@@ -59,11 +59,20 @@ const doc={getElementById:stub,querySelector:stub,addEventListener(){},
 const f=new Function("document","window","console","setTimeout","clearTimeout","URL","Blob","L",src+`
   const out=[],views={feed,post:detail,compose,reports,cal:calendar,
     event:evDetail,map:mapView,profiles,learn,lesson,collection};
+  // detail views need their id in S, so give every view a state that makes sense
+  const setup={post:{pid:POSTS[0].id},event:{eid:EVENTS[0].id},
+    lesson:{lid:"l1"},map:{pl:"p13",cat:"daily"},cal:{day:null,month:null}};
   for(const lang of ["en","ja","ko"]){ S.lang=lang;
-    for(const v in views){ S.view=v;
+    for(const v in views){ Object.assign(S,{view:v},setup[v]||{});
       try{ const o=views[v]()+sheet();
         if(/undefined|\\[object Object\\]/.test(o)) out.push(lang+"/"+v+" suspicious");
       }catch(e){ out.push(lang+"/"+v+" "+e.message); } } }
+  // the branching episode needs playing, not just rendering
+  for(const route of ["osaka","kyoto"]){
+    S.lid="l8"; S.vn={route,i:0,picked:null,score:0};
+    for(let i=0;i<=VN[route].scenes.length;i++){ S.vn.i=i;
+      try{ if(/undefined/.test(vnView())) out.push(route+" scene "+i+" suspicious"); }
+      catch(e){ out.push(route+" scene "+i+" "+e.message); } } }
   return out;`);
 const errs=f(doc,{},console,()=>{},()=>{},{createObjectURL:()=>"",revokeObjectURL(){}},class{},undefined);
 console.log(errs.length?errs.join("\n"):"clean");
