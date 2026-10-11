@@ -78,7 +78,7 @@
 | C-9 | 사용자 id·토큰을 `console.log` 하지 않는다 | 익명성 |
 | C-10 | 공개값만 `CFG` 에. `sb_secret_`·`service_role` 문자열이 `index.html` 에 있으면 안 된다 | PR-4, TC-PR-03 |
 | C-11 | 비동기 로더는 끝나면 `render()` 가 아니라 `refresh()` 를 부른다. `refresh()` 는 `S.view === "map"` 이면 `updateMap()`, 아니면 `render()` | `render()` 가 `#main` 을 바꿔 Leaflet 지도를 떼어 낸다 (`index.html:1781`, `:1788-1789`, BUG-01). CLAUDE.md 지도 규칙 |
-| C-12 | RPC 결과가 반환값 문자열인 함수(`request_exchange`)는 HTTP 200 이어도 반환값을 `ERR`/`T` 매핑에 통과시킨다 | ADR-0005 |
+| C-12 | RPC 결과가 반환값 문자열인 함수(`request_exchange`, `respond_exchange`)는 HTTP 200 이어도 반환값을 `ERR`/`T` 매핑에 통과시킨다 | ADR-0005 |
 
 ## 5. SQL·마이그레이션 (제안)
 

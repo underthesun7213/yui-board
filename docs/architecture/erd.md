@@ -475,11 +475,27 @@ erDiagram
 
 | 테이블 | 컬럼 | 비고 |
 |---|---|---|
-| `exchange_requests` | `status text check (status in ('pending','accepted','declined','suppressed','expired'))` | `suppressed` = 본인 글·이미 교환·같은 상대에게 대기 중. 수신자에게 안 보인다 |
+| `exchange_requests` | `status text check (status in ('pending','accepted','declined','suppressed','expired'))` | `suppressed` = 본인 글·이미 교환·같은 상대에게 **14일 이내** 대기 중. 수신자에게 안 보인다. `expired` 는 아래 지연 만료가 설정한다 |
 | | `responded_at timestamptz` | |
 | `exchange_attempts` | `user_id uuid references profiles on delete cascade`, `created_at` | 정책 0 |
 | `exchanges` | `id bigserial primary key`, `unique (a, b)`, `check (a < b)` | `a`,`b` 는 클라이언트에 노출되지 않음 |
-| 인덱스 `exchange_one_pending (from_user, to_user) where status = 'pending'` unique | (현행 유지) | 같은 상대 대기 요청 1건(POL-4-5)의 **백스톱**. 정상 경로에서는 아래 잠금 때문에 위반이 일어나지 않는다 |
+| 인덱스 `exchange_one_pending (from_user, to_user) where status = 'pending'` unique | (현행 유지) | 같은 상대 대기 요청 1건(POL-4-5)의 **백스톱**. 정상 경로에서는 아래 잠금 때문에 위반이 일어나지 않는다. 아래 "만료" 의 지연 만료가 같은 트랜잭션에서 먼저 실행되므로, 14일 지난 `pending` 이 인덱스에 남아 새 요청을 막는 일이 없다 |
+| 함수 `exchange_ttl() → interval` | `immutable`, `interval '14 days'` | POL-4-8 의 만료 기간을 **한 곳**에 둔다. 뷰·`request_exchange`·`respond_exchange` 가 모두 이 함수를 쓴다 |
+
+**만료 (POL-4-8) — 지연 만료(lazy expiry)를 택한다.** `status='expired'` 로 바꾸는 주기 작업을 두지 않는다. 대신:
+
+1. `request_exchange` 가 요청자 잠금을 잡은 직후, **요청자 자신의** 오래된 대기 요청을 만료시킨다: `update exchange_requests set status='expired' where from_user = me and status = 'pending' and created_at <= now() - exchange_ttl()`. 이어지는 "같은 상대에게 대기 중" 판정과 INSERT 는 이 갱신 뒤에 실행되므로, 무시된 요청 하나가 이후 요청을 영구히 `suppressed` 로 만드는 일이 없고, 부분 유일 인덱스도 막지 않는다.
+2. "같은 상대에게 대기 중" 판정 자체에도 `created_at > now() - exchange_ttl()` 를 넣는다(1과 같은 조건 — 이중 방어).
+3. `respond_exchange` 는 `created_at > now() - exchange_ttl()` 인 `pending` 만 처리한다. 지난 요청은 `not_found` 를 반환하고 그 행을 `expired` 로 바꾼다.
+4. `my_incoming_requests` 는 같은 조건으로 거른다(현행 설계 유지).
+
+갱신되지 않은 채 남는 오래된 `pending` 행(요청자가 다시 요청하지 않은 경우)은 어디에서도 보이지 않고 수락할 수도 없으므로 동작상 `expired` 와 같다. 지표 "교환 성사율"(출시 계획 §3)은 `status='pending' and created_at <= now() - exchange_ttl()` 를 만료로 세어야 한다.
+
+**(a) 주기 작업 대신 이 방식을 고른 이유**
+- 정확성이 작업 실행 시각에 기대지 않는다. 주기 작업이면 작업 사이 최대 한 주기 동안 14일 지난 `pending` 이 부분 유일 인덱스와 "대기 중" 판정에 남아 새 요청이 `suppressed` 된다.
+- `pg_cron` 이 무료 플랜에서 쓸 수 있는지 이번에 확인하지 못했다(**확인 필요**). 지연 만료는 확장·스케줄러·운영 절차가 필요 없다.
+- 갱신 범위가 요청자 자신의 행뿐이라 이미 잡은 요청자 잠금 아래에서 안전하다.
+- 단점: 테이블에 오래된 `pending` 이 남는다. 데이터 정리가 필요해지면(퇴거 30일 후 삭제, POL-5-5) 그때 같은 조건으로 일괄 정리한다.
 
 **동시성.** `request_exchange` 는 첫 문장에서 `pg_advisory_xact_lock(hashtextextended('exreq:' || auth.uid()::text, 0))` 로 **요청자 단위 잠금**을 잡는다. 같은 사용자의 동시 호출이 직렬화되므로 (1) 하루 3건 판단(`exchange_attempts` 카운트 → INSERT)이 3건을 넘지 않고 (2) 같은 상대에 대한 대기 요청 확인(`pending` 존재 → `suppressed`)이 경쟁하지 않는다. 다른 사용자끼리는 서로 막지 않는다.
 
@@ -545,7 +561,7 @@ erDiagram
 | 뷰 | 컬럼 | 조건 | 바뀐 점 |
 |---|---|---|---|
 | `my_contacts` | `contact_id`(=`exchanges.id`), `display_name`, `instagram`, `floor`, `post_id`, `created_at` | 내가 `a` 또는 `b` | 현행의 `id`(상대 uuid) 제거 (N-6) |
-| `my_incoming_requests` | `id`, `post_id`, `display_name`, `floor`, `created_at` | `to_user = auth.uid() and status='pending' and created_at > now() - interval '14 days'` | 만료(POL-4-8 제안) |
+| `my_incoming_requests` | `id`, `post_id`, `display_name`, `floor`, `created_at` | `to_user = auth.uid() and status='pending' and created_at > now() - exchange_ttl()` | 만료(POL-4-8 제안, §4.3 지연 만료) |
 | `my_sent_requests` (신규) | `post_id`, `created_at` | `from_user = auth.uid()` (모든 status) | 상태를 보여주지 않는다 → 거절 비통지(POL-4-6) |
 | `my_post_ids` (신규) | `post_id`, `kind`('post'/'comment'), `id` | 본인 작성 | 수정·삭제 메뉴(M-7, IA-6), 교환 버튼 숨김(FN-HOME-02-7). 본인 것만 |
 | `report_queue` | `target_type`, `target_id`, `n`, `reasons report_reason[]`, `by_reason jsonb`, `first_at`, `last_at` | 미처리, `is_admin()` | 대상 단위로 묶음 (N-9). `reporter_id` 없음 |
@@ -563,7 +579,7 @@ erDiagram
 | RPC (§6.1, §6.2), 헬퍼 `is_admin`/`is_resident`/`is_resident_id`, 카운터 트리거 `bump_like_count`/`bump_comment_count`, `handle_new_user`, `hook_before_user_created` | `security definer set search_path = public` | 정책 0 테이블 접근, 호출자에게 없는 `posts` UPDATE 권한(S-4) |
 | **방어용 트리거 `profiles_guard_admin`, `mod_actions_append_only`, `mod_actions_no_truncate`** | **`security invoker`(기본값). 정의자로 만들지 않는다** | 이 트리거는 `current_user`(실제 호출 역할)로 판단한다. 정의자로 만들면 `current_user` 가 소유자(`postgres`)가 되어 검사가 항상 통과하고 S-1 이 다시 열린다 |
 
-**오류와 결과 코드.** 기본은 `raise exception using errcode = 'P0001', message = '<code>'` 로 짧은 코드 문자열을 쓰고 클라이언트가 `T` 키로 매핑한다(핸드오프 §5.4). **예외: 실패해도 남아야 하는 기록이 있는 함수**(`request_exchange`)는 예외를 던지지 않고 **결과 코드를 반환값으로** 돌려준다. 예외는 트랜잭션을 롤백해 `exchange_attempts` INSERT 를 지우기 때문이다(S-2 의 "실패 시도 롤백" 결함).
+**오류와 결과 코드.** 기본은 `raise exception using errcode = 'P0001', message = '<code>'` 로 짧은 코드 문자열을 쓰고 클라이언트가 `T` 키로 매핑한다(핸드오프 §5.4). **예외: 실패해도 남아야 하는 기록이 있는 함수**(`request_exchange` 의 시도 기록, `respond_exchange` 의 만료 표시)는 예외를 던지지 않고 **결과 코드를 반환값으로** 돌려준다. 예외는 트랜잭션을 롤백해 `exchange_attempts` INSERT 를 지우기 때문이다(S-2 의 "실패 시도 롤백" 결함).
 
 ### 6.1 `service_role` 전용 (Edge Function 이 호출)
 
@@ -581,7 +597,7 @@ erDiagram
 | `delete_own_post` / `delete_own_comment` | `(p_id bigint) → void` | `not_found` (남의 것·없음 동일) | M-7, POL-5-4 |
 | `submit_report` | `(p_type text, p_id bigint, p_reason report_reason) → table(already boolean)` | `not_found`, `not_resident` | M-1, M-2, N-5 |
 | `request_exchange` | `(p_post bigint) → text` — **반환값** `'sent'` / `'daily_limit'` / `'unavailable'` / `'not_resident'`. 예외를 던지지 않는다(시도 기록 보존). 요청자 단위 advisory 잠금(§4.3) | (반환값으로 대체) | S-2, Q7, X-1~X-6, POL-4-4·4-5, ADR-0005 |
-| `respond_exchange` | `(p_req bigint, p_accept boolean) → void` | `not_found`, `not_resident` | X-4, N-8 |
+| `respond_exchange` | `(p_req bigint, p_accept boolean) → text`. 대상 행을 `for update` 로 잠그고 `created_at > now() - exchange_ttl()` 인 `pending` 만 처리. 지난 요청은 `expired` 로 바꾼 뒤 `not_found` (갱신을 남기기 위해 예외 대신 결과 반환 — 반환형을 `text` 로: `'ok'`/`'not_found'`/`'not_resident'`) | (반환값) | X-4, N-8, POL-4-8 |
 | `unlink_exchange` | `(p_contact_id bigint) → void` | `not_found` | X-5, N-6 |
 | `toggle_rsvp` | `(p_event bigint, p_occurs_on date) → table(going boolean, n int, full boolean)`. 정원 검사 전에 `select … from events where id = p_event for update` 로 **이벤트 행을 잠근다** → 같은 이벤트의 동시 참가가 직렬화되어 `count < capacity` 확인과 INSERT 사이에 끼어들 수 없다(정원 초과 방지). 회차별로 더 잘게 잠그려면 `pg_advisory_xact_lock(p_event, (p_occurs_on - date '2000-01-01'))` 도 가능하나 규모상 행 잠금으로 충분 | `full`, `not_found`, `not_resident` | C-5, C-8, Q6 |
 | `moderate` | `(p_type text, p_id bigint, p_action text, p_note text default null) → void` | `not_operator`, `not_found`, `bad_action` | M-4~M-6, S-3, D-4 |
@@ -592,6 +608,7 @@ erDiagram
 | 함수 | EXECUTE | 이유 |
 |---|---|---|
 | `is_admin()`, `is_resident()` | **`authenticated` 에 부여 (필수)** | RLS 정책 식은 호출 역할(`authenticated`)로 평가된다. 회수하면 정책 평가가 42501 로 실패한다. 반환값은 본인에 대한 boolean 뿐 |
+| `exchange_ttl()` | 부여 없음 | 정의자 뷰·RPC 안에서만 쓰인다(소유자 권한) |
 | `is_resident_id(uuid)` | 부여 없음 | 임의 uuid 의 거주 여부를 묻는 함수라 클라이언트에 열면 uuid 탐색 도구가 된다. 정의자 RPC 안에서만 호출(소유자 권한) |
 | 트리거 함수 (`bump_like_count`, `bump_comment_count`, `profiles_guard_admin`, `mod_actions_append_only`, `mod_actions_no_truncate`, `handle_new_user`) | 부여 없음 | 트리거는 EXECUTE 권한 없이 실행된다 |
 | 가입 훅 `hook_before_user_created(event jsonb)` | `supabase_auth_admin` 에만 | 공식 훅 문서 방식 |
@@ -639,6 +656,8 @@ begin
     return 'daily_limit';                       -- 한도 초과 시도는 기록하지 않는다(무한 증가 방지)
   end if;
   insert into exchange_attempts (user_id) values (me);   -- 이후 어떤 결과든 커밋된다
+  update exchange_requests set status = 'expired'          -- 지연 만료 (POL-4-8): 내 오래된 대기 요청
+   where from_user = me and status = 'pending' and created_at <= now() - exchange_ttl();
   select * into p from posts where id = p_post;
   if p.id is null or p.hidden_at is not null or p.deleted_at is not null
      or p.board not in ('market','meet','lost') then
@@ -650,7 +669,8 @@ begin
   values (me, target, p_post,
           case when target = me
                  or exists (select 1 from exchanges where a = least(me,target) and b = greatest(me,target))
-                 or exists (select 1 from exchange_requests where from_user = me and to_user = target and status = 'pending')
+                 or exists (select 1 from exchange_requests where from_user = me and to_user = target
+                              and status = 'pending' and created_at > now() - exchange_ttl())
                then 'suppressed' else 'pending' end)
   on conflict (from_user, post_id) do nothing;
   return 'sent';
@@ -679,11 +699,11 @@ grant  execute on function create_post(uuid, uuid, board, lang, text, text, text
 | 0006 | `events` | `events`(host 3칸, rsvp_count 없음), `event_overrides`, `event_rsvps` | N-3, D-2 |
 | 0007 | `places` | `places` | — |
 | 0008 | `metrics` | `metric_daily` | Q10 |
-| 0009 | `helpers` | `is_admin`, `is_resident`, `is_resident_id` | Q4 |
+| 0009 | `helpers` | `is_admin`, `is_resident`, `is_resident_id`, `exchange_ttl` | Q4, POL-4-8 |
 | 0010 | `triggers` | 카운터(definer), `profiles_guard_admin`·`mod_actions_append_only`(invoker), TRUNCATE 차단 | S-1, S-3, S-4 |
 | 0011 | `rls` | 모든 테이블 RLS 활성, 정책(§5.2). 작성자 테이블은 활성만 | I-2, N-2, N-8, S-3, S-6 |
 | 0012 | `views` | §5.3 뷰 7개 | N-6, N-9, M-6 |
-| 0013 | `rpc` | §6.1·6.2 함수 | S-2, S-5, S-6, N-5, Q6, Q7, D-1, D-4 |
+| 0013 | `rpc` | §6.1·6.2 함수. `exchange_ttl()` 은 `0009_helpers` 에 둔다(뷰 0012 가 먼저 쓰므로). 교환 만료는 지연 만료라 스케줄 작업·`pg_cron` 마이그레이션 없음 | S-2, S-5, S-6, N-5, Q6, Q7, D-1, D-4, POL-4-8 |
 | 0014 | `grants` | 전부 회수 → 표대로 부여 → default privileges | N-1, S-1, N-6, PR-7 |
 | 0015 | `auth_hooks` | `handle_new_user` 트리거(`auth.users` AFTER INSERT), `hook_before_user_created` | S-7 |
 | 0016 | `checks` | 적용 후 점검 — 실패 시 예외로 마이그레이션 실패: (1) RLS 비활성 테이블 0, (2) `anon` 의 테이블·함수 권한 0, (3) `pg_default_acl` 에 `anon` 0, (4) `authenticated` 가 EXECUTE 를 가진 함수가 **허용 목록**(§6.2 RPC + `is_admin`, `is_resident`)과 정확히 일치, (5) `service_role` 전용 함수(§6.1)에 `authenticated` EXECUTE 없음, (6) `profiles_guard_admin`·`mod_actions_append_only` 의 `prosecdef = false` | N-1, S-1 |
@@ -713,6 +733,9 @@ QA test-plan §6.10 에 더할 것. 테스트 계획 문서는 고치지 않고 
 | E-10 | `unavailable` 을 받은 요청 직후 `exchange_attempts` 행 수 확인 | 시도가 남아 있다(롤백 없음) | S-2 |
 | E-11 | 정원 1 남은 회차에 두 사용자가 동시에 `toggle_rsvp` | 한 명만 `going`, 다른 한 명 `full` | Q6 |
 | E-12 | `service_role` 로 `truncate mod_actions` | 거부 | PR-11 |
+| E-14 | B 가 A 의 글 1에 요청(`pending`) → A 가 응답하지 않음 → `created_at` 을 15일 전으로 당긴 뒤(테스트 데이터) B 가 A 의 글 2에 요청 | 반환 `sent`, 글 1 요청은 `expired`, 글 2 요청은 `pending`(수신자 `my_incoming_requests` 에 보임). `exchange_one_pending` 위반 없음 | POL-4-5, POL-4-8 |
+| E-15 | 위와 같이 15일 지난 요청에 A 가 `respond_exchange(…, true)` | `not_found`, 행은 `expired`, `exchanges` 생성 안 됨 | POL-4-8 |
+| E-16 | 13일 된 `pending` 이 있는 상태에서 B 가 A 의 다른 글에 요청 | `sent`, 새 행은 `suppressed`(같은 상대 대기 1건 유지) | POL-4-5 |
 | E-13 | `authenticated` 로 `profiles` 의 `is_admin` PATCH (컬럼 GRANT 우회 시도 포함), `pg_proc.prosecdef` 로 가드 트리거가 invoker 인지 확인 | 거부, `false` | S-1 |
 
 ## 9. 열린 질문

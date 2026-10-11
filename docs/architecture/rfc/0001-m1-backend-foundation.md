@@ -413,9 +413,10 @@ sequenceDiagram
   DB->>DB: 거주 아님 → return 'not_resident'
   DB->>DB: 24시간 시도 수 ≥ 3 → return 'daily_limit'
   DB->>DB: exchange_attempts INSERT (이후 어떤 결과든 커밋됨)
+  DB->>DB: 지연 만료 — 내 pending 중 14일 지난 것 → 'expired' (POL-4-8)
   DB->>DB: 글 없음·숨김·삭제·게시판 ∉ {market, meet, lost} → return 'unavailable'
   DB->>DB: 작성자 조회 (post_authors)
-  alt 본인 글 / 이미 교환 / 같은 상대에게 대기 중
+  alt 본인 글 / 이미 교환 / 같은 상대에게 14일 이내 대기 중
     DB->>DB: status='suppressed' 로 기록 (상대에게 안 보임)
   else 정상
     DB->>DB: status='pending'
@@ -423,6 +424,7 @@ sequenceDiagram
   DB-->>P: 200 "sent" (세 경우 모두 동일)
   P-->>B: 반환 문자열 → T 키 (exSent / exLimit / …)
   Note over P,DB: 예외를 던지지 않고 결과를 반환값으로 준다 — 예외는 시도 기록까지 롤백하기 때문 (ADR-0005)
+  Note over P,DB: 만료는 주기 작업 없이 이 호출과 respond_exchange 에서 처리한다 (ERD §4.3)
 ```
 
 ### 9.5 운영자 숨김 (HOME-05)
@@ -453,6 +455,7 @@ sequenceDiagram
 |---|---|
 | `POST /api/posts`, `/api/posts/:id/comments` | 경로를 Supabase 형식으로: `POST /functions/v1/write-post`, `/functions/v1/write-comment`, `/functions/v1/edit-post`. 요청에 `client_token` 추가 |
 | `request_exchange` 오류 4종 + 23505 | **예외 없음.** HTTP 200 + 반환 문자열 `sent` / `daily_limit` / `unavailable` / `not_resident` (ADR-0005) |
+| `respond_exchange` → `void`, 오류 `no such request` | HTTP 200 + 반환값 `ok` / `not_found` / `not_resident`. 14일(POL-4-8) 지난 요청은 `expired` 로 바꾸고 `not_found` — 만료는 주기 작업 없는 지연 만료 (ERD §4.3, ADR-0005) |
 | `POST /api/posts/:id/comments` 의 `404 post_not_found` | `404 {"error":"not_found"}` — Edge Function 오류 코드를 `unauthorized, not_resident, invalid, not_found, rate_limited, server_error` 로 통일. 숨김·삭제·없는 글을 구별하지 않는다 |
 | `create_post`/`add_comment` 의 `authenticated` EXECUTE | `service_role` 만 (Q4, N-1). 헬퍼 `is_admin`/`is_resident` 는 RLS 평가에 필요해 `authenticated` EXECUTE 유지 |
 | `exchange_requests` 직접 SELECT 로 "보낸 요청 여부" | 뷰 `my_sent_requests(post_id, created_at)` |

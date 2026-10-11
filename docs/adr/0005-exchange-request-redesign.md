@@ -26,7 +26,8 @@
    1. `pg_advisory_xact_lock` 으로 **요청자 단위** 잠금. 같은 사용자의 동시 호출이 직렬화되어 하루 3건을 넘지 않고, 같은 상대에게 `pending` 이 두 건 생기지 않는다(POL-4-5). 다른 사용자끼리는 막지 않는다.
    2. 거주 확인(`not_resident`), 최근 24시간 `exchange_attempts` 가 3건 이상이면 `daily_limit`(이 경우는 기록하지 않음 — 한도 밖 시도로 행이 무한히 늘지 않게).
    3. `exchange_attempts` INSERT. 이후 결과가 `unavailable` 이든 `sent` 든 커밋되므로 실패 시도도 센다(POL-4-4 "실패 포함").
-   4. 글·작성자·교환·대기 판정 후 `exchange_requests` 기록.
+   4. **지연 만료:** 요청자 자신의 `pending` 중 14일(`exchange_ttl()`, POL-4-8) 지난 것을 `expired` 로 바꾼다.
+   5. 글·작성자·교환·대기(14일 이내 `pending` 만) 판정 후 `exchange_requests` 기록.
    
    구현 요지는 [ERD §6.4](../architecture/erd.md#64-핵심-조각-설계-설명용).
 3. **같은 쿼리 경로.** 모든 분기가 같은 조회(글·작성자·교환·대기)를 수행한 뒤 마지막에 status 만 다르게 쓴다. 타이밍 차이를 줄인다.
@@ -36,8 +37,9 @@
    - `my_contacts(contact_id, display_name, instagram, floor, post_id, created_at)` — `contact_id` 는 `exchanges.id`.
    - 해제는 `unlink_exchange(p_contact_id)`.
 5. **같은 글 중복**은 `(from_user, post_id)` 유일. 재요청은 `sent` (이미 보낸 글이라는 것은 요청자 자신이 아는 정보).
-6. `respond_exchange` 에 거주 확인 추가(N-8).
-7. 요청자 쪽 UI 의 "이미 요청함"은 `my_sent_requests` 로, "내 글에는 버튼 숨김"은 `my_post_ids` 로 판단한다.
+6. `respond_exchange` 에 거주 확인 추가(N-8). 14일 지난 요청은 `expired` 로 바꾸고 `not_found` 를 반환한다(만료 표시가 남도록 예외 대신 반환값).
+7. **만료는 주기 작업이 아니라 지연 만료로 한다** (POL-4-8). 만료 조건을 "대기 중" 판정에 두지 않으면 응답 없는 요청 하나가 그 상대에 대한 이후 모든 요청을 영구히 `suppressed` 로 만들고, 부분 유일 인덱스 `exchange_one_pending` 도 막힌다. `pg_cron` 주기 작업은 (1) 작업 사이에 같은 문제가 남고 (2) 무료 플랜 사용 가능 여부를 확인하지 못했다(확인 필요). 지연 만료는 같은 트랜잭션에서 INSERT 보다 먼저 실행되므로 그런 틈이 없다. 기간은 `exchange_ttl()` 한 곳에 둔다. 세부는 [ERD §4.3](../architecture/erd.md#43-교환-adr-0005).
+9. 요청자 쪽 UI 의 "이미 요청함"은 `my_sent_requests` 로, "내 글에는 버튼 숨김"은 `my_post_ids` 로 판단한다.
 
 ## 고려한 대안
 
@@ -62,6 +64,6 @@
 
 | # | 질문 |
 |---|---|
-| X-Q1 | 거절 비통지(POL-4-6), 14일 만료(POL-4-8)는 정책서에서 "제안" 상태다. 이 ADR 은 두 제안을 전제로 했다 — 정책 확정 필요(BL-67) |
+| X-Q1 | 거절 비통지(POL-4-6), 14일 만료(POL-4-8)는 정책서에서 "제안" 상태다. 이 ADR 은 두 제안을 전제로 했다 — 정책 확정 필요(BL-67). 만료 기간이 바뀌면 `exchange_ttl()` 하나만 고친다. POL-4-8 을 채택하지 않으면 만료가 없어져 "응답 없는 요청이 같은 상대에게의 재요청을 영구히 막는" 동작이 정책이 된다 — 그 경우에도 기간을 두는 것을 권한다 |
 | X-Q2 | 본인 글에 `sent` 를 돌려주는 거짓 성공을 받아들일지, `my_post_ids` 로 UI 에서만 막고 서버는 `unavailable` 로 둘지(본인 글 여부는 본인만 아는 정보라 노출 위험은 없다) |
 | X-Q3 | 한도 초과(`daily_limit`) 시도는 기록하지 않는다. "실패 시도도 센다"(POL-4-4)의 범위를 "한도 안의 실패"로 해석해도 되는가 |
