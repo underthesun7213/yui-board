@@ -94,7 +94,7 @@
 | D-8 | **`current_user` 로 판단하는 방어 트리거(`profiles_guard_admin`, `mod_actions_append_only` 등)는 `security definer` 로 만들지 않는다.** 정의자로 만들면 `current_user` 가 소유자가 되어 검사가 무력화된다(S-1). `0016_checks` 가 `prosecdef = false` 를 확인한다 |
 | D-9 | 실패해도 남아야 하는 기록(시도 횟수 등)을 쓰는 함수는 예외를 던지지 않고 결과 코드를 반환한다. 예외는 같은 트랜잭션의 INSERT 를 롤백한다 |
 | D-10 | 같은 사용자·같은 대상의 "확인 후 쓰기"(한도·정원·중복)는 잠금 아래에서: 사용자 단위는 `pg_advisory_xact_lock`, 대상 행이 있으면 `select … for update` |
-| D-11 | 정책 식이 부르는 헬퍼(`is_admin`, `is_resident`)는 `authenticated` 에 EXECUTE 를 준다. 임의 uuid 를 받는 헬퍼(`is_resident_id`)는 주지 않는다 |
+| D-11 | 정책 식이나 뷰가 부르는 헬퍼(`is_admin`, `is_resident`, `exchange_ttl`)는 `authenticated` 에 EXECUTE 를 준다 — 둘 다 조회하는 역할의 권한으로 함수를 호출한다. 임의 uuid 를 받는 헬퍼(`is_resident_id`)는 주지 않는다 |
 
 ## 6. Edge Functions (제안)
 

@@ -608,7 +608,7 @@ erDiagram
 | 함수 | EXECUTE | 이유 |
 |---|---|---|
 | `is_admin()`, `is_resident()` | **`authenticated` 에 부여 (필수)** | RLS 정책 식은 호출 역할(`authenticated`)로 평가된다. 회수하면 정책 평가가 42501 로 실패한다. 반환값은 본인에 대한 boolean 뿐 |
-| `exchange_ttl()` | 부여 없음 | 정의자 뷰·RPC 안에서만 쓰인다(소유자 권한) |
+| `exchange_ttl()` | **`authenticated` 에 부여 (필수)** | 뷰 `my_incoming_requests` 가 호출한다. 뷰 안의 함수 호출은 뷰를 조회하는 사용자가 직접 부른 것으로 취급되므로(PostgreSQL `CREATE VIEW` 문서) 부여하지 않으면 입주자 조회가 42501 로 실패한다. 상수만 반환하므로 노출 위험 없음 |
 | `is_resident_id(uuid)` | 부여 없음 | 임의 uuid 의 거주 여부를 묻는 함수라 클라이언트에 열면 uuid 탐색 도구가 된다. 정의자 RPC 안에서만 호출(소유자 권한) |
 | 트리거 함수 (`bump_like_count`, `bump_comment_count`, `profiles_guard_admin`, `mod_actions_append_only`, `mod_actions_no_truncate`, `handle_new_user`) | 부여 없음 | 트리거는 EXECUTE 권한 없이 실행된다 |
 | 가입 훅 `hook_before_user_created(event jsonb)` | `supabase_auth_admin` 에만 | 공식 훅 문서 방식 |
@@ -706,7 +706,7 @@ grant  execute on function create_post(uuid, uuid, board, lang, text, text, text
 | 0013 | `rpc` | §6.1·6.2 함수. `exchange_ttl()` 은 `0009_helpers` 에 둔다(뷰 0012 가 먼저 쓰므로). 교환 만료는 지연 만료라 스케줄 작업·`pg_cron` 마이그레이션 없음 | S-2, S-5, S-6, N-5, Q6, Q7, D-1, D-4, POL-4-8 |
 | 0014 | `grants` | 전부 회수 → 표대로 부여 → default privileges | N-1, S-1, N-6, PR-7 |
 | 0015 | `auth_hooks` | `handle_new_user` 트리거(`auth.users` AFTER INSERT), `hook_before_user_created` | S-7 |
-| 0016 | `checks` | 적용 후 점검 — 실패 시 예외로 마이그레이션 실패: (1) RLS 비활성 테이블 0, (2) `anon` 의 테이블·함수 권한 0, (3) `pg_default_acl` 에 `anon` 0, (4) `authenticated` 가 EXECUTE 를 가진 함수가 **허용 목록**(§6.2 RPC + `is_admin`, `is_resident`)과 정확히 일치, (5) `service_role` 전용 함수(§6.1)에 `authenticated` EXECUTE 없음, (6) `profiles_guard_admin`·`mod_actions_append_only` 의 `prosecdef = false` | N-1, S-1 |
+| 0016 | `checks` | 적용 후 점검 — 실패 시 예외로 마이그레이션 실패: (1) RLS 비활성 테이블 0, (2) `anon` 의 테이블·함수 권한 0, (3) `pg_default_acl` 에 `anon` 0, (4) `authenticated` 가 EXECUTE 를 가진 함수가 **허용 목록**(§6.2 RPC + `is_admin`, `is_resident`, `exchange_ttl`)과 정확히 일치, (5) `service_role` 전용 함수(§6.1)에 `authenticated` EXECUTE 없음, (6) `profiles_guard_admin`·`mod_actions_append_only` 의 `prosecdef = false` | N-1, S-1 |
 | seed | `seed.sql` (마이그레이션 아님) | `allowed_domains`, `places` 13곳(mock `PLACES`), 이번 학기 이벤트 | — |
 
 **되돌리기.** 출시 계획 §2 "DB 마이그레이션은 되돌리는 스크립트를 함께" 를 따르되, M1 은 빈 DB 에 처음 적용하므로 되돌리기 = 프로젝트 재생성으로 충분하다. 데이터가 생긴 뒤(M2 이후)의 마이그레이션부터 `down` 스크립트를 짝으로 둔다.
