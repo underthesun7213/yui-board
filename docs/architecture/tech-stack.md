@@ -17,7 +17,7 @@
 | 영역 | README 의 선택 | 판정 | 조건·변경점 |
 |---|---|---|---|
 | 백엔드·DB·인증 | Supabase 무료, 도쿄 리전 | **유지** | 새 API 키(`sb_publishable_…`/`sb_secret_…`)로 시작한다. 레거시 `anon`/`service_role` JWT 키는 2026년 말 폐기 예정(§2.1). 무료 프로젝트 1주 비활동 일시정지·백업 없음은 운영 리스크로 관리(§6) |
-| 작성 시 번역 | Azure Translator F0 (월 200만 자) | **유지** | 예상 사용량은 한도의 약 10% (*추정*, §3.2). 번역기 호출은 어댑터 하나로 감싸 DeepL Free 로 교체 가능하게 둔다 |
+| 작성 시 번역 | Azure Translator F0 (월 200만 자) | **유지** | 예상 사용량은 한도의 약 10% (*추정*, §3.2). 한도 소진은 오류 429001, 별도 시간당 제한 있음 → 둘 다 "원문 저장" 경로(§3.1). 번역기 호출은 어댑터 하나로 감싸 DeepL Free 로 교체 가능하게 둔다 |
 | 서버 코드 위치 | (PRD §9 "서버 함수", 핸드오프 §5.3 1안 Edge Functions) | **Supabase Edge Functions** | 비밀값이 Supabase 밖으로 나가지 않는다. 별도 계정·과금 없음 |
 | 정적 호스팅 | GitHub Pages | **유지 (M1~M3)** | 응답 헤더를 설정할 수 없으므로 CSP 는 `<meta>` 로. 헤더가 꼭 필요해지면 Cloudflare Pages 로 이전(ADR-0008) |
 | 지도 | Leaflet + OSM 표준 타일, Google 은 `place_id` 링크만 | **유지** | 사용량은 "가벼운 사용" 범위(*추정*). 타일 사전 다운로드(오프라인 캐시) 금지. 저작자 표시에 저작권 페이지 링크 추가 필요(§5, 신규 발견) |
@@ -34,7 +34,7 @@
 | 항목 | 값 | 신뢰도 | 출처 |
 |---|---|---|---|
 | 무료 플랜 DB 용량 | 500 MB | 3자 가이드 다수 일치 | [makerkit](https://makerkit.dev/blog/saas/supabase-pricing), [costbench](https://costbench.com/software/database-as-service/supabase/free-plan/) |
-| 무료 플랜 MAU | 50,000 (2025년 자료는 10,000 — 구버전으로 판단) | 3자 가이드 | [jetadmin](https://www.jetadmin.io/blog/supabase-pricing-2026-guide-to-plans-limits-and-real-world-costs/), [uibakery](https://uibakery.io/blog/supabase-pricing) |
+| 무료 플랜 MAU | 자료마다 다름: 2026년 가이드 50,000, 2025년 가이드 10,000. **어느 쪽이든 이 프로젝트(최대 약 650명)는 한도의 7% 이하**라 선정에 영향이 없다. 정확한 값은 M1 때 공식 가격 페이지에서 재확인 | 3자 가이드 (상충) | [jetadmin](https://www.jetadmin.io/blog/supabase-pricing-2026-guide-to-plans-limits-and-real-world-costs/), [uibakery](https://uibakery.io/blog/supabase-pricing) |
 | 무료 플랜 egress | 월 5 GB | 3자 가이드 | [makerkit](https://makerkit.dev/blog/md/saas/supabase-pricing) |
 | 무료 플랜 Edge Function 호출 | 월 500,000 (구자료는 일 1,000) | 3자 가이드 | [costbench](https://costbench.com/software/database-as-service/supabase/free-plan/), [focusreactive](https://focusreactive.com/blog/supabase-price/) |
 | 무료 프로젝트 수 | 활성 2개 | 3자 가이드 | [makerkit](https://makerkit.dev/blog/saas/supabase-pricing) |
@@ -61,8 +61,10 @@
 | 비용 0 유지 (25) | 4 — 무료 한도 안. 일시정지·백업 없음이 대가 | 3 — Functions 는 종량제(Blaze) 결제 수단 등록 필요 (*일반 지식, 이번에 미확인*) | 5 — 무료 Workers 일 10만 요청 ([Cloudflare](https://developers.cloudflare.com/workers/platform/pricing/)) | 2 — 상시 VM 필요 |
 | 운영 부담 (20) | 4 — 관리형 Postgres·Auth·함수 | 4 | 3 — 인증을 직접 | 1 — 서버·백업·TLS 직접 |
 | 기존 자산 재사용 (15) | **5** — `schema.sql`, 핸드오프 §5 API 가 전부 PostgREST 기준 | 1 — 전면 재설계 | 1 | 1 |
-| 일본 지연 (10) | 5 — 도쿄 리전 | 4 | 5 — 엣지 | 지역 선택에 따름 |
-| **가중 합 (100점 환산)** | **92** | 63 | 60 | 44 |
+| 일본 지연 (10) | 5 — 도쿄 리전 | 4 | 5 — 엣지 | 3 (*가정* — 호스팅 지역 미정이라 중간값) |
+| **가중 합 (100점 환산)** | **91** | 60 | 62 | 41 |
+
+계산: 가중 합 = Σ(가중치 × 점수) ÷ 5. Supabase (30·5 + 25·4 + 20·4 + 15·5 + 10·5)/5 = 455/5 = 91. Firebase (90+75+80+15+40)/5 = 60. Cloudflare (60+125+60+15+50)/5 = 62. PocketBase (90+50+20+15+30)/5 = 41 — "일본 지연"은 실제 점수가 아니라 가정값이며, 1~5 어느 값을 넣어도 37~45 로 순위가 바뀌지 않는다.
 
 **선정: Supabase.** 핵심 불변식(본문·작성자 분리, 작성자 테이블 무정책 RLS)을 DB 엔진이 강제하는 후보는 Postgres RLS 뿐이다. 나머지 후보는 그 보장을 애플리케이션 코드 리뷰로 옮긴다.
 
@@ -83,6 +85,7 @@
 | 서비스 | 무료 한도 | 한도 초과 시 | 신뢰도 | 출처 |
 |---|---|---|---|---|
 | Azure Translator F0 | 월 200만 자 (표준 번역 + 사용자 지정 학습 합산). 공백·문장부호·모든 코드 포인트를 센다 | F0 는 과금 대신 중단(README 주장). 한 3자 자료만 확인, 공식 문구는 미확인 | 공식 가격 페이지(일본어판) + 3자 | [Azure 가격(ja)](https://azure.microsoft.com/ja-jp/pricing/details/cognitive-services/translator/), [turbo360](https://azure-cost-management-playbook.turbo360.com/docs/ai-translator) |
+| Azure Translator 오류·제한 | 무료 한도 소진 시 오류 코드 **429001**. 그와 별개로 **시간당 문자 수 제한(약 200만 자/시간)** 이 있어 초과 시 429 계열로 제한된다 | 한도 소진은 과금이 아니라 오류 응답으로 나타난다 → POL-6-4·RFC §5.2 의 "실패 = 원문 저장" 경로로 처리 | **공식 문서** (리뷰어 확인, 2026-10-11) | [Translator service limits](https://learn.microsoft.com/azure/ai-services/translator/service-limits) |
 | Azure S1 | 3자 자료 기준 100만 자당 $10 (공식 금액 미확인) | 종량 과금 | 3자 | [immersivetranslate](https://immersivetranslate.com/en/docs/services/azure/) |
 | DeepL API Free | 월 50만 자 | 다음 주기까지 거부(3자 자료) | **공식 지원 문서** (한도) | [DeepL support](https://support.deepl.com/hc/en-us/articles/360021200939-DeepL-API-Free) |
 | Google Cloud Translation | 월 50만 자 (3자 자료, 결제 수단 등록 필요) | 과금 | 3자 | [bluente](https://bluente.com/blog/best-translation-apis-free-tiers) |
@@ -98,7 +101,7 @@
 | 번역 대상 언어 | 2 (원문 외 두 언어) | Azure 는 대상 언어마다 센다 (핸드오프 §5.3) |
 | 과금 글자 수 / 월 | ≈ **18만 자** = F0 의 약 **9%** | |
 
-목표를 5배 넘게 쓰여도 F0 안이다. DeepL Free(50만 자)도 들어가지만 여유가 2.7배뿐이다.
+목표를 5배 넘게 쓰여도 F0 안이다. DeepL Free(50만 자)도 들어가지만 여유가 2.7배뿐이다. 시간당 제한(약 200만 자)은 월 사용량 전체보다 크므로 정상 사용에서는 닿지 않는다. 다만 스팸성 대량 작성은 M-9 빈도 제한(ERD §6.1)이 먼저 막는다.
 
 ### 3.3 비교와 선정
 
@@ -209,6 +212,6 @@ Supabase 기본 SMTP 는 시간당 2~4통 수준이고 사전 승인된 주소�
 | T-1 | 도쿄 리전(`ap-northeast-1`)이 무료 플랜 새 프로젝트에서 선택 가능한가 | 지연, PRD §8 |
 | T-2 | 무료 SMTP 제공자 선택과 그 한도. 학기 초 가입 몰림(수백 통/주)을 견디는가 | ADR-0004 |
 | T-3 | Azure vs DeepL 의 ja↔ko 번역 품질 비교 (실제 글 20건) | ADR-0002, PRD §11 비원어 열람 |
-| T-4 | Azure F0 의 "초과 시 중단" 을 공식 문서로 확인 | POL-6-4 |
+| T-4 | 한도 소진이 오류 429001 로 나타남은 확인됨(§3.1). F0 에서 과금으로 넘어가는 경로가 없다는 점(가격 페이지 문구)만 M1 때 재확인 | POL-6-4 |
 | T-5 | 무료 플랜 비활동 일시정지를 방학 기간에 받아들일지, Pro 로 갈지 | 가용성 |
 | T-6 | 백업: 무료 플랜에서 주기적 `pg_dump` 를 할지. 덤프에는 `post_authors` 가 들어가므로 보관 장소가 `service_role` 과 같은 신뢰 수준이어야 한다 | 익명성, [infra §5](infra.md) |

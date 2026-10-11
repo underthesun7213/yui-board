@@ -207,7 +207,8 @@ flowchart LR
 1. **인증.** `Authorization: Bearer <access token>` 을 `auth.getUser(token)` 으로 검증 → `user_id`. 실패 시 401. (새 API 키는 JWT 가 아니므로 함수의 플랫폼 JWT 검사에 기대지 않고 코드에서 검증한다 — [tech-stack §2.1](../tech-stack.md#21-확인한-사실-2026-10-11))
 2. **입력 검증.** `board` ∈ enum, `src_lang` ∈ {en, ja, ko}, 제목 1~60자, 본문 1~N자(N 은 열린 질문 R-3), `client_token` UUID. 실패 시 422.
 3. **번역.** 어댑터 `translate([title, body], src, targets)` — Azure v3, 타임아웃 5초. 대상은 원문 외 두 언어.
-4. **실패 처리.** 비-2xx·타임아웃·네트워크 오류는 하나의 경로: 원문을 세 칸에 복사, `translated=false`. 작성을 막지 않는다(POL-6-3, 6-4).
+4. **실패 처리.** 비-2xx·타임아웃·네트워크 오류는 하나의 경로: 원문을 세 칸에 복사, `translated=false`. 작성을 막지 않는다(POL-6-3, 6-4). Azure 문서상 무료 한도 소진은 오류 코드 **429001**, 그 밖에 **시간당 문자 수 제한(약 200만 자/시간)** 에 따른 429 계열 응답이 있다([Translator service limits](https://learn.microsoft.com/azure/ai-services/translator/service-limits), 리뷰어 확인 2026-10-11). 둘 다 같은 실패 경로로 처리하고, 응답 본문의 오류 코드만 로그(사용자 ID 없이)에 남겨 "월 한도 소진(429001)"과 "일시 제한"을 구별한다. 429001 이면 그달 남은 기간 번역 호출을 건너뛰도록 `metric_daily` 에 `tr_quota_out` 표시 행을 남기는 방식을 제안한다(*제안*, 지표 허용 목록에 추가 필요).
+4a. **길이 초과 처리.** 번역본이 DB 칸 상한(제목 200, 본문 `3 × B` — [ERD §4.2](../erd.md#42-글댓글))을 넘으면 같은 경로로 원문 저장 + `translated=false`. DB CHECK 위반으로 글 작성이 실패하지 않게 한다.
 5. **DB 호출.** secret 키로 `rpc/create_post(p_author := user_id, p_client_token, p_board, p_src, p_title_*, p_body_*, p_translated)`. 거주 확인·빈도 제한·멱등성은 **DB 함수 안에서** 한다(서버 코드가 우회되어도 유지되도록).
 6. **응답.** `201 {id, translated}`. 같은 `client_token` 재요청은 같은 `id` 를 돌려준다(재시도 안전).
 
@@ -262,15 +263,17 @@ flowchart LR
   AP -->|401| AU[AUTH.refresh → 1회 재시도<br/>실패 시 S.view='auth']
   LD -->|성공| ST["S·데이터 배열 갱신<br/>+ 캐시 저장"]
   LD -->|실패| ER["S.net[x]='err'"]
-  ST --> R["render()"]
-  ER --> R
+  ST --> RF{"refresh()<br/>S.view === 'map'?"}
+  ER --> RF
+  RF -->|아니오| R["render()"]
+  RF -->|예| UM["updateMap()<br/>지도 인스턴스 유지"]
   BOOT[부팅] -->|캐시 먼저| ST
 ```
 
 규칙
 - 뷰 함수 안에서 `fetch` 하지 않는다. 로더가 끝나면 `render()` 를 한 번 부른다.
 - 로더는 같은 키의 진행 중 요청을 중복 시작하지 않는다(`S.net[x]==='loading'` 이면 무시).
-- 지도 탭에서 장소 데이터가 바뀌면 `render()` 가 아니라 `updateMap()` 을 부른다(CLAUDE.md 지도 규칙).
+- **지도 화면 규칙.** 로더가 끝났을 때 `S.view === "map"` 이면 `render()` 가 아니라 `updateMap()` 을 부른다. `render()` 는 `#main` 을 통째로 바꿔 Leaflet 이 붙은 `#lmap` 을 떼어 내는데, `LMAP` 이 null 이 아니면 `initMap()` 이 다시 불리지 않아 지도가 빈 칸이 된다(`index.html:1781`, `:1788-1789` — BUG-01 과 같은 원인). 비동기 로더는 사용자가 이미 다른 화면으로 옮긴 뒤에 끝날 수 있으므로, 완료 시점의 `S.view` 로 판단한다. 장소 외 데이터(본인 정보, 받은 요청 점 등)도 지도 화면에서는 `#main` 을 다시 쓰지 않고 헤더·`updateMap()` 만 갱신한다. 공통 함수 `refresh()` = `S.view==="map" ? updateMap() : render()` 를 두고 로더는 이것만 부른다.
 - 서버에서 온 문자열은 fixture 와 마찬가지로 뷰에서 `esc()` 한다. 서버 데이터라고 안전하지 않다.
 - 응답 → 프로토타입 모양 변환(`created_at` → `min`, `title_*` → `t.{…}` 등)은 로더 안의 `toPost()` 같은 매핑 함수 한 곳에서 한다. 매핑 표는 핸드오프 §6.
 
@@ -406,17 +409,20 @@ sequenceDiagram
   participant DB as Postgres (request_exchange, definer)
   B->>P: 교환 요청 보내기
   P->>DB: rpc/request_exchange(p_post)
-  DB->>DB: exchange_attempts INSERT (실패해도 남도록 먼저, 롤백 없음)
-  DB->>DB: 24시간 시도 수 ≥ 3 → 'daily_limit'
-  DB->>DB: 글 존재·미숨김·게시판 ∈ {market, meet, lost} 아니면 → 'unavailable'
+  DB->>DB: pg_advisory_xact_lock(요청자) — 같은 사용자의 동시 호출 직렬화
+  DB->>DB: 거주 아님 → return 'not_resident'
+  DB->>DB: 24시간 시도 수 ≥ 3 → return 'daily_limit'
+  DB->>DB: exchange_attempts INSERT (이후 어떤 결과든 커밋됨)
+  DB->>DB: 글 없음·숨김·삭제·게시판 ∉ {market, meet, lost} → return 'unavailable'
   DB->>DB: 작성자 조회 (post_authors)
-  alt 본인 글 / 이미 교환 / 대기 중 요청 있음
+  alt 본인 글 / 이미 교환 / 같은 상대에게 대기 중
     DB->>DB: status='suppressed' 로 기록 (상대에게 안 보임)
   else 정상
     DB->>DB: status='pending'
   end
-  DB-->>P: 'sent' (세 경우 모두 동일)
-  P-->>B: 토스트 exSent
+  DB-->>P: 200 "sent" (세 경우 모두 동일)
+  P-->>B: 반환 문자열 → T 키 (exSent / exLimit / …)
+  Note over P,DB: 예외를 던지지 않고 결과를 반환값으로 준다 — 예외는 시도 기록까지 롤백하기 때문 (ADR-0005)
 ```
 
 ### 9.5 운영자 숨김 (HOME-05)
@@ -446,11 +452,16 @@ sequenceDiagram
 | 핸드오프 §5 | 이 RFC |
 |---|---|
 | `POST /api/posts`, `/api/posts/:id/comments` | 경로를 Supabase 형식으로: `POST /functions/v1/write-post`, `/functions/v1/write-comment`, `/functions/v1/edit-post`. 요청에 `client_token` 추가 |
-| `request_exchange` 오류 4종 + 23505 | 결과 3종: `sent`, `daily_limit`, `unavailable` (ADR-0005) |
+| `request_exchange` 오류 4종 + 23505 | **예외 없음.** HTTP 200 + 반환 문자열 `sent` / `daily_limit` / `unavailable` / `not_resident` (ADR-0005) |
+| `POST /api/posts/:id/comments` 의 `404 post_not_found` | `404 {"error":"not_found"}` — Edge Function 오류 코드를 `unauthorized, not_resident, invalid, not_found, rate_limited, server_error` 로 통일. 숨김·삭제·없는 글을 구별하지 않는다 |
+| `create_post`/`add_comment` 의 `authenticated` EXECUTE | `service_role` 만 (Q4, N-1). 헬퍼 `is_admin`/`is_resident` 는 RLS 평가에 필요해 `authenticated` EXECUTE 유지 |
 | `exchange_requests` 직접 SELECT 로 "보낸 요청 여부" | 뷰 `my_sent_requests(post_id, created_at)` |
 | `DELETE /rest/v1/exchanges?a=…&b=…` (상대 uuid 필요) | `rpc/unlink_exchange(p_contact_id)` (N-6) |
 | `reports` 직접 INSERT 와 RPC 공존 | RPC 만, `{already: boolean}` 반환 (N-5) |
-| `event_rsvps` 직접 INSERT/DELETE | `rpc/toggle_rsvp(p_event, p_occurs_on)` → `{going, count, full}` (Q6) |
+| `event_rsvps` 직접 INSERT/DELETE | `rpc/toggle_rsvp(p_event, p_occurs_on)` → `{going, n, full}`, 이벤트 행 잠금으로 정원 초과 방지 (Q6). **PRD PR-3 과 다름** (아래) |
+| `reports` 직접 INSERT 허용 (PRD PR-3) | `submit_report` RPC 만. **PRD PR-3 과 다름** (아래) |
+
+> **기획 변경 요청 (PR-3).** PRD PR-3 은 "좋아요·신고·RSVP 는 본인 행 직접 INSERT 허용"이다. 이 설계는 신고(N-5)와 RSVP(Q6)를 RPC 전용으로 바꾼다. 익명성 보장은 그대로이고 쓰기 경로가 좁아질 뿐이지만, PRD 문구 개정이 필요하다 → 열린 질문 R-7. 이 RFC 는 PRD 를 고치지 않았다.
 | `GET events?select=*` (핸드오프 §5.1 CAL-02) | `select=*` 금지 — 컬럼 GRANT 로 `created_by` 를 막으면 `*` 는 권한 오류가 난다. 컬럼을 나열한다 |
 | `GET profiles?select=…is_admin` | 유지. `is_admin` 은 읽기만 가능 |
 
@@ -513,3 +524,4 @@ sequenceDiagram
 | R-4 | Leaflet 을 저장소에 두어(same-origin) 오프라인 셸에 포함할 것인가, cdnjs + SRI 로 둘 것인가 | 개발 | M2 |
 | R-5 | `supabase/` 디렉터리와 SQL 테스트 도구(pgTAP) 도입 — "테스트 러너 없음" 원칙의 예외로 둘 것인가 | 개발 | M1 시작 |
 | R-6 | 피드 응답을 `localStorage` 에 캐시하는 것을 허용할 것인가 (공용 기기에서 로그아웃 안 하면 남는다) | 기획 | M2 |
+| R-7 | **기획 변경 요청:** PRD PR-3 을 "좋아요만 직접 INSERT, 신고·RSVP 는 RPC 전용"으로 개정할 것인가 (§10, ERD E-Q7) | 기획 | M1 |

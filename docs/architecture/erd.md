@@ -194,6 +194,7 @@ PRD §7.1 과 핸드오프 §9.2 의 항목을 테이블 기준으로 다시 묶
 | `add_comment`, `comments_read` | 숨김 글·부모 소속·깊이·길이 미검사, 부모 글 숨김 무시 | S-6 |
 | 가입 경로 | `profiles`·`residency` 생성 경로 없음, `allowed_domains` 미적용 | S-7 |
 | 작성자 FK | `ON DELETE` 없음 | S-8 |
+| (클라이언트) `index.html` `profiles()` | 방 번호·Instagram 핸들을 `esc()` 없이 출력 (`index.html:1593`, `:1600-1601`). **수정은 클라이언트에서** `esc()` 적용. DB 쪽 `profiles.instagram` 형식 CHECK(§4.1)는 심층 방어일 뿐 대체가 아니다 | S-9, BUG-13 |
 | 함수 권한 | `anon` 에 EXECUTE 잔존 | N-1 |
 | `event_overrides` | 쓰기 경로 없음 | N-2 |
 | `events.host_label` | 단일 언어 | N-3 |
@@ -403,7 +404,7 @@ erDiagram
 
 | 대상 | 변경 | 해결 | ADR |
 |---|---|---|---|
-| `profiles` | 테이블 UPDATE 권한 회수, `grant update (display_name, instagram, lang)`. 방어 2중: `is_admin` 변경 시 `current_user <> 'service_role'` 이면 예외를 던지는 BEFORE UPDATE 트리거 | S-1, PR-9 | — |
+| `profiles` | 테이블 UPDATE 권한 회수, `grant update (display_name, instagram, lang)`. 방어 2중: `is_admin` 변경 시 `current_user <> 'service_role'` 이면 예외를 던지는 BEFORE UPDATE 트리거(**security invoker** — §6 보안 속성 규칙) | S-1, PR-9 | — |
 | `room_invites` (신규) | 방별 1회용 초대 코드. 코드는 해시로 저장. 정책 0, `claim_residency` 로만 사용 | S-7, D-3 | 0004 |
 | `residency` | 쓰기는 `claim_residency`·운영자 RPC 만. `room` 은 컬럼 GRANT 제외 → 본인도 SELECT 로 못 읽음(`floor` 만) | S-7, PR-7 | 0004 |
 | `posts` | `edited_at`, `deleted_at` 추가. 길이 CHECK(언어 칸별 상한은 번역 팽창을 감안해 원문 상한의 3배 — 원문 상한은 함수에서) | M-7, M-9 | 0002 |
@@ -413,17 +414,18 @@ erDiagram
 | `thread_aliases` | `author_id … on delete cascade`. 번호 발급은 `posts` 행 잠금(`select … for update`) 아래에서 | S-8, D-1 | — |
 | `likes`, `event_rsvps` 정책 | `and (select is_resident())` 추가 | N-8 | — |
 | `reports` | 직접 INSERT 정책 제거, `submit_report` 만. `reporter_id … on delete set null` | N-5, S-8 | — |
-| `mod_actions` | `note` 추가. 정책은 운영자 SELECT 만. INSERT 는 `moderate()` 안에서만. BEFORE UPDATE/DELETE 트리거로 거부(`service_role` 포함) | S-3, PR-11 | 0006 |
+| `mod_actions` | `note` 추가. 정책은 운영자 SELECT 만. INSERT 는 `moderate()` 안에서만. BEFORE UPDATE/DELETE 행 트리거 + BEFORE TRUNCATE 문장 트리거로 거부(`service_role` 포함), TRUNCATE 권한 회수 | S-3, PR-11 | 0006 |
 | `posts`/`comments` 운영 정책 | `posts_moderate`, `comments_moderate` 삭제 | S-3 | 0006 |
 | `exchange_requests` | 요청자·수신자 모두 테이블 SELECT 불가(정책 0 + GRANT 없음). 뷰 `my_sent_requests`, `my_incoming_requests` 만. `status` 에 `suppressed`, `expired`. 유일 인덱스를 `(from_user, post_id)` 로 | S-2, PR-10, Q7 | 0005 |
-| `exchange_attempts` (신규) | 시도마다 1행, 정책 0. 하루 3건 판단에 사용 — 실패도 센다 | S-2, POL-4-4 | 0005 |
+| `exchange_attempts` (신규) | 시도마다 1행, 정책 0. 하루 3건 판단에 사용 — `unavailable` 등 실패도 센다. `request_exchange` 는 예외 대신 결과 코드를 반환하므로 이 행이 롤백되지 않는다 | S-2, POL-4-4 | 0005 |
 | `exchanges` | 대리 키 `id` 추가, `unique(a,b)`, `check(a<b)` 유지. 클라이언트 정책 제거 → `my_contacts` 뷰와 `unlink_exchange(p_contact_id)` 만 | N-6 | 0005 |
 | `events` | `host_label` → `host_en, host_ja, host_ko`. `rsvp_count` 제거 → 뷰 `event_occurrence_counts`. `capacity` 는 회차당. `created_by` GRANT 제외 | N-3, D-2, Q6, N-6 | — |
 | `event_overrides` | 운영자 `for all` 정책, 회차별 `capacity` 덮어쓰기 | N-2, C-7 | — |
 | `places` | `added_label` 을 코드값(`ra`/`gip`/`anon`)으로, `added_by` GRANT 제외 | P-3, BUG-09, N-6 | — |
 | `metric_daily` (신규) | 사용자 ID 없는 일별 카운터 | Q10, POL-5-7, BL-35 | 0007 |
 | 카운터 트리거 | `bump_like_count` definer + `set search_path`. 댓글 삭제(소프트)는 카운트 유지 | S-4 | — |
-| 모든 함수 | `revoke execute … from public, anon, authenticated` 후 필요한 역할에만 GRANT | N-1 | 0001 |
+| 모든 함수 | `revoke execute … from public, anon, authenticated` 후 필요한 역할에만 GRANT. 클라이언트 RPC 와 헬퍼 `is_admin`/`is_resident` 는 `authenticated` 에 부여(§6.3) | N-1 | 0001 |
+| `request_exchange`, `toggle_rsvp` | 요청자 단위 advisory 잠금 / 이벤트 행 `for update` 잠금 | POL-4-4·4-5, Q6 | 0005 |
 
 ---
 
@@ -448,7 +450,7 @@ erDiagram
 | 테이블 | 컬럼 | 타입·제약 | 설명 |
 |---|---|---|---|
 | `posts` | `title_{en,ja,ko}` | `text check (char_length(…) <= 200)` | 원문 60자 상한(B-3)은 함수에서. 번역본은 길어질 수 있어 DB 는 여유 상한 |
-| | `body_{en,ja,ko}` | `text check (char_length(…) <= 12000)` | 원문 상한(R-3 결정값 2000 또는 4000)의 3배 |
+| | `body_{en,ja,ko}` | `text check (char_length(…) <= 3 × B)` | `B` = R-3 에서 정할 원문 본문 상한. 2000 이면 6000, 4000 이면 12000. 마이그레이션은 R-3 결정 후 상수를 정한다. **번역본이 이 상한을 넘으면 글 작성을 실패시키지 않는다:** Edge Function 이 RPC 호출 전에 칸 길이를 검사해, 넘는 경우 세 칸 모두 원문으로 채우고 `translated=false` 로 저장한다(POL-6-3 과 같은 경로). DB CHECK 는 마지막 방어선이다. 제목 칸(200)도 같다 |
 | | `edited_at`, `deleted_at` | `timestamptz` | 삭제는 본문을 `null` 로 비우고 시각만 남김(POL-5-4) |
 | `post_authors` | `client_token` | `uuid unique` | 재시도 멱등 키. 클라이언트에 보이지 않음 |
 | | `author_id` | `uuid not null references profiles on delete cascade` | 사용자 삭제 시 연결만 사라지고 글은 익명으로 남는다(S-8, POL-5-4) |
@@ -477,6 +479,9 @@ erDiagram
 | | `responded_at timestamptz` | |
 | `exchange_attempts` | `user_id uuid references profiles on delete cascade`, `created_at` | 정책 0 |
 | `exchanges` | `id bigserial primary key`, `unique (a, b)`, `check (a < b)` | `a`,`b` 는 클라이언트에 노출되지 않음 |
+| 인덱스 `exchange_one_pending (from_user, to_user) where status = 'pending'` unique | (현행 유지) | 같은 상대 대기 요청 1건(POL-4-5)의 **백스톱**. 정상 경로에서는 아래 잠금 때문에 위반이 일어나지 않는다 |
+
+**동시성.** `request_exchange` 는 첫 문장에서 `pg_advisory_xact_lock(hashtextextended('exreq:' || auth.uid()::text, 0))` 로 **요청자 단위 잠금**을 잡는다. 같은 사용자의 동시 호출이 직렬화되므로 (1) 하루 3건 판단(`exchange_attempts` 카운트 → INSERT)이 3건을 넘지 않고 (2) 같은 상대에 대한 대기 요청 확인(`pending` 존재 → `suppressed`)이 경쟁하지 않는다. 다른 사용자끼리는 서로 막지 않는다.
 
 ### 4.4 이벤트
 
@@ -518,7 +523,7 @@ erDiagram
 | `residency` | 컬럼 `floor, active, started_on` (`room` 제외) | — | — | — | 본인 |
 | `posts` | 컬럼 전부 | — | — | — | `(select is_resident()) and hidden_at is null and deleted_at is null`, 운영자는 전부 |
 | `comments` | 컬럼 전부 | — | — | — | 위 + 부모 글 조건 |
-| `likes` | `post_id, created_at` | `post_id, user_id` | — | ○ | 본인 + 입주자 (N-8) |
+| `likes` | `post_id, user_id, created_at` | `post_id, user_id` | — | ○ | 본인 + 입주자 (N-8). `user_id` SELECT 는 `DELETE …?user_id=eq.<uuid>` 의 WHERE 절에 필요하다(컬럼 SELECT 권한이 없으면 42501). RLS 가 본인 행만 보이게 하므로 드러나는 uuid 는 자기 것뿐이다 |
 | `event_rsvps` | `event_id, occurs_on` | — | — | — | 본인. 쓰기는 `toggle_rsvp` |
 | `events` | `created_by` 제외 전부 | — | — | — | 입주자 |
 | `event_overrides` | 전부 | 운영자 | 운영자 | 운영자 | N-2 |
@@ -528,6 +533,10 @@ erDiagram
 | 뷰 `my_contacts`, `my_incoming_requests`, `my_sent_requests`, `report_queue`, `hidden_items`, `event_occurrence_counts`, `my_post_ids` | ○ | | | | 뷰 안의 `auth.uid()`/`is_admin()` 조건 |
 
 운영자 쓰기 권한이 필요한 테이블(`events`, `places`, `event_overrides`)은 테이블 권한을 주고 RLS 정책을 `is_admin()` 으로 거는 현행 방식을 유지한다.
+
+**함수 EXECUTE (`authenticated`):** §6.2 의 클라이언트 RPC 와 **헬퍼 `is_admin()`, `is_resident()`**. RLS 정책 식은 호출자 역할로 평가되므로, 정책이 부르는 헬퍼에는 `authenticated` 의 EXECUTE 가 반드시 필요하다(없으면 모든 읽기가 42501). 두 함수는 `auth.uid()` 본인에 대한 boolean 만 반환하므로 노출 위험이 없다. `is_resident_id(uuid)` 는 임의 uuid 를 받으므로 부여하지 않는다(정의자 함수 안에서만 호출).
+
+**PRD PR-3 과의 차이 (기획 변경 요청).** PR-3 은 "좋아요·신고·RSVP 는 본인 행 직접 INSERT 허용"이라고 적고 있다. 이 설계는 좋아요만 직접 INSERT 를 남기고, **신고는 `submit_report` RPC 로만**(N-5: 중복 판별·경로 통일), **RSVP 는 `toggle_rsvp` RPC 로만**(Q6: 정원 검사·잠금) 쓴다. 익명성 보장은 약해지지 않고 오히려 좁아지지만, PRD 문구와 다르므로 PR-3 개정이 필요하다 → §9 E-Q7.
 
 ### 5.3 뷰 정의 (제안)
 
@@ -547,7 +556,14 @@ erDiagram
 
 ## 6. 함수(RPC)
 
-모두 `language plpgsql security definer set search_path = public`. 오류는 `raise exception using errcode = 'P0001', message = '<code>'` 로 짧은 코드 문자열을 쓰고 클라이언트가 `T` 키로 매핑한다(핸드오프 §5.4).
+**보안 속성 규칙**
+
+| 종류 | 속성 | 이유 |
+|---|---|---|
+| RPC (§6.1, §6.2), 헬퍼 `is_admin`/`is_resident`/`is_resident_id`, 카운터 트리거 `bump_like_count`/`bump_comment_count`, `handle_new_user`, `hook_before_user_created` | `security definer set search_path = public` | 정책 0 테이블 접근, 호출자에게 없는 `posts` UPDATE 권한(S-4) |
+| **방어용 트리거 `profiles_guard_admin`, `mod_actions_append_only`, `mod_actions_no_truncate`** | **`security invoker`(기본값). 정의자로 만들지 않는다** | 이 트리거는 `current_user`(실제 호출 역할)로 판단한다. 정의자로 만들면 `current_user` 가 소유자(`postgres`)가 되어 검사가 항상 통과하고 S-1 이 다시 열린다 |
+
+**오류와 결과 코드.** 기본은 `raise exception using errcode = 'P0001', message = '<code>'` 로 짧은 코드 문자열을 쓰고 클라이언트가 `T` 키로 매핑한다(핸드오프 §5.4). **예외: 실패해도 남아야 하는 기록이 있는 함수**(`request_exchange`)는 예외를 던지지 않고 **결과 코드를 반환값으로** 돌려준다. 예외는 트랜잭션을 롤백해 `exchange_attempts` INSERT 를 지우기 때문이다(S-2 의 "실패 시도 롤백" 결함).
 
 ### 6.1 `service_role` 전용 (Edge Function 이 호출)
 
@@ -564,18 +580,21 @@ erDiagram
 | `claim_residency` | `(p_code text) → table(floor smallint)` | `invalid_code` (만료·사용됨·없음 모두 같은 코드), `already_resident` | S-7, ADR-0004 |
 | `delete_own_post` / `delete_own_comment` | `(p_id bigint) → void` | `not_found` (남의 것·없음 동일) | M-7, POL-5-4 |
 | `submit_report` | `(p_type text, p_id bigint, p_reason report_reason) → table(already boolean)` | `not_found`, `not_resident` | M-1, M-2, N-5 |
-| `request_exchange` | `(p_post bigint) → text` (`'sent'`) | `daily_limit`, `unavailable`, `not_resident` | S-2, Q7, X-1~X-6, ADR-0005 |
+| `request_exchange` | `(p_post bigint) → text` — **반환값** `'sent'` / `'daily_limit'` / `'unavailable'` / `'not_resident'`. 예외를 던지지 않는다(시도 기록 보존). 요청자 단위 advisory 잠금(§4.3) | (반환값으로 대체) | S-2, Q7, X-1~X-6, POL-4-4·4-5, ADR-0005 |
 | `respond_exchange` | `(p_req bigint, p_accept boolean) → void` | `not_found`, `not_resident` | X-4, N-8 |
 | `unlink_exchange` | `(p_contact_id bigint) → void` | `not_found` | X-5, N-6 |
-| `toggle_rsvp` | `(p_event bigint, p_occurs_on date) → table(going boolean, n int, full boolean)` | `full`, `not_found`, `not_resident` | C-5, C-8, Q6 |
+| `toggle_rsvp` | `(p_event bigint, p_occurs_on date) → table(going boolean, n int, full boolean)`. 정원 검사 전에 `select … from events where id = p_event for update` 로 **이벤트 행을 잠근다** → 같은 이벤트의 동시 참가가 직렬화되어 `count < capacity` 확인과 INSERT 사이에 끼어들 수 없다(정원 초과 방지). 회차별로 더 잘게 잠그려면 `pg_advisory_xact_lock(p_event, (p_occurs_on - date '2000-01-01'))` 도 가능하나 규모상 행 잠금으로 충분 | `full`, `not_found`, `not_resident` | C-5, C-8, Q6 |
 | `moderate` | `(p_type text, p_id bigint, p_action text, p_note text default null) → void` | `not_operator`, `not_found`, `bad_action` | M-4~M-6, S-3, D-4 |
 | `bump_metric` | `(p_metric text, p_dim1 text default '', p_dim2 text default '') → void` | 허용 목록 밖이면 무시 | Q10, ADR-0007 |
 
-### 6.3 내부 (EXECUTE 부여 없음)
+### 6.3 헬퍼와 내부 함수
 
-`is_admin()`, `is_resident()`, `is_resident_id(uuid)`, 트리거 함수(`bump_like_count`, `bump_comment_count`, `profiles_guard_admin`, `mod_actions_append_only`, `handle_new_user`), 가입 훅 `hook_before_user_created(event jsonb)` (`supabase_auth_admin` 에만 EXECUTE).
-
-> `is_admin()`/`is_resident()` 는 정책·뷰 안에서 호출되므로 `authenticated` 의 EXECUTE 가 필요할 수 있다. 정의자 함수 안에서 호출되면 소유자 권한으로 실행되지만, RLS 정책 식은 호출자 권한으로 평가된다. **마이그레이션 테스트로 확인하고, 필요하면 이 두 함수만 `authenticated` 에 EXECUTE 를 준다**(반환값이 본인에 대한 boolean 뿐이라 노출 위험 없음).
+| 함수 | EXECUTE | 이유 |
+|---|---|---|
+| `is_admin()`, `is_resident()` | **`authenticated` 에 부여 (필수)** | RLS 정책 식은 호출 역할(`authenticated`)로 평가된다. 회수하면 정책 평가가 42501 로 실패한다. 반환값은 본인에 대한 boolean 뿐 |
+| `is_resident_id(uuid)` | 부여 없음 | 임의 uuid 의 거주 여부를 묻는 함수라 클라이언트에 열면 uuid 탐색 도구가 된다. 정의자 RPC 안에서만 호출(소유자 권한) |
+| 트리거 함수 (`bump_like_count`, `bump_comment_count`, `profiles_guard_admin`, `mod_actions_append_only`, `mod_actions_no_truncate`, `handle_new_user`) | 부여 없음 | 트리거는 EXECUTE 권한 없이 실행된다 |
+| 가입 훅 `hook_before_user_created(event jsonb)` | `supabase_auth_admin` 에만 | 공식 훅 문서 방식 |
 
 ### 6.4 핵심 조각 (설계 설명용)
 
@@ -584,8 +603,9 @@ erDiagram
 revoke update on profiles from authenticated;
 grant  update (display_name, instagram, lang) on profiles to authenticated;
 
+-- 반드시 security invoker (기본값). definer 로 만들면 current_user 가 소유자가 되어 검사가 무력화된다.
 create function profiles_guard_admin() returns trigger
-language plpgsql as $$
+language plpgsql security invoker as $$
 begin
   if new.is_admin is distinct from old.is_admin and current_user <> 'service_role'
      and current_user <> 'postgres' then
@@ -594,14 +614,47 @@ begin
   return new;
 end $$;
 
--- S-3: 운영 기록은 추가만
+-- S-3: 운영 기록은 추가만 (UPDATE·DELETE·TRUNCATE 모두 차단)
 create function mod_actions_append_only() returns trigger
-language plpgsql as $$
+language plpgsql security invoker as $$
 begin
   raise exception using errcode = '42501', message = 'mod_actions is append-only';
 end $$;
 create trigger mod_actions_no_change before update or delete on mod_actions
   for each row execute function mod_actions_append_only();
+-- 행 트리거는 TRUNCATE 에 발동하지 않으므로 문장 단위 트리거를 따로 둔다
+create trigger mod_actions_no_truncate before truncate on mod_actions
+  for each statement execute function mod_actions_append_only();
+revoke truncate on mod_actions from public, anon, authenticated, service_role;
+
+-- S-2: 실패 시도도 남도록 예외 대신 결과 코드를 반환 (요지만)
+create function request_exchange(p_post bigint) returns text
+language plpgsql security definer set search_path = public as $$
+declare me uuid := auth.uid(); target uuid; p posts;
+begin
+  perform pg_advisory_xact_lock(hashtextextended('exreq:' || me::text, 0)); -- 요청자 단위 직렬화
+  if not is_resident_id(me) then return 'not_resident'; end if;
+  if (select count(*) from exchange_attempts
+        where user_id = me and created_at > now() - interval '24 hours') >= 3 then
+    return 'daily_limit';                       -- 한도 초과 시도는 기록하지 않는다(무한 증가 방지)
+  end if;
+  insert into exchange_attempts (user_id) values (me);   -- 이후 어떤 결과든 커밋된다
+  select * into p from posts where id = p_post;
+  if p.id is null or p.hidden_at is not null or p.deleted_at is not null
+     or p.board not in ('market','meet','lost') then
+    return 'unavailable';
+  end if;
+  select author_id into target from post_authors where post_id = p_post;
+  if target is null then return 'unavailable'; end if;   -- 작성자 연결이 끊긴 글(탈퇴, S-8)
+  insert into exchange_requests (from_user, to_user, post_id, status)
+  values (me, target, p_post,
+          case when target = me
+                 or exists (select 1 from exchanges where a = least(me,target) and b = greatest(me,target))
+                 or exists (select 1 from exchange_requests where from_user = me and to_user = target and status = 'pending')
+               then 'suppressed' else 'pending' end)
+  on conflict (from_user, post_id) do nothing;
+  return 'sent';
+end $$;
 
 -- Q4/S-5: 서버 전용 작성 함수 권한
 revoke execute on function create_post(uuid, uuid, board, lang, text, text, text, text, text, text, boolean)
@@ -627,13 +680,13 @@ grant  execute on function create_post(uuid, uuid, board, lang, text, text, text
 | 0007 | `places` | `places` | — |
 | 0008 | `metrics` | `metric_daily` | Q10 |
 | 0009 | `helpers` | `is_admin`, `is_resident`, `is_resident_id` | Q4 |
-| 0010 | `triggers` | 카운터(definer), `profiles_guard_admin`, `mod_actions_append_only` | S-1, S-3, S-4 |
+| 0010 | `triggers` | 카운터(definer), `profiles_guard_admin`·`mod_actions_append_only`(invoker), TRUNCATE 차단 | S-1, S-3, S-4 |
 | 0011 | `rls` | 모든 테이블 RLS 활성, 정책(§5.2). 작성자 테이블은 활성만 | I-2, N-2, N-8, S-3, S-6 |
 | 0012 | `views` | §5.3 뷰 7개 | N-6, N-9, M-6 |
 | 0013 | `rpc` | §6.1·6.2 함수 | S-2, S-5, S-6, N-5, Q6, Q7, D-1, D-4 |
 | 0014 | `grants` | 전부 회수 → 표대로 부여 → default privileges | N-1, S-1, N-6, PR-7 |
 | 0015 | `auth_hooks` | `handle_new_user` 트리거(`auth.users` AFTER INSERT), `hook_before_user_created` | S-7 |
-| 0016 | `checks` | 적용 후 점검: 정책 없는 RLS 비활성 테이블 0, `anon` 권한 0, `pg_default_acl` 에 `anon` 0 — 실패 시 예외로 마이그레이션 실패 | N-1 |
+| 0016 | `checks` | 적용 후 점검 — 실패 시 예외로 마이그레이션 실패: (1) RLS 비활성 테이블 0, (2) `anon` 의 테이블·함수 권한 0, (3) `pg_default_acl` 에 `anon` 0, (4) `authenticated` 가 EXECUTE 를 가진 함수가 **허용 목록**(§6.2 RPC + `is_admin`, `is_resident`)과 정확히 일치, (5) `service_role` 전용 함수(§6.1)에 `authenticated` EXECUTE 없음, (6) `profiles_guard_admin`·`mod_actions_append_only` 의 `prosecdef = false` | N-1, S-1 |
 | seed | `seed.sql` (마이그레이션 아님) | `allowed_domains`, `places` 13곳(mock `PLACES`), 이번 학기 이벤트 | — |
 
 **되돌리기.** 출시 계획 §2 "DB 마이그레이션은 되돌리는 스크립트를 함께" 를 따르되, M1 은 빈 DB 에 처음 적용하므로 되돌리기 = 프로젝트 재생성으로 충분하다. 데이터가 생긴 뒤(M2 이후)의 마이그레이션부터 `down` 스크립트를 짝으로 둔다.
@@ -656,6 +709,11 @@ QA test-plan §6.10 에 더할 것. 테스트 계획 문서는 고치지 않고 
 | E-6 | `select grantee, privilege_type from information_schema.role_table_grants where grantee='anon'` | 0행 | N-1 |
 | E-7 | 같은 글에 두 세션이 동시에 첫 댓글 | 둘 다 성공, 번호 1·2 | D-1 |
 | E-8 | `create_post` 를 같은 `client_token` 으로 두 번 | 같은 id, 글 1개 | 멱등 |
+| E-9 | 한 사용자가 `request_exchange` 를 서로 다른 글에 동시에 5번 | 시도 기록 3건, 반환값 `sent`/`unavailable` 3번 + `daily_limit` 2번. 같은 상대에게 `pending` 은 최대 1건 | POL-4-4, POL-4-5 |
+| E-10 | `unavailable` 을 받은 요청 직후 `exchange_attempts` 행 수 확인 | 시도가 남아 있다(롤백 없음) | S-2 |
+| E-11 | 정원 1 남은 회차에 두 사용자가 동시에 `toggle_rsvp` | 한 명만 `going`, 다른 한 명 `full` | Q6 |
+| E-12 | `service_role` 로 `truncate mod_actions` | 거부 | PR-11 |
+| E-13 | `authenticated` 로 `profiles` 의 `is_admin` PATCH (컬럼 GRANT 우회 시도 포함), `pg_proc.prosecdef` 로 가드 트리거가 invoker 인지 확인 | 거부, `false` | S-1 |
 
 ## 9. 열린 질문
 
@@ -667,3 +725,5 @@ QA test-plan §6.10 에 더할 것. 테스트 계획 문서는 고치지 않고 
 | E-Q4 | 빈도 제한 수치(글 10분 3건·하루 20건, 댓글 1분 5건)는 제안값 | M-9 |
 | E-Q5 | 사용자 삭제(퇴거 후 본인 요청) 시 `post_authors` 연결만 끊고 글은 남긴다(cascade). 본인이 글 본문 삭제를 원하면 탈퇴 전에 `delete_own_*` — 이 순서를 정책으로 확정할 것 | S-8, POL-5-4, PR-12 |
 | E-Q6 | 자동 임시 숨김(POL-3-8, 5명 신고)을 넣으면 `mod_actions.actor_id` 가 없는 시스템 조치가 생긴다. `actor_id` nullable + `actor_kind` 를 지금 넣을지 | POL-3-8, BL-39 |
+| E-Q7 | **기획 변경 요청:** PRD PR-3 의 "좋아요·신고·RSVP 는 본인 행 직접 INSERT 허용"을 "좋아요만 직접 INSERT, 신고는 `submit_report`, RSVP 는 `toggle_rsvp` RPC 로만"으로 개정할 것인가 (§5.2 하단). 이 문서는 PRD 를 고치지 않았다 | PR-3, N-5, Q6 |
+| E-Q8 | 본문 원문 상한 `B` (R-3: 2000 vs 4000) — 번역본 칸 CHECK(`3 × B`)가 이 값에 따라 정해진다 | R-3, M-9 |

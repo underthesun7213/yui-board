@@ -77,6 +77,8 @@
 | C-8 | 속성값은 항상 큰따옴표. `esc()` 가 `'` 를 바꾸지 않는다 | XSS |
 | C-9 | 사용자 id·토큰을 `console.log` 하지 않는다 | 익명성 |
 | C-10 | 공개값만 `CFG` 에. `sb_secret_`·`service_role` 문자열이 `index.html` 에 있으면 안 된다 | PR-4, TC-PR-03 |
+| C-11 | 비동기 로더는 끝나면 `render()` 가 아니라 `refresh()` 를 부른다. `refresh()` 는 `S.view === "map"` 이면 `updateMap()`, 아니면 `render()` | `render()` 가 `#main` 을 바꿔 Leaflet 지도를 떼어 낸다 (`index.html:1781`, `:1788-1789`, BUG-01). CLAUDE.md 지도 규칙 |
+| C-12 | RPC 결과가 반환값 문자열인 함수(`request_exchange`)는 HTTP 200 이어도 반환값을 `ERR`/`T` 매핑에 통과시킨다 | ADR-0005 |
 
 ## 5. SQL·마이그레이션 (제안)
 
@@ -89,6 +91,10 @@
 | D-5 | 오류는 `raise exception using message = '<snake_code>'`. 대상의 존재·소유를 구별하는 메시지 금지(PR-10) |
 | D-6 | 정책 식의 함수 호출은 `(select fn())` 로 감싼다 |
 | D-7 | 클라이언트를 깨는 변경(컬럼 삭제·이름 변경)은 두 단계로: 추가 → 클라이언트 배포 → 삭제 |
+| D-8 | **`current_user` 로 판단하는 방어 트리거(`profiles_guard_admin`, `mod_actions_append_only` 등)는 `security definer` 로 만들지 않는다.** 정의자로 만들면 `current_user` 가 소유자가 되어 검사가 무력화된다(S-1). `0016_checks` 가 `prosecdef = false` 를 확인한다 |
+| D-9 | 실패해도 남아야 하는 기록(시도 횟수 등)을 쓰는 함수는 예외를 던지지 않고 결과 코드를 반환한다. 예외는 같은 트랜잭션의 INSERT 를 롤백한다 |
+| D-10 | 같은 사용자·같은 대상의 "확인 후 쓰기"(한도·정원·중복)는 잠금 아래에서: 사용자 단위는 `pg_advisory_xact_lock`, 대상 행이 있으면 `select … for update` |
+| D-11 | 정책 식이 부르는 헬퍼(`is_admin`, `is_resident`)는 `authenticated` 에 EXECUTE 를 준다. 임의 uuid 를 받는 헬퍼(`is_resident_id`)는 주지 않는다 |
 
 ## 6. Edge Functions (제안)
 
@@ -106,3 +112,12 @@
 | 커밋 메시지 | 명령형 한 줄 요약(영어 또는 한국어), 본문에 이유. 관련 ID 를 적는다: `fix: escape room and insta in profiles() (S-9, BUG-13)` |
 | PR 체크 | 하네스 `clean`, `CACHE` 올림(클라이언트 변경 시), 마이그레이션이면 익명성 케이스 통과, 문자열 3개 언어 |
 | 디렉터리 | 루트: `index.html`, `sw.js`, `manifest.webmanifest`, 아이콘, `schema.sql`(설계 기록). `art/`(그림, 핸드오프 §7.2), `supabase/`(제안), `docs/` |
+
+## 8. 열린 질문
+
+| # | 질문 |
+|---|---|
+| CV-Q1 | `main` 직접 커밋을 그만두고 PR 기반으로 바꿀 것인가 — 개발자 1~2명 규모에서 비용 대비 효과 |
+| CV-Q2 | `supabase/` 디렉터리와 SQL 테스트 도구(pgTAP) 도입 — "테스트 러너 없음"의 예외로 둘지 (RFC R-5) |
+| CV-Q3 | Edge Function 을 TypeScript 로 쓰면 클라이언트(빌드 없는 JS)와 언어가 갈린다. Deno 는 빌드 없이 TS 를 실행하므로 허용할지, JS 로 통일할지 |
+| CV-Q4 | 커밋 메시지 언어(영어/한국어)와 관련 ID 표기를 필수로 할 것인가 |

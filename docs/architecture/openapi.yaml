@@ -164,6 +164,7 @@ paths:
     delete:
       tags: [rpc]
       summary: 좋아요 취소
+      description: "WHERE 절에 user_id 를 쓰므로 likes.user_id 에 컬럼 SELECT 권한이 있다 (ERD §5.2). RLS 로 본인 행만 보인다."
       parameters:
         - { name: post_id, in: query, schema: { type: string }, example: "eq.41" }
         - { name: user_id, in: query, schema: { type: string }, example: "eq.<my uuid>" }
@@ -227,9 +228,149 @@ paths:
   /rest/v1/my_post_ids:
     get:
       tags: [read]
-      summary: 내가 쓴 글·댓글 id (M-7, IA-6)
+      summary: 내가 쓴 글·댓글 id (M-7, IA-6, FN-HOME-02-7)
+      parameters:
+        - { name: select, in: query, schema: { type: string }, example: "kind,id,post_id" }
+        - { name: post_id, in: query, schema: { type: string }, example: "in.(41,40)" }
       responses:
-        '200': { description: 본인 것만 }
+        '200':
+          description: 본인 것만. 수정·삭제 메뉴와 교환 버튼 숨김에 쓴다
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  required: [kind, id, post_id]
+                  properties:
+                    kind: { type: string, enum: [post, comment] }
+                    id: { type: integer, format: int64, description: "kind=post 이면 posts.id, comment 이면 comments.id" }
+                    post_id: { type: integer, format: int64, description: "소속 글 id (kind=post 이면 id 와 같음)" }
+  /rest/v1/profiles:
+    get:
+      tags: [read]
+      summary: 본인 정보 (SYS-01, HOME-01 ⚑, ME-01)
+      parameters:
+        - { name: select, in: query, required: true, schema: { type: string }, example: "display_name,instagram,lang,is_admin" }
+      responses:
+        '200':
+          description: 본인 행 1개 (RLS)
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/Profile' } }
+    patch:
+      tags: [rpc]
+      summary: 본인 정보 수정 (L-3, S-1)
+      description: |
+        컬럼 GRANT 로 display_name, instagram, lang 만 수정 가능. is_admin 을 보내면 42501 (S-1, TC-PR-08).
+        헤더 Prefer: return=minimal 권장.
+      parameters:
+        - { name: id, in: query, required: true, schema: { type: string }, example: "eq.<my uuid>" }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              minProperties: 1
+              properties:
+                display_name: { type: string, minLength: 1, maxLength: 40 }
+                instagram: { type: string, nullable: true, pattern: '^@?[A-Za-z0-9._]{1,30}$' }
+                lang: { $ref: '#/components/schemas/Lang' }
+      responses:
+        '204': { description: 수정됨 }
+        '400': { description: "check 위반 (23514)" }
+        '403': { description: "권한 없는 컬럼 (42501)" }
+  /rest/v1/events:
+    get:
+      tags: [read]
+      summary: 이벤트 (CAL-01, CAL-02)
+      description: |
+        created_by 는 컬럼 GRANT 에서 제외되므로 select=* 금지 (N-6). 월 범위 필터는 핸드오프 §5.1 CAL-01 예시와 같다.
+        반복 일정(rrule)은 클라이언트가 전개한다.
+      parameters:
+        - { name: select, in: query, required: true, schema: { type: string }, example: "id,kind,host_ko,title_ko,body_ko,place_ko,starts_at,ends_at,rrule,until_on,capacity" }
+        - { name: id, in: query, schema: { type: string }, example: "eq.4" }
+        - { name: starts_at, in: query, schema: { type: string }, example: "lt.2026-10-01T00:00:00+09:00" }
+        - { name: or, in: query, schema: { type: string } }
+        - { name: order, in: query, schema: { type: string }, example: "starts_at.asc" }
+      responses:
+        '200':
+          description: 입주자에게 보이는 이벤트
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/Event' } }
+  /rest/v1/event_overrides:
+    get:
+      tags: [read]
+      summary: 회차별 예외 (C-7)
+      parameters:
+        - { name: select, in: query, required: true, schema: { type: string }, example: "event_id,occurs_on,cancelled,title_ko,capacity" }
+        - { name: occurs_on, in: query, schema: { type: string }, example: "gte.2026-09-01" }
+      responses:
+        '200': { description: ok }
+  /rest/v1/event_occurrence_counts:
+    get:
+      tags: [read]
+      summary: 회차별 참가 인원 (C-4, C-8, D-2)
+      parameters:
+        - { name: select, in: query, schema: { type: string }, example: "event_id,occurs_on,n" }
+        - { name: event_id, in: query, schema: { type: string }, example: "in.(4,6)" }
+        - { name: occurs_on, in: query, schema: { type: string }, example: "gte.2026-09-01" }
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    event_id: { type: integer }
+                    occurs_on: { type: string, format: date }
+                    n: { type: integer }
+  /rest/v1/event_rsvps:
+    get:
+      tags: [read]
+      summary: 내 참가 회차 (CAL-02)
+      parameters:
+        - { name: select, in: query, schema: { type: string }, example: "event_id,occurs_on" }
+        - { name: event_id, in: query, schema: { type: string }, example: "eq.4" }
+      responses:
+        '200': { description: 본인 행만. 쓰기는 rpc/toggle_rsvp }
+  /rest/v1/places:
+    get:
+      tags: [read]
+      summary: 지도 장소 (MAP-01, MAP-02)
+      description: added_by 는 컬럼 GRANT 에서 제외 (N-6). added_label 은 코드값(ra, gip, anon) — 화면은 T 로 번역 (BUG-09).
+      parameters:
+        - { name: select, in: query, required: true, schema: { type: string }, example: "id,cat,name_ko,note_ko,lat,lng,google_place_id,walk_min,added_label" }
+        - { name: order, in: query, schema: { type: string }, example: "walk_min.asc" }
+      responses:
+        '200':
+          description: 입주자·미숨김
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/Place' } }
+  /rest/v1/hidden_items:
+    get:
+      tags: [read]
+      summary: 운영자 숨김 목록 (M-6, HOME-05 확장)
+      responses:
+        '200':
+          description: is_admin() 일 때만 행이 있다. 복원은 rpc/moderate(…, 'unhide')
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    target_type: { type: string, enum: [post, comment] }
+                    target_id: { type: integer }
+                    hidden_at: { type: string, format: date-time }
+                    actor_name: { type: string, description: "마지막 조치 운영자 (PR-6 — 운영자는 익명이 아니다)" }
   /rest/v1/report_queue:
     get:
       tags: [read]
@@ -284,14 +425,23 @@ paths:
     post:
       tags: [rpc]
       summary: 프로필 교환 요청 (X-1~X-6, S-2)
-      description: 본인 글·이미 교환·대기 중인 상대여도 'sent' 를 돌려준다 (ADR-0005).
+      description: |
+        예외를 던지지 않는다. 결과는 항상 HTTP 200 + 반환 문자열이다 (ADR-0005).
+        예외는 트랜잭션을 롤백해 시도 기록(exchange_attempts)을 지우므로 쓰지 않는다.
+        본인 글·이미 교환·같은 상대에게 대기 중이어도 "sent" 를 돌려준다.
+        같은 사용자의 동시 호출은 요청자 단위 advisory 잠금으로 직렬화된다.
       requestBody:
         content:
           application/json:
             schema: { type: object, required: [p_post], properties: { p_post: { type: integer } } }
       responses:
-        '200': { description: '"sent"' }
-        '400': { description: "daily_limit | unavailable | not_resident" }
+        '200':
+          description: 결과 코드. T 키 매핑 — sent→exSent, daily_limit→exLimit, unavailable·not_resident→신규 문자열 (BL-53)
+          content:
+            application/json:
+              schema:
+                type: string
+                enum: [sent, daily_limit, unavailable, not_resident]
   /rest/v1/rpc/respond_exchange:
     post:
       tags: [rpc]
@@ -323,6 +473,7 @@ paths:
     post:
       tags: [rpc]
       summary: 회차 참가 토글 (C-5, C-8, Q6)
+      description: 이벤트 행을 for update 로 잠근 뒤 정원을 검사한다 (동시 참가로 정원 초과 방지). PRD PR-3 의 "RSVP 직접 INSERT" 와 다르다 — RFC R-7.
       requestBody:
         content:
           application/json:
@@ -346,6 +497,18 @@ paths:
       responses:
         '204': { description: ok }
         '400': { description: "not_found (남의 글과 없는 글을 구별하지 않음)" }
+  /rest/v1/rpc/delete_own_comment:
+    post:
+      tags: [rpc]
+      summary: 본인 댓글 삭제 (M-7, POL-5-4)
+      description: 본문을 비우고 deleted_at 을 남긴다. 스레드 구조(대댓글)는 유지.
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object, required: [p_id], properties: { p_id: { type: integer } } }
+      responses:
+        '204': { description: ok }
+        '400': { description: "not_found (남의 댓글과 없는 댓글을 구별하지 않음)" }
   /rest/v1/rpc/moderate:
     post:
       tags: [rpc]
@@ -445,6 +608,51 @@ components:
         comment_count: { type: integer }
         created_at: { type: string, format: date-time }
         edited_at: { type: string, format: date-time, nullable: true }
+    Profile:
+      type: object
+      properties:
+        display_name: { type: string }
+        instagram: { type: string, nullable: true }
+        lang: { $ref: '#/components/schemas/Lang' }
+        is_admin: { type: boolean, readOnly: true }
+    Event:
+      type: object
+      properties:
+        id: { type: integer, format: int64 }
+        kind: { type: string, enum: [gip, office, student, ra] }
+        host_en: { type: string }
+        host_ja: { type: string }
+        host_ko: { type: string }
+        title_en: { type: string }
+        title_ja: { type: string }
+        title_ko: { type: string }
+        body_en: { type: string }
+        body_ja: { type: string }
+        body_ko: { type: string }
+        place_en: { type: string }
+        place_ja: { type: string }
+        place_ko: { type: string }
+        starts_at: { type: string, format: date-time }
+        ends_at: { type: string, format: date-time, nullable: true }
+        rrule: { type: string, nullable: true, description: "FREQ=WEEKLY;BYDAY=xx 또는 null (ERD E-Q3)" }
+        until_on: { type: string, format: date, nullable: true }
+        capacity: { type: integer, nullable: true, description: "회차당 정원" }
+    Place:
+      type: object
+      properties:
+        id: { type: integer, format: int64 }
+        cat: { type: string, enum: [transit, daily, food, study, admin, health] }
+        name_en: { type: string }
+        name_ja: { type: string }
+        name_ko: { type: string }
+        note_en: { type: string }
+        note_ja: { type: string }
+        note_ko: { type: string }
+        lat: { type: number }
+        lng: { type: number }
+        google_place_id: { type: string, nullable: true }
+        walk_min: { type: integer, nullable: true }
+        added_label: { type: string, enum: [ra, gip, anon] }
     Comment:
       type: object
       properties:
