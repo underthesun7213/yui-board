@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| 상태 | 초안 (v0.2 — 1차 검토 반영) |
+| 상태 | 초안 (v0.3 — 2차 검토 반영) |
 | 작성일 | 2026-10-11 |
 | 기준 코드 | `index.html` 프로토타입(mock data), `schema.sql` 설계안 |
 | 관련 문서 | `README.md`, `CLAUDE.md` |
@@ -163,10 +163,10 @@ Google Maps API 는 쓰지 않는다. 비용이 들지 않는 `place_id` 외부 
 | L-2 | 글·댓글 본문은 **작성 시점에** 기계번역해 3개 언어로 저장. 번역 실패 시 원문을 저장하고 `translated=false` | P0 | 없음 (프로토타입은 원문을 세 칸에 복사) |
 | L-3 | 사용자 언어 설정 저장 (`profiles.lang`) | P1 | 없음 |
 | A-1 | PWA: 홈 화면 설치, 오프라인 시 앱 셸 캐시 표시 | P0 | 구현. Leaflet(외부 CDN)은 캐시되지 않아 오프라인에서 지도 불가 |
+| A-2 | 매니페스트 바로가기: 이벤트(`?tab=1`), 글쓰기(`?compose=1`) | P1 | 구현 |
 | A-3 | 알림(받은 교환 요청, 내 글의 댓글) | P2 | 없음 |
 | A-4 | 게시판 검색 | P2 | 없음 |
 | A-5 | 접근성: 스크린리더 라벨, 색 대비, 터치 영역 | P1 | 일부 (`aria-*` 있음) |
-| A-2 | 매니페스트 바로가기: 이벤트(`?tab=1`), 글쓰기(`?compose=1`) | P1 | 구현 |
 
 ---
 
@@ -203,8 +203,8 @@ Google Maps API 는 쓰지 않는다. 비용이 들지 않는 `place_id` 외부 
 | S-1 | 치명 | `profile_self_update` 가 컬럼을 제한하지 않아 누구나 자기 행의 `is_admin` 을 true 로 바꿔 운영자가 될 수 있다 | `profiles` 정책 | UPDATE 권한을 `display_name, instagram, lang` 컬럼으로 한정(column GRANT) 또는 트리거로 차단 |
 | S-2 | 치명 | 교환 요청으로 작성자 추적 가능. 요청자가 `exreq_mine` 으로 `to_user` 를 읽고, 같은 작성자의 다른 글에 요청하면 unique 위반·"already exchanged" 로 동일인임이 드러난다. 실패한 호출은 롤백되어 하루 3건 제한에도 걸리지 않는다 | `exchange_requests`, `request_exchange` | 요청자에게 `to_user` 를 숨긴 뷰만 제공, 중복은 글 단위로 판단하고 오류를 균일화, 시도 자체를 제한. Q7(게시판 미확인)도 함께 수정 |
 | S-3 | 높음 | 운영 기록 우회. `posts_moderate`/`comments_moderate` 로 `hidden_at` 직접 변경 가능(`mod_actions` 기록 없음), `mod_actions_admin` 이 `for all` 이라 기록 수정·삭제 가능 | 정책 §9 | 직접 UPDATE 정책 제거, `mod_actions` 는 SELECT 만 허용 |
-| S-4 | 중간 | `bump_like_count` 가 `SECURITY DEFINER` 가 아니라 일반 사용자의 좋아요에서 `posts` UPDATE 가 RLS 에 막혀 `like_count` 가 늘지 않는다 | §7 counters | `security definer set search_path = public` 추가 |
-| S-5 | 중간 | RPC 직접 호출 시 언어별 칸에 서로 다른 내용(예: 영어는 무해, 한국어는 욕설)을 넣고 `translated` 를 임의로 지정할 수 있다 | `create_post`, `add_comment` | Q4 와 함께 결정: 번역 서버만 호출 가능하게 |
+| S-4 | 중간 | `bump_like_count` 가 `SECURITY DEFINER` 가 아니라 일반 사용자의 좋아요에서 `posts` UPDATE 가 RLS 에 막혀 `like_count` 가 늘지 않는다 | `schema.sql` §7 counters | `security definer set search_path = public` 추가 |
+| S-5 | 중간 | RPC 직접 호출 시 언어별 칸에 서로 다른 내용(예: 영어는 무해, 한국어는 욕설)을 넣고 `translated` 를 임의로 지정할 수 있다 | `create_post`, `add_comment` | Q4 의 제안대로 `service_role` 서버만 호출 가능하게 |
 | S-6 | 중간 | `add_comment` 가 글의 숨김 여부, `p_parent` 가 같은 글인지, 대댓글 1단계 제한을 확인하지 않는다. `comments_read` 도 부모 글 숨김을 보지 않는다. 길이 제한 없음 | `add_comment` | 검사 추가 |
 | S-7 | 낮음 | 가입 시 `profiles` 생성 경로, `residency` 쓰기 경로, `allowed_domains` 적용이 없다 | §1 | Q3 결정 후 추가 |
 | S-8 | 낮음 | `post_authors`/`comment_authors.author_id` 에 `ON DELETE` 가 없어 글을 쓴 사용자는 삭제할 수 없다 | §2 | PR-12 보존 정책에 맞춰 결정 |
@@ -229,11 +229,11 @@ Google Maps API 는 쓰지 않는다. 비용이 들지 않는 `place_id` 외부 
 [PWA: index.html] ──(anon key, 사용자 JWT)──> [Supabase PostgREST]  읽기: RLS 적용 테이블·뷰
         │                                              ↑
         └──(글/댓글 작성)──> [서버 함수] ──번역──> [Azure Translator]
-                                   └──(사용자 JWT로 RPC)──> create_post / add_comment
+                                   └──(service_role, p_author 명시)──> create_post / add_comment
 ```
 
 - 읽기는 클라이언트가 RLS 아래에서 직접 한다.
-- 작성은 서버가 번역을 끝낸 뒤 `SECURITY DEFINER` 함수를 호출한다.
+- 작성은 서버가 사용자 JWT 를 검증하고 번역을 끝낸 뒤 `service_role` 로 `SECURITY DEFINER` 함수를 호출한다. 클라이언트는 작성 함수를 직접 호출할 수 없다 (§13 Q4).
 - 인증: `auth.users` 에 `<room>@yui.local` 형태로 로그인. 방 주인이 바뀌면 auth 행 이름만 바꾼다.
   가입 허용 이메일 도메인은 `allowed_domains` 테이블로 관리한다 (§13 Q3 참조).
 
@@ -243,12 +243,12 @@ Google Maps API 는 쓰지 않는다. 비용이 들지 않는 `place_id` 외부 
 |---|---|---|
 | M0 | 프로토타입 (현재) | mock data 로 전 화면 동작, PWA 설치 가능 |
 | M1 | 백엔드 기반 | §7.1 S-1~S-6 수정, Supabase 도쿄 프로젝트, `schema.sql` 마이그레이션 적용, §7 익명성 검증 테스트 통과 |
-| M2 | 인증·읽기 연결 | 로그인, 피드·이벤트·장소를 실데이터로 표시, mock 제거 |
+| M2 | 인증·읽기 연결 | §7.1 S-7 수정(가입 시 프로필·입주 정보 생성), 로그인, 피드·이벤트·장소를 실데이터로 표시, mock 제거 |
 | M3 | 쓰기 경로 | 서버 함수 + 작성 시 번역, 글·댓글·좋아요·신고·교환·RSVP 저장 |
 | M4 | 운영 도구 | 운영자 큐 실데이터 연결, 숨김/복원, 이벤트·장소 등록 |
-| M4.5 | 법무·운영 | 개인정보처리방침·이용약관, 퇴거 시 데이터 처리, RA 권한 절차 |
-| M5 | 콘텐츠 | 일본어 에피소드 그림 제작, 컬렉션 진행 저장 |
-| M6 | 파일럿 | 한 유닛 또는 한 층 대상 시범 운영 후 전체 오픈 |
+| M5 | 법무·운영 | 개인정보처리방침·이용약관, 퇴거 시 데이터 처리, RA 권한 절차 |
+| M6 | 콘텐츠 | 일본어 에피소드 그림 제작, 컬렉션 진행 저장 |
+| M7 | 파일럿 | 한 유닛 또는 한 층 대상 시범 운영 후 전체 오픈 |
 
 ## 11. 성공 지표
 
@@ -268,7 +268,7 @@ Google Maps API 는 쓰지 않는다. 비용이 들지 않는 `place_id` 외부 
 | 익명 게시판에서 특정인 저격 | 작성 화면 규칙 안내, 신고 사유 "특정 가능" 최우선, 운영자 큐 |
 | 번역 무료 한도 초과 | F0 는 초과 시 중단. 원문 저장 + `translated=false` 로 서비스는 계속 |
 | 운영자 부재로 신고 적체 | RA 여러 명에게 운영 권한, 처리 시간 지표 모니터링 |
-| 교환 기능 남용(신원 수집) | 하루 3건 제한, 요청자 신원이 먼저 노출되는 비대칭 구조 |
+| 교환 기능 남용(신원 수집·작성자 추적) | §7.1 S-2 수정(실패한 시도도 제한에 포함, 오류 균일화, `to_user` 비공개), 요청자 신원이 먼저 노출되는 비대칭 구조 |
 | 학기 전환 시 계정 처리 | 방 단위 auth 행 이름 변경, `residency` 이력 보존 |
 | 공식 기숙사 채널과의 충돌 | 공식 공지는 사무실 이벤트로만 게시, 비공식 앱임을 명시 |
 
@@ -281,7 +281,7 @@ Google Maps API 는 쓰지 않는다. 비용이 들지 않는 `place_id` 외부 
 | Q1 | **방 번호 노출 여부가 문서·스키마·UI 사이에서 다르다.** README 와 스키마는 "방 번호는 노출하지 않고 층만 보여준다"인데, 프로토타입의 교환 경고 문구(`exWarn`)·받은 요청·교환 목록은 **방 번호**를 보여준다. 스키마 뷰(`my_contacts`, `my_incoming_requests`)는 층만 준다. 어느 쪽으로 맞출지 결정 필요 | `index.html` `T.*.exWarn`, `profiles()` / `schema.sql` §10 |
 | Q2 | **모집(meet) 게시판의 실명 공개 기능.** `T` 에 "이 글은 익명이 아닙니다", 표시 이름·연락처 입력 문자열(`openT`, `openNote`, `fName`, `fContact`, `organizer`, `contactL`)이 3개 언어로 있으나 어디서도 쓰이지 않고, 스키마에도 해당 컬럼이 없다. 기능을 살릴지, 문자열을 지울지 결정 필요 | `index.html` `T` |
 | Q3 | **로그인 방식.** 스키마 주석은 `<room>@yui.local` 로그인이라 하고, 동시에 가입 허용 도메인 테이블(`allowed_domains`)이 있다. 학교 이메일 가입인지, 방 계정 발급인지 정해야 한다 | `schema.sql` §1 |
-| Q4 | **서버가 작성 함수를 어떤 권한으로 부르는가.** 함수 주석은 "서버에서 번역 후 호출"인데 함수는 `auth.uid()` 를 쓴다. 서버가 `service_role` 로 부르면 `auth.uid()` 가 null 이 된다. 서버는 사용자 JWT 를 그대로 넘겨 호출해야 한다. 이를 명시하고, 클라이언트가 번역 없이 RPC 를 직접 부르는 것을 막을지(현재는 `authenticated` 에 EXECUTE 허용) 결정 필요 | `schema.sql` §11 |
+| Q4 | **서버가 작성 함수를 어떤 권한으로 부르는가.** 함수 주석은 "서버에서 번역 후 호출"인데 함수는 `auth.uid()` 를 쓴다. 서버가 `service_role` 로 부르면 `auth.uid()` 가 null 이 된다. 사용자 JWT 를 그대로 넘기면 DB 가 서버와 클라이언트를 구별할 수 없어 S-5 를 막지 못한다. **제안:** 서버는 사용자 JWT 를 검증해 사용자 ID 를 얻고, `service_role` 로 `create_post(p_author uuid, …)` 처럼 작성자를 명시 인자로 넘겨 호출한다. `authenticated` 의 EXECUTE 권한은 회수한다. 함수 안의 `is_resident()` 검사도 `p_author` 기준으로 바꿔야 한다 | `schema.sql` §11 |
 | Q5 | **입주자 주최 이벤트를 누가 등록하는가.** 이벤트 종류에 "입주자 주최"가 있지만 `events` 쓰기 정책은 운영자만 허용한다. 입주자 제안 → 운영자 승인 흐름이 필요한지 | `schema.sql` §9 |
 | Q6 | **이벤트 정원 검사.** 프로토타입은 클라이언트에서만 정원을 검사하고, 스키마에도 정원 초과를 막는 제약·함수가 없다. 또 `event_rsvps` 에 트리거가 없어 `rsvp_count` 가 갱신되지 않는다. `rsvp` 를 함수로 바꿀지 | `schema.sql` §5, §9 |
 | Q7 | **교환 요청 게시판 제한.** UI 는 양도·모집·분실물에서만 허용하지만 `request_exchange()` 는 게시판을 확인하지 않는다 | `schema.sql` `request_exchange` |
