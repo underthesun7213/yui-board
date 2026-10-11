@@ -550,7 +550,7 @@ erDiagram
 
 운영자 쓰기 권한이 필요한 테이블(`events`, `places`, `event_overrides`)은 테이블 권한을 주고 RLS 정책을 `is_admin()` 으로 거는 현행 방식을 유지한다.
 
-**함수 EXECUTE (`authenticated`):** §6.2 의 클라이언트 RPC 와 **헬퍼 `is_admin()`, `is_resident()`**. RLS 정책 식은 호출자 역할로 평가되므로, 정책이 부르는 헬퍼에는 `authenticated` 의 EXECUTE 가 반드시 필요하다(없으면 모든 읽기가 42501). 두 함수는 `auth.uid()` 본인에 대한 boolean 만 반환하므로 노출 위험이 없다. `is_resident_id(uuid)` 는 임의 uuid 를 받으므로 부여하지 않는다(정의자 함수 안에서만 호출).
+**함수 EXECUTE (`authenticated`):** §6.2 의 클라이언트 RPC 와 **헬퍼 `is_admin()`, `is_resident()`, `exchange_ttl()`**. RLS 정책 식과 뷰 안의 함수 호출은 호출자 역할로 평가되므로, 정책·뷰가 부르는 헬퍼에는 `authenticated` 의 EXECUTE 가 반드시 필요하다(없으면 모든 읽기가 42501). 두 함수는 `auth.uid()` 본인에 대한 boolean 만 반환하므로 노출 위험이 없다. `is_resident_id(uuid)` 는 임의 uuid 를 받으므로 부여하지 않는다(정의자 함수 안에서만 호출).
 
 **PRD PR-3 과의 차이 (기획 변경 요청).** PR-3 은 "좋아요·신고·RSVP 는 본인 행 직접 INSERT 허용"이라고 적고 있다. 이 설계는 좋아요만 직접 INSERT 를 남기고, **신고는 `submit_report` RPC 로만**(N-5: 중복 판별·경로 통일), **RSVP 는 `toggle_rsvp` RPC 로만**(Q6: 정원 검사·잠금) 쓴다. 익명성 보장은 약해지지 않고 오히려 좁아지지만, PRD 문구와 다르므로 PR-3 개정이 필요하다 → §9 E-Q7.
 
