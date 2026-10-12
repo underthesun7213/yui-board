@@ -111,6 +111,21 @@ const f=new Function("document","window","console","setTimeout","clearTimeout","
   for(const fn of ["render","go","mountMap","initMap","syncMap","updateMap","labelMap","setMode",
     "locate","enterMap","ensurePrefs","mapChanged","downloadICS","occOn","upcoming","today"])
     try{ if(typeof eval(fn)!=="function") throw 0; }catch(e){ out.push("missing function: "+fn); }
+  // data that people will edit by hand: a typo here breaks a whole screen
+  const L3=(o,w)=>{ for(const l of ["ja","en","ko"]) if(!o||typeof o[l]!=="string"||!o[l]) out.push(w+" missing "+l); };
+  for(const e of EVENTS){ const w="event "+e.id;
+    if(!HOSTS[e.host]) out.push(w+" unknown host "+e.host);
+    if(!/^\\d{4}-\\d\\d-\\d\\d$/.test(e.d)||!/^\\d\\d:\\d\\d$/.test(e.time)||!/^\\d\\d:\\d\\d$/.test(e.end)) out.push(w+" bad date/time");
+    L3(e.t,w+" title"); L3(e.b,w+" body"); L3(e.place,w+" place");
+    for(const k in e.over||{}){ const o=e.over[k]; if(!o.cancel){ if(o.t)L3(o.t,w+" "+k+" title"); if(o.b)L3(o.b,w+" "+k+" body"); } } }
+  const ids=new Set();
+  for(const p of PLACES){ const w="place "+p.id;
+    if(ids.has(p.id)) out.push(w+" duplicate id"); ids.add(p.id);
+    if(!CATCOLOR[p.cat]) out.push(w+" unknown cat "+p.cat);
+    if(!PREFS.some(x=>x[0]===p.pref)) out.push(w+" unknown pref "+p.pref);
+    if(!(Math.abs(p.lat)<=90&&Math.abs(p.lng)<=180)) out.push(w+" bad coordinates");
+    if(p.by&&!T.en.by[p.by]) out.push(w+" unknown by "+p.by);
+    L3(p.n,w+" name"); if(p.d) L3(p.d,w+" description"); }
   // every view in VIEWS was covered
   for(const v in VIEWS) if(!cases.some(c=>c[1]===v)) out.push("view not tested: "+v);
   return out;`);

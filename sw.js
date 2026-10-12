@@ -1,5 +1,5 @@
 /* Bump CACHE on every deploy — it is what forces phones to pick up new code. */
-const CACHE = "yui-v3";
+const CACHE = "yui-v4";
 
 const SHELL = [
   "./",
@@ -27,7 +27,8 @@ self.addEventListener("install", e => {
 self.addEventListener("activate", e => {
   e.waitUntil(
     caches.keys()
-      .then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
+      // only our own old caches: other apps may share this origin (github.io)
+      .then(keys => Promise.all(keys.filter(k => k.startsWith("yui-") && k !== CACHE).map(k => caches.delete(k))))
       .then(() => self.clients.claim())
   );
 });
