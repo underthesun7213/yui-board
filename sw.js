@@ -1,5 +1,5 @@
 /* Bump CACHE on every deploy — it is what forces phones to pick up new code. */
-const CACHE = "yui-v5";
+const CACHE = "yui-v6";
 
 const SHELL = [
   "./",
