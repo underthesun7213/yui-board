@@ -1,7 +1,7 @@
 -- Places: G-10, G-13, G-14, G-15, G-16, G-21, G-23 (places), G-27, Y-E1~E3.
 begin;
 \ir _helpers.sql
-select plan(51);
+select plan(53);
 
 create temp table ids (k text primary key, v uuid);
 insert into ids values ('a', tests.user()), ('b', tests.user());
@@ -50,6 +50,8 @@ select is(tests.bad('x', 'food', '', null, 37.5665, 126.978, 'en'), 'invalid:loc
 select is(tests.bad('ab' || chr(8238) || 'cd', 'food', '', null, 34.82, 135.65, 'en'), 'invalid:name', 'right-to-left override');
 select is(tests.bad('a' || chr(8203) || 'b', 'food', '', null, 34.82, 135.65, 'en'), 'invalid:name', 'zero-width space');
 select is(tests.bad(chr(12288) || chr(12288), 'food', '', null, 34.82, 135.65, 'en'), 'invalid:name', 'only ideographic spaces');
+select is(tests.bad(chr(12644), 'food', '', null, 34.82, 135.65, 'en'), 'invalid:name', 'Hangul filler');
+select is(tests.bad('a' || chr(917505) || 'b', 'food', '', null, 34.82, 135.65, 'en'), 'invalid:name', 'tag character');
 select is(tests.bad('x', 'food', 'a' || chr(8232) || 'b', null, 34.82, 135.65, 'en'), 'invalid:description', 'line separator');
 select is(tests.bad('x', 'food', 'a' || chr(13) || 'b', null, 34.82, 135.65, 'en'), 'invalid:description', 'lone carriage return');
 select is(tests.bad('x', 'food', 'a' || chr(9) || 'b', null, 34.82, 135.65, 'en'), 'ok:', 'tab is fine in a description');

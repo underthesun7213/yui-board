@@ -206,6 +206,8 @@ describe('validation mirrors the server', () => {
     expect(checkPlace({ ...place, name: 'a\u202eb' })).toBe('name');
     expect(checkPlace({ ...place, name: 'a\u200bb' })).toBe('name');
     expect(checkPlace({ ...place, name: '\u3000\u3000' })).toBe('name');
+    expect(checkPlace({ ...place, name: '\u3164' })).toBe('name');
+    expect(checkPlace({ ...place, name: '\u2800' })).toBe('name');
     expect(checkPlace({ ...place, description: 'a\rb' })).toBe('description');
     expect(checkPlace({ ...place, description: 'a\nb\tc' })).toBe(null);
   });

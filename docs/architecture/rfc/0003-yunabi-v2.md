@@ -34,6 +34,8 @@
 - R-10: 부재 중 숨김의 사용자 문구·OQ-21
 - R-11: history state
 
+**개정 (Y-2 구현 반영, 브랜치 `claude/sharp-einstein-3m78cy` `e2e1597` — 리뷰 수정 포함).** 구현과 리뷰가 바꾸거나 확정한 곳에 `[Y-2 구현]` 을 달았다: IP 한도가 경로 대신 메서드로 셈(§11.1, §13.3, §14), 클라이언트의 읽기 페이지 나눔·401 재시도·세션 분실·CAPTCHA·언어 청크(§8, §11, §12.1), 로컬 테스트 스택(§19), 실제 프로젝트에서 확인할 항목(§17.6a PL-6). DB 쪽 세부는 [ERD v2](../erd-v2.md) 의 같은 표시.
+
 ---
 
 ## 1. 배경과 문제
@@ -381,6 +383,7 @@ v1.3 은 URL 을 `./` 로 고정하고 화면을 `history.state` 에만 두었�
 |---|---|
 | 형식 | `src/i18n/en.ts` 가 `export const en = {...} as const`. `type Messages = Widen<typeof en>`. `ja.ts`·`ko.ts` 는 `satisfies Messages` → 키가 빠지면 **컴파일 오류** |
 | 이전 | v1.3 `T`(`index.html:383-615`)를 기계적으로 옮긴다. 배열(`tabs`, `wd`)·중첩(`regions`, `cats`)은 그대로. `by`(추가한 사람 라벨)·주최 관련 문구는 폐기(Y-M3, Y-K1) |
+| 지연 로드 `[Y-2 구현]` | `en` 만 첫 번들에 들어가고 `ja`·`ko` 는 각자 지연 청크(`src/i18n/index.ts` 의 `import('./ja')`·`import('./ko')`)로, 그 언어를 고를 때 받는다. 받기 전에는 영어로 그리고, 서비스워커가 세 언어를 모두 사전 캐시해 오프라인에서도 바뀐다 |
 | 보간 | v1.3 `fill("{n}")` 과 같은 `t('homeCol', {n, m})`. 매개변수 이름도 타입으로 |
 | React 연결 `[D24]` | `t()` 는 언어를 인자로 받는 순수 함수. 컴포넌트는 `const t = useT()`(= `useStore(prefs, s => s.lang)` 로 언어를 구독해 그 언어의 `t` 를 돌려줌). 언어를 바꾸면 구독한 컴포넌트만 다시 그려진다. 지도 라벨은 런타임이 `prefs` 를 직접 구독(§9). 날짜·수 서식은 `Intl.DateTimeFormat`·`Intl.NumberFormat`, 복수형이 필요한 영어 문구는 `Intl.PluralRules` (일본어·한국어는 복수형 구분 없음) |
 | 신규 문구 | 폼 라벨·검증·서버 상태 코드(§13.4)·빈 상태(Y-M5, Y-K3)·신고 사유(Y-R1)·Y-A2 안내·Y-M7 경고·Y-K11·법적 페이지. 모두 3개 언어(Y-C2) |
@@ -472,8 +475,11 @@ sequenceDiagram
 | 일정 | `GET /rest/v1/events_public?select=…` + `GET /rest/v1/event_occurrences_public?select=…` | 보이는 시리즈 + 회차 덮어쓰기. 전개(`occOn`)는 클라이언트 `domain/calendar` |
 | 판 번호 | **`GET /rest/v1/rpc/data_version`** → bigint (`stable` 함수, `rpc('data_version', {}, {get:true})`) | 장소·일정·회차·숨김이 바뀔 때마다 오르는 카운터. 같으면 다시 받지 않는다 |
 | 내 항목 | **`GET /rest/v1/rpc/my_items`** (계정이 있을 때만, `stable`) | 숨김·삭제 상태 포함(Y-R8). 응답의 id 로 카드에 [수정]·[삭제] 표시 |
+| 수정할 내 항목 `[Y-2 구현]` | **`GET /rest/v1/rpc/my_place?p_id=…`**, **`GET /rest/v1/rpc/my_event?p_id=…`** (계정이 있을 때만, `stable`) | 숨겨진 내 항목은 공개 뷰에 없으므로 수정 폼을 이것으로 채운다(Y-E1). 삭제되지 않은 내 것만, 아니면 null (ERD v2 §7.1) |
 
-`[검토 #1, critical]` 첫 판은 두 함수를 30초마다 **POST** 로 불렀고, `db_pre_request` 는 GET 이 아닌 모든 요청을 셌다. 기숙사처럼 공인 IP 하나 뒤에서 5명이 지도를 열어 두면 5분 60회를 다 쓰고, 그 뒤 **600명 전원의 쓰기가 429** 가 된다. 이제 두 함수는 GET 으로 부르고, `db_pre_request` 는 **쓰기 RPC 경로만** 센다(ERD v2 §7 머리말, G-52).
+**페이지 나눔 `[Y-2 구현]`:** 클라우드 Data API 는 한 요청에 최대 1,000행만 돌려준다(최대 행 수 설정). 세 뷰 읽기는 `order=` 를 붙여 `limit=1000&offset=…` 으로 마지막 페이지(1,000행 미만)까지 이어 받는다 — 잘린 목록을 조용히 쓰지 않게(`src/api/rest.ts`). 로컬 스택도 `db-max-rows = 1000` 으로 같은 조건을 만든다(§19).
+
+`[검토 #1, critical]` 첫 판은 두 함수를 30초마다 **POST** 로 불렀고, `db_pre_request` 는 GET 이 아닌 모든 요청을 셌다. 기숙사처럼 공인 IP 하나 뒤에서 5명이 지도를 열어 두면 5분 60회를 다 쓰고, 그 뒤 **600명 전원의 쓰기가 429** 가 된다. 이제 두 함수는 GET 으로 부른다. ~~`db_pre_request` 는 쓰기 RPC 경로만 센다~~ — `[Y-2 구현]` 경로 목록은 리뷰에서 우회가 나와(퍼센트 인코딩한 함수 이름, `/rpc/graphql`, 뷰에 대한 `PATCH`) 버렸고, **`db_pre_request` 는 GET·HEAD·OPTIONS 가 아닌 모든 요청을 경로와 무관하게 센다**. 폴링과 읽기는 모두 GET 이므로 위 문제는 생기지 않는다(ERD v2 §7 머리말·§7.4, G-52).
 
 읽기에는 **계정이 필요 없다**(`anon` 역할 + publishable 키). Y-A1(읽기만 하면 계정 없음)과 맞고, 익명 로그인이 막혀도(B-1, 공격 대응 스위치) 읽기는 된다. 읽기 요청은 SDK 없이 `fetch` 로 해 첫 화면 크기를 줄인다.
 
@@ -531,6 +537,9 @@ sequenceDiagram
 
 - 세션 저장 키는 `yui.auth`(auth-js `storageKey`) — 출처 공유(R-6) 아래에서 다른 앱과 겹치지 않게.
 - 토큰 갱신은 auth-js 자동 갱신. 갱신 토큰이 만료·삭제되면(저장소 삭제, 1년 비활동 정리 — Y-P5) 새 익명 계정이 생기고 옛 항목은 고칠 수 없다(Y-A2 안내의 내용).
+- **`[Y-2 구현]` 401 → 한 번 갱신 후 재전송.** 쓰기 RPC 가 401 이면 `refreshSession()` 으로 토큰을 한 번 갱신하고 같은 요청을 다시 보낸다(생성은 `client_token` 으로 멱등, 나머지는 반복해도 안전). 그래도 401/403 이면 `forbidden`. 429 는 `rate_limited`.
+- **`[Y-2 구현]` 세션 분실은 조용히 새 계정을 만들지 않는다.** 이 브라우저에 계정이 있었다는 표시(`had_account`, 기기 저장소 `platform/storage`)가 있는데 세션이 없으면(갱신 거절, 저장소 일부 삭제) 쓰기는 상태 **`session_lost`** 로 끝나고 화면이 한 번 알린다 — 새 계정이 되면 지금까지 올린 것을 고칠 수 없다는 뜻이다. 알린 뒤 표시를 지우므로 **다음 저장은 새 익명 계정으로 진행**된다. 위 문단의 "새 익명 계정이 생긴다" 는 이 안내를 거친 뒤에만 일어난다.
+- **`[Y-2 구현]` CAPTCHA 스위치 — 앱 쪽 구현됨.** `signInAnonymously` 가 `captcha_failed`(또는 captcha 오류 문구)로 실패하면 상태 `captcha` → `session.captchaRequired` → 폼에 Turnstile 위젯(`ui/Captcha`, 사이트 키는 빌드에 포함)이 나타나고, 다음 저장 때 토큰을 `signInAnonymously({ options: { captchaToken } })` 로 보낸다. 스위치가 꺼져 있으면 위젯은 나타나지 않는다. 관리자 콘솔 로그인의 위젯(§12.2)은 이 항목과 별개다.
 - 기기 이전(Q-Y2)은 범위 밖.
 
 ### 12.2 관리자 로그인 (Y-R5, Y-S3)
@@ -562,14 +571,14 @@ sequenceDiagram
 
 | 대상 | 규칙 (서버) | 근거 |
 |---|---|---|
-| 장소 이름 | 공백 정리 후 1~60자(`char_length`), 제어 문자 금지 | Y-M6 |
+| 장소 이름 | 공백 정리 후 1~60자(`char_length`), 제어 문자 금지. `[Y-2 구현]` 모든 글 필드 공통: 앞뒤 공백·U+00A0·U+3000 정리, C1 제어·방향·폭 0·서식 문자 거절, 여러 줄 필드는 탭·LF 외 제어 문자 거절(CR 단독 포함), 필수 필드는 보이는 글자 1개 이상(ERD v2 §4.1) | Y-M6 |
 | 카테고리 | enum `transit, daily, food, study, admin, health` | Y-M6, v1.3 `CATCOLOR` |
 | 설명 | 0~500자 | Y-M6 |
-| Google 링크 | 선택. `https://` 만, 호스트가 정확히 `www.google.com`·`google.com`·`www.google.co.jp`·`google.co.jp` 이고 경로가 `/maps` 로 시작, 또는 호스트 `maps.app.goo.gl`. 최대 500자. 사용자 정보(`user@`)·포트 금지. **`goo.gl/maps` 는 받지 않는다** — 지원 종료된 단축 링크 `[검토 nit]`, PRD 와의 차이는 OQ-16 | Y-M6, Y-S4 |
+| Google 링크 | 선택. `https://` 만, 호스트가 정확히 `www.google.com`·`google.com`·`www.google.co.jp`·`google.co.jp` 이고 경로가 `/maps` 로 시작, 또는 호스트 `maps.app.goo.gl`. 최대 500자. 사용자 정보(`user@`)·포트 금지. `[Y-2 구현]` 점 경로 조각(`/../`, `%2e` 표기 포함)·역슬래시·공백 문자 금지. **`goo.gl/maps` 는 받지 않는다** — 지원 종료된 단축 링크 `[검토 nit]`, PRD 와의 차이는 OQ-16 | Y-M6, Y-S4 |
 | 좌표 | 유한한 수, 일본 경계 폴리곤(PostGIS, 단순화본)에서 **10 km 이내**여야 하고, 도도부현 = 가장 가까운 폴리곤. 단순화로 지워진 작은 섬·해안 지점을 위한 여유 거리 | Y-M6, Y-A5 |
 | 작성 언어 | enum `en, ja, ko` (화면 언어) | Y-M6, Y-K4 |
 | 일정 제목 / 장소 / 설명 | 1~60 / 0~60 / 0~500자 | Y-K4 |
-| 일정 날짜 | `>= 도쿄 오늘`(생성 시). 시작·끝 `HH:MM`, 끝 > 시작(같은 날) | Y-K4 |
+| 일정 날짜 | `>= 도쿄 오늘`(생성 시). 시작·끝 `HH:MM`, 끝 > 시작(같은 날). `[Y-2 구현]` 시작일 ≤ 도쿄 오늘 + 365, 시각은 분 단위·24:00 미만, 생성 시 오늘 이미 끝난 칸은 거절, 수정으로 회차 덮어쓰기 시각이 시작 ≥ 끝이 되면 그 회차 시각을 시리즈 값으로 되돌림(ERD v2 §4.3) | Y-K4 |
 | 매주 반복 | `weekly_until` 필수(반복일 때), 같은 요일, `start_date < weekly_until <= start_date + 175일`(**최대 26회**) | Y-K6 — "26주" 해석은 OQ-3 |
 | 회차 수정·취소 | 시리즈의 실제 회차 날짜, 그 회차가 끝나지 않았을 것 | Y-K7, Y-K9 |
 | 지난 일정 수정 | 마지막 회차의 끝 시각(도쿄)이 지났으면 수정 거절, 삭제는 허용 | Y-K9 |
@@ -588,7 +597,7 @@ sequenceDiagram
   participant F as public.create_place (definer)
   participant DB as app 스키마
   C->>PR: POST /rest/v1/rpc/create_place (JWT, client_token, 입력)
-  PR->>PRE: 쓰기 RPC 경로만: 신뢰 프록시가 붙인 IP → 기숙사 범위면 dorm 한도 → 키(IPv4 / IPv6 /64) 5분 창 카운트
+  PR->>PRE: GET·HEAD·OPTIONS 외 모든 요청 [Y-2 구현]: 신뢰 프록시가 붙인 IP → 기숙사 범위면 dorm 한도 → 키(IPv4 / IPv6 /64) 5분 창 카운트
   alt IP 한도 초과
     PRE-->>C: 429 (Y-S7)
   end
@@ -612,9 +621,9 @@ sequenceDiagram
 | Auth (Supabase) | 익명 로그인 **IP 당** | 기본 시간당 30(**검토가 확인**) → **시간당 150 으로 올린다** `[검토 #6]` | 플랫폼 설정. Supabase 의 이 한도는 **프로젝트 전체에 하나의 값**으로 알려져 있어(범위별 설정 기능은 확인 못 함 — OQ-5) 기숙사 범위만 따로 줄 수 없다. 학기 초 오리엔테이션에 기숙사 공인 IP 하나에서 수십~수백 명이 첫 쓰기를 하면 30 은 막힌다. 150 으로 올리고 아래 전역 한도·계정 한도·CAPTCHA 스위치를 주 방어로 둔다 |
 | Auth 훅 | 익명 계정 생성 **전역** | 시간당 200 (*제안*) | `before-user-created` 가 최근 1시간 익명 생성 수를 세어 초과 시 거절 + `security_events`. **훅이 익명 가입에도 도는지는 미확인**(ERD v2 OQ-E5) — 안 돌면 감시 경보(익명 생성 수)와 §17.7 런북으로 대체. 이 한도 자체가 DoS 대상이다(공격자가 200개를 먼저 써서 정상 사용자를 막음) → §17.7 런북 R-2 `[검토 #11]` |
 | RPC `require_writer` | 앱 계정(`app.accounts`) 생성 **전역** `[재검토 #1]` | 시간당 200 (`accounts_per_hour`) | **훅과 무관한 상한.** 계정 행은 첫 쓰기·신고 때만 생기므로, 생성 직전 전역 잠금 아래 최근 1시간 생성 수를 세어 넘으면 `rate_limited`(쓰기 거절, 기록). 익명 Auth 사용자는 만들어질 수 있어도 쓰기·신고는 못 한다 — 훅이 익명 가입에 도는지(OQ-E5)와 상관없이 대량 생성 계정의 쓰기를 막는다. 남는 비용은 쓸모없는 `auth.users` 행(1년 정리 + 런북 R-2) |
-| PostgREST | **쓰기 RPC 만** `[검토 #1]`, IP 당 | 기본 5분 60, **기숙사 범위 5분 600** `[검토 #6]` | `db_pre_request` — Supabase 공식 패턴(쓰기만 센다는 점은 검토가 확인). IP 는 **신뢰 프록시가 덧붙인 값**(공식 예시의 첫 값은 위조 가능 — 실측해 `xff_trusted_hops`) `[검토 #7]`. 기숙사 공인 IP/CIDR 는 `app.ip_tiers` 에 **평문**(건물의 주소, 개인정보 아님). 키 = IPv4 주소 또는 **IPv6 /64** 의 일일 솔트 해시 `[검토 #6]`, 1시간 보관(가명 처리 — §16) |
+| PostgREST | ~~쓰기 RPC 만~~ **GET·HEAD·OPTIONS 외 모든 요청(경로 무관)** `[검토 #1]` `[Y-2 구현]`, IP 당 | 기본 5분 60, **기숙사 범위 5분 600** `[검토 #6]` | `db_pre_request` — Supabase 공식 패턴. `[Y-2 구현]` 경로 목록으로 고르던 첫 안은 퍼센트 인코딩한 함수 이름·`/rpc/graphql`·뷰 `PATCH` 로 우회되어 메서드만 본다(관리 RPC POST 도 셈). `pg_graphql` 은 제거. 인자 변환에 실패하는 요청(잘못된 enum·uuid)은 함수 전에 실패해 카운트가 롤백되지만 아무것도 바꾸거나 기록하지 않는다(ERD v2 G-55). IP 는 **신뢰 프록시가 덧붙인 값**(공식 예시의 첫 값은 위조 가능 — 실측해 `xff_trusted_hops`) `[검토 #7]`. `[Y-2 구현]` 그 값은 `app.client_ip` 가 `v4:포트`·`[v6]:포트`·IPv4 대응 IPv6(`::ffff:a.b.c.d` → IPv4)까지 해석한다. 기숙사 공인 IP/CIDR 는 `app.ip_tiers` 에 **평문**(건물의 주소, 개인정보 아님). 키 = IPv4 주소 또는 **IPv6 /64** 의 일일 솔트 해시 `[검토 #6]`, 1시간 보관(가명 처리 — §16) |
 | RPC | 계정당 24시간 | 장소 등록 10, 일정 등록 10, 수정 30, 신고 20 (Y-A3) | `write_log` + 사용자 단위 advisory 잠금. 삭제는 제한 없음(악용 이득 없음). 기숙사 범위 안에서는 **이 계정 한도와 전역 가입 한도가 주 방어**다 |
-| 스위치 | CAPTCHA | 기본 OFF | Supabase Bot and Abuse Protection(Turnstile) ON → 익명 로그인과 **관리자 비밀번호 로그인**에 토큰 필요. 재배포 없이 켜려면 **Turnstile 사이트 키가 사용자 앱·콘솔 빌드에 미리 들어 있어야 한다**(검토의 확인) `[검토 #5]`. 클라이언트는 오류를 받으면 위젯을 띄운다. 두 CSP 모두 Turnstile 출처를 미리 허용(§17.3) |
+| 스위치 | CAPTCHA | 기본 OFF | Supabase Bot and Abuse Protection(Turnstile) ON → 익명 로그인과 **관리자 비밀번호 로그인**에 토큰 필요. 재배포 없이 켜려면 **Turnstile 사이트 키가 사용자 앱·콘솔 빌드에 미리 들어 있어야 한다**(검토의 확인) `[검토 #5]`. 클라이언트는 오류를 받으면 위젯을 띄운다(`[Y-2 구현]` 사용자 앱 구현됨 — §12.1). 두 CSP 모두 Turnstile 출처를 미리 허용(§17.3) |
 
 "하루" 는 롤링 24시간(경계 시각 악용 없음, 구현 단순). 계정을 새로 만들어 한도를 피하는 것은 **자동화된 대량 생성일 때만** 막는다(Y-A4, D20) — 위 Auth·훅·IP 층, CAPTCHA 스위치, §17.7 런북이 그 장치다.
 
@@ -738,8 +747,8 @@ DB 에서는 열 조합이다(ERD v2 §4.2): `deleted_at`, `auto_hidden_at`, `su
 | T-18a | D | **전역 가입 한도(시간당 200) 자체를 소진**해 정상 사용자의 첫 쓰기를 막음 `[검토 #11]` — 훅 한도와 `require_writer` 의 계정 생성 상한 둘 다 해당 | A6 | 감시 경보(생성이 한도의 50%) → 런북 R-2: CAPTCHA ON(자동화는 통과 못 하고 사람은 통과). 단 **이미 찬 상한은 CAPTCHA 를 켜도 1시간 창이 지나야 풀린다** — 급하면 관리자가 `accounts_per_hour` 를 일시적으로 올린다 (최종 재검토 nit) | S7, S10 | 런북 시험 |
 | T-18c | D/T | 훅이 익명 가입에 **돌지 않으면** 대량 생성 계정이 쓰기·신고를 제한 없이 함 (OQ-E5 미확인) `[재검토 #1]` | A1, A6 | `require_writer` 의 계정 생성 전역 상한(시간당 200) — Auth 와 무관하게 성립 | S7 | G-38 |
 | T-18b | D | **기숙사 NAT** — 정상 사용자 다수가 한 IP 를 공유해 IP 한도에 걸림(공격이 아니어도 서비스 거부) `[검토 #6]` | A6 | Auth IP 한도 150, `ip_tiers` 기숙사 범위 쓰기 5분 600, 폴링은 GET(쓰기 한도 밖) | S7 | G-52, 부하 시험 |
-| T-19 | D | 쓰기·신고 폭주 | A6, A1 | IP 5분 한도(`db_pre_request`, 쓰기 RPC 만), 계정 24시간 한도, 자동 숨김 남용은 관리자 복원 + 보호(Y-R6) | S7 | pgTAP, 통합 |
-| T-19a | S/D | **IP 한도 우회** `[검토 #7]`: (1) `x-forwarded-for` 맨 왼쪽 값 위조 (2) 형식 오류 예외가 `ip_hits` 증가를 롤백 (3) IPv6 /128 회전 | A6 | 신뢰 프록시가 붙인 값(실측 `xff_trusted_hops`), 형식 오류도 상태 반환, IPv6 /64 키 | S7 | G-53~G-55 |
+| T-19 | D | 쓰기·신고 폭주 | A6, A1 | IP 5분 한도(`db_pre_request`, GET·HEAD·OPTIONS 외 모든 요청 `[Y-2 구현]`), 계정 24시간 한도, 자동 숨김 남용은 관리자 복원 + 보호(Y-R6) | S7 | pgTAP, 통합 |
+| T-19a | S/D | **IP 한도 우회** `[검토 #7]`: (1) `x-forwarded-for` 맨 왼쪽 값 위조 (2) 형식 오류 예외가 `ip_hits` 증가를 롤백 (3) IPv6 /128 회전 (4) `[Y-2 구현]` 경로 비교 우회 — 퍼센트 인코딩한 함수 이름, `/rpc/graphql`, 뷰 `PATCH` | A6 | 신뢰 프록시가 붙인 값(실측 `xff_trusted_hops`), 형식 오류도 상태 반환, IPv6 /64 키, 메서드 기준 계수 + `pg_graphql` 제거. 남는 것: 인자 변환 실패 요청은 롤백(바꾸는 것·기록 없음) | S7 | G-53~G-55 |
 | T-19b | T | **스크립트로 대량 숨김** `[검토 #10]`: 시간당 계정 200개 → 신고 3건씩이면 시간당 약 1,300건 숨김 가능 (Y-A4 의 자동화 공격) | A1 | 차단기는 두지 않는다(D20). 감시 경보(자동 숨김 1시간 5건 초과) → 런북 R-1: CAPTCHA ON → `admin_restore_bulk` 로 기간 일괄 복원. 수동 복원 비용을 책임자가 받아들일지는 OQ-17 | S7, S10 | 런북 시험, G-36 |
 | T-20 | D | 읽기 폭주로 egress 소진 | A6 | 읽기는 IP 제한 대상이 아님(공식 패턴 한계). 응답 최소 열·판 번호로 재다운로드 억제, 감시가 사용량 70% 경보 → 필요 시 Turnstile/Pro 판단 | S10 | 감시 |
 | T-21 | D | 무료 프로젝트 일시정지·장애 | A6 | 오프라인 스냅샷 읽기, 런북 재개 절차, 감시 워크플로가 정지 탐지 | S9, S10 | 런북 |
@@ -839,6 +848,7 @@ D25(관리자 = 책임자 1명)로 아래 모든 절차의 실행자는 책임�
 | PL-3 | 관리자 TOTP 2개 등록 `[D25]` | — | R-5 로 계정 생성 직후 요소 2개(주 + 예비)를 이름을 붙여 등록한다. 예비 TOTP 비밀은 **휴대폰과도, 관리자 비밀번호를 둔 금고와도 다른 곳**에 두고, 그 보관 장소를 책임자만 아는 곳에 기록한다 `[검토 R-9]`. **R-7 ① 모의 실행**(로그인 화면에서 예비 요소를 골라 로그인 → 요소 교체). **R-7 ② 모의 실행**(로컬 스택에서 `updateUserById` → `deleteFactor` → 재등록) | §12.2, R-7 |
 | PL-4 | Supabase·GitHub·Cloudflare **계정 자체의 2단계 인증** `[D25]` | — | 세 계정 모두 2단계 인증 켜짐 확인(관리자 TOTP 를 잃었을 때 R-7 ② 의 마지막 근거가 Supabase 계정이다. 각 서비스의 2단계 인증 지원은 *일반 지식 — 출시 전 확인*) | R-7, T-10 |
 | PL-5 | 부재 대비 `[D25]` | — | 감시 경보가 휴대폰 메일로 오는지 시험(§17.6 알림 시험과 같이), SYS-04 의 응답 기간 문구와 ME-02 "검토 중" 설명 확정(R-8 초안 `[검토 R-10]`), R-8 확인, OQ-21 책임자 답 기록 | R-8, Y-P6, OQ-21 |
+| PL-6 | **로컬 스택과 다른 점 — 실제 프로젝트에서 확인** `[Y-2 구현]` | Y-2 는 로컬 스택(§19.1a)으로만 검증됨 | 첫 마이그레이션 적용 뒤 실제 프로젝트에서: ① `pgrst.db_pre_request` 가 켜졌는지 — 같은 IP 에서 61번째 쓰기가 **429**(ERD v2 OQ-E1) ② `xff_trusted_hops` 실측 — 앞단 프록시 수를 재고 G-54(왼쪽 위조 값 무시)를 HTTP 로 재현(OQ-E8) ③ `pg_graphql` 꺼짐 — `/graphql/v1`·`/rpc/graphql` 이 동작하지 않음 ④ 가입 훅이 **익명 가입에도** 호출되는지(로컬은 호출됨 — OQ-E5 일부 답) ⑤ `supabase_admin` default privileges 마이그레이션의 notice 유무(OQ-E10) ⑥ 기본 statement timeout 아래서 쓰기·정리 작업이 끝나는지 ⑦ 로컬에서는 `postgres` 가 superuser 라 가려졌을 수 있는 권한 오류 — 마이그레이션 전체(`checks` 포함)가 클라우드의 `postgres` 로 통과하는지 | ERD v2 OQ-E1·E5·E8·E10 |
 
 ---
 
@@ -892,6 +902,20 @@ D25(관리자 = 책임자 1명)로 아래 모든 절차의 실행자는 책임�
 | 통합 E2E | Playwright + 로컬 Supabase | 첫 쓰기 익명 계정, 멱등 재전송, 다른 기기 반영, 신고 3건 숨김, 관리자 aal2 로그인·복원·삭제·정지 | `npm run test:backend` |
 | 보안 | Playwright `request` + 페이로드 세트, ZAP baseline | Y-S1, Y-S4, Y-S5, Y-S11 | CI(보안), 출시 전 |
 
+### 19.1a 로컬 테스트 스택 `[Y-2 구현]`
+
+위 표의 "로컬 Supabase"(`supabase start`, Docker)는 **쓰지 못했다** — 개발 환경에서 Docker 이미지를 받을 수 없었다. 대신 `scripts/local-stack/` 이 실제 부품을 바이너리로 띄운다: **Postgres 16**(+ pgTAP, PostGIS), **Supabase Auth v2.197.0**, **PostgREST v13.0.8**(`fetch-bins.sh` 가 GitHub 릴리스에서 받음), 그 앞에 `/auth/v1`·`/rest/v1` 을 한 포트(54321)로 묶는 작은 게이트웨이(`gateway.mjs` — 실제 앞단처럼 호출자 주소를 `x-forwarded-for` 에 **덧붙인다**). `bootstrap.sql` 이 Supabase 의 기본 역할·기본 권한(공개 스키마 새 객체를 API 역할에 자동 부여)을 흉내 내고, Auth 첫 기동 뒤 마이그레이션을 순서대로 적용, 가입 훅을 켜고 Auth 를 다시 띄운 다음 초대 안 된 이메일 가입이 403 인지 확인한다. PostgREST 는 `db-max-rows = 1000`(클라우드 최대 행 수와 같게). 매번 빈 DB 에서 시작한다. CI 의 `db` 잡도 같은 스크립트를 쓴다(apt 로 Postgres 16·pgTAP·PostGIS → `fetch-bins.sh` → `npm run test:db` → `npm run test:backend`). 그래서 §19.2 그림의 `supabase start → db reset` 은 이 스택으로 바뀌었다.
+
+**클라우드와 다른 점 — 기억할 것:**
+
+| 로컬 스택 | 클라우드 | 영향 | 확인 |
+|---|---|---|---|
+| `postgres` 가 **superuser** | `postgres` 는 superuser 아님 | 클라우드에서 권한 부족으로 실패할 수 있는 문(예: `supabase_admin` 의 default privileges)이 로컬에서는 통과한다 | §17.6a PL-6 ⑤⑦ |
+| `pg_cron`·`pg_graphql` 없음 | 둘 다 있음(`pg_graphql` 은 마이그레이션이 제거) | 정기 작업 일정은 로컬에서 돌지 않음(정리 함수는 pgTAP 가 직접 호출), `pg_graphql` 제거 효과는 로컬에서 보이지 않음 | PL-6 ③ |
+| 프록시 **한 단**(게이트웨이) | 앞단 프록시 수 미상 | `xff_trusted_hops` 는 로컬에서 1 로만 시험됨 | PL-6 ②, ERD v2 OQ-E8 |
+| 역할별 기본 statement timeout 없음 | `anon`·`authenticated` 등에 기본 timeout 이 있는 것으로 알려짐(*확인 필요*) | 오래 걸리는 요청이 로컬에서만 통과할 수 있다 | PL-6 ⑥ |
+| `pgrst.db_pre_request`·가입 훅을 스크립트·마이그레이션이 켬 | 마이그레이션의 `alter role authenticator` 가 먹는지 미확인, 훅은 대시보드 등록 | 로컬 통과가 클라우드 동작을 보장하지 않음 | PL-6 ①④ |
+
 **v1.3 의 50개 검사 이전:** 스크립트가 저장소에 없다(RFC-0002 §11.2). RFC-0002 §11.2 의 범주표를 테스트 목록으로 펼쳐 `tests/e2e/v13-parity.spec.ts` 로 다시 쓰고, 각 테스트 이름에 ML-\*/Y-\* ID 를 붙인다. Y-1 완료 기준 = 이 파일 통과. 원본이 발견되면 대조한다(tech-stack-v2 TS-Q4).
 
 ### 19.2 CI (GitHub Actions)
@@ -901,7 +925,7 @@ flowchart LR
   PR[PR / push] --> Q[quality: npm ci → lint → tsc -b → unit+render → bundle size]
   PR --> SEC[security: npm audit high → gitleaks repo]
   Q --> E2E[e2e: playwright fixture 모드]
-  PR -->|supabase/ 변경 또는 main| DB[db: setup-cli → supabase start → db reset → test db → backend e2e → security 직접 요청]
+  PR -->|supabase/ 변경 또는 main| DB[db: Postgres 16 + Auth + PostgREST 바이너리 로컬 스택 §19.1a → test db → backend e2e·security 직접 요청]
   E2E & DB & SEC --> M{main 병합}
   M --> BUILD[build: dist, dist-admin → 산출물 비밀 검사 → gitleaks dist]
   BUILD --> PAGES[deploy-pages: 사용자 앱]

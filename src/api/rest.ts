@@ -38,15 +38,18 @@ async function get<T>(path: string): Promise<T> {
   return (await r.json()) as T;
 }
 
-/* The hosted API answers at most 1000 rows per request; read page after
-   page so nothing is cut off silently. The order makes the pages stable. */
+/* The hosted API answers at most "max rows" per request (1000 unless the
+   project lowers it); read until a page comes back empty, so nothing is cut
+   off silently whatever that limit is. The order keeps the pages stable. */
 const PAGE = 1000;
 async function getAll<T>(path: string): Promise<T[]> {
   const out: T[] = [];
   for (let offset = 0; ; offset += PAGE) {
     const page = await get<T[]>(`${path}&limit=${PAGE}&offset=${offset}`);
+    if (!page.length) return out;
     out.push(...page);
-    if (page.length < PAGE) return out;
+    /* the server may cap a page below PAGE ("max rows"): continue right after it */
+    offset += page.length - PAGE;
   }
 }
 

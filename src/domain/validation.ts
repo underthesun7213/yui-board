@@ -6,7 +6,7 @@ import { addDays, dayDiff } from './calendar/dates';
 const CNTRL = /\p{Cc}/u;
 /* invisible or direction-changing characters, C1 controls, line separators (as the server) */
 const HIDDEN =
-  /[\u0080-\u009f\u00ad\u061c\u180e\u200b-\u200f\u2028-\u202e\u2060-\u206f\ufeff\ufff9-\ufffb]/u;
+  /[\u0080-\u009f\u00ad\u061c\u180e\u200b-\u200f\u2028-\u202e\u2060-\u206f\ufeff\ufff9-\ufffb\u115f\u1160\u3164\uffa0\u2800\u{e0000}-\u{e007f}]/u;
 /* in multi-line fields only tab and newline */
 const ctrlBesidesTabNewline = (v: string) => CNTRL.test(v.replace(/[\t\n]/g, ''));
 const VISIBLE = /[^\s\u00a0\u3000]/u;

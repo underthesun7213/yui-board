@@ -40,8 +40,14 @@ export function PlaceForm({ id }: { id?: number }) {
   useEffect(() => {
     if (id && !pub) void loadOwn<Place>('place', id).then(setOwn);
   }, [id, pub]);
-  if (id && !pub && own === undefined) return <BackBar title={m.editPlace} />;
-  const editing = pub ?? own ?? undefined;
+  /* once resolved, the form keeps that copy: a poll that hides the item while
+     it is being edited must not take the form away (React's "adjust state
+     while rendering" pattern) */
+  const [kept, setKept] = useState<Place | undefined>(undefined);
+  const found = pub ?? own ?? undefined;
+  if (found && !kept) setKept(found);
+  if (id && !kept && !pub && own === undefined) return <BackBar title={m.editPlace} />;
+  const editing = kept ?? found;
   return (
     <PlaceFormBody key={editing?.id ?? 'new'} id={id} editing={editing} mine={mine || !!own} />
   );
@@ -53,6 +59,8 @@ function PlaceFormBody({ id, editing, mine }: { id?: number; editing?: Place; mi
   const hasAccount = useStore(session, (s) => s.hasAccount);
   const framed = useStore(session, (s) => s.framed);
   const online = useStore(net, (s) => s.online);
+  /* the CAPTCHA switch is on: wait for the check */
+  const waitCaptcha = useStore(session, (s) => s.captchaRequired && !s.captchaReady);
   const pick = useStore(mapUi, (s) => s.pick);
 
   const [draft] = useState(() =>
@@ -253,7 +261,7 @@ function PlaceFormBody({ id, editing, mine }: { id?: number; editing?: Place; mi
           </p>
         )}
         <div className="btns">
-          <button type="submit" className="primary" disabled={busy || blocked}>
+          <button type="submit" className="primary" disabled={busy || blocked || waitCaptcha}>
             {busy ? m.saving : m.save}
           </button>
           {!id && (

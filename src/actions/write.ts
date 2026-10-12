@@ -9,6 +9,7 @@ import { t } from '../i18n';
 import { confirmAction, newId } from '../platform/dialog';
 import { isFramed } from '../platform/frame';
 import { store } from '../platform/storage';
+import { data } from '../state/data';
 import { mapUi } from '../state/mapUi';
 import { prefs } from '../state/prefs';
 import { session } from '../state/session';
@@ -126,15 +127,20 @@ export async function savePlace(
   if (r.status === 'ok' || r.status === 'duplicate') {
     if (!opts.id) dropDraft('place');
     const id = opts.id ?? r.id;
-    navigate({ name: 'map' }, { replace: true });
-    /* show it: its prefecture under All of Japan, card open */
-    mapUi.set((s) => ({
-      mode: 'japan',
-      pref: r.pref ?? s.pref,
-      pl: id ?? null,
-      cat: '',
-      fitSeq: s.fitSeq + 1,
-    }));
+    /* a hidden item is not on the map: back to My posts, where it shows its state */
+    if (!id || !data.get().places.some((x) => x.id === id)) {
+      navigate({ name: 'me' }, { replace: true });
+    } else {
+      navigate({ name: 'map' }, { replace: true });
+      /* show it: its prefecture under All of Japan, card open */
+      mapUi.set((s) => ({
+        mode: 'japan',
+        pref: r.pref ?? s.pref,
+        pl: id,
+        cat: '',
+        fitSeq: s.fitSeq + 1,
+      }));
+    }
   }
   return r;
 }
@@ -172,7 +178,9 @@ export async function saveEvent(
   if (r.status === 'ok' || r.status === 'duplicate') {
     if (!opts.id) dropDraft('event');
     const id = opts.id ?? r.id;
-    if (id) navigate({ name: 'event', id, date: e.start_date }, { replace: true });
+    if (id && data.get().events.some((x) => x.id === id))
+      navigate({ name: 'event', id, date: e.start_date }, { replace: true });
+    else navigate({ name: 'me' }, { replace: true });
   }
   return r;
 }

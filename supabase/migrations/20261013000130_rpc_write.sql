@@ -7,13 +7,14 @@
 
 -- Text people write. Rejects control characters (a newline only where the
 -- field allows several lines), invisible and direction-changing characters
--- that can disguise text, and — when required — text with nothing visible.
+-- that can disguise text (blank-looking fillers such as U+3164 and U+2800,
+-- and tag characters included), and — when required — text with nothing visible.
 create function app.check_text(p_value text, p_min integer, p_max integer, p_single_line boolean)
 returns boolean
 language sql immutable set search_path = '' as $$
   select p_value is not null
      and char_length(p_value) between p_min and p_max
-     and p_value !~ '[\u0080-\u009f\u00ad\u061c\u180e\u200b-\u200f\u2028-\u202e\u2060-\u206f\ufeff\ufff9-\ufffb]'
+     and p_value !~ '[\u0080-\u009f\u00ad\u061c\u180e\u200b-\u200f\u2028-\u202e\u2060-\u206f\ufeff\ufff9-\ufffb\u115f\u1160\u3164\uffa0\u2800\U000e0000-\U000e007f]'
      and (case when p_single_line then p_value !~ '[[:cntrl:]]'
                else p_value !~ '[\x01-\x08\x0b-\x1f\x7f]' end)
      and (p_min = 0 or p_value ~ '[^[:space:]\u00a0\u3000]')

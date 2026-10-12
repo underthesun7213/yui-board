@@ -232,7 +232,8 @@ test('Y-E1 a hidden place can still be edited from My posts, and stays hidden', 
   await expect(page.locator('#pf-name')).toHaveValue('Hidden later');
   await page.fill('#pf-name', 'Hidden later, fixed');
   await page.click('.form button[type=submit]');
-  await page.goto('./#/me');
+  /* still hidden, so the app returns to My posts rather than the map */
+  await page.waitForURL(/#\/me$/);
   await expect(
     page.locator('.my', { hasText: 'Hidden later, fixed' }).locator('.state'),
   ).toHaveClass(/hidden_review/);

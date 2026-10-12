@@ -10,6 +10,7 @@
 | 개정 | **2026-10-12 보안 검토(판정 "보완 필요", 기준 `da55060`) 반영.** 고친 곳에 `[검토 #n]` 표시. 요지: PUBLIC 의 EXECUTE 회수(#2), `require_admin` 실패 안전(#3), 관리자 생성 경로(#4), IP 등급·/64·신뢰 헤더(#6·#7), 형식 오류도 상태 반환(#7), IP 가명 처리·보관(#8), 백업 범위(#9), 일괄 복원(#10), 테스트 보강(#14), 정지된 신고자 제외·`by_owner` 계산 순서·`goo.gl/maps` 제거(낮음·nit) |
 | 재개정 | **보안 재검토(조건부 승인) 반영** — `[재검토 #n]`: 계정 생성 전역 상한을 `require_writer` 에(#1), 관리자 연결 탈취 방지 `bind_admin`(#2), PostGIS 를 `extensions` 스키마에(#3), 익명 이메일 연결이 SMTP 를 소모하는 위험(#4), 관리 RPC 의 남은 감시 공백(#5) |
 | 책임자 결정 (2026-10-12) | **D24(React)** 는 DB 와 무관 — 이 문서에 프레임워크 의존 내용은 없다. **D25(관리자 = 책임자 1명)**: 스키마는 그대로(`admins` 는 여러 행을 허용하지만 운영 행은 1개), 생성 절차·TOTP 문구를 1인 기준으로 고쳤다(§4.5, §7 머리말, OQ-E9). **D26**: 기숙사 IP(`ip_tiers` 값)와 SMTP 는 출시 전 항목(RFC-0003 §17.6a) — `ip_tiers` 가 비어 있어도 함수는 기본 한도로 동작한다 |
+| Y-2 구현 반영 | **`[Y-2 구현]`** — `supabase/migrations/` (브랜치 `claude/sharp-einstein-3m78cy`, `e2e1597`, 리뷰 수정 포함)와 다른 점·확정된 점을 고친 곳에 표시: `db_pre_request` 가 GET/HEAD/OPTIONS 외 **모든** 요청을 셈(§7 머리말·§7.4), `pgrst.db_pre_request` 설정·`pg_graphql` 제거(§8 16), 전역 default privileges(§5.1 2a·§8 19·20), 읽기 RPC `my_place`·`my_event`(§5.2·§7.1), 입력 검증 보강(§4.1·§4.3, G-15). 이 문서의 "현행 DB 없음" 은 이 브랜치 기준으로는 낡았다 — 마이그레이션이 원본이다 |
 | 이어받는 교훈 | [erd.md](erd.md) (보류): 모든 GRANT 명시(N-1), 열 단위로 식별자 숨김(N-6), 정의자 함수는 필요한 곳에만 + `search_path` 고정, 정책·뷰가 부르는 헬퍼의 EXECUTE(§6.3), 방어 트리거는 invoker(S-1), 실패해도 남아야 하는 기록은 예외 대신 반환값(S-2), 확인 후 쓰기는 잠금 아래(D-10), 지연 만료 |
 
 > 이 문서의 SQL 은 **설계 설명용 조각**이다. 실제 파일은 §8 순서로 `supabase/migrations/` 에 새로 쓴다.
@@ -28,7 +29,7 @@
 | V-6 | 관리 RPC 는 `admins` 행(허용 목록) + 비익명 + `aal2` + 세션 행 존재·12시간 이내. 하나라도 아니면 **예외로 실패**(fail-closed) `[검토 #3]` | Y-R5, Y-S3 | G-30~G-36 |
 | V-7 | 정의자 함수는 모두 `set search_path = ''` 이고 동적 SQL(`execute`)을 쓰지 않는다 | Y-S5, Y-S1 | §8 `checks` |
 | V-8 | 사람을 식별하는 값은 Y-P1 목록뿐: 익명 계정 id, 관리자 이메일. IP 는 **가명 처리**(일일 솔트 해시, IPv6 는 /64 단위)로만 저장 — `ip_hits` 1시간, `security_events.ip_key` 48시간 뒤 null, 솔트는 이틀 뒤 삭제·백업 제외. 솔트가 같은 DB 에 있는 동안은 익명화가 아니라 가명 처리이며(IPv4 공간 2^32 은 무차별 대입 가능), 방침에도 그렇게 쓴다 `[검토 #8]` | Y-P1, Y-S12 | 스키마 검토, G-56 |
-| V-9 | **`PUBLIC` 을 포함해** `anon` 이 EXECUTE 할 수 있는 함수는 `data_version` 뿐, `authenticated` 는 허용 목록과 정확히 일치 `[검토 #2]` | Y-S1 | §8 `checks`, G-03 |
+| V-9 | **`PUBLIC` 을 포함해** `anon` 이 EXECUTE 할 수 있는 함수는 `data_version` 뿐, `authenticated` 는 허용 목록과 정확히 일치 `[검토 #2]`. `[Y-2 구현]` 실제 목록 — `anon`: `data_version`, `app.db_pre_request`. `authenticated`: `data_version`, `my_items`, **`my_place`, `my_event`**, `create_place`, `update_place`, `delete_place`, `create_event`, `update_event`, `delete_event`, `set_occurrence`, `clear_occurrence`, `app.db_pre_request` (Y-2 에는 신고·관리 RPC 마이그레이션이 아직 없어 `submit_report`·`admin_*` 는 목록에 없다 — 추가할 때 `checks` ④ 도 함께 고친다) | Y-S1 | §8 `checks`, G-03 |
 
 ---
 
@@ -236,6 +237,12 @@ create type app.item_kind      as enum ('place','event');
 
 인덱스: `places_visible (pref) where deleted_at is null and auto_hidden_at is null and suspension_hidden_at is null` (공개 뷰·도도부현 집계), `places_deleted (deleted_at) where deleted_at is not null` (정리 작업).
 
+**함수 쪽 글자·링크 검사 `[Y-2 구현]`** (`rpc_write` 의 `app.check_text`·`app.trim_text`·`app.check_maps_url`. 위 CHECK 는 마지막 방어선이고, 상태 코드 `invalid` 는 이 검사가 만든다. 장소·일정·회차의 모든 글 필드에 같은 규칙):
+- **다듬기:** `app.trim_text` 가 앞뒤의 ASCII 공백(`[[:space:]]`)과 U+00A0(줄 바꿈 없는 공백)·U+3000(전각 공백)을 지운다. 그 밖의 유니코드 공백 문자는 다듬지 않는다(아래 "보이는 글자" 판정도 같은 집합).
+- **거절하는 문자:** C1 제어 문자(U+0080–009F), 서식·방향·폭 0 문자 U+00AD, U+061C, U+180E, U+200B–200F, U+2028–202E, U+2060–206F, U+FEFF, U+FFF9–FFFB — 글을 다르게 보이게 꾸미는 데 쓰인다. 한 줄 필드(이름·제목·장소)는 모든 제어 문자, 여러 줄 필드(설명·본문)는 탭(U+0009)·줄 바꿈(U+000A) **외의** 제어 문자(U+0001–0008, 000B–001F, 007F)를 거절한다 — 그래서 **CR 단독(그리고 CRLF)도 거절**된다. 클라이언트는 줄 바꿈을 LF 로 보내야 한다.
+- **보이는 글자:** 최소 길이가 1 이상인 필드는 공백(위 집합)이 아닌 글자가 하나 있어야 한다.
+- **링크:** 위 허용 목록 정규식에 더해, 점 경로 조각(`/./`, `/../`, 끝의 `/.`·`/..`, `%2e`·`%2f` 로 쓴 것 포함, 대소문자 무시)과 역슬래시·공백 문자가 있으면 거절한다(`https://www.google.com/maps/../url?q=…` 같은 우회 — `tests/e2e-backend/security.spec.ts`).
+
 ### 4.2 항목 상태 열 (장소·일정 공통)
 
 | 상태 (ME-02 표시) | 조건 |
@@ -261,6 +268,12 @@ create type app.item_kind      as enum ('place','event');
 | (없음) `kind`, `host` | — | Y-K5, Y-K1 — 종류·주최 폐기 |
 
 `app.event_occurrences` (Y-K7): PK `(event_id, occurs_on)`, `event_id references app.events on delete cascade`. `cancelled boolean not null default false`, 덮어쓰기 열(`title`, `start_time`, `end_time`, `place_text`, `body`)은 null 이면 시리즈 값. 같은 길이 CHECK. `check (end_time is null or start_time is null or end_time > start_time)`. `occurs_on` 이 실제 회차인지는 함수가 검사(요일·범위).
+
+**함수 쪽 날짜·시각 검사 `[Y-2 구현]`** (`app.check_event`, `app.check_time`, 생성·수정 함수):
+- `start_date ≤ 도쿄 오늘 + 365` (생성·수정 모두, 넘으면 `field: start_date`). 생성은 여기에 `start_date ≥ 도쿄 오늘`.
+- 시각은 **분 단위**(초 = 0)이고 **24:00 미만**(`app.check_time` — `.ics` 에는 24:00 이 없다). 회차 덮어쓰기 시각도 같은 검사.
+- 생성: 오늘 날짜라도 **끝 시각이 이미 지난 칸**(`(start_date + end_time) at time zone 'Asia/Tokyo' < now()`)은 `invalid` (`field: time`).
+- 수정(`update_event`): 시리즈 시각이 바뀌어 어떤 회차의 덮어쓴 시각이 시작 ≥ 끝이 되면, 그 회차의 `start_time`·`end_time` 을 null 로 되돌린다(시리즈 시각을 따름). 회차 행의 `check (end_time > start_time)` 위반 예외를 막고, 회차의 취소·글 덮어쓰기는 유지한다.
 
 ### 4.4 소유 (`app.place_owners`, `app.event_owners`)
 
@@ -320,14 +333,19 @@ create type app.item_kind      as enum ('place','event');
 
 1. 마지막 마이그레이션(`grants`)에서 `public`·`app` 의 모든 객체에 대해 `anon`, `authenticated` 권한을 **먼저 전부 회수**하고 아래 표만 다시 준다. Supabase 의 기본 노출 정책(2026-05-30 이후 새 프로젝트는 자동 노출 없음 — tech-stack-v2 §5.2)이 바뀌어도 결과가 같다.
 2. `alter default privileges in schema public, app revoke all … from anon, authenticated` (이후 객체 차단).
-2a. **`PUBLIC` 의 EXECUTE 를 회수한다 `[검토 #2]`.** Postgres 는 새 함수의 EXECUTE 를 기본으로 `PUBLIC` 에 주고, Supabase 는 `postgres`·`supabase_admin` 의 기본 권한도 둔다. `anon`·`authenticated` 만 회수하면 둘 다 `PUBLIC` 의 구성원이라 **모든 함수(쓰기 RPC, `ops_health` 포함)를 여전히 부를 수 있다**. 첫 판의 이 결함을 다음으로 고친다:
+2a. **`PUBLIC` 의 EXECUTE 를 회수한다 `[검토 #2]`.** Postgres 는 새 함수의 EXECUTE 를 기본으로 `PUBLIC` 에 주고, Supabase 는 `postgres`·`supabase_admin` 의 기본 권한도 둔다. `anon`·`authenticated` 만 회수하면 둘 다 `PUBLIC` 의 구성원이라 **모든 함수(쓰기 RPC, `ops_health` 포함)를 여전히 부를 수 있다**. 첫 판의 이 결함을 다음으로 고친다.
+   `[Y-2 구현]` **스키마 단위 `alter default privileges … in schema … revoke execute … from public` 은 아무 일도 하지 않는다** — 스키마 단위 기본 권한은 전역 기본 권한에 **더하기만** 하고, `PUBLIC` 의 함수 EXECUTE 는 전역 기본값(내장)에서 온다. 그래서 첫 안의 SQL 을 아래처럼 바꿨다(`20261013000190_grants.sql`):
    ```sql
-   revoke execute on all functions in schema public, app from public;
-   alter default privileges for role postgres in schema public, app revoke execute on functions from public;
-   alter default privileges for role supabase_admin in schema public, app revoke execute on functions from public;  -- 이 역할로 ALTER 할 수 있는지 Y-2 확인
+   revoke execute on all functions in schema public, app from public, anon, authenticated, service_role;
+   alter default privileges in schema public, app revoke execute on functions from public, anon, authenticated, service_role;
+   -- PUBLIC 은 전역으로, 함수를 만드는 역할에 대해
+   alter default privileges for role postgres revoke execute on functions from public;
+   -- supabase_admin: 역할이 있고 권한이 될 때만(do 블록, insufficient_privilege 면 notice 후 계속)
+   alter default privileges for role supabase_admin revoke execute on functions from public;
+   alter default privileges for role supabase_admin in schema public, app revoke execute on functions from anon, authenticated;
    -- 그 뒤 §5.2 표대로 anon / authenticated / service_role 에 명시 GRANT
    ```
-   검사(§8 ③④⑨)는 `has_function_privilege(역할, oid, 'EXECUTE')` 로 **`public`·`anon`·`authenticated` 세 역할 모두**에 대해 한다(`proacl` 문자열 검사로는 PUBLIC 상속을 놓친다).
+   `supabase_admin` 에 대한 ALTER 가 클라우드에서 허용되는지는 아직 모른다 — 실패해도 마이그레이션은 계속되고, 결과는 `checks` ③④⑨·**⑨b**(`postgres` 의 전역 기본 ACL 행이 있고 `PUBLIC` EXECUTE 가 없음)가 효과로 검증한다. 단 ⑨ 는 전역(스키마 없음) 기본 ACL 을 `postgres` 것만 보므로, `supabase_admin` 의 ALTER 가 실패해 그 역할의 전역 `PUBLIC` EXECUTE 가 남아도 마이그레이션은 통과한다 — 이미 있는 함수는 ③④ 가 잡지만, 나중에 `supabase_admin` 이 만드는 함수는 다음 마이그레이션의 ③④ 까지 열려 있다(OQ-E10). 검사(§8 ③④⑨)는 `has_function_privilege(역할, oid, 'EXECUTE')` 로 **`public`·`anon`·`authenticated` 세 역할 모두**에 대해 한다(`proacl` 문자열 검사로는 PUBLIC 상속을 놓친다).
 3. **`app` 의 모든 테이블은 RLS 활성 + 정책 0개**. GRANT 도 0 이라 이중으로 막힌다. RLS 는 GRANT 가 실수로 생겨도 0행을 돌려주게 하는 두 번째 벽이다.
 4. 읽기는 `public` 뷰, 쓰기는 `public` 정의자 함수. 뷰는 소유자 권한으로 실행되는 **정의자 뷰**(`security_invoker = false`, 의도적 — Supabase 보안 점검기 경고에 주석). 뷰는 사용자 정의 함수를 부르지 않는다(뷰 안 함수는 조회자 권한으로 EXECUTE 검사 — erd.md §6.3 교훈. 오늘 날짜는 `(now() at time zone 'Asia/Tokyo')::date` 로 내장 함수만).
 5. `public` 스키마의 `CREATE` 를 `public` 역할에서 회수(T-23).
@@ -344,10 +362,11 @@ create type app.item_kind      as enum ('place','event');
 | `public.data_version()` | EXECUTE | EXECUTE | — | — | `stable`, 정의자, bigint 하나. **GET 으로 부른다**(`rpc('data_version', {}, {get:true})`) — IP 쓰기 한도에 세지 않게 `[검토 #1]` |
 | 쓰기 RPC (§7.1), `submit_report` | — | EXECUTE | — | — | 익명 사용자도 `authenticated` |
 | `public.my_items()` | — | EXECUTE | — | — | **`stable`, GET** `[검토 #1]`. 계정 행을 만들지 않는다(`require_writer` 를 부르지 않고 `auth.uid()` 만) |
+| `public.my_place(p_id)`, `public.my_event(p_id)` `[Y-2 구현]` | — | EXECUTE | — | — | **`stable`, GET, 정의자.** 숨겨진 내 항목을 수정 폼에 채우기 위한 읽기(Y-E1) — 공개 뷰에는 숨김 항목이 없다. 소유자(`auth.uid()`)의 **삭제되지 않은** 항목만, 숨김 상태여도 돌려준다. 남의 것·없음·삭제됨은 모두 null(구별 없음, 기록 없음). 계정 행을 만들지 않는다 |
 | 관리 RPC `admin_*` (§7.3) | — | EXECUTE | — | — | 함수 첫 줄 `perform app.require_admin()` — 실패하면 **예외**(V-6) |
 | `public.ops_health()` | — | — | EXECUTE | — | 감시 워크플로 전용 (Y-S10) |
 | `app.require_writer()`, `app.require_admin()`, `app.pref_of()`, `app.ip_key()`, `app.evaluate_item()`, `app.setting()` | — | — | — | — | **헬퍼 EXECUTE 부여 안 함.** 정책·뷰가 부르지 않고 정의자 함수 안에서만 호출되므로(소유자 권한) 필요 없다 — erd.md 와 달리 RLS 정책이 없어서 가능 |
-| `app.db_pre_request()` | (필요 시) | (필요 시) | — | — | `authenticator` 설정 `pgrst.db_pre_request` 로 호출. 요청 역할로 실행되므로 `anon`·`authenticated` EXECUTE 가 필요할 수 있다 — 클라우드에서 설정 가능 여부와 함께 Y-2 확인(OQ-E1). 필요하면 `checks` 의 허용 목록에 이 함수만 더한다 |
+| `app.db_pre_request()` | EXECUTE | EXECUTE | — | — | `authenticator` 설정 `pgrst.db_pre_request` 로 호출. 요청 역할로 실행되므로 `anon`·`authenticated` EXECUTE 가 필요하다. `[Y-2 구현]` 부여했고 `checks` ③④ 허용 목록에 이 함수만 더했다. 함수는 정의자(`ip_hits` 쓰기). 클라우드 동작 확인은 OQ-E1 |
 | `app.admin_invites`, `app.ip_tiers` | — | — | — | 활성, 정책 0 | `[검토 #4·#6]` SQL 로만 관리 |
 | 트리거 함수 | — | — | — | — | EXECUTE 불필요 |
 | `before-user-created` 훅 함수 | — | — | — | — | `supabase_auth_admin` 에만 EXECUTE (공식 훅 방식) |
@@ -396,7 +415,9 @@ revoke truncate, update, delete on app.mod_actions from public, anon, authentica
 
 **형식 오류도 상태로 돌려준다 `[검토 #7]`.** 첫 판은 형식 오류를 예외로 던졌는데, 예외는 같은 트랜잭션의 `ip_hits` 증가(`db_pre_request`)까지 되돌려 **형식 오류로 끝나는 요청은 IP 한도에 세지지 않았다** — 잘못된 입력을 무한히 보내는 공격이 한도를 피한다. 그래서 쓰기·신고 RPC 는 형식 오류를 `{status:'invalid', field:'<name>'}` 로 반환하고 `security_events('invalid_input')` 에 남긴다. 예외는 **예상하지 못한 오류**(DB CHECK 위반 등 — 함수 검사의 구멍)와 **관리 RPC 의 권한 실패**(§7.3, 실패 안전이 우선)에만 쓴다.
 
-**호출 방식 `[검토 #1]`.** 사용자 앱이 반복해 부르는 읽기 전용(`stable`) 함수 `data_version`, `my_items` 는 GET 으로 부른다. 관리 RPC 는 POST 지만 아래 쓰기 RPC 목록에 없어 IP 한도에 세지 않는다(관리자 1명 — D25, 콘솔은 별도 출처). `db_pre_request` 는 **쓰기 RPC 목록**(`create_*`, `update_*`, `delete_*`, `set_occurrence`, `clear_occurrence`, `submit_report`)의 경로일 때만 센다(`current_setting('request.path', true)` 와 방식으로 판단).
+**호출 방식 `[검토 #1]`.** 사용자 앱이 부르는 읽기 전용(`stable`) 함수 `data_version`, `my_items`, `my_place`, `my_event` 는 GET 으로 부른다.
+
+~~`db_pre_request` 는 **쓰기 RPC 목록**(`create_*`, `update_*`, …)의 경로일 때만 센다(`request.path` 와 방식으로 판단). 관리 RPC 는 POST 지만 목록에 없어 세지 않는다.~~ **`[Y-2 구현]` 경로 목록을 버렸다.** 리뷰에서 경로 비교를 피하는 길이 나왔다: 퍼센트 인코딩한 함수 이름(`/rpc/delete%5Fplace`, `/rpc/%64elete_place` — PostgREST 는 디코딩해 같은 함수를 부른다), `/rpc/graphql`(pg_graphql), 뷰에 대한 `PATCH`·`DELETE` 등. 그래서 이제 **메서드가 GET·HEAD·OPTIONS 가 아닌 모든 요청을 경로와 무관하게 센다**(`request.method` 만 본다). 읽기(뷰 GET, GET 으로 부르는 읽기 RPC, 폴링)는 여전히 세지 않으므로 `[검토 #1]` 의 목적은 유지된다. 결과적으로 **관리 RPC(POST)도 센다** — 관리자 1명의 사용량은 한도에 한참 못 미친다(D25). `pg_graphql` 은 `ops` 마이그레이션에서 제거한다(§8 16).
 
 ### 7.1 쓰기 (`authenticated`)
 
@@ -411,6 +432,8 @@ revoke truncate, update, delete on app.mod_actions from public, anon, authentica
 | `public.set_occurrence` | `(p_event_id bigint, p_occurs_on date, p_cancelled boolean, p_title text, p_start_time time, p_end_time time, p_place_text text, p_body text) → jsonb` | 소유 → 회차가 실제 날짜(요일·범위) → 그 회차가 끝나지 않았을 것 → upsert. 한도 `edit` | Y-K7 |
 | `public.clear_occurrence` | `(p_event_id bigint, p_occurs_on date) → jsonb` | 같은 검사 → 행 삭제(시리즈 값으로 복귀) | Y-K7 |
 | `public.my_items` | `() → table(kind app.item_kind, id bigint, title text, state text, created_on date, edited_on date, deleted_on date, last_date date)` | `stable`, GET. `auth.uid()` 소유분만, 계정 행을 만들지 않음. `state` ∈ `visible, hidden_review, deleted` `[검토 #1]` | Y-R8, ME-02 |
+| `public.my_place` `[Y-2 구현]` | `(p_id bigint) → jsonb` `{id, name, category, description, gmaps_url, lat, lng, pref, lang}` 또는 null | `language sql stable security definer`, GET(`?p_id=`). 소유자 + `deleted_at is null` 만, **숨김이어도** 반환. 그 외 null | Y-E1 |
+| `public.my_event` `[Y-2 구현]` | `(p_id bigint) → jsonb` `{id, title, start_date, start_time, end_time, weekly_until, place_text, body, lang}` 또는 null | 같음. 회차 덮어쓰기는 포함하지 않는다 | Y-E1 |
 
 ### 7.2 신고 (`authenticated`)
 
@@ -492,7 +515,7 @@ end $$;
 | `app.bind_admin(p_user_id uuid, p_email citext) → void` | `postgres` 만 (SQL 편집기) | §4.5 연결 탈취 방지 검사 후 `admins` 행 추가, 초대 `used_at` `[재검토 #2]` |
 | `public.ops_health() → jsonb` | service_role | 최근 1시간·24시간: `security_events` 종류별 수, 익명 생성 수, 자동 숨김 수, 관리 조치 수, 미처리 신고 24시간 초과 수, 한도에 닿은 IP 창 수, DB 크기 (Y-S10). **숫자만** 돌려준다(IP·계정·항목 내용 없음) — 감시 출력이 노출돼도 방어 상태 외에는 드러나지 않게 |
 | `app.require_writer() → uuid` | 없음 | `auth.uid()` null → `forbidden`; `accounts` 없으면 생성(Y-A1) — **생성 직전에 전역 잠금(`pg_advisory_xact_lock(hashtext('accounts:create'))`) 아래 최근 1시간 `accounts.created_at` 수를 세어 `settings('accounts_per_hour')`(기본 200) 이상이면 생성하지 않고 `security_events('signup_throttled')` + `rate_limited`** `[재검토 #1]`; 정지면 `suspended_write` 기록 후 `suspended`; `last_active_at` 갱신 |
-| `app.db_pre_request() → void` | (OQ-E1) | **쓰기 RPC 경로일 때만**(위 목록) `[검토 #1]`: 신뢰 헤더 값(`xff_trusted_hops`)에서 IP 를 얻고 `[검토 #7]`, `ip_tiers` 범위면 `dorm` 한도, 아니면 기본 한도 `[검토 #6]`. 키(IPv6 /64)로 `ip_hits` 증가, 초과면 `raise sqlstate 'PT429'`(PostgREST 상태 코드 지정 방식 — Y-2 확인). 이 증가는 뒤따르는 RPC 가 예외 없이 끝나야 남는다 — 그래서 쓰기 RPC 는 형식 오류도 상태로 반환한다(§7 머리말) |
+| `app.db_pre_request() → void` | anon, authenticated (정의자) | ~~쓰기 RPC 경로일 때만~~ **`[Y-2 구현]` 메서드가 GET·HEAD·OPTIONS 가 아닌 모든 요청**(경로 무관, §7 머리말) `[검토 #1]`: `x-forwarded-for` 를 쉼표로 나눠 **오른쪽에서 `xff_trusted_hops` 번째**(최소 1, 기본 1) 값을 `app.client_ip` 로 해석 `[검토 #7]`. `app.client_ip` 는 `v4:포트`, `[v6]:포트`, IPv4 대응 IPv6(`::ffff:a.b.c.d` → IPv4)를 받아 호스트 주소로 정규화하고, 해석할 수 없으면 null → 키 `sha256('unknown')` 하나에 기본 한도(해석 못 하는 요청끼리 한 통을 공유). `ip_tiers` 의 `dorm` 범위면 `dorm` 한도, 아니면 기본 한도 `[검토 #6]`. 키(`app.ip_key`, IPv6 /64)로 5분 창 `ip_hits` 증가, 초과면 `raise sqlstate 'PT429'`(로컬 PostgREST 13 에서 HTTP 429 확인). 이 증가는 뒤따르는 요청이 예외 없이 끝나야 남는다 — 그래서 쓰기 RPC 는 형식 오류도 상태로 반환한다(§7 머리말). **남는 구멍 `[Y-2 구현]`:** PostgREST 가 인자를 함수 타입으로 바꾸지 못하는 요청(잘못된 enum·uuid 등)은 함수가 돌기 전에 실패해 이 증가가 롤백된다. 그런 요청은 아무것도 바꾸지 않고 아무것도 기록하지 않으므로 비용은 요청 자체뿐이다 — G-55 는 **타입이 맞는 요청에 대해서만** 성립한다 |
 | `app.hook_before_user_created(event jsonb) → jsonb` | supabase_auth_admin | 익명: 최근 1시간 익명 생성 수 < `anon_signups_per_hour` 아니면 거절. **이 훅은 보조다** — 익명 가입에 훅이 도는지 미확인(OQ-E5)이므로 전역 상한의 보장은 `require_writer` 의 계정 생성 상한이 맡는다(계정은 첫 쓰기 때만 생기므로 Auth 와 무관하게 성립) `[재검토 #1]`. 비익명: 이메일이 **`admin_invites`** 에 있어야 함 `[검토 #4]`. 이 훅은 가입 경로만 막는다 — 익명 → 이메일 연결(`updateUser`)은 훅을 거치지 않으므로 **권한 판단에 쓰지 않는다**. 익명 가입에도 훅이 도는지·페이로드 형식은 **미확인**(OQ-E5) — 돌지 않으면 전역 한도는 감시 경보 + CAPTCHA 런북으로만 대응 |
 
 ---
@@ -518,11 +541,11 @@ end $$;
 | 13 | `rpc_write` | §7.1 | Y-M\*, Y-K\* |
 | 14 | `rpc_report` | §7.2 | Y-R\* |
 | 15 | `rpc_admin` | §7.3 | Y-R4~R7 |
-| 16 | `ops` | `data_version()`, `ops_health()`, `db_pre_request` + `alter role authenticator set pgrst.db_pre_request` (Supabase 클라우드에서 허용되는지 확인 — OQ-E1) | Y-S7, Y-S10 |
+| 16 | `ops` | `data_version()`, `ops_health()`, `app.client_ip`, `db_pre_request` + `alter role authenticator set pgrst.db_pre_request to 'app.db_pre_request'`(`authenticator` 역할이 있을 때만) + `notify pgrst, 'reload config'` (Supabase 클라우드에서 허용되는지 확인 — OQ-E1). `[Y-2 구현]` **`drop extension if exists pg_graphql cascade`** — GraphQL 은 쓰지 않고, 클라우드에서는 같은 함수로 가는 두 번째 문(`/rpc/graphql`)이 된다 | Y-S7, Y-S10 |
 | 17 | `auth_hook` | `hook_before_user_created` + EXECUTE (대시보드에서 훅 등록) | Y-S3, Y-S7 |
 | 18 | `jobs` | §6 의 cron 일정 | Y-P5 |
-| 19 | `grants` | **`PUBLIC` 포함** 전부 회수(§5.1 2a) → §5.2 표대로 부여 → default privileges(`postgres`·`supabase_admin` 의 `PUBLIC` EXECUTE 포함) `[검토 #2]` | V-1, V-9, Y-S1 |
-| 20 | `checks` | 적용 후 점검, 실패 시 예외로 마이그레이션 실패: ① `app` 테이블 전부 RLS 활성·정책 0 ② `public`·`anon`·`authenticated` 의 `app` 테이블 권한 0 (`has_table_privilege`) ③ `public`·`anon` 이 `has_function_privilege(…,'EXECUTE')` 인 `public`·`app` 함수 = {`data_version`} (+`db_pre_request` 필요 시) ④ `authenticated` 의 같은 검사 = 허용 목록과 정확히 일치 ⑤ 모든 정의자 함수의 `proconfig` 에 `search_path=` ⑥ 정의자 함수 본문(`prosrc`)에 `execute` 없음 ⑦ `mod_actions_guard` 의 `prosecdef = false` ⑧ 공개 뷰의 열 목록이 고정 목록과 일치 ⑨ `pg_default_acl` 에 `anon`·`authenticated`·**`PUBLIC`(grantee 0)** 의 EXECUTE 없음 ⑩ `service_role` EXECUTE 함수 = {`ops_health`} ⑪ 이름이 `admin_%` 인 모든 `public` 함수(`admin_whoami` 제외)의 본문 첫 문장이 `perform app.require_admin()` `[검토 #2·#3]` ⑫ 확장(`pg_extension.extnamespace`)이 `public` 에 없음 — 특히 `postgis` `[재검토 #3]` ⑬ `app.bind_admin` 의 EXECUTE 는 `postgres` 외 없음 `[재검토 #2]` | V-1~V-9 |
+| 19 | `grants` | **`PUBLIC` 포함** 전부 회수(§5.1 2a) → default privileges → §5.2 표대로 부여 `[검토 #2]`. `[Y-2 구현]` `PUBLIC` 의 함수 EXECUTE 기본값은 **전역으로** 회수: `alter default privileges for role postgres revoke execute on functions from public`, `supabase_admin` 은 역할이 있고 권한이 될 때만(아니면 notice). 스키마 단위 회수만으로는 효과가 없다(§5.1 2a) | V-1, V-9, Y-S1 |
+| 20 | `checks` | 적용 후 점검, 실패 시 예외로 마이그레이션 실패: ① `app` 테이블 전부 RLS 활성·정책 0 ② `public`·`anon`·`authenticated` 의 `app` 테이블 권한 0 (`has_table_privilege`) ③ `public`·`anon` 이 `has_function_privilege(…,'EXECUTE')` 인 `public`·`app` 함수 = {`data_version`, `app.db_pre_request`} `[Y-2 구현]` ④ `authenticated` 의 같은 검사 = 허용 목록과 정확히 일치(`[Y-2 구현]` V-9 의 목록 — `my_place`·`my_event`·`app.db_pre_request` 포함) ⑤ 모든 정의자 함수의 `proconfig` 에 `search_path=` ⑥ 정의자 함수 본문(`prosrc`)에 `execute` 없음 ⑦ `mod_actions_guard` 의 `prosecdef = false` ⑧ 공개 뷰의 열 목록이 고정 목록과 일치 ⑨ `pg_default_acl` 에 `anon`·`authenticated`·**`PUBLIC`(grantee 0)** 의 EXECUTE 없음(`public`·`app` 스키마 행 + `postgres` 의 전역 행) ⑨b `[Y-2 구현]` `postgres` 의 **전역** 함수 기본 ACL 행이 존재하고 `PUBLIC` EXECUTE 가 없음 — 행이 없으면 내장 기본값(`PUBLIC` EXECUTE)이 살아 있다는 뜻 ⑩ `service_role` EXECUTE 함수 = {`ops_health`} ⑪ 이름이 `admin_%` 인 모든 `public` 함수(`admin_whoami` 제외)의 본문 첫 문장이 `perform app.require_admin()` `[검토 #2·#3]` ⑫ 확장(`pg_extension.extnamespace`)이 `public` 에 없음 — 특히 `postgis` `[재검토 #3]` ⑬ `app.bind_admin` 의 EXECUTE 는 `postgres` 외 없음 `[재검토 #2]` | V-1~V-9 |
 | seed | `supabase/seed/fixtures.sql` | 로컬·CI 전용: 테스트 계정(익명 A·B·C·D, 관리자 1 — TOTP 비밀 고정), `tests/fixtures` 와 같은 장소·일정. **운영에 적용하지 않는다**(초기 데이터 0, Y-M4) | PRD §7 |
 
 **대시보드 설정(마이그레이션 밖, 점검표):** 익명 로그인 ON, **이메일 공개 가입 OFF**(관리자는 대시보드·Admin API 로만 생성 `[검토 #4]`), TOTP ON, 세션 비활동·최대 수명(Pro 기능으로 보임 — 무료면 §7.3 의 DB 검사만), CAPTCHA 스위치(기본 OFF, Turnstile 키 미리 등록 — 사이트 키는 사용자 앱·콘솔 **빌드에 미리 포함**해야 재배포 없이 켤 수 있다, 켜면 **관리자 비밀번호 로그인에도 적용**된다 `[검토 #5]`), 익명 로그인 IP 한도, Data API 노출 스키마 `public` 만, 레거시 키 비활성화, 훅 등록, 프로젝트 멤버.
@@ -545,7 +568,7 @@ end $$;
 | G-12 | `anon` 이 쓰기 RPC | 권한 오류 |
 | G-13 | 같은 `client_token` 으로 `create_place` 두 번 | 같은 id, 행 1개 (Y-C4) |
 | G-14 | 11번째 장소, 31번째 수정, 21번째 신고 (24시간) | `rate_limited` (Y-A3) |
-| G-15 | 비정상 입력 세트: 길이 0/61/501, 제어 문자, 범위 밖 좌표, 바다 한가운데, `javascript:`·`http:`·`https://evil.com/maps`·`https://google.com.evil.com/maps`·`https://user@google.com/maps`·`https://goo.gl/maps/x` 링크, 끝 ≤ 시작, 과거 날짜, 26회 초과 반복, 요일이 다른 회차 | 전부 `{status:'invalid', field}` + `security_events('invalid_input')` — **예외가 아님** (Y-S5) `[검토 #7]` |
+| G-15 | 비정상 입력 세트: 길이 0/61/501, 제어 문자, 범위 밖 좌표, 바다 한가운데, `javascript:`·`http:`·`https://evil.com/maps`·`https://google.com.evil.com/maps`·`https://user@google.com/maps`·`https://goo.gl/maps/x` 링크, 끝 ≤ 시작, 과거 날짜, 26회 초과 반복, 요일이 다른 회차. `[Y-2 구현]` 추가: 방향·폭 0·서식 문자(예 U+202E, U+200B, U+FEFF, U+00AD), C1 제어 문자, 여러 줄 필드의 CR 단독, 공백·U+3000 만 있는 이름, 점 경로 조각 링크(`…/maps/../url?q=…`, `%2e%2e`), 역슬래시·공백이 든 링크, `도쿄 오늘 + 366` 시작일, 초가 있는 시각·`24:00`, 오늘 이미 끝난 칸의 생성 | 전부 `{status:'invalid', field}` + `security_events('invalid_input')` — **예외가 아님** (Y-S5) `[검토 #7]` |
 | G-16 | SQL 메타문자 문자열(`'; drop table …`)을 이름에 | 그대로 저장되고 다른 영향 없음 |
 | G-20 | 공개 뷰 열 목록 | 고정 목록과 일치 (소유자·토큰·숨김 열 없음) |
 | G-21 | `my_items` 를 B 로 | A 의 항목 없음 |
@@ -571,10 +594,10 @@ end $$;
 | G-42 | 가드 트리거 `prosecdef = false` | 통과 |
 | G-50 | 정리 작업: 31일 지난 삭제 항목, 1년 지난 일정·기록, 1년 비활동 계정(장소는 남고 소유 행만 사라짐 — Y-P5) | 통과 |
 | G-51 | 훅: 시간당 익명 생성 한도 + 1 | 거절 + `signup_throttled` |
-| G-52 | `db_pre_request` 단위 시험(요청 GUC 를 흉내 내 호출): 쓰기 RPC 경로는 증가, **`data_version`·`my_items` GET 과 읽기 뷰는 증가 없음**, 기본 한도 61번째 `PT429`, `ip_tiers` 범위의 주소는 600까지 통과 `[검토 #1·#6·#14]` | 통과 |
+| G-52 | `db_pre_request` 단위 시험(요청 GUC 를 흉내 내 호출): ~~쓰기 RPC 경로는 증가~~ **GET·HEAD·OPTIONS 외 모든 메서드는 경로와 무관하게 증가** — 퍼센트 인코딩한 이름(`/rpc/update%5Fplace`), 뷰에 대한 `PATCH` 포함 `[Y-2 구현]`. **`data_version`·`my_items` GET 과 읽기 뷰는 증가 없음**, 기본 한도 61번째 `PT429`, `ip_tiers` 범위의 주소는 600까지 통과 `[검토 #1·#6·#14]`. `app.client_ip`: `v4:포트`, `[v6]:포트`, `::ffff:` IPv4 대응 주소, 해석 불가 → null. HTTP 층(`tests/e2e-backend/security.spec.ts`)에서도 `%64elete_place`·`delete%5Fplace` 가 같은 창에 세져 한도 초과 시 429 | 통과 |
 | G-53 | IPv6 `2001:db8:1:2::a` 와 `2001:db8:1:2::b` 가 같은 키, `2001:db8:1:3::a` 는 다른 키 (/64) | 통과 |
 | G-54 | `x-forwarded-for: 1.2.3.4, <프록시가 붙인 값>` 에서 키가 프록시가 붙인 값으로 계산됨 (왼쪽 위조 값 무시) | 통과 |
-| G-55 | 형식 오류로 끝난 쓰기 요청도 `ip_hits` 에 남음 | 통과 `[검토 #7]` |
+| G-55 | 형식 오류로 끝난 쓰기 요청도 `ip_hits` 에 남음. `[Y-2 구현]` **타입이 맞는 요청에 한해서다** — PostgREST 가 인자를 변환하지 못하는 요청(잘못된 enum·uuid)은 함수 실행 전에 실패해 카운트가 롤백된다. 그런 요청은 아무것도 바꾸지 않고 기록도 남기지 않는다(§7.4 `db_pre_request` 의 남는 구멍) | 통과 `[검토 #7]` |
 | G-56 | 정리 후 48시간 지난 `security_events.ip_key` 가 null | 통과 `[검토 #8]` |
 | G-60 | (통합, 병렬 연결 3개) B·C·D 가 동시에 신고 | 숨김 1회, `auto_hide` 기록 1행 `[검토 #14]` |
 
@@ -586,12 +609,13 @@ HTTP 층 같은 케이스(PostgREST 경유)는 `tests/security/` 의 Playwright 
 
 | # | 질문 | 관련 |
 |---|---|---|
-| OQ-E1 | Supabase 클라우드에서 `pgrst.db_pre_request` 설정이 허용되는지, 함수의 실행 역할·EXECUTE 필요 여부, 상태 코드 지정(`PT429`) 동작 | Y-S7 |
+| OQ-E1 | Supabase 클라우드에서 `pgrst.db_pre_request` 설정이 허용되는지, 함수의 실행 역할·EXECUTE 필요 여부, 상태 코드 지정(`PT429`) 동작. **`[Y-2 구현]` 로컬 PostgREST v13.0.8 에서는 답함:** 마이그레이션의 `alter role authenticator set pgrst.db_pre_request` + `notify pgrst, 'reload config'` 로 켜지고, 요청 역할(`anon`·`authenticated`)의 EXECUTE 가 필요하며, `PT429` 는 HTTP 429. **클라우드에서는 아직 미확인** — 실제 프로젝트에서 61번째 쓰기가 429 인지 본다(RFC-0003 §17.6a PL-6) | Y-S7 |
 | OQ-E2 | 정지된 계정이 **자기 항목 삭제**는 할 수 있게 할지 (개인정보를 스스로 지우는 길) | Y-R7, Y-E3 — 제안: 허용 |
 | OQ-E3 | 신고 사유 "기타" 에 자유 서술을 받을지 — 받지 않는 것을 제안(최소화) | Y-R1, Y-S12 |
 | OQ-E4 | 좌표 판정 여유 10 km 가 적절한지 샘플(작은 섬·항구)로 확인 | Y-M6 |
-| OQ-E5 | **미확인(보안 검토도 확인 못 함):** `before-user-created` 훅이 익명 가입·Admin API 생성에도 호출되는지, 페이로드에 `is_anonymous` 가 있는지. 안 되면 전역 한도는 감시 경보 + CAPTCHA 런북으로만 | Y-S7, Y-S3 |
+| OQ-E5 | **미확인(보안 검토도 확인 못 함):** `before-user-created` 훅이 익명 가입·Admin API 생성에도 호출되는지, 페이로드에 `is_anonymous` 가 있는지. 안 되면 전역 한도는 감시 경보 + CAPTCHA 런북으로만. **`[Y-2 구현]` 일부 답함:** 로컬 스택(Supabase Auth v2.197.0, 훅 `pg-functions://postgres/app/hook_before_user_created`)에서는 익명 가입에도 훅이 호출된다(Y-2 구현 보고. 자동 시험은 이메일 가입 거절 403 만 고정하고 있다). 클라우드 프로젝트에서의 호출·Admin API 경로는 여전히 확인 필요(RFC-0003 §17.6a PL-6) | Y-S7, Y-S3 |
 | OQ-E6 | 백업에 `auth.users`·`auth.identities`·`auth.mfa_factors` 를 넣을지 — 넣지 않으면 복구 후 모든 익명 사용자가 자기 항목을 잃는다. **넣되 토큰·세션 표는 뺀다**(RFC-0003 §17.5 `[검토 #9]`). `mfa_factors` 에는 관리자 TOTP 비밀이 있으므로 넣지 않고 복구 후 TOTP 재등록하는 안도 있다 — 제안: 빼고 재등록 | Y-S9 |
-| OQ-E7 | **남는 공백 두 가지 `[재검토 #5]`:** (1) 관리 RPC 는 실패 때 예외를 던지므로 같은 트랜잭션의 `db_pre_request` 카운트도 롤백된다 — 게다가 관리 RPC 는 쓰기 RPC 목록이 아니라 애초에 세지 않는다. 즉 **관리 RPC 직접 호출은 IP 한도 밖**이다(무차별 대입은 Auth 의 로그인 한도·TOTP 가 막는다는 전제). (2) 콘솔을 거치지 않은 `admin_*` 직접 호출의 거절(42501)은 DB 에 남지 않고 **Supabase API 로그에만** 남는다. Y-2 에서 확인: 감시 워크플로가 그 로그를 읽을 수 있는지(Management API·Log Explorer, 무료 플랜 보관 기간). 못 읽으면 이 두 신호는 감시 대상에서 빠진다는 것을 수용된 잔여 위험으로 기록 | Y-S7, Y-S10 |
+| OQ-E7 | **남는 공백 두 가지 `[재검토 #5]`:** (1) 관리 RPC 는 실패 때 예외를 던지므로 같은 트랜잭션의 `db_pre_request` 카운트도 롤백된다(`[Y-2 구현]` 이제 POST 인 관리 RPC 도 세지만, 권한 실패로 끝난 호출은 롤백으로 남지 않는다). 즉 **실패하는 관리 RPC 직접 호출은 사실상 IP 한도 밖**이다(무차별 대입은 Auth 의 로그인 한도·TOTP 가 막는다는 전제). (2) 콘솔을 거치지 않은 `admin_*` 직접 호출의 거절(42501)은 DB 에 남지 않고 **Supabase API 로그에만** 남는다. Y-2 에서 확인: 감시 워크플로가 그 로그를 읽을 수 있는지(Management API·Log Explorer, 무료 플랜 보관 기간). 못 읽으면 이 두 신호는 감시 대상에서 빠진다는 것을 수용된 잔여 위험으로 기록 | Y-S7, Y-S10 |
 | OQ-E9 | 익명 사용자의 이메일 연결 요청(`updateUser({email})`)도 프로젝트 SMTP 로 확인 메일을 보낸다. 기본 발신은 시간당 몇 통뿐이라 이것으로 **관리자 비밀번호 재설정 메일이 막힐 수 있다** `[재검토 #4]` — 사용자 SMTP 를 둘지, 런북에 위험과 우회(책임자가 대시보드에서 비밀번호 직접 재설정)를 적을지. 제안: 런북에 기록 + 관리자가 2명 이상이 되면 사용자 SMTP. **D25(관리자 1명)·D26(SMTP 는 출시 전 항목)** — 런북 R-6 으로 운영, 사용자 SMTP 여부는 RFC-0003 §17.6a PL-2 에서 결정 | Y-S3 |
-| OQ-E8 | `xff_trusted_hops` 실측값과, 기숙사 공인 IP/CIDR (`ip_tiers` 에 넣을 값) | Y-S7 |
+| OQ-E8 | `xff_trusted_hops` 실측값과, 기숙사 공인 IP/CIDR (`ip_tiers` 에 넣을 값). `[Y-2 구현]` 로컬 스택은 게이트웨이 한 단(값 1)이라 실측이 되지 않는다 — 클라우드에서 측정(RFC-0003 §17.6a PL-6) | Y-S7 |
+| OQ-E10 | `[Y-2 구현]` 클라우드에서 `alter default privileges for role supabase_admin …` 가 허용되는지. 안 되면(마이그레이션은 notice 후 계속) `supabase_admin` 이 나중에 만드는 `public` 함수에 `PUBLIC` EXECUTE 가 붙을 수 있고 `checks` ⑨ 는 그 역할의 전역 행을 보지 않는다(§5.1 2a). 첫 적용 로그의 notice 유무와 `pg_default_acl` 을 확인해 기록 | Y-S1 |

@@ -45,6 +45,7 @@ export function WeekForm({ id, date }: { id: number; date: string }) {
     );
   }
   const run = async (p: Promise<{ status: string }>) => {
+    if (busy) return;
     setBusy(true);
     const r = await p;
     setBusy(false);

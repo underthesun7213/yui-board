@@ -6,6 +6,7 @@ interface Turnstile {
     opts: { sitekey: string; callback(token: string): void; 'expired-callback'(): void },
   ): string;
   remove(id: string): void;
+  reset(id: string): void;
 }
 declare global {
   interface Window {
@@ -40,5 +41,5 @@ export async function renderCaptcha(
     callback: (tok) => onToken(tok),
     'expired-callback': () => onToken(null),
   });
-  return () => t.remove(id);
+  return { remove: () => t.remove(id), reset: () => t.reset(id) };
 }
