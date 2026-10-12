@@ -1,0 +1,8 @@
+dist
+node_modules
+vendor
+docs
+public/data
+*.md
+schema.sql
+legacy

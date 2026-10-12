@@ -22,3 +22,6 @@ out/
 # supabase local state
 .branches/
 .temp/
+test-results/
+playwright-report/
+.vite/

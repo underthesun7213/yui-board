@@ -1,81 +1,81 @@
-# YUI
+# YUNABI
 
 An app for residents of **GLOBAL COMMONS 結 -YUI-**, the international residence
-hall on Kansai Gaidai's Gotenyama campus (about 650 residents, Japanese students
-and exchange students sharing units).
+hall on Kansai Gaidai's Gotenyama campus: everyday-Japanese comics and a
+branching conversation game, a map of everyday places, and a calendar.
 
-> The app name is a placeholder until a new one is chosen. Change `appName` in `T`
-> (`index.html`), the `<title>`, and `manifest.webmanifest`.
+Scope: [`docs/02-requirements/PRD-YUNABI.md`](docs/02-requirements/PRD-YUNABI.md).
+Design: [RFC-0003](docs/architecture/rfc/0003-yunabi-v2.md),
+[ADR-0023](docs/adr/0023-frontend-framework-react.md) (React) and
+[ADR-0024](docs/adr/0024-react-switch-review-fixes.md).
 
-## Current state: the MLP
+## Where it is
 
-A mobile-first PWA with **no backend and no accounts**. Scope and reasoning are in
-[`docs/02-requirements/PRD-MLP.md`](docs/02-requirements/PRD-MLP.md).
+**Y-1 (this build): the rewrite.** React 19 + Vite + TypeScript, with the v1.3
+features unchanged. Until the backend arrives (Y-2) the app reads the v1.3
+sample data from `tests/fixtures/` (fixture mode — no `VITE_SUPABASE_URL`).
+Places and events will be shared and registered by users from Y-2 on; there is
+no production deploy before then (D23).
 
 | Tab | What it holds |
 |---|---|
 | Home | Shortcuts to the three features, collection progress, next event |
-| Japanese | Seven comic episodes of everyday Japanese + a branching Osaka/Kyoto conversation game with collectible ending cards |
-| Map | **Near me** (default, uses the device location after a notice) or **All of Japan** (pick a prefecture on a boundary map or from a list). Curated places only |
-| Calendar | Month grid of dorm events, weekly series, export to your own calendar (.ics) |
+| Japanese | Seven comic episodes + a branching Osaka/Kyoto game with ending cards |
+| Map | **Near me** (always where the map starts; location only after a notice) or **All of Japan** (prefecture boundary map or list) |
+| Calendar | Month grid, weekly series with one-week changes and cancellations, `.ics` export |
 
-What the app remembers — ending cards, language, the location choice — is kept in
-this device's browser storage only (`yui.v1.*` keys). If storage is blocked the
-app still works and forgets on reload.
+The device remembers ending cards, language and the location choice under the
+same `yui.v1.*` keys as v1.3, so nothing is lost when the app updates.
 
-The comic panels and ending cards are placeholders: each carries a scene note to
-draw from (`s`), and an `img` field replaces the placeholder when artwork exists.
+## Running it
 
-## Adding data
+Node 22 or later.
 
-- **Places** — append to `PLACES` in `index.html`. Each needs `id`, `pref` (JIS
-  prefecture code, e.g. `"27"` Osaka), `cat`, `lat`, `lng` and a name in `ja`/`en`/`ko`;
-  description, `by` and Google `gid` are optional.
-- **Events** — append to `EVENTS`. Weekly events are written once with
-  `weekly.until`, and `over` replaces a single week's title or text.
+```
+npm install
+npm run dev          # http://localhost:5173
+npm run build        # typecheck, build to dist/, check bundle budgets
+npm run preview      # serve dist/
+```
 
-## Design decisions worth keeping
+## Checks
 
-- **Trilingual (en / ja / ko), English default.** Every UI string lives in `T`.
-- **Nothing leaves the device except map requests.** Location is only used on the
-  device; map tiles come from OpenStreetMap and reveal the area being viewed, which
-  the location notice says.
-- **No Google Maps API.** Place cards link out to Google Maps by `place_id`.
-- **Created once, kept alive.** The Leaflet map survives re-renders and language
-  changes; filters and selection patch it in place.
+```
+npm run lint         # ESLint, including the security rules (ADR-0016)
+npm run typecheck
+npm test             # unit tests + render check (every screen × language × state)
+npm run test:e2e     # Playwright on a production build, 375px
+```
+
+In a Claude cloud session run browser tests with
+`CHROMIUM_PATH=/opt/pw-browsers/chromium npm run test:e2e`.
+
+## Artwork
+
+Gray boxes stand where pictures go. Drop a file into `src/art/` with the name
+of its slot and rebuild — no code change:
+
+| Slot | File | Ratio |
+|---|---|---|
+| Comic cut | `src/art/lessons/l2/05.webp` = episode 2, cut 5 | 4:3 (1200×900) |
+| Game scene | `src/art/vn/osaka/03.webp` | 4:3 |
+| Ending card | `src/art/endings/e_osaka_best.webp` | 3:2 (1200×800) |
+
+`.png` and `.jpg` work too. A file whose name matches no slot fails the tests.
 
 ## Files
 
 ```
-index.html                       the app
-vendor/leaflet*/                 Leaflet 1.9.4 + markercluster 1.5.3 (BSD-2 / MIT)
-data/japan-prefectures.geojson   prefecture boundaries — Natural Earth, public domain, simplified
-manifest.webmanifest             PWA manifest (relative paths — works under a subpath)
-sw.js                            service worker; bump CACHE on every deploy
-icon-*.png                       app icons
-docs/                            planning documents (see docs/README.md)
-schema.sql                       backend design for the earlier board plan — on hold
+index.html               Vite entry (the meta CSP is added at build time)
+src/                     the app — see CLAUDE.md for the layout
+public/                  manifest, icons, data/japan-prefectures.geojson (Natural Earth, public domain)
+tests/                   fixtures, unit and render tests, Playwright
+scripts/                 bundle size check
+docs/                    planning and design documents
+assets/brand/            logo sources
 ```
-
-## Running it
-
-Serve the folder — the map and prefecture data are fetched, so `file://` is not
-enough, and location needs HTTPS or `localhost`:
-
-```
-python -m http.server 8000
-```
-
-## Deploying
-
-GitHub Pages serves the repository root. `manifest.webmanifest` and `sw.js` use
-relative paths so a project subpath (`/<repo>/`) works without edits.
-
-**Bump `CACHE` in `sw.js` on every deploy.** Without that, phones that already
-installed the app keep showing the old build.
 
 ## On hold
 
-The anonymous board, reports and profile exchange — with the Supabase schema, the
-translate-on-write path and the architecture docs — are paused, not deleted. See
-`docs/02-requirements/PRD.md` (v0.4), `docs/architecture/` and `docs/adr/`.
+The anonymous board plan (`schema.sql`, PRD v0.4 and the older backend docs) is
+paused, not deleted.

@@ -1,0 +1,32 @@
+[
+  {
+    "event_id": 4,
+    "occurs_on": "2026-09-15",
+    "cancelled": false,
+    "title": "GIP: Board Game Day",
+    "start_time": null,
+    "end_time": null,
+    "place_text": null,
+    "body": "Nanjamonja, ito and a few others. Japanese-based conversation is fine, no sign-up. Just show up."
+  },
+  {
+    "event_id": 4,
+    "occurs_on": "2026-09-22",
+    "cancelled": false,
+    "title": "GIP: Karaoke Night",
+    "start_time": null,
+    "end_time": null,
+    "place_text": null,
+    "body": "This week's Tuesday GIP is karaoke."
+  },
+  {
+    "event_id": 4,
+    "occurs_on": "2026-10-20",
+    "cancelled": true,
+    "title": null,
+    "start_time": null,
+    "end_time": null,
+    "place_text": null,
+    "body": null
+  }
+]

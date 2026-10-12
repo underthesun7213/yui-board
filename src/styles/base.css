@@ -1,0 +1,74 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+html {
+  -webkit-text-size-adjust: 100%;
+}
+body {
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-en);
+  font-size: 16px;
+  line-height: 1.6;
+  display: flex;
+  justify-content: center;
+  min-height: 100dvh;
+  overscroll-behavior-y: none;
+  -webkit-tap-highlight-color: transparent;
+}
+/* System fonts per language, including text someone wrote in another language (Y-C5). */
+:lang(ja) {
+  font-family: var(--font-ja);
+}
+:lang(ko) {
+  font-family: var(--font-ko);
+}
+:lang(en) {
+  font-family: var(--font-en);
+}
+html:lang(ja) body {
+  line-height: 1.7;
+}
+/* Korean wraps at spaces, not mid-word. */
+html:lang(ko) body {
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+#root {
+  display: contents;
+}
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: inherit;
+}
+button:disabled {
+  cursor: default;
+}
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+a {
+  color: var(--primary);
+}
+/* Built for phones: chrome is not text-selectable on touch. */
+.apphead,
+.tabbar,
+.bar {
+  -webkit-user-select: none;
+  user-select: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}
