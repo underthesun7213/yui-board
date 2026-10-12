@@ -8,6 +8,8 @@
 
 §1~§3 은 **현재 코드에서 실제로 쓰는 관례를 추출**한 것이다. §4 이후는 실데이터 연결(M1~M3)을 위한 **제안**이다.
 
+> **[2026-10-12 점검]** 이 문서는 게시판 프로토타입 기준이다. MLP 구현 뒤 일부가 낡았다 — 각 절의 **[낡음]**·**[보류]** 표시를 보라. 현행 구조·규칙의 원본은 `CLAUDE.md` 와 [RFC-0002](rfc/0002-mlp-client-only.md) 다. 판정 요약은 [README "컨벤션 점검"](README.md#컨벤션-점검-2026-10-12-indexhtmlclaudemd-대조).
+
 ---
 
 ## 1. 클라이언트 (`index.html`) — 현행 관례
@@ -15,6 +17,8 @@
 ### 1.1 구조 (CLAUDE.md)
 
 `<style>` → 마크업 → `<script>` 하나. 스크립트 순서: `T` → 데이터 상수 → `S` → 뷰 함수 → `render()` → 위임 `click`·`change` 핸들러 → 매니페스트 바로가기 처리 → 서비스 워커 등록.
+
+> **[낡음]** `change` 핸들러는 없다. 지금 순서: `T` → 데이터 → `S`·`store` → 뷰·`VIEWS` → 지도 런타임 → `render()`·`go()` → 위임 `click` → `/* Manifest shortcuts` 아래 시작 코드. 파일도 `index.html` 하나가 아니다(`vendor/`, `data/` — ADR-0013). CLAUDE.md "The shape of the code" 를 따른다.
 
 ### 1.2 이름
 
@@ -30,6 +34,8 @@
 | `data-*` 속성 | 동작 이름 짧게. 값 있는 것은 `dataset`, 없는 것은 `hasAttribute` | `data-p`, `data-like`, `data-back`, `data-vnnext` |
 | CSS 토큰 | `--` + 일본 색 이름 | `--washi`, `--sumi`, `--ai`, `--beni` |
 
+> **[낡음 — 예시]** 규칙(대문자 상수, `S` 짧은 키, 인자 없는 뷰, `…HTML()`, `{ja,en,ko}`, `data-*`)은 유효하다. 예시 중 `POSTS`, `CBOARDS`, `EXBOARDS`, `DAILY_LIMIT`, `REPORTS`, `REQS`, `EXCH`, `S.pid`, `feed()`, `detail()`, `profiles()`, `sheet()`, `plistHTML()`(지금 `listHTML()`), `ago`, `who`, `data-p`, `data-like` 는 코드에 없다. 새 이름: `store`, `VIEWS`, `PARENT`, `ROOTS`, 지도 모듈 변수 `LBOX`·`LMAP`·`LPREF` 등.
+
 ### 1.3 규칙 (CLAUDE.md 에서 그대로)
 
 - 모든 사용자 노출 문자열은 `T` 에 ja/en/ko 3개 언어로. `aria-label` 포함(BUG-10).
@@ -40,6 +46,8 @@
 - 개별 요소에 리스너 달지 않음. 예외는 `dragScroll()`·`fadeBoards` 처럼 `render()` 바깥에 고정된 요소(`#boards`)에 한 번만 다는 것 — 현행 코드가 `el._ds`, `bn._fd` 플래그로 중복을 막는다.
 - 배포 산출물이 바뀌면 `sw.js` 의 `CACHE` 올림.
 - 완료 판정은 CLAUDE.md 헤드리스 하네스 `clean`.
+
+> **[일부 낡음]** `fadeBoards`·`#boards` 는 없다(예외는 `dragScroll()` 하나). 지도 규칙은 "`LBOX` 가 `render()` 밖에 살고 `mountMap()` 이 다시 붙인다, 지도 컨트롤은 `updateMap()`"(ADR-0014). CLAUDE.md 에 생긴 규칙이 여기 없다: 뷰는 `localStorage`·`navigator`·`fetch`·`L` 을 건드리지 않는다, 위치는 안내 수락 후에만, 새 같은 출처 파일은 `sw.js` `SHELL` 에. 하네스는 이제 `undefined` 외에 `NaN`·`[object Object]` 도 찾고, `VIEWS` 의 모든 화면에 케이스를 요구한다.
 
 ### 1.4 코드 모양
 
@@ -53,7 +61,11 @@
 - 같은 출처만 처리, 교차 출처는 통과(`return`).
 - 탐색·`.json` network-first, 나머지 cache-first.
 
+> **[보완]** 지금은 `.geojson` 도 network-first 이고, `SHELL` 에 `vendor/`·`data/` 파일이 들어 있다. 새 같은 출처 파일은 `SHELL` 에 넣는다(CLAUDE.md).
+
 ## 3. SQL (`schema.sql`) — 현행 관례
+
+> **[보류]** 백엔드 계획 보류(ADR-0009). `schema.sql` 은 설계 기록으로 남아 있다.
 
 - 소문자 키워드, 테이블 복수형(`posts`, `likes`), 다국어 컬럼은 `<name>_<lang>` (`title_en`).
 - enum 값은 프로토타입 키와 같다(`board` = `CBOARDS`).
@@ -64,6 +76,8 @@
 ---
 
 ## 4. 실데이터 연결 규칙 (제안)
+
+> **[대부분 보류]** 서버가 없다(ADR-0009). MLP 에도 유효한 것: C-2(부수 효과는 경계 주석 아래), C-7(접두어 + `try/catch` — 지금은 `yui.v1.` 키와 `store` 객체, ADR-0010), C-8(속성값 큰따옴표, `esc()` 는 `'` 를 바꾸지 않음). **[낡음]** C-3 의 목록(`POSTS` 없음, 하네스는 `p13` 대신 `p1`·`p3` 사용)과 C-11 `refresh()`(ADR-0014 의 `LBOX` 방식으로 대체).
 
 | # | 규칙 | 이유 |
 |---|---|---|
@@ -82,6 +96,8 @@
 
 ## 5. SQL·마이그레이션 (제안)
 
+> **[보류]** ADR-0009.
+
 | # | 규칙 |
 |---|---|
 | D-1 | 적용은 `supabase/migrations/` 의 번호순 파일로만(ERD §7). 대시보드 SQL 편집기로 스키마를 바꾸지 않는다 |
@@ -98,6 +114,8 @@
 
 ## 6. Edge Functions (제안)
 
+> **[보류]** ADR-0009.
+
 - 파일: `supabase/functions/<kebab-name>/index.ts`. 공통 코드는 `supabase/functions/_shared/`(번역 어댑터, 응답 헬퍼).
 - 응답 형식: 성공 `201 {…}`, 오류 `{ "error": "<snake_code>", "field"?: "<name>" }` (핸드오프 §5.3).
 - 로그: 소요 시간·결과 코드만. `user_id`·본문·글 id 금지.
@@ -112,6 +130,8 @@
 | 커밋 메시지 | 명령형 한 줄 요약(영어 또는 한국어), 본문에 이유. 관련 ID 를 적는다: `fix: escape room and insta in profiles() (S-9, BUG-13)` |
 | PR 체크 | 하네스 `clean`, `CACHE` 올림(클라이언트 변경 시), 마이그레이션이면 익명성 케이스 통과, 문자열 3개 언어 |
 | 디렉터리 | 루트: `index.html`, `sw.js`, `manifest.webmanifest`, 아이콘, `schema.sql`(설계 기록). `art/`(그림, 핸드오프 §7.2), `supabase/`(제안), `docs/` |
+
+> **[일부 낡음]** 디렉터리에 `vendor/`(Leaflet, markercluster)와 `data/`(경계 GeoJSON)가 빠져 있다. `supabase/` 는 보류, `art/` 는 아직 없다. PR 체크의 "마이그레이션이면 익명성 케이스" 는 보류. 이번 MLP 작업은 `main` 직접 커밋이 아니라 작업 브랜치에서 했다 — 브랜치 규칙(CV-Q1)은 여전히 미결.
 
 ## 8. 열린 질문
 

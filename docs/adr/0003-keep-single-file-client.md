@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| 상태 | 제안됨 |
+| 상태 | ADR-0013으로 대체됨 |
 | 날짜 | 2026-10-11 |
 | 근거 | CLAUDE.md "The shape of the code", PRD §8 구조·품질, 핸드오프 §1.2, FN-HOME-01-1, BL-30, BL-53, TC-L-02 |
 | 관련 | [RFC-0001 §6](../architecture/rfc/0001-m1-backend-foundation.md#6-단일-파일-클라이언트에-데이터-계층-붙이기), [conventions.md](../architecture/conventions.md) |

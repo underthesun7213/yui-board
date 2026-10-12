@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| 상태 | 제안됨 |
+| 상태 | 보류 (ADR-0009) |
 | 날짜 | 2026-10-11 |
 | 근거 | PRD Q4, S-5, S-6, L-2, M-7, M-9, §9, POL-6-1~6-4, FN-HOME-03-5, FN-HOME-02-5, 핸드오프 §5.3, BL-04, BL-12, BL-27, TC-S-05, TC-L-05, TC-M-11 |
 | 관련 | [RFC-0001 §5](../architecture/rfc/0001-m1-backend-foundation.md#5-쓰기-경로--작성-시-번역), [tech-stack §2.3·§3](../architecture/tech-stack.md), [ERD §6.1](../architecture/erd.md#61-service_role-전용-edge-function-이-호출) |

@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| 상태 | 제안됨 |
+| 상태 | 보류 (ADR-0009) |
 | 날짜 | 2026-10-11 |
 | 근거 | PRD G3, PR-1~PR-10, S-1, S-2, S-5, N-1, N-6, POL-1-1~1-4, TC-PR-01·04·07·09 |
 | 관련 | [RFC-0001 §4.3](../architecture/rfc/0001-m1-backend-foundation.md#43-신뢰-경계), [ERD §1·§5](../architecture/erd.md), ADR-0002, ADR-0005 |

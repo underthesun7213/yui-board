@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| 상태 | 제안됨 |
+| 상태 | 보류 (ADR-0009) |
 | 날짜 | 2026-10-11 |
 | 근거 | PRD Q3, S-7, §9, POL-9-1~9-3, IA-5, AUTH-01, BL-07, BL-08, BL-26, TC-S-07, docs/README "가장 먼저 결정할 것" #2 |
 | 관련 | [tech-stack §4](../architecture/tech-stack.md#4-인증-q3--기술-검토), [RFC-0001 §7·§9.1](../architecture/rfc/0001-m1-backend-foundation.md#7-인증입주-확인), [ERD §4.1](../architecture/erd.md#41-신원입주) |

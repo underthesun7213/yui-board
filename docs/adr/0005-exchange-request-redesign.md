@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| 상태 | 제안됨 |
+| 상태 | 보류 (ADR-0009) |
 | 날짜 | 2026-10-11 |
 | 근거 | PRD S-2, Q7, X-1~X-7, PR-8, PR-10, N-6, N-8, POL-4-1~4-8, FN-HOME-07-2, FN-HOME-02-7, BL-02, BL-47, BL-48, TC-PR-09, TC-X-08 |
 | 관련 | [RFC-0001 §9.4](../architecture/rfc/0001-m1-backend-foundation.md#94-교환-요청-home-07-s-2-수정-후), [ERD §4.3·§5.3](../architecture/erd.md#43-교환-adr-0005), ADR-0001 |

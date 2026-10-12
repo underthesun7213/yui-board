@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| 상태 | 제안됨 |
+| 상태 | 보류 (ADR-0009) |
 | 날짜 | 2026-10-11 |
 | 근거 | PRD S-3, M-4, M-5, M-6, PR-6, PR-11, POL-3-4, POL-3-5, POL-3-6, N-9, BUG-02, BL-03, BL-14, BL-15, TC-PR-05, TC-PR-10, TC-M-06, TC-M-08 |
 | 관련 | [RFC-0001 §9.5](../architecture/rfc/0001-m1-backend-foundation.md#95-운영자-숨김-home-05), [ERD §3.1·§6.4](../architecture/erd.md) |

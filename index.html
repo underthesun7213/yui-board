@@ -1640,8 +1640,8 @@ function locate(){
   if(typeof navigator==="undefined"||!navigator.geolocation){S.locState="fail";updateMap(true);return;}
   S.locState="wait";updateMap(false);
   navigator.geolocation.getCurrentPosition(
-    pos=>{S.loc={lat:pos.coords.latitude,lng:pos.coords.longitude};S.locState="ok";delete MODEVIEW.near;mapChanged();},
-    err=>{S.locState=err.code===1?"denied":"fail";mapChanged();},
+    pos=>{S.loc={lat:pos.coords.latitude,lng:pos.coords.longitude};S.locState="ok";delete MODEVIEW.near;locChanged();},
+    err=>{S.locState=err.code===1?"denied":"fail";locChanged();},
     {enableHighAccuracy:false,timeout:10000,maximumAge:300000});
 }
 function ensurePrefs(){
@@ -1652,6 +1652,9 @@ function ensurePrefs(){
 }
 /* Async results: apply now if the map is on screen, otherwise on the next mount. */
 function mapChanged(){if(S.view==="map")updateMap(true);else MAPSTALE=true;}
+/* A location result only moves the map in near mode; in Japan mode the user's
+   view is left alone and near mode refits when they switch back. */
+function locChanged(){if(S.mode==="near")mapChanged();else if(S.view==="map")updateMap(false);}
 /* Switching mode returns to where that mode was left; the first visit fits. */
 function setMode(m){
   if(LMAP)MODEVIEW[S.mode]={c:LMAP.getCenter(),z:LMAP.getZoom()};
