@@ -36,11 +36,17 @@ export async function locate() {
     location.set({ state: 'ok', loc: r.loc, refreshing: false });
     if (had && distM(had, r.loc) < MOVED_M) return;
     forgetView('near');
-  } else if (had) {
-    /* keep the last good position rather than falling back to 結 */
+  } else if (had && !r.denied) {
+    /* a timeout keeps the last good position rather than falling back to 結;
+       withdrawn permission does not */
     location.set({ refreshing: false });
     return;
-  } else location.set({ state: r.denied ? 'denied' : 'fail', refreshing: false });
+  } else
+    location.set({
+      state: r.denied ? 'denied' : 'fail',
+      refreshing: false,
+      loc: r.denied ? null : before.loc,
+    });
   /* a result only moves the map in near mode; in Japan mode the view is left alone */
   if (mapUi.get().mode === 'near') bumpFit();
 }

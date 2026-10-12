@@ -133,7 +133,7 @@ describe.each(['en', 'ja', 'ko'] as const)('%s', (lang) => {
   it.each(cases)('%s', async (_n, r, setup, mark) => {
     reset();
     prefs.set({ lang });
-    route.set({ route: r, prev: null });
+    route.set({ route: r, prev: null, taps: 0 });
     setup?.();
     check(await html(), mark);
   });
@@ -141,7 +141,7 @@ describe.each(['en', 'ja', 'ko'] as const)('%s', (lang) => {
   it.each(['osaka', 'kyoto'] as const)('plays the %s route through', async (k) => {
     reset();
     prefs.set({ lang });
-    route.set({ route: { name: 'lesson', lid: 'l8' }, prev: 'learn' });
+    route.set({ route: { name: 'lesson', lid: 'l8' }, prev: 'learn', taps: 0 });
     for (let i = 0; i <= VN[k].scenes.length; i++)
       for (const picked of i < VN[k].scenes.length ? [null, 0, 1] : [null]) {
         for (const score of [0, 5]) {

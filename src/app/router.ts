@@ -38,7 +38,7 @@ export function navigate(to: Route, opts: { replace?: boolean } = {}) {
   /* Coming to the map from another screen always starts at near me (D14). */
   if (to.name === 'map' && from.route.name !== 'map')
     mapUi.set({ mode: 'near', pref: null, cat: '', pl: null });
-  route.set({ route: to, prev: opts.replace ? from.prev : from.route.name });
+  route.set({ route: to, prev: opts.replace ? from.prev : from.route.name, taps: from.taps + 1 });
   write(!!opts.replace, formatRoute(to));
   hook(to, from.route, 'push');
 }

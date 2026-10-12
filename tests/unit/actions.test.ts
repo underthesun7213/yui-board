@@ -47,6 +47,13 @@ describe('location', () => {
     expect(mapUi.get().fitSeq).toBe(seq + 1);
   });
 
+  it('drops the last fix when permission was withdrawn', async () => {
+    location.set({ state: 'ok', loc: { lat: 35.68, lng: 139.76 } });
+    geo.next = { ok: false, denied: true };
+    await locate();
+    expect(location.get()).toMatchObject({ state: 'denied', loc: null, refreshing: false });
+  });
+
   it('reports denied and failed first attempts', async () => {
     geo.next = { ok: false, denied: true };
     await locate();

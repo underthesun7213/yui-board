@@ -75,6 +75,23 @@ test.describe('home, tabs, language, back', () => {
     expect(await y(page, (a) => a.route.get().route.name)).toBe('home');
   });
 
+  test('ML-14 a tap opens a screen at the top; system back keeps the scroll', async ({
+    page,
+    errors,
+  }) => {
+    void errors;
+    await page.goto('./#/learn');
+    await expect(page.locator('.lesson')).toHaveCount(8);
+    await page.evaluate(() => scrollTo(0, 245));
+    await tap(page, '[data-lesson="l5"]');
+    await expect(page.locator('.cut').first()).toBeVisible();
+    expect(await page.evaluate(() => scrollY)).toBe(0);
+    await page.goBack();
+    await expect(page.locator('.lesson')).toHaveCount(8);
+    await page.waitForTimeout(200);
+    expect(await page.evaluate(() => scrollY)).toBeGreaterThan(200);
+  });
+
   test('Y-C hash links open their screen', async ({ page, errors }) => {
     void errors;
     await page.goto('./#/learn/collection');

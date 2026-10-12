@@ -8,7 +8,7 @@ import { ScreenBoundary } from '../ui/ErrorBoundary';
 import { Header } from '../ui/Header';
 import { TabBar } from '../ui/TabBar';
 import { Toast } from '../ui/Toast';
-import { formatRoute, ROOTS } from './routes';
+import { ROOTS } from './routes';
 import { Calendar, Collection, EventDetail, LearnList, Lesson, MapScreen } from './screens';
 
 function Screen({ r }: { r: Route }) {
@@ -32,16 +32,17 @@ function Screen({ r }: { r: Route }) {
 
 export function App() {
   const m = useT();
-  const r = useStore(route, (s) => s.route);
-  const current = r.name;
+  const nav = useStore(route, (s) => s);
+  const current = nav.route.name;
   /* While a new screen's chunk loads, the old screen stays up instead of
      flashing "Loading" (store updates cannot be transitions themselves). */
-  const shown = useDeferredValue(r);
-  /* a new screen starts at the top, once it is the one on screen */
-  const shownKey = formatRoute(shown);
+  const deferred = useDeferredValue(nav);
+  const shown = deferred.route;
+  /* A tap starts the screen at the top once it is on screen (a tab tapped
+     again too); system back keeps where the page was, as in v1.3. */
   useEffect(() => {
-    scrollTo(0, 0);
-  }, [shownKey]);
+    if (deferred.taps) scrollTo(0, 0);
+  }, [deferred.taps]);
   const failed = (
     <div className="chunkfail" role="alert">
       <p>{m.chunkFail}</p>
