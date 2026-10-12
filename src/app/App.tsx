@@ -8,8 +8,19 @@ import { ScreenBoundary } from '../ui/ErrorBoundary';
 import { Header } from '../ui/Header';
 import { TabBar } from '../ui/TabBar';
 import { Toast } from '../ui/Toast';
-import { ROOTS } from './routes';
-import { Calendar, Collection, EventDetail, LearnList, Lesson, MapScreen } from './screens';
+import { formatRoute, ROOTS } from './routes';
+import {
+  Calendar,
+  Collection,
+  EventDetail,
+  EventForm,
+  LearnList,
+  Lesson,
+  MapScreen,
+  MyItems,
+  PlaceForm,
+  WeekForm,
+} from './screens';
 
 function Screen({ r }: { r: Route }) {
   switch (r.name) {
@@ -27,6 +38,18 @@ function Screen({ r }: { r: Route }) {
       return <Calendar />;
     case 'event':
       return <EventDetail id={r.id} date={r.date} />;
+    case 'placeNew':
+      return <PlaceForm />;
+    case 'placeEdit':
+      return <PlaceForm id={r.id} />;
+    case 'eventNew':
+      return <EventForm />;
+    case 'eventEdit':
+      return <EventForm id={r.id} />;
+    case 'weekEdit':
+      return <WeekForm id={r.id} date={r.date} />;
+    case 'me':
+      return <MyItems />;
   }
 }
 
@@ -57,7 +80,7 @@ export function App() {
       <div id="app">
         {ROOTS.includes(current) && <Header />}
         <main id="main">
-          <ScreenBoundary key={shown.name} fallback={failed}>
+          <ScreenBoundary key={formatRoute(shown)} fallback={failed}>
             <Suspense
               fallback={
                 <p className="loading" data-route-loading="">

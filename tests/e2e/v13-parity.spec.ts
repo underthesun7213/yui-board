@@ -319,6 +319,8 @@ test.describe('map', () => {
     expect(await zoom()).toBe(15);
     await tap(page, '.globe');
     await tap(page, '[data-l="ko"]');
+    /* the Korean strings load as their own chunk */
+    await page.waitForFunction(() => window.__yunabi.prefs.get().lang === 'ko');
     expect(
       await y(
         page,

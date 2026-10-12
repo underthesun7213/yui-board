@@ -10,6 +10,8 @@ export interface Data {
   /** derived from events + overrides, rebuilt with them */
   schedule: Schedule;
   fetchedAt: string | null;
+  /** the server's data_version when this was read */
+  version: number | null;
   status: DataStatus;
 }
 export const data = createStore<Data>({
@@ -18,6 +20,7 @@ export const data = createStore<Data>({
   overrides: [],
   schedule: makeSchedule([], []),
   fetchedAt: null,
+  version: null,
   status: 'idle',
 });
 
@@ -26,6 +29,8 @@ export function setData(
   events: EventSeries[],
   overrides: OccurrenceOverride[],
   fetchedAt: string,
+  version: number | null = null,
+  status: DataStatus = 'ok',
 ) {
   data.set({
     places,
@@ -33,6 +38,7 @@ export function setData(
     overrides,
     schedule: makeSchedule(events, overrides),
     fetchedAt,
-    status: 'ok',
+    version,
+    status,
   });
 }

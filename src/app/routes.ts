@@ -15,6 +15,12 @@ export const TAB_OF: Record<RouteName, number> = {
   map: 2,
   cal: 3,
   event: 3,
+  placeNew: 2,
+  placeEdit: 2,
+  eventNew: 3,
+  eventEdit: 3,
+  weekEdit: 3,
+  me: 0,
 };
 /** Where ‹ goes. */
 export const PARENT: Partial<Record<RouteName, Route>> = {
@@ -24,6 +30,12 @@ export const PARENT: Partial<Record<RouteName, Route>> = {
   lesson: { name: 'learn' },
   collection: { name: 'learn' },
   event: { name: 'cal' },
+  placeNew: { name: 'map' },
+  placeEdit: { name: 'map' },
+  eventNew: { name: 'cal' },
+  eventEdit: { name: 'cal' },
+  weekEdit: { name: 'cal' },
+  me: { name: 'home' },
 };
 
 export function formatRoute(r: Route): string {
@@ -42,6 +54,18 @@ export function formatRoute(r: Route): string {
       return '#/cal';
     case 'event':
       return `#/cal/event/${r.id}/${r.date}`;
+    case 'placeNew':
+      return '#/map/new';
+    case 'placeEdit':
+      return `#/map/edit/${r.id}`;
+    case 'eventNew':
+      return '#/cal/new';
+    case 'eventEdit':
+      return `#/cal/edit/${r.id}`;
+    case 'weekEdit':
+      return `#/cal/edit/${r.id}/${r.date}`;
+    case 'me':
+      return '#/me';
   }
 }
 
@@ -55,9 +79,23 @@ export function parseRoute(hash: string): Route | null {
         ? { name: 'collection' }
         : { name: 'lesson', lid: decodeURIComponent(p[1]!) };
   }
-  if (p[0] === 'map' && p.length === 1) return { name: 'map' };
+  const num = (s: string | undefined) => (s && /^\d+$/.test(s) ? +s : null);
+  const day = (s: string | undefined) => (s && /^\d{4}-\d\d-\d\d$/.test(s) ? s : null);
+  if (p[0] === 'map') {
+    if (p.length === 1) return { name: 'map' };
+    if (p.length === 2 && p[1] === 'new') return { name: 'placeNew' };
+    if (p.length === 3 && p[1] === 'edit' && num(p[2]) != null)
+      return { name: 'placeEdit', id: num(p[2])! };
+  }
+  if (p[0] === 'me' && p.length === 1) return { name: 'me' };
   if (p[0] === 'cal') {
     if (p.length === 1) return { name: 'cal' };
+    if (p.length === 2 && p[1] === 'new') return { name: 'eventNew' };
+    if (p[1] === 'edit' && num(p[2]) != null) {
+      if (p.length === 3) return { name: 'eventEdit', id: num(p[2])! };
+      if (p.length === 4 && day(p[3]))
+        return { name: 'weekEdit', id: num(p[2])!, date: day(p[3])! };
+    }
     if (
       p[1] === 'event' &&
       p.length === 4 &&

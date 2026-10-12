@@ -3,8 +3,9 @@
    back to client rendering or the loading state, and on undefined, NaN or
    [object Object] leaking into the output. This is the v1.3 headless check. */
 import { prerender } from 'react-dom/static';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { App } from '../../src/app/App';
+import { loadLang } from '../../src/i18n';
 import { VN } from '../../src/content/vn';
 import { CAT } from '../../src/domain/categories';
 import { PREFS } from '../../src/domain/geo/prefs';
@@ -22,21 +23,32 @@ import { mapUi } from '../../src/state/mapUi';
 import { prefs } from '../../src/state/prefs';
 import { route, type Route } from '../../src/state/route';
 import { vn, VN_START } from '../../src/state/vn';
+import { session } from '../../src/state/session';
+import { net } from '../../src/state/net';
 import events from '../fixtures/events.json';
 import occurrences from '../fixtures/occurrences.json';
 import places from '../fixtures/places.json';
+
+/* the fixtures are dated around this day */
+vi.useFakeTimers({ toFake: ['Date'] });
+vi.setSystemTime(new Date('2026-10-12T03:00:00Z'));
 
 const hm = (e: EventSeries) => ({
   ...e,
   start_time: e.start_time.slice(0, 5),
   end_time: e.end_time.slice(0, 5),
 });
-setData(
-  places as Place[],
-  (events as EventSeries[]).map(hm),
-  occurrences as OccurrenceOverride[],
-  '2026-10-12T00:00:00Z',
-);
+await loadLang('ja');
+await loadLang('ko');
+
+const loadFixtures = () =>
+  setData(
+    places as Place[],
+    (events as EventSeries[]).map(hm),
+    occurrences as OccurrenceOverride[],
+    '2026-10-12T00:00:00Z',
+  );
+loadFixtures();
 const GIP = (events as EventSeries[]).find((e) => e.weekly_until)!.id;
 
 async function html(): Promise<string> {
@@ -48,7 +60,10 @@ async function html(): Promise<string> {
 }
 
 function reset() {
-  data.set({ status: 'ok' });
+  loadFixtures();
+  session.set({ hasAccount: false, items: [], minePlaces: {}, mineEvents: {}, framed: false });
+  net.set({ online: true });
+  data.set({ status: 'ok', fetchedAt: '2026-10-12T00:00:00Z' });
   mapUi.set({
     mode: 'near',
     pref: null,
@@ -89,7 +104,13 @@ const cases: Case[] = [
   ['event-weekly', { name: 'event', id: GIP, date: '2026-10-13' }],
   ['event-missing', { name: 'event', id: GIP, date: '2026-10-14' }, undefined, /class="empty"/],
   ['event-cancelled', { name: 'event', id: GIP, date: '2026-10-20' }, undefined, /class="empty"/],
-  ['home-loading', { name: 'home' }, () => data.set({ status: 'loading' }), /class="dstatus"/],
+  [
+    'home-loading',
+    { name: 'home' },
+    () => data.set({ status: 'loading', fetchedAt: null }),
+    /class="dstatus"/,
+  ],
+  ['cal-offline', { name: 'cal' }, () => data.set({ status: 'offline' }), /class="dstatus warn"/],
   ['cal-data-error', { name: 'cal' }, () => data.set({ status: 'error' }), /class="dstatus warn"/],
   ['map-data-error', { name: 'map' }, () => data.set({ status: 'error' }), /class="dstatus warn"/],
   ['map-near-pl', { name: 'map' }, () => (location.set({ state: 'skip' }), mapUi.set({ pl: 1 }))],
@@ -101,6 +122,109 @@ const cases: Case[] = [
   ],
   ['map-pref-13', { name: 'map' }, () => mapUi.set({ mode: 'japan', pref: '13' })],
   ['map-fail', { name: 'map' }, () => mapUi.set({ mapFail: true, tileFail: true })],
+  [
+    'map-empty',
+    { name: 'map' },
+    () => (location.set({ state: 'skip' }), data.set({ places: [] })),
+    /class="empty"/,
+  ],
+  [
+    'map-mine',
+    { name: 'map' },
+    () => (
+      location.set({ state: 'skip' }),
+      mapUi.set({ pl: 1 }),
+      session.set({ minePlaces: { 1: true } })
+    ),
+  ],
+  ['cal-empty', { name: 'cal' }, () => setData([], [], [], 'x'), /class="empty"/],
+  [
+    'event-mine',
+    { name: 'event', id: GIP, date: '2026-10-13' },
+    () => session.set({ mineEvents: { [GIP]: true } }),
+  ],
+  ['place-new', { name: 'placeNew' }],
+  [
+    'place-new-offline',
+    { name: 'placeNew' },
+    () => net.set({ online: false }),
+    /class="dstatus warn"/,
+  ],
+  [
+    'place-new-framed',
+    { name: 'placeNew' },
+    () => session.set({ framed: true }),
+    /class="dstatus warn"/,
+  ],
+  [
+    'place-edit',
+    { name: 'placeEdit', id: 1 },
+    () => session.set({ hasAccount: true, minePlaces: { 1: true } }),
+  ],
+  ['place-edit-not-mine', { name: 'placeEdit', id: 1 }, undefined, /class="empty"/],
+  ['event-new', { name: 'eventNew' }],
+  [
+    'event-edit',
+    { name: 'eventEdit', id: GIP },
+    () => session.set({ mineEvents: { [GIP]: true } }),
+  ],
+  [
+    'event-edit-past',
+    { name: 'eventEdit', id: 1 },
+    () => session.set({ mineEvents: { 1: true } }),
+    /class="empty"/,
+  ],
+  [
+    'week-edit',
+    { name: 'weekEdit', id: GIP, date: '2026-10-13' },
+    () => session.set({ mineEvents: { [GIP]: true } }),
+  ],
+  [
+    'week-edit-cancelled',
+    { name: 'weekEdit', id: GIP, date: '2026-10-20' },
+    () => session.set({ mineEvents: { [GIP]: true } }),
+  ],
+  ['me-empty', { name: 'me' }, undefined, /class="empty"/],
+  [
+    'me-items',
+    { name: 'me' },
+    () =>
+      session.set({
+        hasAccount: true,
+        items: [
+          {
+            kind: 'place',
+            id: 1,
+            title: 'x',
+            state: 'visible',
+            created_on: '2026-10-01',
+            edited_on: '2026-10-02',
+            deleted_on: null,
+            last_date: null,
+          },
+          {
+            kind: 'event',
+            id: 2,
+            title: 'y',
+            state: 'hidden_review',
+            created_on: '2026-10-01',
+            edited_on: null,
+            deleted_on: null,
+            last_date: '2026-10-30',
+          },
+          {
+            kind: 'place',
+            id: 3,
+            title: 'z',
+            state: 'deleted',
+            created_on: '2026-10-01',
+            edited_on: null,
+            deleted_on: '2026-10-05',
+            last_date: null,
+          },
+        ],
+      }),
+  ],
 ];
 for (const st of ['ask', 'idle', 'wait', 'ok', 'denied', 'fail', 'skip'] as LocState[])
   cases.push([
@@ -118,6 +242,12 @@ const MARK: Record<Route['name'], RegExp> = {
   map: /class="seg"/,
   cal: /class="mnav"/,
   event: /class="evwrap"/,
+  placeNew: /class="form"/,
+  placeEdit: /class="form"/,
+  eventNew: /class="form"/,
+  eventEdit: /class="form"/,
+  weekEdit: /class="form"/,
+  me: /class="mylist"/,
 };
 const BAD = /undefined|NaN|\[object Object\]/;
 function check(out: string, mark?: RegExp) {
@@ -154,7 +284,7 @@ describe.each(['en', 'ja', 'ko'] as const)('%s', (lang) => {
 
 describe('route table', () => {
   it('has a case for every screen', () => {
-    const names: Route['name'][] = ['home', 'learn', 'lesson', 'collection', 'map', 'cal', 'event'];
+    const names = Object.keys(MARK) as Route['name'][];
     for (const n of names)
       expect(
         cases.some((c) => c[1].name === n),

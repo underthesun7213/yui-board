@@ -7,7 +7,13 @@ export type Route =
   | { name: 'collection' }
   | { name: 'map' }
   | { name: 'cal' }
-  | { name: 'event'; id: number; date: string };
+  | { name: 'event'; id: number; date: string }
+  | { name: 'placeNew' }
+  | { name: 'placeEdit'; id: number }
+  | { name: 'eventNew' }
+  | { name: 'eventEdit'; id: number }
+  | { name: 'weekEdit'; id: number; date: string }
+  | { name: 'me' };
 export type RouteName = Route['name'];
 
 /** prev: the screen this history entry was opened from (for ‹).

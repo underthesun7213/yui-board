@@ -14,6 +14,9 @@ export interface MapUi {
   mapFail: boolean;
   /** bumped to ask the map to fit its contents */
   fitSeq: number;
+  /** the place form is open: a tap on the map sets `pick` */
+  picking: boolean;
+  pick: { lat: number; lng: number } | null;
 }
 export const mapUi = createStore<MapUi>({
   mode: 'near',
@@ -25,4 +28,6 @@ export const mapUi = createStore<MapUi>({
   tileFail: false,
   mapFail: false,
   fitSeq: 0,
+  picking: false,
+  pick: null,
 });

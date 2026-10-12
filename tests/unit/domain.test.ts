@@ -10,7 +10,11 @@ import { HOME, mainBounds, regionOf, shownPlaces, walkMin } from '../../src/doma
 import { PREFS } from '../../src/domain/geo/prefs';
 import { buildIcs, icsEsc, icsFold } from '../../src/domain/ics';
 import type { EventSeries, OccurrenceOverride, Place } from '../../src/domain/types';
-import { MESSAGES } from '../../src/i18n';
+import { en } from '../../src/i18n/en';
+import { ja } from '../../src/i18n/ja';
+import { ko } from '../../src/i18n/ko';
+
+const MESSAGES = { en, ja, ko };
 import events from '../fixtures/events.json';
 import occurrences from '../fixtures/occurrences.json';
 import places from '../fixtures/places.json';

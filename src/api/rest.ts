@@ -1,4 +1,7 @@
 import { CATEGORIES, type EventSeries, type OccurrenceOverride, type Place } from '../domain/types';
+import { FIXTURE_MODE, SUPABASE_KEY, SUPABASE_URL } from './config';
+
+export { FIXTURE_MODE };
 
 export interface Snapshot {
   places: Place[];
@@ -8,7 +11,7 @@ export interface Snapshot {
 
 const hm = (t: string | null) => (t ? t.slice(0, 5) : t);
 const CATS = new Set<string>(CATEGORIES);
-function normalize(s: Snapshot): Snapshot {
+export function normalize(s: Snapshot): Snapshot {
   return {
     /* a category this build does not know cannot be drawn; skip it */
     places: s.places.filter((p) => CATS.has(p.category)),
@@ -25,10 +28,15 @@ function normalize(s: Snapshot): Snapshot {
   };
 }
 
-/* Until the backend lands (Y-2) there is no Supabase URL and the app reads the
-   test fixtures — the v1.3 sample data in the shape of the public read API.
-   They load as their own chunk, so the home screen does not carry them. */
-export const FIXTURE_MODE = !import.meta.env.VITE_SUPABASE_URL;
+/* Reads need no account: the publishable key and the public views (Y-A1).
+   Plain fetch, so the first screen does not carry the Supabase SDK. */
+async function get<T>(path: string): Promise<T> {
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+    headers: { apikey: SUPABASE_KEY, accept: 'application/json' },
+  });
+  if (!r.ok) throw new Error(`read ${path}: ${r.status}`);
+  return (await r.json()) as T;
+}
 
 export async function readAll(): Promise<Snapshot> {
   if (FIXTURE_MODE) {
@@ -43,7 +51,24 @@ export async function readAll(): Promise<Snapshot> {
       overrides: o.default as OccurrenceOverride[],
     });
   }
-  throw new Error('Supabase reads arrive in Y-2');
+  const [places, events, overrides] = await Promise.all([
+    get<Place[]>(
+      'places_public?select=id,name,category,description,gmaps_url,lat,lng,pref,lang,created_on,edited_on&order=id',
+    ),
+    get<EventSeries[]>(
+      'events_public?select=id,title,start_date,start_time,end_time,weekly_until,place_text,body,lang,created_on,edited_on&order=id',
+    ),
+    get<OccurrenceOverride[]>(
+      'event_occurrences_public?select=event_id,occurs_on,cancelled,title,start_time,end_time,place_text,body',
+    ),
+  ]);
+  return normalize({ places, events, overrides });
+}
+
+/** A number that changes whenever anything public changes. GET, so it is never counted as a write. */
+export async function readVersion(): Promise<number> {
+  if (FIXTURE_MODE) return 0;
+  return Number(await get<number>('rpc/data_version'));
 }
 
 export async function fetchPrefectures(): Promise<unknown> {

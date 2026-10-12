@@ -12,6 +12,7 @@ import {
   clusterIcon,
   homeIcon,
   meIcon as meDivIcon,
+  pickIcon,
   pinIcon as pinDivIcon,
   PREF_STYLE,
   TILE_URL,
@@ -40,11 +41,15 @@ interface Applied {
   locOk: boolean;
   lang: string;
   prefReady: boolean;
+  picking: boolean;
+  pickLat: number | null;
+  pickLng: number | null;
 }
 
 export interface MapHandlers {
   onPin(id: number): void;
   onPref(code: string): void;
+  onMapClick(at: { lat: number; lng: number }): void;
 }
 
 let L: LT | null = null;
@@ -54,6 +59,7 @@ let map: Leaflet.Map | null = null;
 let cluster: Leaflet.MarkerClusterGroup | null = null;
 let homeMarker: Leaflet.Marker | null = null;
 let me: Leaflet.Marker | null = null;
+let pickMarker: Leaflet.Marker | null = null;
 let prefLayer: Leaflet.GeoJSON | null = null;
 let prefGeo: unknown = null;
 const pins = new Map<number, Leaflet.Marker>();
@@ -63,7 +69,7 @@ let applied: Applied | null = null;
 let seenMode: 'near' | 'japan' | null = null;
 let currentSlot: HTMLElement | null = null;
 let gen = 0;
-let handlers: MapHandlers = { onPin() {}, onPref() {} };
+let handlers: MapHandlers = { onPin() {}, onPref() {}, onMapClick() {} };
 
 /** For tests: how many times L.map was called. */
 export const stats = { created: 0, syncs: 0 };
@@ -98,6 +104,9 @@ function snapshot(): Applied {
     locOk: l.state === 'ok',
     lang: prefs.get().lang,
     prefReady: m.prefReady,
+    picking: m.picking,
+    pickLat: m.pick?.lat ?? null,
+    pickLng: m.pick?.lng ?? null,
   };
 }
 const shown = (a: Applied) =>
@@ -145,6 +154,7 @@ function create(L: LT) {
     iconCreateFunction: (c) => clusterIcon(L, c.getChildCount()),
   });
   map.addLayer(cluster);
+  map.on('click', (e) => handlers.onMapClick({ lat: e.latlng.lat, lng: e.latlng.lng }));
   for (const s of [mapUi, data, location, prefs] as const) s.subscribe(onChange);
 }
 
@@ -204,6 +214,18 @@ function apply(next: Applied) {
     return;
   }
   sync(next);
+  /* the place form: a spot that did not come from a tap (current location,
+     or the place being edited) is brought into view */
+  if (
+    next.picking &&
+    next.pickLat != null &&
+    next.pickLng != null &&
+    (!prev || !prev.picking || prev.pickLat == null)
+  ) {
+    const at: [number, number] = [next.pickLat, next.pickLng];
+    afterZoom(() => map!.setView(at, Math.max(map!.getZoom(), 16), { animate: false }));
+    return;
+  }
   if (!prev) return fit(next);
   if (prev.mode !== next.mode) {
     /* back to where this mode was left; the first visit fits */
@@ -282,6 +304,15 @@ function sync(a: Applied) {
     me.setLatLng([a.loc.lat, a.loc.lng]);
     if (!m.hasLayer(me)) me.addTo(m);
   } else if (me && m.hasLayer(me)) m.removeLayer(me);
+  if (a.picking && a.pickLat != null && a.pickLng != null) {
+    pickMarker ??= lf.marker([a.pickLat, a.pickLng], {
+      icon: pickIcon(lf),
+      zIndexOffset: 2000,
+      interactive: false,
+    });
+    pickMarker.setLatLng([a.pickLat, a.pickLng]);
+    if (!m.hasLayer(pickMarker)) pickMarker.addTo(m);
+  } else if (pickMarker && m.hasLayer(pickMarker)) m.removeLayer(pickMarker);
   if (a.mode === 'japan' && prefGeo) {
     prefLayer ??= lf.geoJSON(prefGeo as GeoJSON.GeoJsonObject, {
       style: prefStyle as Leaflet.StyleFunction,

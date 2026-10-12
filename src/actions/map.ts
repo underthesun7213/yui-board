@@ -112,4 +112,7 @@ setHandlers({
   onPref: (code) => {
     if (onMap()) selectPref(code);
   },
+  onMapClick: (at) => {
+    if (mapUi.get().picking) mapUi.set({ pick: at });
+  },
 });

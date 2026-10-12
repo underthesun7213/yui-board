@@ -29,6 +29,15 @@ export const homeIcon = (L: LT, label: string) =>
 export const meIcon = (L: LT, label: string) =>
   L.divIcon({ className: 'mew', html: meNode(label), iconSize: [22, 22], iconAnchor: [11, 11] });
 
+/* The spot being chosen in the place form: fixed markup, no text. */
+export const pickIcon = (L: LT) =>
+  L.divIcon({
+    className: 'pickw',
+    html: '<span class="pick"></span>',
+    iconSize: [30, 40],
+    iconAnchor: [15, 38],
+  });
+
 /* Prefecture boundaries (direction A): navy lines; prefectures with places
    tinted navy; the selected one filled butterfly-sky with a navy edge. */
 export const PREF_STYLE = {

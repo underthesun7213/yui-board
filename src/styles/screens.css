@@ -1200,3 +1200,260 @@ main {
   text-decoration: underline;
   text-underline-offset: 3px;
 }
+.pickw {
+  background: none;
+  border: none;
+}
+.pick {
+  display: block;
+  width: 30px;
+  height: 30px;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  background: var(--primary);
+  border: 3px solid #fff;
+  box-shadow:
+    0 0 0 2px var(--navy),
+    0 2px 6px rgba(21, 32, 43, 0.4);
+}
+
+/* ---------- writing ---------- */
+.pagehead.withadd {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.pagehead.withadd h1 {
+  flex: 1;
+}
+.calhead {
+  display: flex;
+  justify-content: flex-end;
+  padding: 12px var(--gutter) 0;
+}
+.addbtn {
+  min-height: 40px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: var(--primary-tint);
+  color: var(--on-tint);
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.empty .primary {
+  margin-top: 16px;
+}
+.empty.slim {
+  padding: 16px var(--gutter) 8px;
+}
+.dates {
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.mine {
+  align-self: center;
+  flex: 0 0 100%;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--success);
+}
+.note {
+  margin-top: 12px;
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.55;
+}
+.mylink {
+  display: block;
+  margin: 0 var(--gutter) 24px;
+  min-height: 44px;
+  color: var(--primary);
+  font-size: 15px;
+  font-weight: 600;
+}
+.form {
+  padding: 8px var(--gutter) 24px;
+}
+.form .lmapslot {
+  margin: 4px calc(-1 * var(--gutter)) 12px;
+}
+.field {
+  margin-top: 16px;
+  border: none;
+}
+.field > label,
+.field > legend {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 6px;
+}
+.field .opt {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--muted);
+}
+.field .count {
+  margin-left: auto;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--muted);
+}
+.field input:not([type='checkbox']):not([type='radio']),
+.field textarea,
+.field select {
+  display: block;
+  width: 100%;
+  min-height: 48px;
+  padding: 10px 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-s);
+  background: var(--canvas);
+  color: var(--ink);
+  font: inherit;
+  font-size: 16px;
+}
+.field textarea {
+  resize: vertical;
+  line-height: 1.6;
+}
+.field input:disabled {
+  background: var(--surface);
+  color: var(--muted);
+}
+.field.bad input,
+.field.bad textarea {
+  border-color: var(--danger);
+}
+.hint {
+  margin-top: 6px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.err {
+  margin-top: 6px;
+  font-size: 14px;
+  color: var(--danger);
+}
+.chiprow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.chiprow .fchip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+.chiprow .fchip input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+.chiprow .fchip.on {
+  background: var(--primary-tint);
+  border-color: var(--primary);
+  color: var(--on-tint);
+  font-weight: 600;
+}
+.chiprow .fchip:focus-within {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+.check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  margin-top: 12px;
+  font-size: 15px;
+}
+.check input {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--primary);
+}
+.row2 {
+  display: flex;
+  gap: 12px;
+}
+.row2 > .field {
+  flex: 1;
+  min-width: 0;
+}
+.warnbox {
+  margin-top: 4px;
+  padding: 14px 16px;
+  border-radius: var(--r-m);
+  background: var(--warning-bg);
+  color: var(--warning-fg);
+}
+.warnbox b {
+  display: block;
+  font-size: 16px;
+}
+.warnbox p {
+  margin-top: 6px;
+  font-size: 14px;
+}
+.warnbox .check {
+  color: var(--ink);
+}
+.primary:disabled,
+.secondary:disabled {
+  background: var(--surface);
+  color: var(--muted);
+  border-color: var(--line);
+  cursor: not-allowed;
+}
+.mylist {
+  list-style: none;
+}
+.my {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px var(--gutter);
+  border-bottom: 1px solid var(--line);
+}
+.my .kind {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.my b {
+  font-size: 16px;
+  font-weight: 600;
+}
+.my .meta {
+  font-size: 13px;
+  color: var(--muted);
+}
+.my .state {
+  align-self: flex-start;
+  margin-top: 4px;
+  padding: 0 8px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  font-size: 12px;
+  line-height: 22px;
+}
+.my .state.visible {
+  color: var(--success);
+}
+.my .state.hidden_review {
+  color: var(--warning-fg);
+}
+.my .state.deleted {
+  color: var(--muted);
+}
+.my .btns {
+  margin-top: 8px;
+}

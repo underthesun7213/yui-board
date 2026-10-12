@@ -33,6 +33,7 @@ vi.mock('leaflet', () => {
           rec.z = 5;
         },
         once() {},
+        on() {},
         addLayer() {},
         hasLayer: () => false,
         removeLayer() {},

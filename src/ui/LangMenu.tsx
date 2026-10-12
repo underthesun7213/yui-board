@@ -51,7 +51,7 @@ export function LangMenu() {
             data-l={l}
             aria-pressed={lang === l}
             onClick={() => {
-              setLang(l);
+              void setLang(l);
               setOpen(false);
             }}
           >

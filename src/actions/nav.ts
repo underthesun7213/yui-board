@@ -1,6 +1,7 @@
 import { navigate } from '../app/router';
 import { TABS } from '../app/routes';
 import type { Lang } from '../domain/types';
+import { loadLang } from '../i18n';
 import { store } from '../platform/storage';
 import { calendarUi } from '../state/calendarUi';
 import { prefs } from '../state/prefs';
@@ -18,7 +19,12 @@ export function tab(i: number) {
   navigate(to, { replace: route.get().route.name === to.name });
 }
 
-export function setLang(lang: Lang) {
-  prefs.set({ lang });
+export async function setLang(lang: Lang) {
   store.set('lang', lang);
+  try {
+    await loadLang(lang);
+  } catch {
+    return; /* offline and not cached: stay in the current language */
+  }
+  prefs.set({ lang });
 }

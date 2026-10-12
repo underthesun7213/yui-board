@@ -58,6 +58,9 @@ export function Home() {
           </span>
         </button>
       </div>
+      <button className="mylink" onClick={() => go({ name: 'me' })}>
+        {m.myOpen} ›
+      </button>
     </>
   );
 }

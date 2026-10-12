@@ -10,6 +10,10 @@ export const loaders = {
   map: () => import('../features/map/MapScreen'),
   cal: () => import('../features/calendar/Calendar'),
   event: () => import('../features/calendar/EventDetail'),
+  placeForm: () => import('../features/write/PlaceForm'),
+  eventForm: () => import('../features/write/EventForm'),
+  weekForm: () => import('../features/write/WeekForm'),
+  me: () => import('../features/me/MyItems'),
 };
 
 export const LearnList = lazy(() => loaders.learn().then((m) => ({ default: m.LearnList })));
@@ -18,6 +22,10 @@ export const Collection = lazy(() => loaders.collection().then((m) => ({ default
 export const MapScreen = lazy(() => loaders.map().then((m) => ({ default: m.MapScreen })));
 export const Calendar = lazy(() => loaders.cal().then((m) => ({ default: m.Calendar })));
 export const EventDetail = lazy(() => loaders.event().then((m) => ({ default: m.EventDetail })));
+export const PlaceForm = lazy(() => loaders.placeForm().then((m) => ({ default: m.PlaceForm })));
+export const EventForm = lazy(() => loaders.eventForm().then((m) => ({ default: m.EventForm })));
+export const WeekForm = lazy(() => loaders.weekForm().then((m) => ({ default: m.WeekForm })));
+export const MyItems = lazy(() => loaders.me().then((m) => ({ default: m.MyItems })));
 
 export function preload() {
   for (const load of Object.values(loaders)) load().catch(() => {});

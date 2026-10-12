@@ -7,6 +7,7 @@ import { calendarUi } from '../../state/calendarUi';
 import { data } from '../../state/data';
 import { prefs } from '../../state/prefs';
 import { useStore } from '../../state/useStore';
+import { go } from '../../actions/nav';
 import { DataStatus } from '../../ui/DataStatus';
 import { EventRow } from './EventRow';
 
@@ -28,6 +29,11 @@ export function Calendar() {
   return (
     <>
       <DataStatus />
+      <div className="calhead">
+        <button className="addbtn" onClick={() => go({ name: 'eventNew' })}>
+          ＋ {m.addEvent}
+        </button>
+      </div>
       <div className="mnav">
         <button aria-label={m.aPrev} onClick={() => moveMonth(-1)}>
           ‹
@@ -85,7 +91,12 @@ export function Calendar() {
           </div>
         ))
       ) : (
-        <p className="empty">{m.homeNone}</p>
+        <div className="empty">
+          <p>{schedule.events.length ? m.homeNone : m.emptyEvents}</p>
+          <button className="primary" onClick={() => go({ name: 'eventNew' })}>
+            ＋ {m.addEvent}
+          </button>
+        </div>
       )}
     </>
   );

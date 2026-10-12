@@ -1,7 +1,10 @@
 import { downloadIcs } from '../../actions/calendar';
-import { formatDay, weekday } from '../../domain/calendar/dates';
+import { go } from '../../actions/nav';
+import { deleteEvent } from '../../actions/write';
+import { session } from '../../state/session';
+import { formatDay, tokyoToday, weekday } from '../../domain/calendar/dates';
 import { findOcc } from '../../domain/calendar/occurrences';
-import { LOCALE } from '../../i18n';
+import { fill, LOCALE } from '../../i18n';
 import { useT } from '../../i18n/useT';
 import { data } from '../../state/data';
 import { prefs } from '../../state/prefs';
@@ -13,6 +16,7 @@ export function EventDetail({ id, date }: { id: number; date: string }) {
   const m = useT();
   const lang = useStore(prefs, (s) => s.lang);
   const schedule = useStore(data, (s) => s.schedule);
+  const mine = useStore(session, (s) => !!s.mineEvents[id]);
   const o = findOcc(schedule, id, date);
   if (!o) {
     return (
@@ -23,6 +27,10 @@ export function EventDetail({ id, date }: { id: number; date: string }) {
     );
   }
   const e = o.event;
+  const today = tokyoToday();
+  const over = (e.weekly_until ?? e.start_date) < today;
+  const day = (d: string) =>
+    formatDay(d, LOCALE[lang], { year: 'numeric', month: 'short', day: 'numeric' });
   const when = `${formatDay(o.date, LOCALE[lang], { month: 'long', day: 'numeric' })} (${m.wd[weekday(o.date)]}) ${o.start}–${o.end}`;
   return (
     <>
@@ -44,11 +52,37 @@ export function EventDetail({ id, date }: { id: number; date: string }) {
             {o.body}
           </div>
         )}
+        <p className="dates">
+          {fill(m.addedOn, { d: day(e.created_on) })}
+          {e.edited_on && ' · ' + fill(m.editedOn, { d: day(e.edited_on) })}
+        </p>
         <div className="btns">
           <button className="primary" data-ics onClick={() => downloadIcs(e.id, o.date)}>
             {m.ics}
           </button>
         </div>
+        <p className="note">{m.icsNote}</p>
+        {mine && (
+          <div className="btns">
+            <span className="mine">{m.mine}</span>
+            {!over && (
+              <button className="secondary" onClick={() => go({ name: 'eventEdit', id: e.id })}>
+                {m.edit}
+              </button>
+            )}
+            {e.weekly_until && o.date >= today && (
+              <button
+                className="secondary"
+                onClick={() => go({ name: 'weekEdit', id: e.id, date: o.date })}
+              >
+                {m.editWeek}
+              </button>
+            )}
+            <button className="secondary" onClick={() => void deleteEvent(e.id)}>
+              {m.del}
+            </button>
+          </div>
+        )}
       </div>
     </>
   );

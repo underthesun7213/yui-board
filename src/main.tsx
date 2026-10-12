@@ -1,6 +1,7 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { loadData } from './actions/data';
+import { startData } from './actions/data';
+import { refreshMine } from './actions/write';
 import { enterMap, ensurePrefs } from './actions/map';
 import { watchForUpdates } from './actions/update';
 import { App } from './app/App';
@@ -8,6 +9,7 @@ import { onRouteChange, startRouter } from './app/router';
 import { ROOTS } from './app/routes';
 import { preload } from './app/screens';
 import { LANGS, type Lang } from './domain/types';
+import { isLoaded, loadLang } from './i18n';
 import { store } from './platform/storage';
 import { collection } from './state/collection';
 import { location } from './state/location';
@@ -20,7 +22,10 @@ import './styles/screens.css';
 
 /* Restore what this device remembers (same keys as v1.3). */
 const lang = store.get<string>('lang', 'en');
-prefs.set({ lang: LANGS.includes(lang as Lang) ? (lang as Lang) : 'en' });
+const startLang: Lang = LANGS.includes(lang as Lang) ? (lang as Lang) : 'en';
+/* the chosen language's strings before the first paint (English is built in) */
+await loadLang(startLang).catch(() => {});
+prefs.set({ lang: isLoaded(startLang) ? startLang : 'en' });
 const cg = store.get<unknown>('cg', {});
 if (cg && typeof cg === 'object' && !Array.isArray(cg)) {
   const ok: Record<string, true> = {};
@@ -45,7 +50,8 @@ onRouteChange((to, from, how) => {
   else if (mapUi.get().mode === 'japan') void ensurePrefs();
 });
 startRouter();
-void loadData();
+void startData();
+void refreshMine();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

@@ -1,6 +1,10 @@
 import 'leaflet/dist/leaflet.css';
 import 'leaflet.markercluster/dist/MarkerCluster.css';
 import { reload } from '../../actions/app';
+import { go } from '../../actions/nav';
+import { deletePlace } from '../../actions/write';
+import { formatDay } from '../../domain/calendar/dates';
+import { session } from '../../state/session';
 import {
   selectPref,
   setCat,
@@ -13,7 +17,7 @@ import { CAT } from '../../domain/categories';
 import { HOME, prefName, regionOf, shownPlaces, walkMin, type Region } from '../../domain/geo/geo';
 import { PREFS } from '../../domain/geo/prefs';
 import { CATEGORIES, type Place } from '../../domain/types';
-import { fill } from '../../i18n';
+import { fill, LOCALE } from '../../i18n';
 import { useT } from '../../i18n/useT';
 import { MapSlot } from '../../map/MapSlot';
 import { data } from '../../state/data';
@@ -29,8 +33,11 @@ export function MapScreen() {
   const mapFail = useStore(mapUi, (s) => s.mapFail);
   return (
     <>
-      <div className="pagehead">
+      <div className="pagehead withadd">
         <h1>{m.mapT}</h1>
+        <button className="addbtn" onClick={() => go({ name: 'placeNew' })}>
+          ＋ {m.addPlace}
+        </button>
       </div>
       <ModeBar />
       <DataStatus />
@@ -179,11 +186,15 @@ const safeMapsUrl = (u: string | null) =>
 
 function PlaceCard() {
   const m = useT();
+  const lang = useStore(prefs, (s) => s.lang);
   const pl = useStore(mapUi, (s) => s.pl);
   const places = useStore(data, (s) => s.places);
+  const mine = useStore(session, (s) => (pl != null ? !!s.minePlaces[pl] : false));
   const { near, from } = useShown();
   const p = pl == null ? null : places.find((x) => x.id === pl);
   if (!p) return null;
+  const day = (d: string) =>
+    formatDay(d, LOCALE[lang], { year: 'numeric', month: 'short', day: 'numeric' });
   const url = safeMapsUrl(p.gmaps_url);
   return (
     <div className="pcard">
@@ -194,10 +205,25 @@ function PlaceCard() {
       <h3 lang={p.lang}>{p.name}</h3>
       {p.description && <p lang={p.lang}>{p.description}</p>}
       <LangBadge lang={p.lang} />
+      <p className="dates">
+        {fill(m.addedOn, { d: day(p.created_on) })}
+        {p.edited_on && ' · ' + fill(m.editedOn, { d: day(p.edited_on) })}
+      </p>
       {url && (
         <a className="glink" href={url} target="_blank" rel="noopener noreferrer">
           {m.openMap}
         </a>
+      )}
+      {mine && (
+        <div className="btns">
+          <span className="mine">{m.mine}</span>
+          <button className="secondary" onClick={() => go({ name: 'placeEdit', id: p.id })}>
+            {m.edit}
+          </button>
+          <button className="secondary" onClick={() => void deletePlace(p.id)}>
+            {m.del}
+          </button>
+        </div>
       )}
     </div>
   );
@@ -212,6 +238,7 @@ function PlaceList() {
   const places = useStore(data, (s) => s.places);
   const { list, near, from } = useShown();
   if (mode === 'japan' && !pref) {
+    const none = !places.length;
     const groups = new Map<Region, (typeof PREFS)[number][]>();
     for (const p of PREFS) {
       const r = regionOf(p[0]);
@@ -219,6 +246,14 @@ function PlaceList() {
     }
     return (
       <>
+        {none && (
+          <div className="empty slim">
+            <p>{m.emptyPlaces}</p>
+            <button className="primary" onClick={() => go({ name: 'placeNew' })}>
+              ＋ {m.addPlace}
+            </button>
+          </div>
+        )}
         {(Object.keys(m.regions) as Region[]).map((r) => (
           <div key={r}>
             <div className="sect">{m.regions[r]}</div>
@@ -243,7 +278,15 @@ function PlaceList() {
       </>
     );
   }
-  if (!list.length) return <p className="empty">{near ? m.nearEmpty : m.prefEmpty}</p>;
+  if (!list.length)
+    return (
+      <div className="empty">
+        <p>{!places.length ? m.emptyPlaces : near ? m.nearEmpty : m.prefEmpty}</p>
+        <button className="primary" onClick={() => go({ name: 'placeNew' })}>
+          ＋ {m.addPlace}
+        </button>
+      </div>
+    );
   return (
     <ul className="plist" aria-label={m.aPlaces}>
       {list.map((p) => (

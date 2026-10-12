@@ -18,6 +18,16 @@ const BUDGETS = [
     ],
   },
   {
+    name: 'writing (forms + account)',
+    kb: 50,
+    roots: [
+      'src/features/write/PlaceForm.tsx',
+      'src/features/write/EventForm.tsx',
+      'src/features/write/WeekForm.tsx',
+      'node_modules/@supabase/auth-js/dist/module/index.js',
+    ],
+  },
+  {
     name: 'lessons and game',
     kb: 30,
     roots: [
