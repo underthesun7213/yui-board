@@ -31,8 +31,8 @@
 | [0020](../adr/0020-hosting-github-pages-actions.md) | 사용자 앱은 같은 GitHub Pages 주소(Actions 배포), 관리자 콘솔은 헤더 가능한 별도 출처(Cloudflare) | **승인됨** (D21) |
 | [0021](../adr/0021-data-access-views-rpc.md) | 테이블 비노출 스키마, 읽기는 공개 뷰, 쓰기는 정의자 RPC | 제안됨 |
 | [0022](../adr/0022-security-baseline.md) | 보안 기준선 Y-S1~S12 (D24·D25·D26 메모 추가) | 제안됨 |
-| [0023](../adr/0023-frontend-framework-react.md) | React 19 + Vite 8 + TS 정적 SPA. 지도 런타임·라우터·상태·i18n 은 React 밖(react-leaflet·React Router·Zustand·i18next 없음), `react/no-danger`, 홈 예산 75 KB(→ ADR-0024 가 실측으로 100 KB 대체 제안) | **승인됨** (D24) — 본문은 그대로, 보완은 ADR-0024 |
-| [0024](../adr/0024-react-switch-review-fixes.md) | React 전환 검토 보완: 홈 예산 **100 KB**(react-dom 19.3.0 실측 67.2 KB), `useStore` 의 `getServerSnapshot`, `prerender` 렌더 검사, Leaflet 인자 허용 목록 린트, `detach` 세대, 지연 라우트 오류 경계·전환, history state, 버전 고정(TS 6.0.3) | 제안됨 |
+| [0023](../adr/0023-frontend-framework-react.md) | React 19 + Vite 8 + TS 정적 SPA. 지도 런타임·라우터·상태·i18n 은 React 밖(react-leaflet·React Router·Zustand·i18next 없음), `react/no-danger`, 홈 예산 75 KB(→ ADR-0024 로 100 KB 대체) | **승인됨** (D24) — 본문은 그대로, 보완은 ADR-0024 |
+| [0024](../adr/0024-react-switch-review-fixes.md) | React 전환 검토 보완: 홈 예산 **100 KB**(react-dom 19.3.0 실측 67.2 KB), `useStore` 의 `getServerSnapshot`, `prerender` 렌더 검사, Leaflet 인자 허용 목록 린트, `detach` 세대, 지연 라우트 오류 경계·전환, history state, 버전 고정(TS 6.0.3) | **승인됨** (D27) |
 
 ADR-0009 의 상태 줄을 "ADR-0017으로 일부 대체됨" 으로 바꿨다(본문 그대로). ADR-0011(정적 데이터)·ADR-0013(빌드 없음)도 v2 에서 사실상 대체되지만 상태 줄은 책임자 확인 후 바꾼다(RFC-0003 OQ-15).
 
@@ -44,7 +44,7 @@ ADR-0009 의 상태 줄을 "ADR-0017으로 일부 대체됨" 으로 바꿨다(�
 
 **아직 책임자 결정이 필요한 것:**
 - ADR-0023 의 세부 방침 확정 범위(RE-Q1)
-- 홈 예산 100 KB 승인(ADR-0024 RF-Q1)
+- ~~홈 예산 100 KB 승인(ADR-0024 RF-Q1)~~ — 승인됨 (D27)
 - 반영 시간 "10초" 해석(RFC-0003 OQ-1)
 - 비공개 운영 저장소(OQ-F)
 - 스크립트 대량 숨김의 수동 복원 비용 수용(OQ-17)
