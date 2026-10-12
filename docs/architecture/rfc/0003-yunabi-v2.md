@@ -304,6 +304,7 @@ flowchart TD
     - ja 「画面を読み込めませんでした。接続を確認して、再読み込みしてください。」 / 再読み込み
     - ko "화면을 불러오지 못했어요. 연결을 확인하고 다시 불러와 주세요." / 다시 불러오기
   - 경계는 라우트가 바뀌면 `key` 로 초기화된다.
+  - 페이지 안에서 다시 시도하지 않는다 `[Y-1 구현]`. Chromium 은 한 번 실패한 동적 import 를 페이지를 다시 불러올 때까지 실패한 채로 둔다. 그래서 지도 청크 오류도 [다시 불러오기](페이지 새로고침) 버튼을 보여 준다.
 - **전환.** 외부 저장소(`useSyncExternalStore`) 값은 Transition 으로 그릴 수 없다(React 가 blocking 갱신으로 되돌린다 — react.dev). 그래서 `App` 은 화면 자리에 그릴 라우트를 React 상태 `shown` 으로 한 겹 두고, `routeStore` 구독에서 `startTransition(() => setShown(next))` 로 맞춘다.
   - 새 청크를 받는 동안 옛 화면이 그대로 보여서 fallback 이 깜박이지 않는다. fallback 은 첫 진입 때만 보인다.
   - 헤더·탭 강조는 `useStore(routeStore)` 로 즉시 바뀐다.
@@ -343,7 +344,7 @@ v1.3 은 URL 을 `./` 로 고정하고 화면을 `history.state` 에만 두었�
 | ‹ : `PARENT[view] === prevView` 이면 `history.back()`, 아니면 `go(parent, true)` | 같음 — `nav.ts` 의 `PARENT` 표(위 표의 "부모"), `history.state.prev`. `[검토 R-11]` 손으로 고친 해시·외부 링크로 들어온 기록은 `history.state === null` 이다. 이때 `prev` 가 없으므로 ‹ 는 `PARENT` 라우트로 `navigate(parent, {replace: true})` 하고, `map` 이 없으면 D14 기본값(near)을 쓴다 |
 | 도도부현 선택 = `pushState(+pf)`, OS 뒤로 가기 → 같은 지도에서 `updateMap` | 같음 — `#/map` 에 머무르며 `state.pref` 만 바뀐 기록 항목. `popstate` 가 지도 → 지도이면 **화면을 다시 만들지 않고** 지도 상태만 바꾼다 |
 | 모드 전환은 기록 항목 아님(`replaceState`) | 같음 |
-| D14: 다른 화면에서 지도로 `go()` 하면 near 로 (`index.html:1747-1753`) | 같음 — `navigate('#/map')` 가 다른 라우트에서 올 때 `mode=near, pref=null, cat='', pl=null`. 위치가 허용 상태면 다시 측위(Y-M1, 권한 창 없음) |
+| D14: 다른 화면에서 지도로 `go()` 하면 near 로 (`index.html:1747-1753`) | 같음 — `navigate('#/map')` 가 다른 라우트에서 올 때 `mode=near, pref=null, cat='', pl=null`. 위치가 허용 상태면 다시 측위(Y-M1, 권한 창 없음 — 측위 중·실패 시 마지막 좌표 유지, 100 m 이상 움직일 때만 다시 맞춤, 모드 전환은 진입이 아님 — §9 `[Y-1 구현]`) |
 | `popstate` 로 지도에 돌아오면 state 의 `mode` 를 복원 (`:1823`) — D14 를 적용하지 않음 | **같게 유지** (OS 뒤로 가기는 "이전 화면 그대로" 가 기대 동작). OQ-8 에 확인 요청 |
 | 시작: `history.state` → `?v=` → `?tab=1` → 홈, 쿼리 제거 | 시작: 해시 라우트 → `history.state` → **옛 쿼리 `?v=learn|map|cal`, `?tab=1`(→`#/cal`), `?compose=1`(→`#/`) 을 해시로 바꿔 `replaceState`** (manifest 바로가기·옛 링크 호환) |
 | manifest `shortcuts` `./?v=map` | `./#/map` 으로 바꾸되, 옛 쿼리도 계속 받는다 |
@@ -398,12 +399,12 @@ v1.3 은 URL 을 `./` 로 고정하고 화면을 `history.state` 에만 두었�
 | StrictMode `[D24]` | 개발 모드에서 React 는 effect 를 "설치 → 정리 → 다시 설치" 로 두 번 돌린다. 위 계약에서 이것은 attach → detach → attach 이고, `ensure()` 가 메모이즈되어 **`L.map` 은 한 번만** 생긴다. **경합 가드:** `attach(slot)` 은 `currentSlot = slot; const g = ++gen; await ensure(); if (gen !== g \|\| currentSlot !== slot) return;` 로 그 사이 detach·재attach 된 경우 붙이지 않는다. `detach(slot)` 은 `currentSlot === slot` 일 때만 동작한다 — 지도 화면 ↔ 장소 폼(MAP-04)처럼 새 슬롯이 먼저 붙는 경우 옛 슬롯의 정리가 새 슬롯을 떼지 않게. **그때 `currentSlot = null; ++gen;` 도 한다** `[검토 R-5]`. 그래서 `ensure()` 를 기다리는 동안 attach → detach 만 일어나면(화면을 바로 떠남) 나중에도 붙이지 않는다. StrictMode 순서는 attach(g=1) → detach(gen=2, slot=null) → attach(g=3) 이고, `ensure()` 가 끝나면 g=3 인 호출만 붙인다 — `L.map` 1회, 붙이기 1회. 컴포넌트 ref 에 인스턴스를 두고 정리에서 `remove()` 하는 흔한 처방은 StrictMode 는 통과하지만 탭을 떠날 때마다 지도를 부숴 Y-M2 를 어기므로 쓰지 않는다. react-leaflet 도 같은 이유(컴포넌트 수명 = 지도 수명)로 쓰지 않는다(ADR-0023 결정 2·3) |
 | 상태 → 지도 `[D24]` | 런타임이 attach 되어 있는 동안 `mapUi`·`data`·`location`·`prefs` 저장소를 **직접 구독**해 `sync()` 한다(React effect 의존성 배열로 지도를 움직이지 않음 — 이중 실행으로 `fitBounds` 가 두 번 불리는 일이 없다). 맞춤은 `mapUi.fitSeq` 증가로 요청한다. 화면 HTML(상태줄·칩·목록·카드)은 React 가 부분 갱신하므로 v1.3 의 `updateMap()`(컨테이너 5개 `innerHTML` 교체)이 필요 없다 |
 | 비동기 결과 | 위치·경계 로드·**데이터 갱신**은 상태만 바꾼다. 런타임이 attach 상태면 구독이 반영하고, 아니면 `runtime.stale = true` → 다음 `attach` 가 맞춤 (v1.3 `mapChanged`/`locChanged`) |
-| D14 / Y-M1 | 라우터가 다른 화면 → `#/map` 일 때 `mapUi.enterNear()`: `modeView.japan` 저장 → near → 저장된 near 화면이 있으면 `setView`, 없으면 맞춤. 위치 상태가 `ok`/`idle` 이면 `locate()` 다시(권한 창 없음 — 이미 허용된 권한만 사용) |
+| D14 / Y-M1 | 라우터가 다른 화면 → `#/map` 일 때 `mapUi.enterNear()`: `modeView.japan` 저장 → near → 저장된 near 화면이 있으면 `setView`, 없으면 맞춤. 위치 상태가 `ok`/`idle` 이면 `locate()` 다시(권한 창 없음 — 이미 허용된 권한만 사용). `[Y-1 구현]` 세부: (1) 다시 측위하는 동안 **마지막 좌표를 계속 쓴다** — 상태는 `ok` 그대로이고 `refreshing` 표지만 켠다. (2) 새 측위가 실패하면 마지막 좌표를 유지한다. (3) 새 좌표가 **100 m 이상** 움직였을 때만 다시 맞춘다. (4) 모드 전환(near ↔ japan)은 진입이 아니다 — 상태가 `idle` 일 때만 측위하고, 고른 도도부현을 유지한다(v1.3 과 같음). (5) 각 모드는 왕복할 때마다 마지막으로 떠난 화면(`modeView[mode]`)으로 돌아간다 |
 | 도도부현 | 경계 GeoJSON 은 `public/data/` 에서 일본 전체 첫 진입 때 `fetch`(v1.3 `ensurePrefs`). 같은 파일이 DB 의 판정용 테이블로도 들어간다(ERD v2 §4.6). `mainBounds()` 는 `domain/geo/bounds.ts` 로 |
 | 장소 등록 | MAP-04 는 **같은 지도 인스턴스**를 쓴다: 폼 라우트에서도 `MapSlot` 을 붙이고 "위치 고르기" 모드(지도 탭 → 임시 마커). [현재 위치] 는 Y-M7 경고 확인 후에만 좌표를 채운다 |
 | 타일 | URL 은 설정 상수(RFC-0002 R-2). 실패 집계·안내(v1.3 `tileFail`) 유지 |
 | 라벨 | 확대 버튼·내 위치·결 마커 문구는 `attach` 때마다 현재 언어로(v1.3 `labelMap`) |
-| 사용자 글 출력 `[검토 #12]` | Leaflet 은 툴팁·팝업·`divIcon` 의 **문자열을 `innerHTML` 로 넣는다** — v1.3 처럼 `esc()` 를 잊으면 그대로 XSS 다. v2 규칙: 핀 이름 같은 사용자 글은 `map/layers.ts` 의 `textNode(name)`(`createElement` + `textContent`)으로 만든 노드로만 넘기고, `divIcon` 의 `html` 은 사용자 글이 없는 고정 마크업(카테고리 색 점)만. 마커 `title` 옵션은 속성이라 안전. 장소 카드·목록은 React 컴포넌트(JSX 텍스트 이스케이프)로 그린다 `[D24]`. 린트와 E2E(이름이 XSS 페이로드인 핀)로 강제한다. `[검토 R-4]` 린트는 "리터럴 금지" 가 아니라 **허용 목록**이다: Leaflet HTML API 의 인자와 `content` 옵션은 `textNode(…)` 호출일 때만 통과한다. `divIcon` 은 `icons.ts` 에서 문자열 리터럴 `html` 로만 만든다(ADR-0016 결정 2 L1~L3·ICON_HTML) |
+| 사용자 글 출력 `[검토 #12]` | Leaflet 은 툴팁·팝업·`divIcon` 의 **문자열을 `innerHTML` 로 넣는다** — v1.3 처럼 `esc()` 를 잊으면 그대로 XSS 다. v2 규칙: 핀 이름 같은 사용자 글은 `map/layers.ts` 의 `textNode(name)`(`createElement` + `textContent`)으로 만든 노드로만 넘기고, `divIcon` 의 `html` 은 사용자 글이 없는 고정 마크업(카테고리 색 점)만. 마커 `title` 옵션은 속성이라 안전. 장소 카드·목록은 React 컴포넌트(JSX 텍스트 이스케이프)로 그린다 `[D24]`. 린트와 E2E(이름이 XSS 페이로드인 핀)로 강제한다. `[검토 R-4]` 린트는 "리터럴 금지" 가 아니라 **허용 목록**이다: Leaflet HTML API 의 인자와 `content` 옵션은 `textNode(…)` 호출일 때만 통과한다. `divIcon` 은 `icons.ts` 에서만 만들고, `html` 은 문자열 리터럴이거나 `map/layers.ts` 의 DOM 팩토리 호출(`textNode`·`pinNode`·`clusterNode`·`meNode`, 글자는 `textContent`)이다 `[Y-1 구현]` — 핀·클러스터 개수·"結" 홈 마커·"현재 위치" 제목이 글자를 담기 때문. Leaflet 1.9 `DivIcon.createIcon` 은 Element 를 HTML 로 해석하지 않고 붙이므로 데이터가 HTML 이 되지 않는다. `icons.ts` 는 `./layers` 만 import 한다. L1·L2 도 같은 팩토리 허용 목록이고, 린트 단위 테스트는 `tests/unit/lint.test.ts` (ADR-0016 결정 2 L1~L3·ICON_HTML) |
 
 ```mermaid
 sequenceDiagram
@@ -430,9 +431,13 @@ sequenceDiagram
     RT->>RT: 컨테이너 재부착, invalidateSize, label(lang), sync(stale), 저장소 구독
   end
   alt locState = ok 또는 idle
-    A->>G: getCurrentPosition (권한 창 없음)
-    G-->>A: 좌표 → location 저장소
-    A-->>RT: (구독) sync({fit:true})
+    A->>G: getCurrentPosition (권한 창 없음, ok 면 마지막 좌표 유지 + refreshing) [Y-1 구현]
+    alt 성공
+      G-->>A: 좌표 → location 저장소
+      A-->>RT: (구독) 100 m 이상 움직였으면 sync({fit:true}), 아니면 맞춤 없음
+    else 실패
+      G-->>A: 오류 → 마지막 좌표 유지 (ok 였다면 ok 그대로)
+    end
   end
   U->>R: 탭 "캘린더"
   R->>MS: routeStore 변경 → 해제
@@ -763,6 +768,7 @@ upgrade-insecure-requests
 ```
 
 - **`'self'` 대신 경로를 한정한다** `[검토 #13]`. GitHub Pages 프로젝트 사이트의 출처 `https://<user>.github.io` 는 같은 사용자의 **다른 Pages 프로젝트 전부**를 포함하므로 `script-src 'self'` 는 그 프로젝트들의 스크립트도 믿는다. 경로가 붙은 출처 표현식은 그 경로 아래만 허용한다(경로가 `/` 로 끝나면 접두어 일치). 단 CSP 는 **리디렉션 뒤에는 경로를 무시**한다(사양) — 같은 출처 안 리디렉션을 만들 수 있는 다른 프로젝트가 있다면 완전한 격리는 아니다. 완전한 해결은 사용자 도메인(ADR-0020 결정 6). Vite 산출물은 모두 `assets/` 아래로 나오게(`build.assetsDir`) 한다. `<user>`·`yui-board` 는 빌드 시 설정에서 채운다.
+- **빌드 환경 변수** `[Y-1 구현]`: 운영 빌드는 경로 한정 CSP 를 만들려고 **`YUNABI_ORIGIN`**(전체 URL, `/` 로 끝남 — 예 `https://<user>.github.io/yui-board/`)을 요구하고, 없으면 빌드가 실패한다. 로컬 빌드만 **`YUNABI_ALLOW_SELF=1`** 로 `'self'` 를 허용한다. E2E 빌드는 테스트 핸들을 노출하므로 **`dist-e2e/`** 에 따로 내보내고 **절대 배포하지 않는다**(§20).
 - `default-src 'none'` 로 바꾸고 필요한 것만 연다.
 
 - `style-src 'unsafe-inline'`: Leaflet 이 인라인 스타일을 쓴다. 스크립트 실행 경로가 아니라 수용(Y-1 에서 제거 가능 여부 확인). React 의 `style={…}` 는 CSSOM 으로 설정되어 이 제한과 무관하다(*일반 지식*) `[D24]`. (이전 안의 이유였던 Svelte 전환 효과는 없어짐.)
@@ -924,6 +930,8 @@ flowchart LR
 | DB | `supabase db push` (수동 승인), Cron 작업은 마이그레이션에 포함 | prod |
 | 로컬 | `npm run dev`(fixture 모드: `VITE_SUPABASE_URL` 없음 → `tests/fixtures`), `npm run dev:backend`(로컬 Supabase) | local |
 | 스테이징 | 따로 두지 않는다(무료 프로젝트 2개 한도·일시정지, infra.md §2 판단 유지). CI 의 로컬 스택이 스테이징 역할 | — |
+
+빌드 `[Y-1 구현]`: 배포용 `dist/` 는 `YUNABI_ORIGIN`(전체 URL, `/` 로 끝남)을 준 운영 빌드로만 만든다(§17.3). `YUNABI_ALLOW_SELF=1` 빌드는 로컬 확인용이다. E2E 빌드는 테스트 핸들이 들어 있어 `dist-e2e/` 로 나가며, 배포 작업은 `dist/` 만 올린다.
 
 롤백: 사용자 앱은 이전 성공 실행의 산출물 재배포(새 SW 가 다시 설치됨). DB 는 앞으로만(되돌리는 마이그레이션을 짝으로) — 데이터 손상은 백업 복구.
 

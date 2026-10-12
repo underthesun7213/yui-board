@@ -74,8 +74,12 @@ ADR-0023 이 승인된 뒤 Y-1 이 시작되어 의존성이 설치되었고, Re
 4. **Leaflet HTML API 의 인자는 DOM 노드를 만드는 함수 호출만 허용한다** `[검토 R-4]` (ADR-0023 결정 7 보완)
    - `src/map/**` 에서 `bindTooltip`·`bindPopup`·`setContent`·`setTooltipContent`·`setPopupContent` 의 첫 인자는 반드시 `textNode(...)` 호출이어야 한다. `map/layers.ts` 에 다른 DOM 노드 팩토리를 추가하면 그 이름도 허용 목록에 넣는다. 그 밖의 식은 **모두 오류**다: 식별자, 멤버 접근, 템플릿, 화살표 함수 등.
    - `L.popup({content})`·`L.tooltip({content})` 의 `content` 도 같은 규칙을 따른다.
-   - `divIcon`·`new L.DivIcon` 은 `map/icons.ts` 에서만 부른다. 그 안의 `html` 은 **문자열 리터럴 상수**만 허용하고, `icons.ts` 는 상태·데이터 모듈을 import 하지 않는다.
-   - 선택자 전문은 [ADR-0016 결정 2](0016-toolchain-test-ci.md)에 있다.
+   - `divIcon`·`new L.DivIcon` 은 `map/icons.ts` 에서만 부른다. 그 안의 `html` 은 **문자열 리터럴**이거나 **`map/layers.ts` 의 DOM 노드 팩토리 호출**(`textNode`·`pinNode`·`clusterNode`·`meNode` — 글자는 모두 `textContent` 로 넣는다)만 허용한다 `[Y-1 구현]`.
+     - 이유: 핀, 클러스터 개수, "結" 홈 마커, "현재 위치" 제목은 글자를 담는다. 리터럴만으로는 만들 수 없다.
+     - 안전한 이유: Leaflet 1.9 의 `DivIcon.createIcon` 은 `html` 이 Element 이면 HTML 로 해석하지 않고 그 노드를 붙인다. 그래서 데이터가 HTML 이 될 길이 없다.
+     - `icons.ts` 가 import 할 수 있는 것은 `./layers` 뿐이다(상태·`api`·`runtime` 금지).
+     - L1·L2(툴팁·팝업 인자, `content`)도 같은 팩토리 허용 목록 `^(textNode|pinNode|clusterNode|meNode)$` 를 쓴다 `[Y-1 구현]`.
+   - 선택자 전문은 [ADR-0016 결정 2](0016-toolchain-test-ci.md)에 있다. 선택자는 단위 테스트(`tests/unit/lint.test.ts`)로 통과·실패 예를 확인한다 `[Y-1 구현]`.
    - 린트가 따라가지 못하는 별칭(`const f = textNode`)은 오류로 떨어진다. 일부러 엄격하게 둔 쪽이다.
 
 5. **경합 가드: `detach` 도 세대를 올린다** `[검토 R-5]` (ADR-0023 결정 2 보완)
@@ -99,6 +103,7 @@ ADR-0023 이 승인된 뒤 Y-1 이 시작되어 의존성이 설치되었고, Re
 6. **지연 라우트: 오류 경계와 전환** `[검토 R-7]` (ADR-0023 결정 5 보완)
    - **오류 경계.** `App` 의 화면 자리는 `<RouteErrorBoundary key={route.name}><Suspense fallback={<RouteLoading/>}>…` 로 감싼다. 클래스 컴포넌트이고, 라우트가 바뀌면 `key` 로 초기화된다.
      - 청크 로드 실패(오프라인에서 사전 캐시에 없는 청크, 또는 배포 뒤 옛 해시 파일이 사라짐)를 잡아서 문구와 [다시 불러오기] 를 보여 준다. 다시 불러오기는 `actions/app.reload()` 가 맡는다(화면 컴포넌트는 `location` 을 직접 쓰지 않는다).
+     - 페이지 안에서 다시 시도하지 않고 페이지를 다시 불러온다 `[Y-1 구현]`. Chromium 은 한 번 실패한 동적 import 를 페이지를 다시 불러올 때까지 실패한 채로 둔다. 지도 청크의 오류 화면도 같은 [다시 불러오기] 버튼이다.
      - Vite 의 `vite:preloadError` 창 이벤트는 `main.tsx` 가 받아 같은 상태로 보낸다.
      - 문구(3개 언어, `err.chunk`·`err.reload`): en "Couldn't load this screen. Check your connection and reload." / [Reload] · ja 「画面を読み込めませんでした。接続を確認して、再読み込みしてください。」 / [再読み込み] · ko "화면을 불러오지 못했어요. 연결을 확인하고 다시 불러와 주세요." / [다시 불러오기]
    - **전환.** 이동할 때 이미 보이던 화면이 fallback 으로 깜박이지 않게 한다. 다만 `useSyncExternalStore` 로 읽는 값은 Transition 으로 그릴 수 없다(확인표 — React 가 blocking 으로 되돌린다). 그래서 다음 구조를 쓴다.
@@ -143,7 +148,7 @@ ADR-0023 이 승인된 뒤 Y-1 이 시작되어 의존성이 설치되었고, Re
 - **나쁜 점:**
   - 첫 화면이 ADR-0023 의 가정보다 25 KB 크다.
   - 렌더 검사가 비동기(`await prerender`)가 되어 조금 느려진다(*추정*: 케이스 수백 개에 수 초).
-  - `textNode` 이외의 DOM 팩토리를 늘릴 때마다 린트 허용 목록을 고쳐야 한다.
+  - DOM 팩토리를 늘릴 때마다 린트 허용 목록(L1·L2·ICON_HTML 공통)을 고쳐야 한다. Y-1 에서 `textNode`·`pinNode`·`clusterNode`·`meNode` 넷이 되었다 `[Y-1 구현]`.
 - **바뀌는 문서:**
   - ADR-0016 결정 2·3 과 TC-Q2
   - tech-stack-v2 §1·§2.2·§2.5·§3.2·§4·부록·TS-Q1·TS-Q3
