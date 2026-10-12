@@ -1,5 +1,5 @@
 /* Bump CACHE on every deploy — it is what forces phones to pick up new code. */
-const CACHE = "yui-v1";
+const CACHE = "yui-v2";
 
 const SHELL = [
   "./",
@@ -8,7 +8,12 @@ const SHELL = [
   "./icon-192.png",
   "./icon-512.png",
   "./icon-maskable-512.png",
-  "./icon-180.png"
+  "./icon-180.png",
+  "./vendor/leaflet/leaflet.js",
+  "./vendor/leaflet/leaflet.css",
+  "./vendor/leaflet.markercluster/leaflet.markercluster.js",
+  "./vendor/leaflet.markercluster/MarkerCluster.css",
+  "./data/japan-prefectures.geojson"
 ];
 
 self.addEventListener("install", e => {
@@ -31,12 +36,13 @@ self.addEventListener("fetch", e => {
   const req = e.request;
   if (req.method !== "GET") return;
 
+  // Map tiles and other hosts are left to the browser: they are not ours to cache.
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
 
   // Navigations and data: try the network first so a redeploy shows up
   // immediately; fall back to cache when the dorm wifi drops.
-  const isDoc = req.mode === "navigate" || url.pathname.endsWith(".json");
+  const isDoc = req.mode === "navigate" || /\.(json|geojson)$/.test(url.pathname);
 
   if (isDoc) {
     e.respondWith(
@@ -46,7 +52,8 @@ self.addEventListener("fetch", e => {
           caches.open(CACHE).then(c => c.put(req, copy));
           return res;
         })
-        .catch(() => caches.match(req).then(r => r || caches.match("./index.html")))
+        .catch(() => caches.match(req, { ignoreSearch: req.mode === "navigate" })
+          .then(r => r || caches.match("./index.html")))
     );
     return;
   }

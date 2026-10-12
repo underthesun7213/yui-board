@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>YUI Board — 結の掲示板</title>
-<meta name="description" content="Events and community board for residents of GLOBAL COMMONS 結 -YUI-.">
+<title>YUI</title>
+<meta name="description" content="Everyday Japanese comics and a conversation game, a map of everyday places, and the dorm calendar — for residents of GLOBAL COMMONS 結 -YUI-.">
 <link rel="manifest" href="./manifest.webmanifest">
 <meta name="theme-color" content="#1D3E5C">
 <meta name="color-scheme" content="light">
@@ -14,10 +14,6 @@
 <meta name="apple-mobile-web-app-title" content="YUI">
 <link rel="apple-touch-icon" href="./icon-180.png">
 <link rel="icon" href="./icon-192.png">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.min.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.min.js"></script>
 <style>
 :root{
   --washi:#E9EAE5;
@@ -48,12 +44,13 @@ body{
   -webkit-tap-highlight-color:transparent;
 }
 /* Built for phones. Chrome elements shouldn't be text-selectable on touch. */
-header,.tabbar,.strip,.boards,.bar{-webkit-user-select:none;user-select:none}
+header,.tabbar,.bar{-webkit-user-select:none;user-select:none}
 /* Hover styles only where a real pointer exists, so taps don't leave stuck states. */
 @media(hover:hover){
-  .boards,.filters{cursor:grab}
-  .boards:active,.filters:active{cursor:grabbing}
-      }
+  .filters{cursor:grab}
+  .filters:active{cursor:grabbing}
+  .langmenu button:hover,.ev:hover{background:var(--card)}
+}
 /* Fills the notch / status bar area in iOS standalone mode. */
 #statusfill{position:fixed;top:0;left:0;right:0;z-index:60;
   height:env(safe-area-inset-top);background:var(--ai)}
@@ -99,52 +96,10 @@ header{
   box-shadow:0 8px 24px rgba(26,29,32,.3);overflow:hidden;min-width:172px;
 }
 .langmenu button{display:block;width:100%;text-align:left;padding:11px 14px;font-size:13.5px;color:var(--sumi)}
-.langmenu button:hover{background:var(--card)}
 .langmenu button[aria-pressed="true"]{background:var(--card);color:var(--ai);font-weight:600}
 .langmenu p{padding:9px 14px 10px;font-size:11px;line-height:1.5;color:var(--sumi-faint);border-top:1px solid var(--line)}
 .langmenu[hidden]{display:none}
-
-.boardwrap{position:relative}
-.boardwrap::before,.boardwrap::after{content:"";position:absolute;top:0;bottom:2px;width:30px;
-  pointer-events:none;opacity:0;transition:opacity .15s}
-.boardwrap::before{left:0;background:linear-gradient(to left,rgba(29,62,92,0),var(--ai) 72%)}
-.boardwrap::after{right:0;background:linear-gradient(to right,rgba(29,62,92,0),var(--ai) 72%)}
-.boardwrap[data-l="1"]::before{opacity:1}
-.boardwrap[data-r="1"]::after{opacity:1}
-.boards{
-  display:flex;gap:2px;overflow-x:auto;
-  margin-top:13px;
-  scrollbar-width:none;
-}
-.boards::-webkit-scrollbar{display:none}
-.boards button{
-  white-space:nowrap;font-size:13px;
-  padding:8px 13px 9px;
-  color:#A9C0D2;
-  border-bottom:2.5px solid transparent;
-}
-.boards button[aria-pressed="true"]{color:#fff;border-bottom-color:var(--beni)}
-
-/* ---------- feed ---------- */
 main{flex:1;position:relative}
-.feed{list-style:none}
-.post{
-  display:block;width:100%;text-align:left;
-  padding:15px 18px 12px;
-  border-bottom:1px solid var(--line);
-}
-.meta{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--sumi-faint);margin-bottom:6px}
-.bdot{width:7px;height:7px;border-radius:50%;flex:0 0 auto}
-.tag{color:var(--sumi-soft);font-weight:600}
-.meta .sep{opacity:.5}
-.post h2{font-size:15.5px;font-weight:600;line-height:1.42;letter-spacing:-.012em}
-.excerpt{font-size:13.5px;color:var(--sumi-soft);margin-top:5px;line-height:1.55;
-  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.acts{display:flex;gap:24px;margin-top:11px}
-.acts span{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--sumi-faint)}
-.acts svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.7;
-  stroke-linecap:round;stroke-linejoin:round}
-
 /* ---------- detail ---------- */
 .bar{
   position:sticky;top:0;z-index:15;
@@ -155,63 +110,14 @@ main{flex:1;position:relative}
 .bar h1{font-size:14px;font-weight:600;letter-spacing:-.01em}
 .bar .back{font-size:19px;line-height:1;color:var(--ai);padding:2px 4px}
 .bar .right{margin-left:auto;font-size:12.5px;color:var(--sumi-faint)}
-article{padding:18px 18px 20px}
-article h1{font-size:19px;font-weight:600;line-height:1.38;letter-spacing:-.015em;margin-bottom:9px}
-article .body{font-size:15px;white-space:pre-wrap;margin-top:12px}
-.tr-note{
-  font-size:12px;color:var(--sumi-faint);
-  margin-top:10px;padding-top:9px;border-top:1px dashed var(--line);
-  display:flex;align-items:center;gap:9px;
-}
-.tr-note button{color:var(--ai-mid);font-weight:600;font-size:12px;text-decoration:underline;text-underline-offset:2px}
-.actions{display:flex;gap:9px;margin-top:18px}
-.act{
-  flex:1;padding:9px;border:1px solid var(--line);background:var(--card);
-  border-radius:6px;font-size:13px;color:var(--sumi-soft);
-}
-.act[aria-pressed="true"]{background:var(--ai);border-color:var(--ai);color:#fff}
-.act.warn{flex:0 0 auto;padding:9px 13px;color:var(--sumi-faint)}
-
-.comments{border-top:8px solid var(--washi-deep);padding:6px 0 0}
-.cmt{position:relative;padding:14px 18px;border-bottom:1px solid var(--line)}
-.cmt.reply{padding-left:42px}
-.cmt.reply::before{content:"";position:absolute;left:22px;top:16px;bottom:16px;
-  width:2px;border-radius:1px;background:var(--line)}
-.cmt .who{font-size:12.5px;font-weight:600;color:var(--sumi);margin-bottom:4px}
-.cmt .who em{font-style:normal;font-weight:400;color:var(--sumi-faint);margin-left:6px}
-.cmt.op .who{color:var(--ai)}
-.cmt p{font-size:14px}
-
-
-/* ---------- compose ---------- */
-.compose{padding:18px}
-.field{margin-bottom:15px}
-.field label{display:block;font-size:12.5px;color:var(--sumi-soft);margin-bottom:5px}
-.field input,.field textarea,.field select{
-  width:100%;font:inherit;padding:10px 11px;
-  border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--sumi);
-}
-.field textarea{min-height:170px;resize:vertical;line-height:1.65}
-.field input:focus,.field textarea:focus,.field select:focus{outline:none;border-color:var(--ai);background:#fff}
-.hint{font-size:11.5px;color:var(--sumi-faint);margin-top:5px;line-height:1.5}
 .submit{
   width:100%;background:var(--ai);color:#fff;padding:13px;
   border-radius:6px;font-size:14.5px;font-weight:600;
 }
-
-/* ---------- reports (RA) ---------- */
 .ra-head{padding:16px 18px;background:var(--ai);color:#DCE6ED}
 .ra-head h1{font-size:16px;font-weight:600}
 .ra-head p{font-size:12px;color:var(--asagi);margin-top:3px}
-.rep{padding:15px 18px;border-bottom:1px solid var(--line)}
-.rep .reason{font-size:11.5px;color:var(--beni);font-weight:600;margin-bottom:4px}
-.rep .quoted{font-size:13.5px;color:var(--sumi-soft);border-left:2px solid var(--line);padding-left:10px;margin-bottom:9px}
-.rep .btns{display:flex;gap:7px}
-.rep .btns button{border:1px solid var(--line);border-radius:5px;padding:6px 11px;font-size:12.5px;background:var(--card)}
-.rep .btns .hide{color:var(--beni);border-color:#D8B0AD}
-
 .empty{padding:60px 34px;text-align:center;color:var(--sumi-faint);font-size:13.5px;line-height:1.7}
-
 /* ---------- calendar ---------- */
 .mnav{display:flex;align-items:center;gap:6px;padding:14px 12px 10px}
 .mnav h1{flex:1;text-align:center;font-size:16.5px;font-weight:600;letter-spacing:-.01em}
@@ -230,7 +136,6 @@ article .body{font-size:15px;white-space:pre-wrap;margin-top:12px}
 .cd{width:5px;height:5px;border-radius:50%;background:var(--asagi)}
 .cd.gip{background:var(--beni)}.cd.office{background:var(--ai)}.cd.student{background:var(--line)}
 .cell[aria-pressed="true"] .cd{background:#fff}
-
 /* ---------- map ---------- */
 .maphead{padding:16px 18px 4px}
 .maphead h1{font-size:17px;font-weight:600;letter-spacing:-.01em}
@@ -268,14 +173,8 @@ article .body{font-size:15px;white-space:pre-wrap;margin-top:12px}
 .plist .dotc{flex:0 0 auto;width:8px;height:8px;border-radius:50%}
 .plist b{flex:1;font-weight:500}
 .plist .pmin{font-size:12px;color:var(--sumi-faint)}
-
-/* ---------- RA entry ---------- */
-.raflag{margin-left:8px;font-size:13px;color:#C3D3DF;background:rgba(255,255,255,.16);
-  padding:6px 9px;border-radius:6px}
-
 .daylabel{padding:13px 18px 6px;font-size:12px;font-weight:600;color:var(--sumi-faint);background:var(--washi-deep)}
 .ev{position:relative;display:block;width:100%;text-align:left;padding:14px 18px 14px 62px;border-bottom:1px solid var(--line)}
-.ev:hover{background:var(--card)}
 .ev .clock{position:absolute;left:15px;top:15px;width:38px;text-align:right;font-size:12px;font-weight:600;color:var(--sumi-soft)}
 .ev::after{content:"";position:absolute;left:56px;top:0;bottom:0;width:2.5px;background:var(--asagi)}
 .ev.gip::after{background:var(--beni)}
@@ -300,43 +199,8 @@ article .body{font-size:15px;white-space:pre-wrap;margin-top:12px}
 .evbtns button{flex:1;padding:12px;border-radius:6px;font-size:13.5px;font-weight:600;border:1px solid var(--line);background:var(--card);color:var(--sumi-soft)}
 .evbtns .go{background:var(--ai);border-color:var(--ai);color:#fff}
 .evbtns .go[aria-pressed="true"]{background:var(--card);border-color:var(--ai);color:var(--ai)}
-
-.rules{margin-top:4px;padding:13px 15px;background:var(--card);
-  border:1px solid var(--line);border-radius:8px}
-.rules b{display:block;font-size:12.5px;color:var(--sumi-soft);margin-bottom:7px}
-.rules ul{margin:0;padding-left:16px}
-.rules li{font-size:12.5px;color:var(--sumi-faint);line-height:1.65}
-.rules li b{color:var(--beni);font-weight:600}
-.rules .rok{font-size:12px;color:var(--sumi-soft);line-height:1.6;
-  margin-top:9px;padding-top:9px;border-top:1px solid var(--line)}
-
-.exbtn{width:100%;margin-top:9px;padding:11px;border-radius:6px;
-  border:1px solid var(--ai);background:var(--washi);color:var(--ai);
-  font-size:13.5px;font-weight:600}
-.exbtn[disabled]{border-color:var(--line);color:var(--sumi-faint);background:var(--card)}
-.warnbox2{padding:12px 14px;border-radius:8px;margin:13px 0 16px;
-  background:#F6EDEC;border:1px solid #DFC0BD;
-  font-size:12.5px;color:var(--sumi-soft);line-height:1.6}
 .sect{padding:16px 18px 7px;font-size:12px;font-weight:600;color:var(--sumi-faint);
   background:var(--washi-deep)}
-.req,.exch{padding:15px 18px;border-bottom:1px solid var(--line)}
-.req .rline{font-size:14px;line-height:1.55}
-.req .rline b{color:var(--ai)}
-.rfrom{font-size:11.5px;color:var(--sumi-faint);margin-top:6px}
-.req .btns{display:flex;gap:7px;margin-top:11px}
-.req .btns button{flex:1;border:1px solid var(--line);border-radius:6px;padding:9px;
-  font-size:13px;background:var(--card);color:var(--sumi-soft)}
-.req .btns .ok{background:var(--ai);border-color:var(--ai);color:#fff;font-weight:600}
-.exch .xmain{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap}
-.exch .xmain b{font-size:15px;font-weight:600}
-.exch .xroom{font-size:12px;color:var(--sumi-faint)}
-.exch .xmain a{font-size:13px;color:var(--ai);text-decoration:underline;text-underline-offset:3px}
-.exch .cut{margin-top:10px;font-size:12px;color:var(--sumi-faint);
-  border:1px solid var(--line);border-radius:5px;padding:5px 10px;background:var(--card)}
-.hasdot{position:relative}
-.hasdot::after{content:"";position:absolute;top:3px;right:3px;width:7px;height:7px;
-  border-radius:50%;background:var(--beni);border:1.5px solid var(--ai)}
-
 /* ---------- lessons ---------- */
 .lesson{display:flex;align-items:center;gap:13px;width:100%;text-align:left;
   padding:14px 18px;border-bottom:1px solid var(--line)}
@@ -420,26 +284,6 @@ article .body{font-size:15px;white-space:pre-wrap;margin-top:12px}
 .expr b{font-size:15.5px;font-weight:600}
 .expr .rd{font-size:12px;color:var(--sumi-faint);margin-left:9px}
 .expr p{font-size:13px;color:var(--sumi-soft);margin-top:5px;line-height:1.55}
-
-/* ---------- report sheet ---------- */
-.scrim{position:fixed;inset:0;background:rgba(20,24,28,.42);z-index:70}
-.sheet{position:fixed;left:50%;transform:translateX(-50%);bottom:0;z-index:71;
-  width:100%;max-width:var(--col);background:var(--washi);
-  border-radius:16px 16px 0 0;padding:20px 18px calc(18px + env(safe-area-inset-bottom));
-  box-shadow:0 -6px 28px rgba(20,24,28,.28)}
-.sheet h2{font-size:16.5px;font-weight:600;letter-spacing:-.01em}
-.sheet .swhy{font-size:13px;color:var(--sumi-soft);margin-top:4px}
-.quoted2{font-size:12.5px;color:var(--sumi-faint);border-left:2px solid var(--line);
-  padding-left:10px;margin:13px 0 4px;line-height:1.5}
-.reasons{display:flex;flex-direction:column;margin-top:10px}
-.reasons button{text-align:left;padding:13px 4px;font-size:14.5px;border-bottom:1px solid var(--line)}
-.reasons button:first-child{color:var(--beni);font-weight:600}
-.sheet .snote{font-size:11.5px;color:var(--sumi-faint);margin-top:13px;line-height:1.55}
-.sheet .scancel{width:100%;margin-top:14px;padding:12px;border-radius:8px;
-  background:var(--card);border:1px solid var(--line);font-size:14px;color:var(--sumi-soft)}
-.cmt .crep{position:absolute;right:12px;top:11px;font-size:13px;color:var(--sumi-faint);padding:4px 6px}
-.rep .rmeta{font-size:11px;color:var(--sumi-faint);margin-bottom:6px}
-
 /* ---------- tabbar ---------- */
 .tabbar{
   position:fixed;bottom:0;width:100%;max-width:var(--col);
@@ -451,13 +295,6 @@ article .body{font-size:15px;white-space:pre-wrap;margin-top:12px}
 .tabbar button{flex:1;padding:11px 0 12px;font-size:11px;color:var(--sumi-faint)}
 .tabbar button i{display:block;font-style:normal;font-size:17px;line-height:1.3}
 .tabbar button[aria-pressed="true"]{color:var(--ai);font-weight:600}
-.fab{
-  position:fixed;right:calc(50% - var(--col)/2 + 16px);bottom:88px;z-index:29;
-  width:52px;height:52px;border-radius:50%;
-  background:var(--beni);color:#fff;font-size:23px;line-height:1;
-  box-shadow:0 3px 12px rgba(26,29,32,.28);
-}
-@media(max-width:462px){.fab{right:16px}}
 .toast{
   position:fixed;bottom:96px;left:50%;transform:translateX(-50%);
   background:var(--sumi);color:#F2F2EE;font-size:13px;
@@ -466,6 +303,61 @@ article .body{font-size:15px;white-space:pre-wrap;margin-top:12px}
 }
 .toast.on{opacity:1}
 @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+/* ---------- MLP additions ---------- */
+header{padding-bottom:14px}
+.crest-text{min-width:0}
+.crest-text b,.crest-text span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.globe{white-space:nowrap;min-height:36px}
+/* Korean wraps at spaces, not mid-word. */
+html[lang="ko"] body{word-break:keep-all;overflow-wrap:anywhere}
+.bar .back{min-width:44px;min-height:44px;display:flex;align-items:center;justify-content:center;
+  margin:-10px 0 -10px -12px;font-size:22px}
+.mnav button{width:44px;height:44px}
+
+/* home */
+.hhead{padding:22px 18px 4px}
+.hhead h1{font-size:19px;font-weight:600;letter-spacing:-.015em}
+.hcards{display:flex;flex-direction:column;gap:12px;padding:12px 18px 24px}
+.hcard{display:flex;gap:14px;align-items:flex-start;text-align:left;padding:16px;
+  border:1px solid var(--line);border-radius:12px;background:var(--card)}
+.hcard i{flex:0 0 auto;width:42px;height:42px;border-radius:10px;background:var(--ai);color:var(--washi);
+  font-style:normal;font-size:20px;line-height:42px;text-align:center}
+.hcard.jp i{background:var(--beni)}
+.hcard.map i{background:var(--ai-mid)}
+.hcard span{flex:1;min-width:0}
+.hcard b{display:block;font-size:16px;font-weight:600;letter-spacing:-.01em}
+.hcard em{display:block;font-style:normal;font-size:13px;color:var(--sumi-soft);margin-top:2px}
+.hcard small{display:block;font-size:12px;color:var(--ai);margin-top:8px;font-weight:600}
+
+/* map modes, notices, prefectures */
+.seg{display:flex;margin:12px 18px 0;border:1px solid var(--line);border-radius:9px;overflow:hidden;background:var(--card)}
+.seg button{flex:1;padding:10px 6px;font-size:13.5px;color:var(--sumi-soft);min-height:44px}
+.seg button[aria-pressed="true"]{background:var(--ai);color:#fff;font-weight:600}
+.notice{margin:12px 18px 0;padding:14px 15px;border:1px solid var(--line);border-radius:9px;background:var(--card)}
+.notice b{display:block;font-size:14.5px;font-weight:600}
+.notice p{font-size:12.5px;color:var(--sumi-soft);margin-top:6px;line-height:1.6}
+.nbtns{display:flex;gap:8px;margin-top:12px}
+.nbtns button{flex:1;padding:10px;border-radius:7px;font-size:13px;font-weight:600;min-height:44px;
+  border:1px solid var(--line);background:var(--washi);color:var(--sumi-soft)}
+.nbtns .go{background:var(--ai);border-color:var(--ai);color:#fff}
+.mmsg{margin:10px 18px 0;font-size:12.5px;color:var(--sumi-soft);line-height:1.6}
+.mmsg button{color:var(--ai);font-weight:600;text-decoration:underline;text-underline-offset:2px;min-height:32px}
+.prefbar{display:flex;align-items:center;gap:10px;margin:8px 18px 0}
+.prefbar b{flex:1;font-size:15.5px;font-weight:600}
+.prefbar button{font-size:12.5px;color:var(--ai);font-weight:600;min-height:44px}
+.lmapslot{min-height:330px;margin-top:4px}
+.lmapslot .maperr{padding:140px 24px 0}
+.preflist{display:flex;flex-wrap:wrap;gap:6px;padding:8px 18px 14px}
+.preflist button{font-size:13px;padding:8px 11px;border:1px solid var(--line);border-radius:16px;
+  background:var(--card);color:var(--sumi-soft);min-height:40px}
+.preflist button.has{border-color:var(--ai);color:var(--ai);font-weight:600}
+.preflist small{font-size:11px;margin-left:5px;font-weight:400}
+.mew{background:none;border:none}
+.mew i{display:block;width:16px;height:16px;border-radius:50%;background:#2F7BEA;
+  border:3px solid #fff;box-shadow:0 0 0 2px rgba(47,123,234,.35)}
+.cempty{padding:0 18px 4px;font-size:12.5px;color:var(--sumi-faint)}
+/* centred with left:50%, so the box would shrink to half the screen and wrap */
+.toast{width:max-content;max-width:calc(100vw - 40px);text-align:center}
 </style>
 </head>
 <body data-top="ai">
@@ -475,282 +367,245 @@ article .body{font-size:15px;white-space:pre-wrap;margin-top:12px}
     <div class="crest">
       <div class="knot">結</div>
       <div class="crest-text">
-        <b id="ttl">結の掲示板</b>
+        <b id="ttl">YUI</b>
         <span id="sub">GLOBAL COMMONS 結 -YUI-</span>
       </div>
       <div class="lang" id="lang"></div>
-      <button class="raflag" id="profbtn" data-prof aria-label="Profiles">⇄</button>
-      <button class="raflag" id="raflag" data-ra aria-label="RA">⚑</button>
     </div>
-    <div class="boardwrap" id="boardwrap"><nav class="boards" id="boards"></nav></div>
   </header>
   <main id="main"></main>
 </div>
-<button class="fab" id="fab" aria-label="write">＋</button>
 <nav class="tabbar" id="tabbar"></nav>
-<div class="toast" id="toast"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script>
 /* ============ i18n ============ */
+/* appName is a placeholder until the name is decided — change it here only. */
 const T = {
- ja:{title:"結の掲示板",tabs:["ホーム","カレンダー","日本語","マップ"],tabIcon:["◇","▦","あ","◉"],
-   learnT:"生活の日本語",learnS:"寮で実際に出会う場面から",
-   lvL:"レベル",exprT:"この回の表現",artTodo:"イラスト準備中",
-   colT:"コレクション",colS:"エンディングを集める",colOpen:"集めたカードを見る",
-   vnPick:"どっちと出かける？",vnStart:"出かける",vnNext:"次へ",
-   vnAgain:"もう一度",vnBack:"ルート選択へ",vnScene:"場面",
-   vnGot:"新しいカードを手に入れた",vnHave:"このカードはもう持っている",
-   vnScore:"自然に返せた回数",locked:"？？？",
-   mapT:"みんなのおすすめ",mapS:"結から歩いて行ける場所",
-   walk:"徒歩",mins:"分",addedBy:"追加",allCat:"すべて",
+ ja:{
+   appName:"YUI",
+   appSub:"生活の日本語・マップ・カレンダー",
+   tabs:["ホーム","日本語","マップ","カレンダー"],
+   tabIcon:["⌂","あ","◉","▦"],
+   homeT:"今日は何をする？",
+   homeJp:"生活の日本語",
+   homeJpS:"マンガと会話ゲーム",
+   homeCol:"カード {n} / {m}",
+   homeMap:"マップ",
+   homeMapS:"近くの生活スポット",
+   homeCal:"カレンダー",
+   homeCalS:"寮のイベント",
+   homeNext:"次の予定",
+   homeNone:"予定されたイベントはありません",
+   mapT:"マップ",
+   modeNear:"近く",
+   modeJapan:"日本全体",
+   locAskT:"現在地を使いますか？",
+   locAskB:"現在地はこの端末で地図の中心を決めるためだけに使い、保存しません。ただし地図の画像を読み込むとき、表示している地域が地図サーバー（OpenStreetMap）に伝わります。",
+   locUse:"現在地を使う",
+   locSkip:"結を中心に見る",
+   locWait:"現在地を確認しています…",
+   locDenied:"位置情報がオフになっています。ブラウザの設定で許可すると近くを表示できます。今は結を中心に表示しています。",
+   locFail:"現在地を取得できませんでした。結を中心に表示しています。",
+   locRetry:"もう一度",
+   youHere:"現在地",
+   nearEmpty:"近くに登録された場所はまだありません。「日本全体」から地域を選んでみてください。",
+   prefPick:"都道府県を選んでください",
+   prefAll:"日本全体に戻る",
+   prefEmpty:"この都道府県にはまだ登録された場所がありません。",
+   prefFail:"都道府県の地図を読み込めませんでした。下の一覧から選べます。",
+   prefCount:"{n}か所",
+   mapLoading:"地図を読み込んでいます…",
+   walkAbout:"徒歩 約{n}分",
+   by:{ra:"RA",gip:"GIP",anon:"匿名"},
+   regions:{hokkaido:"北海道",tohoku:"東北",kanto:"関東",chubu:"中部",kinki:"近畿",chugoku:"中国",shikoku:"四国",kyushu:"九州・沖縄"},
+   weeklyOn:"毎週{d}曜",
+   colEmpty:"8話を最後まで進めるとカードが手に入ります。",
+   aLang:"言語",
+   aPrev:"前の月",
+   aNext:"次の月",
+   learnT:"生活の日本語",
+   learnS:"寮で実際に出会う場面から",
+   lvL:"レベル",
+   exprT:"この回の表現",
+   artTodo:"イラスト準備中",
+   colT:"コレクション",
+   colS:"エンディングを集める",
+   colOpen:"集めたカードを見る",
+   vnPick:"どっちと出かける？",
+   vnStart:"出かける",
+   vnNext:"次へ",
+   vnBack:"ルート選択へ",
+   vnGot:"新しいカードを手に入れた",
+   vnHave:"このカードはもう持っている",
+   vnScore:"自然に返せた回数",
+   locked:"？？？",
+   addedBy:"追加",
+   allCat:"すべて",
    cats:{transit:"交通",daily:"生活",food:"食べる",study:"勉強",admin:"手続き",health:"医療"},
-   ring:["5分","10分","15分"],here:"結",openMap:"Googleマップで開く",mapFail:"地図を読み込めませんでした。下の一覧をご覧ください。",
-   raBadge:"RAモード",
-   profT:"プロフィール交換",profS:"交換した相手の連絡先",
-   reqIn:"届いているリクエスト",exchL:"交換済み",room:"部屋",
-   exReq:"プロフィール交換をリクエスト",
-   exWarn:"あなたの名前と部屋番号（{r} {n}）が相手に伝わります。承諾されなくても伝わります。",
-   exSend:"リクエストを送る",exAsk:"さんがプロフィール交換を希望しています。承諾しますか？",
-   accept:"承諾する",decline:"断る",unlink:"交換を解除",
-   exSent:"リクエストを送りました",exOk:"交換しました",exNo:"断りました",exCut:"交換を解除しました",
-   exDone:"リクエスト送信済み",exLimit:"1日に送れるリクエストは3件までです",
-   fromPost:"投稿",noReq:"届いているリクエストはありません。",noExch:"まだ交換した相手はいません。",
-   repT:"この投稿を通報",repC:"このコメントを通報",repWhy:"理由を選んでください",
-   repNote:"通報したことは相手に伝わりません。RAだけが確認します。",
-   repCancel:"やめる",repDone:"通報しました。RAが確認します",repAlready:"通報済みです",
-   reasons:{identify:"他人が特定できる",harass:"誹謗中傷・いやがらせ",sexual:"性的・不快な内容",
-     spam:"宣伝・スパム",wrong:"事実と違う情報",other:"その他"},
-   repFrom:"投稿",repFromC:"コメント",repCount:"件の通報",
-   evT:"イベント",host:"主催",where:"場所",cap:"定員",going:"参加予定",
-   people:"人",full:"満員",weekly:"毎週火曜",noEv:"この日は予定がありません。",
-   join:"参加する",joined:"参加予定",ics:"カレンダーに追加",
-   addedIcs:"カレンダーファイルを保存しました",joinedT:"参加登録しました",
-   wd:["日","月","火","水","木","金","土"],wdShort:["日","月","火","水","木","金","土"],
-   boards:{all:"すべて",free:"自由",meet:"募集",unit:"ユニット",market:"ゆずります",lost:"落とし物"},
-   rulesT:"守ってほしいこと",
-   rules:["<b>他人</b>が特定できる書き方（名前・部屋番号・階＋特徴）","性的な内容","暴力的な内容","人を見下す・差別する内容"],
-   rulesOk:"自分の連絡先を自分で書くのは問題ありません。募集の投稿ではよくあることです。",
-   anonNote:"投稿は匿名です。名前も部屋番号も表示されません。",
-   openT:"この投稿は匿名になりません",
-   openNote:"募集の投稿には名前と連絡先が表示されます。知らない人から連絡が来てもいい範囲で書いてください。",
-   fName:"表示する名前",fContact:"連絡先（Instagram / LINE など）",
-   ph:{name:"ゆい",contact:"@your_id"},
-   organizer:"募集",contactL:"連絡先",
-   langNote:"投稿は自動翻訳されます。原文はいつでも表示できます。",
-   anon:"匿名",op:"投稿者",like:"いいね",cmt:"コメント",report:"通報",
-   liked:"いいね済み",back:"戻る",
-   showOrig:"原文を表示",showTr:"日本語に訳す",trBy:"自動翻訳",
-   composeT:"新しい投稿",fBoard:"掲示板",fTitle:"タイトル",fBody:"本文",
-   post:"投稿する",
-   hint:"投稿は匿名です。名前も部屋番号も表示されません。ただし共同生活の場です — 個人が特定できる書き方は避けてください。",
-   raT:"通報の確認",raS:"RAが対応します",keep:"問題なし",hide:"非表示にする",
-   posted:"投稿しました",kept:"そのまま残しました",hidden:"非表示にしました",
-   reported:"通報しました。RAが確認します",
-   emptyRep:"未処理の通報はありません。",
-   emptyBoard:"まだ投稿がありません。最初の一件を書いてみませんか。",
-   ago:{m:"分前",h:"時間前",d:"日前"}},
- en:{title:"YUI Board",tabs:["Home","Calendar","Japanese","Map"],tabIcon:["◇","▦","あ","◉"],
-   learnT:"Everyday Japanese",learnS:"Scenes you will actually meet in the dorm",
-   lvL:"Level",exprT:"Phrases from this episode",artTodo:"Artwork coming",
-   colT:"Collection",colS:"Endings you have found",colOpen:"Open the collection",
-   vnPick:"Who are you going out with?",vnStart:"Go out",vnNext:"Next",
-   vnAgain:"Play again",vnBack:"Choose a route",vnScene:"Scene",
-   vnGot:"New card unlocked",vnHave:"You already have this card",
-   vnScore:"Replies that landed",locked:"???",
-   mapT:"Places residents recommend",mapS:"Everything within walking distance of 結",
-   walk:"",mins:" min walk",addedBy:"Added by",allCat:"All",
+   here:"結",
+   openMap:"Googleマップで開く",
+   mapFail:"地図を読み込めませんでした。下の一覧をご覧ください。",
+   evT:"イベント",
+   host:"主催",
+   where:"場所",
+   noEv:"この日は予定がありません。",
+   ics:"カレンダーに追加",
+   addedIcs:"カレンダーファイルを保存しました",
+   wd:["日","月","火","水","木","金","土"],
+   wdShort:["日","月","火","水","木","金","土"],
+   back:"戻る"},
+ en:{
+   appName:"YUI",
+   appSub:"Everyday Japanese · Map · Calendar",
+   tabs:["Home","Japanese","Map","Calendar"],
+   tabIcon:["⌂","あ","◉","▦"],
+   homeT:"What are you up to today?",
+   homeJp:"Everyday Japanese",
+   homeJpS:"Comics and a conversation game",
+   homeCol:"Cards {n} / {m}",
+   homeMap:"Map",
+   homeMapS:"Everyday places near you",
+   homeCal:"Calendar",
+   homeCalS:"Dorm events",
+   homeNext:"Next up",
+   homeNone:"No upcoming events",
+   mapT:"Map",
+   modeNear:"Near me",
+   modeJapan:"All of Japan",
+   locAskT:"Use your location?",
+   locAskB:"Your location is only used on this device to centre the map, and it is not saved. When the map images load, though, the area you are looking at is sent to the map server (OpenStreetMap).",
+   locUse:"Use my location",
+   locSkip:"Show around 結 instead",
+   locWait:"Finding your location…",
+   locDenied:"Location is turned off. Allow it in your browser settings to see what's near you. Showing around 結 for now.",
+   locFail:"Couldn't get your location. Showing around 結.",
+   locRetry:"Try again",
+   youHere:"You are here",
+   nearEmpty:"No places registered near here yet. Try picking a region under All of Japan.",
+   prefPick:"Pick a prefecture",
+   prefAll:"Back to all of Japan",
+   prefEmpty:"No places registered in this prefecture yet.",
+   prefFail:"The prefecture map could not load. You can still pick from the list below.",
+   prefCount:"{n} places",
+   mapLoading:"Loading the map…",
+   walkAbout:"about {n} min walk",
+   by:{ra:"RA",gip:"GIP",anon:"Anonymous"},
+   regions:{hokkaido:"Hokkaido",tohoku:"Tohoku",kanto:"Kanto",chubu:"Chubu",kinki:"Kansai",chugoku:"Chugoku",shikoku:"Shikoku",kyushu:"Kyushu & Okinawa"},
+   weeklyOn:"Every {d}",
+   colEmpty:"Finish episode 8 to collect cards.",
+   aLang:"Language",
+   aPrev:"Previous month",
+   aNext:"Next month",
+   learnT:"Everyday Japanese",
+   learnS:"Scenes you will actually meet in the dorm",
+   lvL:"Level",
+   exprT:"Phrases from this episode",
+   artTodo:"Artwork coming",
+   colT:"Collection",
+   colS:"Endings you have found",
+   colOpen:"Open the collection",
+   vnPick:"Who are you going out with?",
+   vnStart:"Go out",
+   vnNext:"Next",
+   vnBack:"Choose a route",
+   vnGot:"New card unlocked",
+   vnHave:"You already have this card",
+   vnScore:"Replies that landed",
+   locked:"???",
+   addedBy:"Added by",
+   allCat:"All",
    cats:{transit:"Getting around",daily:"Daily",food:"Food",study:"Study",admin:"Paperwork",health:"Health"},
-   ring:["5 min","10 min","15 min"],here:"結",openMap:"Open in Google Maps",mapFail:"The map could not load. The list below still works.",
-   raBadge:"RA mode",
-   profT:"Profile exchange",profS:"People you have exchanged contacts with",
-   reqIn:"Requests received",exchL:"Exchanged",room:"Room",
-   exReq:"Request profile exchange",
-   exWarn:"Your name and room number ({r} {n}) will be sent to them. They see it whether or not they accept.",
-   exSend:"Send request",exAsk:"would like to exchange profiles. Accept?",
-   accept:"Accept",decline:"Decline",unlink:"Remove",
-   exSent:"Request sent",exOk:"Profiles exchanged",exNo:"Declined",exCut:"Removed",
-   exDone:"Request already sent",exLimit:"You can send up to 3 requests a day",
-   fromPost:"From",noReq:"No requests right now.",noExch:"No exchanges yet.",
-   repT:"Report this post",repC:"Report this comment",repWhy:"Why are you reporting it?",
-   repNote:"The author is not told. Only RAs see reports.",
-   repCancel:"Cancel",repDone:"Reported. An RA will look at it.",repAlready:"You already reported this",
-   reasons:{identify:"Identifies someone else",harass:"Harassment or abuse",sexual:"Sexual or offensive",
-     spam:"Spam or advertising",wrong:"Factually wrong",other:"Something else"},
-   repFrom:"Post",repFromC:"Comment",repCount:" reports",
-   evT:"Events",host:"Host",where:"Where",cap:"Capacity",going:"Going",
-   people:"",full:"Full",weekly:"Every Tuesday",noEv:"Nothing on this day.",
-   join:"I'm going",joined:"You're going",ics:"Add to my calendar",
-   addedIcs:"Calendar file saved",joinedT:"You're on the list",
-   wd:["Sun","Mon","Tue","Wed","Thu","Fri","Sat"],wdShort:["S","M","T","W","T","F","S"],
-   boards:{all:"All",free:"General",meet:"Meetups",unit:"Unit",market:"Market",lost:"Lost & found"},
-   rulesT:"House rules",
-   rules:["Anything that identifies <b>someone else</b> (name, room number, floor plus a description)","Sexual content","Violent content","Content that demeans or degrades someone"],
-   rulesOk:"Putting your own contact details in your own post is fine — that's normal for meetups.",
-   anonNote:"Posts are anonymous — no name, no room number.",
-   openT:"This post will NOT be anonymous",
-   openNote:"Meetup posts show your name and contact. Only put what you're comfortable with a stranger in the building seeing.",
-   fName:"Name to show",fContact:"Contact (Instagram / LINE / etc.)",
-   ph:{name:"Yui",contact:"@your_id"},
-   organizer:"Organized by",contactL:"Contact",
-   langNote:"Posts are machine-translated. The original is always one tap away.",
-   anon:"Anon",op:"Author",like:"Like",cmt:"Comments",report:"Report",
-   liked:"Liked",back:"Back",
-   showOrig:"Show original",showTr:"Translate to English",trBy:"Machine translation",
-   composeT:"New post",fBoard:"Board",fTitle:"Title",fBody:"Your post",
-   post:"Post",
-   hint:"Posts are anonymous — no name, no room number. But 650 people live here. Don't write anything that identifies someone.",
-   raT:"Reported posts",raS:"Handled by RAs",keep:"Leave it up",hide:"Hide it",
-   posted:"Posted",kept:"Left up",hidden:"Hidden",
-   reported:"Reported. An RA will look at it.",
-   emptyRep:"Nothing waiting for review.",
-   emptyBoard:"Nothing here yet. Write the first one.",
-   ago:{m:"m ago",h:"h ago",d:"d ago"}},
- ko:{title:"결 게시판",tabs:["홈","캘린더","일본어","맵"],tabIcon:["◇","▦","あ","◉"],
-   learnT:"생활 일본어",learnS:"기숙사에서 실제로 만나는 장면",
-   lvL:"레벨",exprT:"이번 편의 표현",artTodo:"그림 준비 중",
-   colT:"컬렉션",colS:"엔딩 모으기",colOpen:"모은 카드 보기",
-   vnPick:"누구와 놀러 갈까?",vnStart:"나가기",vnNext:"다음",
-   vnAgain:"다시 하기",vnBack:"루트 선택으로",vnScene:"장면",
-   vnGot:"새 카드를 얻었다",vnHave:"이미 가지고 있는 카드",
-   vnScore:"자연스럽게 받은 횟수",locked:"？？？",
-   mapT:"입주자 추천 장소",mapS:"결에서 걸어갈 수 있는 곳",
-   walk:"도보",mins:"분",addedBy:"추가",allCat:"전체",
+   here:"結",
+   openMap:"Open in Google Maps",
+   mapFail:"The map could not load. The list below still works.",
+   evT:"Events",
+   host:"Host",
+   where:"Where",
+   noEv:"Nothing on this day.",
+   ics:"Add to my calendar",
+   addedIcs:"Calendar file saved",
+   wd:["Sun","Mon","Tue","Wed","Thu","Fri","Sat"],
+   wdShort:["S","M","T","W","T","F","S"],
+   back:"Back"},
+ ko:{
+   appName:"YUI",
+   appSub:"생활 일본어 · 지도 · 캘린더",
+   tabs:["홈","일본어","지도","캘린더"],
+   tabIcon:["⌂","あ","◉","▦"],
+   homeT:"오늘은 뭐 할까요?",
+   homeJp:"생활 일본어",
+   homeJpS:"만화와 대화 게임",
+   homeCol:"카드 {n} / {m}",
+   homeMap:"지도",
+   homeMapS:"내 주위 생활 장소",
+   homeCal:"캘린더",
+   homeCalS:"기숙사 일정",
+   homeNext:"다음 일정",
+   homeNone:"예정된 일정이 없습니다",
+   mapT:"지도",
+   modeNear:"내 주위",
+   modeJapan:"일본 전체",
+   locAskT:"현재 위치를 사용할까요?",
+   locAskB:"위치는 이 기기에서 지도 중심을 잡는 데만 쓰고 저장하지 않습니다. 다만 지도 그림을 불러올 때 보고 있는 지역이 지도 서버(OpenStreetMap)에 전달됩니다.",
+   locUse:"위치 사용",
+   locSkip:"결 기준으로 보기",
+   locWait:"현재 위치를 확인하고 있습니다…",
+   locDenied:"위치 사용이 꺼져 있습니다. 브라우저 설정에서 허용하면 내 주위를 볼 수 있습니다. 지금은 결 기준으로 보여줍니다.",
+   locFail:"현재 위치를 가져오지 못했습니다. 결 기준으로 보여줍니다.",
+   locRetry:"다시 시도",
+   youHere:"현재 위치",
+   nearEmpty:"근처에 등록된 장소가 아직 없습니다. 일본 전체에서 지역을 골라 보세요.",
+   prefPick:"도도부현을 고르세요",
+   prefAll:"일본 전체로 돌아가기",
+   prefEmpty:"이 도도부현에는 아직 등록된 장소가 없습니다.",
+   prefFail:"도도부현 지도를 불러오지 못했습니다. 아래 목록에서 고를 수 있습니다.",
+   prefCount:"{n}곳",
+   mapLoading:"지도를 불러오고 있습니다…",
+   walkAbout:"도보 약 {n}분",
+   by:{ra:"RA",gip:"GIP",anon:"익명"},
+   regions:{hokkaido:"홋카이도",tohoku:"도호쿠",kanto:"간토",chubu:"주부",kinki:"간사이",chugoku:"주고쿠",shikoku:"시코쿠",kyushu:"규슈·오키나와"},
+   weeklyOn:"매주 {d}요일",
+   colEmpty:"8화를 끝까지 하면 카드를 얻습니다.",
+   aLang:"언어",
+   aPrev:"이전 달",
+   aNext:"다음 달",
+   learnT:"생활 일본어",
+   learnS:"기숙사에서 실제로 만나는 장면",
+   lvL:"레벨",
+   exprT:"이번 편의 표현",
+   artTodo:"그림 준비 중",
+   colT:"컬렉션",
+   colS:"엔딩 모으기",
+   colOpen:"모은 카드 보기",
+   vnPick:"누구와 놀러 갈까?",
+   vnStart:"나가기",
+   vnNext:"다음",
+   vnBack:"루트 선택으로",
+   vnGot:"새 카드를 얻었다",
+   vnHave:"이미 가지고 있는 카드",
+   vnScore:"자연스럽게 받은 횟수",
+   locked:"？？？",
+   addedBy:"추가",
+   allCat:"전체",
    cats:{transit:"교통",daily:"생활",food:"먹을 곳",study:"공부",admin:"행정",health:"의료"},
-   ring:["5분","10분","15분"],here:"결",openMap:"구글 지도에서 열기",mapFail:"지도를 불러오지 못했습니다. 아래 목록을 이용해주세요.",
-   raBadge:"RA 모드",
-   profT:"프로필 교환",profS:"교환한 상대의 연락처",
-   reqIn:"받은 요청",exchL:"교환됨",room:"호실",
-   exReq:"프로필 교환 요청",
-   exWarn:"내 이름과 호실({r} {n})이 상대에게 전달됩니다. 승낙하지 않아도 전달됩니다.",
-   exSend:"요청 보내기",exAsk:"님이 프로필 교환을 하고 싶어합니다. 승낙하시겠습니까?",
-   accept:"승낙",decline:"거절",unlink:"교환 해제",
-   exSent:"요청을 보냈습니다",exOk:"교환했습니다",exNo:"거절했습니다",exCut:"교환을 해제했습니다",
-   exDone:"이미 요청을 보냈습니다",exLimit:"하루에 보낼 수 있는 요청은 3건까지입니다",
-   fromPost:"게시글",noReq:"받은 요청이 없습니다.",noExch:"아직 교환한 상대가 없습니다.",
-   repT:"이 글 신고하기",repC:"이 댓글 신고하기",repWhy:"신고 사유를 선택해주세요",
-   repNote:"신고한 사실은 작성자에게 알려지지 않습니다. RA만 확인합니다.",
-   repCancel:"취소",repDone:"신고했습니다. RA가 확인합니다",repAlready:"이미 신고한 글입니다",
-   reasons:{identify:"다른 사람을 특정할 수 있음",harass:"비방·괴롭힘",sexual:"성적·불쾌한 내용",
-     spam:"광고·스팸",wrong:"사실과 다른 정보",other:"기타"},
-   repFrom:"게시글",repFromC:"댓글",repCount:"건 신고",
-   evT:"이벤트",host:"주최",where:"장소",cap:"정원",going:"참가 예정",
-   people:"명",full:"마감",weekly:"매주 화요일",noEv:"이 날은 일정이 없습니다.",
-   join:"참가하기",joined:"참가 예정",ics:"내 캘린더에 추가",
-   addedIcs:"캘린더 파일을 저장했습니다",joinedT:"참가 등록했습니다",
-   wd:["일","월","화","수","목","금","토"],wdShort:["일","월","화","수","목","금","토"],
-   boards:{all:"전체",free:"자유",meet:"모임",unit:"유닛",market:"나눔·장터",lost:"분실물"},
-   rulesT:"지켜주세요",
-   rules:["<b>다른 사람</b>을 특정할 수 있는 표현 (이름·호실·층+인상착의)","성적인 내용","폭력적인 내용","비하하거나 차별하는 내용"],
-   rulesOk:"본인 연락처를 본인이 올리는 건 괜찮습니다. 모임 글에서는 흔한 일이에요.",
-   anonNote:"익명으로 올라갑니다. 이름도 호실도 표시되지 않아요.",
-   openT:"이 글은 익명이 아닙니다",
-   openNote:"모임 글에는 이름과 연락처가 표시됩니다. 모르는 사람이 연락해도 괜찮은 선까지만 적어주세요.",
-   fName:"표시할 이름",fContact:"연락처 (인스타그램 / LINE 등)",
-   ph:{name:"유이",contact:"@your_id"},
-   organizer:"주최",contactL:"연락처",
-   langNote:"글은 자동 번역됩니다. 원문은 언제든 볼 수 있어요.",
-   anon:"익명",op:"글쓴이",like:"공감",cmt:"댓글",report:"신고",
-   liked:"공감함",back:"뒤로",
-   showOrig:"원문 보기",showTr:"한국어로 번역",trBy:"자동 번역",
-   composeT:"새 글 쓰기",fBoard:"게시판",fTitle:"제목",fBody:"내용",
-   post:"올리기",
-   hint:"익명으로 올라갑니다. 이름도 호실도 표시되지 않아요. 다만 650명이 같이 사는 곳입니다 — 특정 개인이 드러나는 글은 피해주세요.",
-   raT:"신고 확인",raS:"RA가 처리합니다",keep:"문제 없음",hide:"숨기기",
-   posted:"올렸습니다",kept:"그대로 뒀습니다",hidden:"숨겼습니다",
-   reported:"신고했습니다. RA가 확인합니다",
-   emptyRep:"처리할 신고가 없습니다.",
-   emptyBoard:"아직 글이 없습니다. 첫 글을 써보세요.",
-   ago:{m:"분 전",h:"시간 전",d:"일 전"}}
+   here:"결",
+   openMap:"구글 지도에서 열기",
+   mapFail:"지도를 불러오지 못했습니다. 아래 목록을 이용해주세요.",
+   evT:"이벤트",
+   host:"주최",
+   where:"장소",
+   noEv:"이 날은 일정이 없습니다.",
+   ics:"내 캘린더에 추가",
+   addedIcs:"캘린더 파일을 저장했습니다",
+   wd:["일","월","화","수","목","금","토"],
+   wdShort:["일","월","화","수","목","금","토"],
+   back:"뒤로"}
 };
 
-/* ============ mock data ============ */
-/* text: {ja,en,ko} — src marks the language it was actually written in */
-let POSTS = [
- {id:2,board:"unit",src:"ja",min:38,likes:31,liked:false,
-  t:{ja:"3階キッチンのフライパン、そろそろ誰か引き取って",
-     en:"Whoever owns the frying pan in the 3F kitchen, please come get it",
-     ko:"3층 키친 프라이팬 주인, 이제 좀 가져가세요"},
-  b:{ja:"もう4日ずっと同じ場所に置きっぱなしです。焦げもそのまま。\n共用棚がそれで一段まるまる埋まってます。今日中に見つからなければ一旦ロッカーに移します。",
-     en:"Same pan, same spot, four days now. Still burnt on the bottom.\nIt's taking up an entire shelf of the shared rack. If nobody claims it today I'm moving it to the locker.",
-     ko:"나흘째 같은 자리에 그대로 있습니다. 눌어붙은 것도 그대로예요.\n공용 선반 한 칸을 통째로 차지하고 있습니다. 오늘 안에 주인이 안 나타나면 일단 사물함으로 옮기겠습니다."},
-  c:[{a:1,src:"en",op:false,min:31,t:{ja:"3階の共用棚、フライパン以外もひどい",en:"Honestly the whole 3F shelf is a crime scene",ko:"솔직히 3층 선반 전체가 참사입니다"}},
-     {a:2,src:"ko",op:false,min:24,t:{ja:"すみません私のです。今日取りに行きます…",en:"That's mine, sorry. Picking it up today…",ko:"제 겁니다 죄송해요. 오늘 가지러 갈게요…"}},
-     {a:0,src:"ja",op:true,min:20,reply:true,t:{ja:"ありがとうございます！助かります",en:"Thank you! Appreciated.",ko:"감사합니다! 살았네요"}}]},
-
- {id:3,board:"meet",src:"en",min:52,likes:24,liked:false,
-  t:{ja:"土曜、京都行きませんか（4人くらい）",
-     en:"Kyoto on Saturday? Looking for ~4 people",
-     ko:"토요일에 교토 갈 사람? 4명 정도"},
-  b:{ja:"枚方市駅から始発で出て、伏見稲荷 → 東福寺 → 夜は鴨川あたりで解散、みたいな緩い予定です。\n日本語でも英語でも大丈夫。返信ください。",
-     en:"First train from Hirakatashi, Fushimi Inari → Tofukuji → wander down to Kamogawa in the evening. Loose plan, no rush.\nJapanese or English both fine. Reply here.",
-     ko:"히라카타시역에서 첫차로 출발해서 후시미이나리 → 도후쿠지 → 저녁엔 가모가와 쪽에서 해산, 이런 느슨한 일정이에요.\n일본어든 영어든 괜찮습니다. 댓글 주세요."},
-  c:[{a:1,src:"ja",op:false,min:44,t:{ja:"行きたいです。何時集合ですか",en:"I'm in. What time do we meet?",ko:"가고 싶어요. 몇 시 집합인가요"}},
-     {a:2,src:"ko",op:false,min:33,t:{ja:"人数まだ空いてますか？",en:"Any spots left?",ko:"아직 자리 남았나요?"}}]},
-
- {id:4,board:"lost",src:"ko",min:150,likes:3,liked:false,
-  t:{ja:"AirPodsのケースを落としました（1階ラウンジ）",
-     en:"Lost my AirPods case — 1F lounge",
-     ko:"에어팟 케이스 잃어버렸어요 (1층 라운지)"},
-  b:{ja:"白いケースで、角に青いシールが貼ってあります。昨日の夜10時ごろ、ラウンジのソファ席にいました。\n見かけた方いたらコメントください。",
-     en:"White case with a small blue sticker on the corner. I was on the lounge sofa around 10pm last night.\nComment here if you've seen it.",
-     ko:"흰색 케이스이고 모서리에 파란 스티커가 붙어 있어요. 어젯밤 10시쯤 라운지 소파에 있었습니다.\n보신 분 댓글 부탁드려요."},
-  c:[{a:1,src:"ja",op:false,min:120,t:{ja:"受付の落とし物箱、見ましたか？けっこう溜まってます",en:"Did you check the lost-property box at reception? It fills up fast.",ko:"프런트 분실물 박스 확인해보셨어요? 꽤 쌓여 있어요."}}]},
-
- {id:5,board:"market",src:"ja",min:260,likes:9,liked:false,
-  t:{ja:"炊飯器ゆずります 1500円（3合・1年使用）",
-     en:"Rice cooker, ¥1500 — 3-cup, used one year",
-     ko:"밥솥 넘겨요 1500엔 (3홉·1년 사용)"},
-  b:{ja:"来月帰国するので手放します。動作は問題なし、内釜のコーティングも生きてます。\n受け渡しは1階ラウンジで。現金かPayPayで。",
-     en:"Going home next month so I'm letting it go. Works fine, inner pot coating still intact.\nHandover in the 1F lounge. Cash or PayPay.",
-     ko:"다음 달에 귀국해서 정리합니다. 작동 문제없고 내솥 코팅도 멀쩡해요.\n수령은 1층 라운지에서. 현금이나 PayPay."},
-  c:[]},
-
- {id:6,board:"free",src:"ja",min:300,likes:41,liked:false,
-  t:{ja:"カラオケルームの予約、埋まるの早すぎませんか",
-     en:"The karaoke room booking fills up way too fast",
-     ko:"노래방 예약 너무 빨리 차지 않나요"},
-  b:{ja:"金曜の枠、公開10分で全部埋まってました。同じ人が毎週押さえてる気がします。\n一人あたり週1回まで、とかにできないんでしょうか。",
-     en:"Friday slots were gone ten minutes after they opened. It feels like the same people book every single week.\nCould we cap it at one booking per person per week?",
-     ko:"금요일 슬롯이 공개 10분 만에 다 찼습니다. 같은 사람이 매주 잡는 것 같아요.\n1인당 주 1회 제한 같은 걸 걸 수 없을까요."},
-  c:[{a:1,src:"en",op:false,min:280,t:{ja:"フィットネスルームも同じ問題",en:"Same story with the fitness room honestly",ko:"피트니스룸도 똑같은 문제예요"}},
-     {a:2,src:"ja",op:false,min:210,t:{ja:"RAに言えば議題に上げてくれますよ",en:"Bring it to an RA — they can put it on the agenda.",ko:"RA한테 말하면 안건으로 올려줍니다"}}]},
-
- {id:7,board:"unit",src:"en",min:420,likes:18,liked:false,
-  t:{ja:"5階の洗濯機、また止まりません",
-     en:"5F washing machine is broken again",
-     ko:"5층 세탁기 또 고장났어요"},
-  b:{ja:"右から2番目です。脱水の途中で止まって、扉も開かなくなります。\n先月修理したばかりのはずなんですが。使う前に確認してください。",
-     en:"Second from the right. It stops mid-spin and then the door won't open.\nPretty sure it was repaired last month. Check before you load it.",
-     ko:"오른쪽에서 두 번째입니다. 탈수 중에 멈추고 문도 안 열려요.\n지난달에 수리했던 걸로 아는데. 쓰기 전에 확인하세요."},
-  c:[{a:1,src:"ja",op:false,min:390,t:{ja:"受付に紙で貼っておくといいです",en:"Put a paper note on it — reception actually reads those.",ko:"종이로 붙여놓는 게 좋아요. 프런트가 그건 봅니다."}}]},
-
- {id:8,board:"free",src:"ko",min:1500,likes:27,liked:false,
-  t:{ja:"日本語のタンデム相手を探しています",
-     en:"Looking for a Japanese–Korean tandem partner",
-     ko:"일본어 탄뎀 같이 하실 분"},
-  b:{ja:"韓国語を教えます、日本語を教えてください。週2回、1時間ずつくらいを考えています。\nラウンジでも自習室でも大丈夫です。レベルは初中級です。",
-     en:"I'll teach Korean, you teach me Japanese. Thinking twice a week, about an hour each.\nLounge or study room, either works. I'm lower-intermediate.",
-     ko:"한국어 가르쳐드리고 일본어 배우고 싶습니다. 주 2회, 한 시간씩 생각하고 있어요.\n라운지든 자습실이든 괜찮습니다. 레벨은 초중급이에요."},
-  c:[{a:1,src:"ja",op:false,min:1400,t:{ja:"興味あります！韓国語は完全に初心者です",en:"Interested! I'm a complete beginner in Korean though.",ko:"관심 있어요! 한국어는 완전 초보입니다만."}}]}
-];
-
-let REPORTS = [
- {id:101,why:"identify",kind:"post",pid:7,n:3,
-  quoted:"5階の洗濯機、また止まりません — 「5階の〇〇号室の子がまた回しっぱなしにしてる」"},
- {id:102,why:"spam",kind:"post",pid:null,n:6,
-  quoted:"格安SIM紹介します DM ください（同じ内容を6回投稿）"}];
-let repSeq=200;
-
-/* ---- profile exchange ---- */
-const ME={name:"Juha Bak",room:"4112",insta:"@juha.bk"};
-const EXBOARDS=["market","meet","lost"];
-const DAILY_LIMIT=3;
-let REQS=[{id:"q1",name:"Mina Tanaka",room:"3617",insta:"@mina.tnk",pid:5,at:40}];
-let EXCH=[{id:"x1",name:"Sofia Rossi",room:"2305",insta:"@sofia.rss",pid:3,at:2880}];
-let sentToday=0,exSeq=300;
-
 /* ============ events ============ */
-const TODAY="2026-09-09";
+/* Sample schedule — replace with the real one. A weekly event is written once:
+   weekly.until ends the series, and over[date] replaces one week's title/body. */
 const HOSTS={
  gip:{ja:"GIP（グローバル・イノベーション・プログラム）",en:"GIP (Global Innovation Program)",ko:"GIP (글로벌 이노베이션 프로그램)"},
  ra:{ja:"ユニット12 RA",en:"Unit 12 RA",ko:"유닛 12 RA"},
@@ -763,180 +618,53 @@ const EVENTS=[
   t:{ja:"ユニットミーティング（9月）",en:"Unit meeting — September",ko:"유닛 미팅 (9월)"},
   b:{ja:"共用キッチンの当番と、秋学期の新しいメンバーの紹介です。全員参加です。",
      en:"Kitchen duty rota and introductions for the new autumn-semester members. Everyone attends.",
-     ko:"공용 키친 당번 배정과 가을학기 신규 멤버 소개입니다. 전원 참석입니다."},going:14},
+     ko:"공용 키친 당번 배정과 가을학기 신규 멤버 소개입니다. 전원 참석입니다."}},
 
  {id:"e2",kind:"office",d:"2026-09-11",time:"06:00",end:"09:00",host:"office",
   place:{ja:"全室",en:"All rooms",ko:"전 객실"},
   t:{ja:"消防設備点検",en:"Fire equipment inspection",ko:"소방설비 점검"},
   b:{ja:"業者が各部屋の火災報知器を点検します。不在でもマスターキーで入室します。",
      en:"Contractors check the smoke detector in every room. They enter with a master key whether or not you are in.",
-     ko:"업체가 각 방 화재경보기를 점검합니다. 부재중이어도 마스터키로 입실합니다."},going:0},
+     ko:"업체가 각 방 화재경보기를 점검합니다. 부재중이어도 마스터키로 입실합니다."}},
 
  {id:"e3",kind:"student",d:"2026-09-12",time:"07:30",end:"20:00",host:"student",
   place:{ja:"枚方市駅 集合",en:"Meet at Hirakatashi Station",ko:"히라카타시역 집합"},
   t:{ja:"京都日帰り（伏見稲荷・東福寺）",en:"Kyoto day trip — Fushimi Inari & Tofukuji",ko:"교토 당일치기 (후시미이나리·도후쿠지)"},
-  b:{ja:"掲示板から生まれた集まりです。緩い予定なので途中参加・途中離脱OK。",
-     en:"Came out of a board post. Loose plan — join or leave partway, no problem.",
-     ko:"게시판에서 시작된 모임입니다. 느슨한 일정이라 중간 합류·이탈 자유."},cap:8,going:5},
+  b:{ja:"緩い予定なので途中参加・途中離脱OK。",
+     en:"Loose plan — join or leave partway, no problem.",
+     ko:"느슨한 일정이라 중간 합류·이탈 자유."}},
 
- {id:"e4",kind:"gip",d:"2026-09-15",time:"17:00",end:"19:00",host:"gip",repeat:true,
+ {id:"gip",kind:"gip",d:"2026-09-15",time:"17:00",end:"19:00",host:"gip",weekly:{until:"2026-12-22"},
   place:{ja:"CAFÉ COMMONS",en:"CAFÉ COMMONS",ko:"CAFÉ COMMONS"},
-  t:{ja:"GIP：ボードゲームデー",en:"GIP: Board Game Day",ko:"GIP: 보드게임 데이"},
-  b:{ja:"「なんじゃもんじゃ」「ito」などを予定しています。日本語ベースでも大丈夫、申し込み不要です。ふらっと来てください。",
-     en:"Nanjamonja, ito and a few others. Japanese-based conversation is fine, no sign-up. Just show up.",
-     ko:"난자몬자, ito 등을 준비합니다. 일본어 위주여도 괜찮고 신청 불필요합니다. 그냥 오시면 됩니다."},going:38},
+  t:{ja:"GIP：火曜イベント",en:"GIP: Tuesday event",ko:"GIP: 화요일 이벤트"},
+  b:{ja:"毎週火曜のGIPイベントです。申し込み不要、ふらっと来てください。",
+     en:"The weekly Tuesday GIP event. No sign-up — just show up.",
+     ko:"매주 화요일 GIP 이벤트입니다. 신청 없이 그냥 오시면 됩니다."},
+  over:{
+   "2026-09-15":{
+    t:{ja:"GIP：ボードゲームデー",en:"GIP: Board Game Day",ko:"GIP: 보드게임 데이"},
+    b:{ja:"「なんじゃもんじゃ」「ito」などを予定しています。日本語ベースでも大丈夫、申し込み不要です。ふらっと来てください。",
+       en:"Nanjamonja, ito and a few others. Japanese-based conversation is fine, no sign-up. Just show up.",
+       ko:"난자몬자, ito 등을 준비합니다. 일본어 위주여도 괜찮고 신청 불필요합니다. 그냥 오시면 됩니다."}},
+   "2026-09-22":{
+    t:{ja:"GIP：カラオケ",en:"GIP: Karaoke Night",ko:"GIP: 노래방"},
+    b:{ja:"毎週火曜のGIPイベント、今週はカラオケです。",
+       en:"This week's Tuesday GIP is karaoke.",
+       ko:"매주 화요일 GIP 이벤트, 이번 주는 노래방입니다."}}}},
 
  {id:"e5",kind:"gip",d:"2026-09-19",time:"10:00",end:"18:00",host:"gip",
   place:{ja:"淡路島（バス移動）",en:"Awaji Island (bus)",ko:"아와지섬 (버스 이동)"},
   t:{ja:"フィールドトリップ：淡路島",en:"Field Trip: Awaji Island",ko:"필드 트립: 아와지섬"},
   b:{ja:"バスの席数の都合で先着40名です。昼食は各自。雨天決行。",
      en:"Capped at 40 by bus seats, first come first served. Lunch on your own. Runs rain or shine.",
-     ko:"버스 좌석 때문에 선착순 40명입니다. 점심은 각자. 우천 시에도 진행."},cap:40,going:40},
-
- {id:"e6",kind:"gip",d:"2026-09-22",time:"17:00",end:"19:00",host:"gip",repeat:true,
-  place:{ja:"CAFÉ COMMONS",en:"CAFÉ COMMONS",ko:"CAFÉ COMMONS"},
-  t:{ja:"GIP：カラオケ",en:"GIP: Karaoke Night",ko:"GIP: 노래방"},
-  b:{ja:"毎週火曜のGIPイベント、今週はカラオケです。",
-     en:"This week's Tuesday GIP is karaoke.",
-     ko:"매주 화요일 GIP 이벤트, 이번 주는 노래방입니다."},going:12},
+     ko:"버스 좌석 때문에 선착순 40명입니다. 점심은 각자. 우천 시에도 진행."}},
 
  {id:"e7",kind:"office",d:"2026-09-26",time:"18:00",end:"21:00",host:"office",
   place:{ja:"グローバルタウン 中庭",en:"Global Town courtyard",ko:"글로벌타운 안뜰"},
   t:{ja:"縁日（夏祭り）",en:"Ennichi — summer festival",ko:"엔니치 (여름 축제)"},
   b:{ja:"屋台、金魚すくい、浴衣の着付け体験。結の入居者ほぼ全員が参加する年一の行事です。",
      en:"Food stalls, goldfish scooping, yukata dressing. The one night of the year almost the whole building turns out.",
-     ko:"포장마차, 금붕어 뜨기, 유카타 입기 체험. 결 입주자 거의 전원이 참가하는 연 1회 행사입니다."},going:412}];
-
-function d2(n){return String(n).padStart(2,"0")}
-function dstr(dt){return dt.getFullYear()+"-"+d2(dt.getMonth()+1)+"-"+d2(dt.getDate())}
-function icsDate(d,t){return d.replace(/-/g,"")+"T"+t.replace(":","")+"00"}
-function downloadICS(e){
-  const t=T[S.lang];
-  const ics=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//YUI Board//EN","BEGIN:VEVENT",
-   "UID:"+e.id+"@yui.board","DTSTART;TZID=Asia/Tokyo:"+icsDate(e.d,e.time),
-   "DTEND;TZID=Asia/Tokyo:"+icsDate(e.d,e.end),
-   "SUMMARY:"+e.t[S.lang],"LOCATION:"+e.place[S.lang],
-   "DESCRIPTION:"+e.b[S.lang].replace(/\n/g,"\\n"),"END:VEVENT","END:VCALENDAR"].join("\r\n");
-  const a=document.createElement("a");
-  a.href=URL.createObjectURL(new Blob([ics],{type:"text/calendar"}));
-  a.download=e.id+".ics";a.click();URL.revokeObjectURL(a.href);
-  toast(t.addedIcs);
-}
-
-/* ============ state ============ */
-const S={lang:"en",board:"all",view:"feed",pid:null,eid:null,day:null,tr:{},tab:0,menu:false,going:{},cat:"",pl:null,month:null,isRA:true,sheet:null,mine:{},cboard:"free",sent:{},lid:null,cg:{},vn:{route:null,i:0,picked:null,score:0},reps:[...REPORTS]};
-const $=id=>document.getElementById(id);
-const esc=s=>s.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-
-function ago(min){const t=T[S.lang].ago;
-  if(min<60)return min+t.m;
-  if(min<1440)return Math.floor(min/60)+t.h;
-  return Math.floor(min/1440)+t.d;}
-
-/* per-post anonymous numbering, like 에타 */
-function who(c){const t=T[S.lang];return c.op?t.op:t.anon+" "+c.a;}
-
-function toast(msg){const el=$("toast");el.textContent=msg;el.classList.add("on");
-  clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove("on"),1700);}
-
-/* ============ chrome ============ */
-const LNAME={ja:"日本語",en:"English",ko:"한국어"};
-function renderLang(){
-  const t=T[S.lang];
-  $("lang").innerHTML=`<button class="globe" data-menu aria-expanded="${S.menu}" aria-label="Language">
-      <span class="g">🌐</span>${LNAME[S.lang]}<span class="v">▼</span></button>
-    <div class="langmenu" ${S.menu?"":"hidden"}>
-      ${["en","ja","ko"].map(l=>`<button data-l="${l}" aria-pressed="${S.lang===l}">${LNAME[l]}</button>`).join("")}
-      <p>${t.langNote}</p>
-    </div>`;
-}
-function renderBoards(){
-  const t=T[S.lang];
-  const keys=["all","free","meet","unit","market","lost"];
-  $("boards").innerHTML=keys.map(k=>
-    `<button data-b="${k}" aria-pressed="${S.board===k}">${t.boards[k]}</button>`).join("");
-}
-function renderTabs(){
-  const t=T[S.lang];
-  $("tabbar").innerHTML=t.tabs.map((lab,i)=>
-    `<button data-t="${i}" aria-pressed="${S.tab===i}"><i>${t.tabIcon[i]}</i>${lab}</button>`).join("");
-  $("ttl").textContent=t.title;
-}
-
-/* ============ views ============ */
-function feed(){
-  const t=T[S.lang];
-  let list=POSTS.filter(p=>!p.hidden&&(S.board==="all"||p.board===S.board));
-  list=[...list].sort((a,b)=>a.min-b.min);
-  if(!list.length)return `<p class="empty">${t.emptyBoard}</p>`;
-  return `<ul class="feed">`+list.map(p=>`<li><button class="post" data-p="${p.id}">
-      <div class="meta"><span class="bdot" style="background:${BCOLOR[p.board]}"></span>
-        <span class="tag">${t.boards[p.board]}</span><span class="sep">·</span><span>${ago(p.min)}</span></div>
-      <h2>${esc(p.t[S.lang])}</h2>
-      <p class="excerpt">${esc(p.b[S.lang].replace(/\n/g," "))}</p>
-      <div class="acts"><span>${IC.bub}${p.c.length}</span><span>${IC.hrt}${p.likes}</span></div>
-    </button></li>`).join("")+`</ul>`;
-}
-
-function detail(){
-  const t=T[S.lang],p=POSTS.find(x=>x.id===S.pid);
-  const foreign=p.src!==S.lang;
-  const showing=S.tr[p.id]==="orig"?p.src:S.lang;
-  const trRow=foreign?`<div class="tr-note">
-      <span>${{ja:"日本語",en:"English",ko:"한국어"}[p.src]} · ${t.trBy}</span>
-      <button data-tr="${p.id}">${showing===S.lang?t.showOrig:t.showTr}</button></div>`:"";
-  return `<div class="bar"><button class="back" data-back aria-label="${t.back}">‹</button>
-      <h1>${t.boards[p.board]}</h1><span class="right">${ago(p.min)}</span></div>
-    <article>
-      <h1>${esc(p.t[showing])}</h1>
-      <div class="body">${esc(p.b[showing])}</div>
-      ${trRow}
-      <div class="actions">
-        <button class="act" data-like="${p.id}" aria-pressed="${p.liked}">♡ ${p.liked?t.liked:t.like} ${p.likes}</button>
-        <button class="act warn" data-rep-post="${p.id}">⚑ ${t.report}</button>
-      </div>
-      ${EXBOARDS.includes(p.board)?`<button class="exbtn" data-ex="${p.id}"
-        ${S.sent[p.id]?"disabled":""}>⇄ ${S.sent[p.id]?t.exDone:t.exReq}</button>`:""}
-    </article>
-    <div class="comments">${p.c.length?p.c.map((c,i)=>{
-      const cs=["cmt",c.reply?"reply":"",c.op?"op":""].join(" ");
-      return `<div class="${cs}"><div class="who">${who(c)}<em>${ago(c.min)}</em></div>
-        <button class="crep" data-rep-cmt="${p.id}:${i}" aria-label="${t.report}">⚑</button>
-        <p>${esc(c.t[S.lang])}</p></div>`;}).join(""):""}</div>`;
-}
-
-const CBOARDS=["free","meet","unit","market","lost"];
-function compose(){
-  const t=T[S.lang];
-  const opts=CBOARDS.map(k=>`<option${S.cboard===k?" selected":""}>${t.boards[k]}</option>`).join("");
-  return `<div class="bar"><button class="back" data-back aria-label="${t.back}">‹</button><h1>${t.composeT}</h1></div>
-    <div class="compose">
-      <div class="field"><label for="cb">${t.fBoard}</label>
-        <select id="cb" data-cb>${opts}</select></div>
-      <div class="field"><label for="ct">${t.fTitle}</label><input id="ct" maxlength="60"></div>
-      <div class="field"><label for="cx">${t.fBody}</label><textarea id="cx"></textarea>
-        <p class="hint">${t.anonNote}</p></div>
-      <div class="rules">
-        <b>${t.rulesT}</b>
-        <ul>${t.rules.map(r=>`<li>${r}</li>`).join("")}</ul>
-        <p class="rok">${t.rulesOk}</p>
-      </div>
-      <button class="submit" data-submit>${t.post}</button>
-    </div>`;
-}
-
-function reports(){
-  const t=T[S.lang];
-  return `<div class="bar"><button class="back" data-back aria-label="${t.back}">‹</button><h1>${t.raBadge}</h1></div>
-   <div class="ra-head"><h1>${t.raT}</h1><p>${t.raS}</p></div>`+
-   (S.reps.length?S.reps.map(r=>`<div class="rep">
-      <div class="reason">⚑ ${t.reasons[r.why]||r.why}</div>
-      <div class="rmeta">${r.kind==="post"?t.repFrom:t.repFromC} · ${r.n}${t.repCount}</div>
-      <div class="quoted">${esc(r.quoted)}</div>
-      <div class="btns"><button data-keep="${r.id}">${t.keep}</button>
-        <button class="hide" data-hide="${r.id}">${t.hide}</button></div>
-    </div>`).join(""):`<p class="empty">${t.emptyRep}</p>`);
-}
+     ko:"포장마차, 금붕어 뜨기, 유카타 입기 체험. 결 입주자 거의 전원이 참가하는 연 1회 행사입니다."}}];
 
 /* ============ lessons ============ */
 /* Panels are placeholders until artwork exists: each cut carries the line and
@@ -1339,106 +1067,234 @@ const VN={
           ko:"인사치레에 정색으로 답한 셈. 약속처럼 무겁게 들린다"}}]}]}};
 
 /* ============ places ============ */
-/* Bearing + walking time measured from 結 (34.8244, 135.6525) at ~78 m/min,
-   which allows for the hill up to the Gotenyama campus. */
-const IC={
- hrt:'<svg viewBox="0 0 24 24"><path d="M12 20.5S4 15.8 4 10.6A4.1 4.1 0 0 1 12 8.9a4.1 4.1 0 0 1 8 1.7c0 5.2-8 9.9-8 9.9z"/></svg>',
- bub:'<svg viewBox="0 0 24 24"><path d="M20.5 14.3a3 3 0 0 1-3 3H9.2L4.5 20.8V6.2a3 3 0 0 1 3-3h10a3 3 0 0 1 3 3z"/></svg>'};
-const BCOLOR={free:"#3D6A92",meet:"#5E7A52",unit:"#1D3E5C",market:"#B0872F",lost:"#7A6A9B"};
+/* Curated places only. To add places, append entries in this shape:
+   pref is the JIS prefecture code ("27" = Osaka), by is a key of T.by,
+   d and gid are optional. Walking time is estimated from the map's
+   reference point, so it is not stored. */
 const CATCOLOR={transit:"#1D3E5C",daily:"#3D6A92",food:"#B03A34",study:"#5E7A52",admin:"#7A6A9B",health:"#B07A2E"};
 const GMAP="https://www.google.com/maps/place/?q=place_id:";
 const HOME={lat:34.8244,lng:135.6525};
 const PLACES=[
- {id:"p1",cat:"transit",ang:75,min:7,lat:34.8293711,lng:135.6541524,gid:"ChIJBaoYa_QcAWARR6zUK4K7Jcw",by:"RA",
+ {id:"p1",pref:"27",cat:"transit",lat:34.8293711,lng:135.6541524,gid:"ChIJBaoYa_QcAWARR6zUK4K7Jcw",by:"ra",
   n:{ja:"京阪 御殿山駅",en:"Gotenyama Station",ko:"고텐야마역"},
   d:{ja:"いちばん近い駅。各駅停車のみなので、京都・大阪へは枚方市で乗り換えるほうが早いことが多いです。",
      en:"Closest station, but local trains only — for Kyoto or Osaka it is often faster to change at Hirakatashi.",
      ko:"가장 가까운 역. 각역정차만 서기 때문에 교토·오사카는 히라카타시에서 갈아타는 게 빠를 때가 많습니다."}},
- {id:"p2",cat:"transit",ang:68,min:7,lat:34.8288914,lng:135.6547265,gid:"ChIJ49uAXvQcAWAR3Xi1em0k6Ts",by:"匿名",
+ {id:"p2",pref:"27",cat:"transit",lat:34.8288914,lng:135.6547265,gid:"ChIJ49uAXvQcAWAR3Xi1em0k6Ts",by:"anon",
   n:{ja:"駐輪場（御殿山東）",en:"Bike lockers (Gotenyama-higashi)",ko:"자전거 주차장 (고텐야마히가시)"},
   d:{ja:"1日100円。枚方市駅まで歩くと13分ですが自転車なら5分ほどなので、自転車があると生活がかなり変わります。",
      en:"¥100 a day. Hirakatashi is 13 minutes on foot but about 5 by bike — a bike changes daily life here more than anything else.",
      ko:"1일 100엔. 히라카타시역까지 걸으면 13분인데 자전거로는 5분 정도라, 자전거가 있으면 생활이 꽤 달라집니다."}},
- {id:"p3",cat:"daily",ang:72,min:6,lat:34.8286027,lng:135.6541948,gid:"ChIJuycsxYYdAWARtzQ3ix1Jeso",by:"RA",
+ {id:"p3",pref:"27",cat:"daily",lat:34.8286027,lng:135.6541948,gid:"ChIJuycsxYYdAWARtzQ3ix1Jeso",by:"ra",
   n:{ja:"セブン-イレブン（御殿山駅前）",en:"7-Eleven (by the station)",ko:"세븐일레븐 (역 앞)"},
   d:{ja:"24時間。ATM、宅配便の受け取り、書類のプリントもここで。駅前なので帰りに寄りやすいです。",
      en:"24 hours. ATM, parcel pickup, document printing. Right by the station, so easy to catch on the way home.",
      ko:"24시간. ATM, 택배 수령, 서류 출력. 역 앞이라 돌아오는 길에 들르기 좋습니다."}},
- {id:"p4",cat:"daily",ang:39,min:8,lat:34.828033,lng:135.6578698,gid:"ChIJQbh4OWEcAWARKZNvlWh31J0",by:"匿名",
+ {id:"p4",pref:"27",cat:"daily",lat:34.828033,lng:135.6578698,gid:"ChIJQbh4OWEcAWARKZNvlWh31J0",by:"anon",
   n:{ja:"ファミリーマート",en:"FamilyMart",ko:"패밀리마트"},
   d:{ja:"セブンより少し遠いですが、外大生が散歩がてらよく行くのはこちら。夜に歩くとちょうどいい距離です。",
      en:"A bit further than the 7-Eleven, but this is the one KGU students actually walk to. Good distance for a night stroll.",
      ko:"세븐일레븐보다 조금 멀지만 간사이가이다이 학생들이 실제로 걸어가는 건 이쪽. 밤 산책 거리로 딱입니다."}},
- {id:"p5",cat:"health",ang:57,min:5,lat:34.8275837,lng:135.6550048,gid:"ChIJcfvzF04dAWARFG4_nDHiDxs",by:"RA",
+ {id:"p5",pref:"27",cat:"health",lat:34.8275837,lng:135.6550048,gid:"ChIJcfvzF04dAWARFG4_nDHiDxs",by:"ra",
   n:{ja:"渚たなのファミリークリニック",en:"Nagisatanano Family Clinic",ko:"나기사타나노 패밀리 클리닉"},
   d:{ja:"いちばん近い内科。外国人の受診にも慣れています。土曜午後もやっていますが日曜休み。保険証を忘れずに。",
      en:"Closest general clinic and used to seeing foreign patients. Open Saturday afternoons, closed Sundays. Bring your insurance card.",
      ko:"가장 가까운 내과. 외국인 진료에 익숙합니다. 토요일 오후도 진료하고 일요일은 휴무. 보험증 꼭 챙기세요."}},
- {id:"p6",cat:"admin",ang:67,min:8,lat:34.8296043,lng:135.6552418,gid:"ChIJNUbPi_QcAWAR0YTfOa-O1Ck",by:"RA",
+ {id:"p6",pref:"27",cat:"admin",lat:34.8296043,lng:135.6552418,gid:"ChIJNUbPi_QcAWAR0YTfOa-O1Ck",by:"ra",
   n:{ja:"枚方渚郵便局",en:"Nagisa Post Office",ko:"나기사 우체국"},
   d:{ja:"ゆうちょ口座の開設と国際便。窓口は平日17時まで、土日は閉まっています。ATMは隣で24時間。",
      en:"Japan Post bank account and international mail. Counter closes 5pm weekdays, shut at weekends. The ATM next door runs 24 hours.",
      ko:"유초은행 계좌 개설과 국제우편. 창구는 평일 17시까지, 주말 휴무. 옆 ATM은 24시간."}},
- {id:"p13",cat:"daily",ang:269,min:6,lat:34.820445,lng:135.6524256,gid:"ChIJT97BVVkcAWARoq6_Y4Rr-RA",by:"匿名",
+ {id:"p13",pref:"27",cat:"daily",lat:34.820445,lng:135.6524256,gid:"ChIJT97BVVkcAWARoq6_Y4Rr-RA",by:"anon",
   n:{ja:"マンダイ 枚方店",en:"Mandai Hirakata",ko:"만다이 히라카타점"},
   d:{ja:"結からいちばん近いスーパーで、しかも安いです。惣菜やサンドイッチは市内の他店より3割ほど安いことも。毎日9〜22時。",
      en:"The closest supermarket to 結, and also the cheapest. Prepared food and sandwiches can run about 30% under anywhere else in town. Open 9–22 every day.",
      ko:"결에서 가장 가까운 슈퍼이면서 가장 쌉니다. 반찬이나 샌드위치는 시내 다른 곳보다 30% 정도 싼 경우도. 매일 9~22시."}},
- {id:"p7",cat:"daily",ang:76,min:11,lat:34.8317389,lng:135.6547329,gid:"ChIJxUjHpPMcAWARgvFCnPhg0To",by:"匿名",
+ {id:"p7",pref:"27",cat:"daily",lat:34.8317389,lng:135.6547329,gid:"ChIJxUjHpPMcAWARgvFCnPhg0To",by:"anon",
   n:{ja:"ライフ 御殿山店",en:"Life Gotenyama",ko:"라이프 고텐야마점"},
   d:{ja:"北側のスーパー。マンダイのほうが近くて安いので、御殿山駅から帰るついでに寄る人が多いです。",
      en:"The supermarket on the north side. Mandai is closer and cheaper, so most people stop here on the way back from Gotenyama Station rather than making a trip.",
      ko:"북쪽 슈퍼. 만다이가 더 가깝고 싸기 때문에, 고텐야마역에서 돌아오는 길에 들르는 정도로 씁니다."}},
- {id:"p8",cat:"transit",ang:249,min:13,lat:34.8160589,lng:135.6485734,gid:"ChIJJ46ph1ocAWARGOoXxgvMqNo",by:"GIP",
+ {id:"p8",pref:"27",cat:"transit",lat:34.8160589,lng:135.6485734,gid:"ChIJJ46ph1ocAWARGOoXxgvMqNo",by:"gip",
   n:{ja:"枚方市駅",en:"Hirakatashi Station",ko:"히라카타시역"},
   d:{ja:"特急が止まる駅。京都・大阪へはここから。行きは下り坂、帰りは登り坂なので体感がかなり違います。",
      en:"Limited express stops here — this is your gateway to Kyoto and Osaka. Downhill on the way there, uphill coming back; it feels very different.",
      ko:"특급이 서는 역. 교토·오사카는 여기서. 갈 때는 내리막, 올 때는 오르막이라 체감이 꽤 다릅니다."}},
- {id:"p9",cat:"daily",ang:253,min:11,lat:34.8172193,lng:135.6498164,gid:"ChIJj-mUegAdAWAR2OvMldT3Y5o",by:"RA",
+ {id:"p9",pref:"27",cat:"daily",lat:34.8172193,lng:135.6498164,gid:"ChIJj-mUegAdAWAR2OvMldT3Y5o",by:"ra",
   n:{ja:"ダイソー（枚方モール4階）",en:"DAISO (Hirakata Mall 4F)",ko:"다이소 (히라카타몰 4층)"},
   d:{ja:"入居初週に必要なもの（ハンガー、食器、掃除用具）はここでほぼ揃います。駅直結なので雨でも行けます。",
      en:"Covers almost everything you need in your first week — hangers, dishes, cleaning kit. Connected to the station, so fine in the rain.",
      ko:"입주 첫 주에 필요한 것(옷걸이, 식기, 청소도구)은 여기서 거의 해결됩니다. 역과 연결돼 있어 비 와도 갈 수 있어요."}},
- {id:"p10",cat:"study",ang:254,min:12,lat:34.81606,lng:135.64957,gid:"ChIJZek-cVAcAWARVFe0gnysw1E",by:"GIP",
+ {id:"p10",pref:"27",cat:"study",lat:34.81606,lng:135.64957,gid:"ChIJZek-cVAcAWARVFe0gnysw1E",by:"gip",
   n:{ja:"枚方T-SITE",en:"Hirakata T-SITE",ko:"히라카타 T-SITE"},
   d:{ja:"朝7時から夜10時まで。上の階が静かで、試験期間はここに来る人が多いです。スターバックスも入っています。",
      en:"Open 7am to 10pm. Upper floors are quiet and fill up with students during exams. There is a Starbucks inside.",
      ko:"아침 7시부터 밤 10시까지. 위층이 조용해서 시험기간에 많이 옵니다. 스타벅스도 있어요."}},
- {id:"p11",cat:"admin",ang:264,min:14,lat:34.8147157,lng:135.6512887,gid:"ChIJiVvS20QcAWARuwLSMt7jPb8",by:"RA",
+ {id:"p11",pref:"27",cat:"admin",lat:34.8147157,lng:135.6512887,gid:"ChIJiVvS20QcAWARuwLSMt7jPb8",by:"ra",
   n:{ja:"枚方市役所",en:"Hirakata City Hall",ko:"히라카타 시청"},
   d:{ja:"転入届と国民健康保険の手続き。来日から14日以内です。書類さえ揃っていれば15分ほどで終わります。平日9時〜17時半のみ。",
      en:"Residence registration and national health insurance, within 14 days of arriving. With the right documents it takes about 15 minutes. Weekdays 9:00–17:30 only.",
      ko:"전입신고와 국민건강보험 수속. 입국 후 14일 이내입니다. 서류만 갖춰가면 15분쯤이면 끝납니다. 평일 9시~17시 30분만."}},
- {id:"p12",cat:"food",ang:240,min:15,lat:34.8154322,lng:135.6462713,gid:"ChIJ56H-ngsdAWARj4IbGeBgHF4",by:"匿名",
+ {id:"p12",pref:"27",cat:"food",lat:34.8154322,lng:135.6462713,gid:"ChIJ56H-ngsdAWARj4IbGeBgHF4",by:"anon",
   n:{ja:"中華そば 麓 fumoto",en:"Chuka Soba Fumoto",ko:"주카소바 후모토"},
   d:{ja:"枚方市駅の近く。醤油ラーメンと炒飯の評判がいい店です。昼と夜のあいだは閉まるので時間に注意。",
      en:"Near Hirakatashi. Known for shoyu ramen and fried rice. Closes between lunch and dinner, so check the time.",
      ko:"히라카타시역 근처. 쇼유라멘과 볶음밥으로 평이 좋습니다. 점심과 저녁 사이에는 문을 닫으니 시간 확인 필요."}}];
 
+/* [JIS code, ja, en, ko] — names from Natural Earth, which is also the source of
+   data/japan-prefectures.geojson. */
+const PREFS=[
+ ["01","北海道","Hokkaido","홋카이도"], ["02","青森県","Aomori","아오모리현"], ["03","岩手県","Iwate","이와테현"],
+ ["04","宮城県","Miyagi","미야기현"], ["05","秋田県","Akita","아키타현"], ["06","山形県","Yamagata","야마가타현"],
+ ["07","福島県","Fukushima","후쿠시마현"], ["08","茨城県","Ibaraki","이바라키현"], ["09","栃木県","Tochigi","도치기현"],
+ ["10","群馬県","Gunma","군마현"], ["11","埼玉県","Saitama","사이타마현"], ["12","千葉県","Chiba","지바현"],
+ ["13","東京都","Tokyo","도쿄도"], ["14","神奈川県","Kanagawa","가나가와현"], ["15","新潟県","Niigata","니가타현"],
+ ["16","富山県","Toyama","도야마현"], ["17","石川県","Ishikawa","이시카와현"], ["18","福井県","Fukui","후쿠이현"],
+ ["19","山梨県","Yamanashi","야마나시현"], ["20","長野県","Nagano","나가노현"], ["21","岐阜県","Gifu","기후현"],
+ ["22","静岡県","Shizuoka","시즈오카현"], ["23","愛知県","Aichi","아이치현"], ["24","三重県","Mie","미에현"],
+ ["25","滋賀県","Shiga","시가현"], ["26","京都府","Kyoto","교토부"], ["27","大阪府","Osaka","오사카부"],
+ ["28","兵庫県","Hyogo","효고현"], ["29","奈良県","Nara","나라현"], ["30","和歌山県","Wakayama","와카야마현"],
+ ["31","鳥取県","Tottori","돗토리현"], ["32","島根県","Shimane","시마네현"], ["33","岡山県","Okayama","오카야마현"],
+ ["34","広島県","Hiroshima","히로시마현"], ["35","山口県","Yamaguchi","야마구치현"], ["36","徳島県","Tokushima","도쿠시마현"],
+ ["37","香川県","Kagawa","가가와현"], ["38","愛媛県","Ehime","에히메현"], ["39","高知県","Kochi","고치현"],
+ ["40","福岡県","Fukuoka","후쿠오카현"], ["41","佐賀県","Saga","사가현"], ["42","長崎県","Nagasaki","나가사키현"],
+ ["43","熊本県","Kumamoto","구마모토현"], ["44","大分県","Oita","오이타현"], ["45","宮崎県","Miyazaki","미야자키현"],
+ ["46","鹿児島県","Kagoshima","가고시마현"], ["47","沖縄県","Okinawa","오키나와현"]];
 
-function evRow(e){
+const JAPAN_BOUNDS=[[24.0,122.9],[45.6,146.0]];
+function regionOf(code){const n=+code;
+  return n===1?"hokkaido":n<=7?"tohoku":n<=14?"kanto":n<=23?"chubu":n<=30?"kinki":n<=35?"chugoku":n<=39?"shikoku":"kyushu";}
+
+/* ============ state ============ */
+/* mode: "near" | "japan". locState: "ask" (never asked) | "idle" (allowed before,
+   not yet located this session) | "wait" | "ok" | "denied" | "fail" | "skip". */
+const S={lang:"en",view:"home",prevView:null,menu:false,lid:null,eid:null,eday:null,day:null,month:null,
+  cg:{},vn:{route:null,i:0,picked:null,score:0},
+  mode:"near",pref:null,cat:"",pl:null,loc:null,locState:"ask",prefFail:false};
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+/* Device storage. Every access is guarded: private modes and blocked storage
+   throw, and the headless test runs without localStorage at all. */
+const store={
+  get(k,d){try{const v=localStorage.getItem("yui.v1."+k);return v==null?d:JSON.parse(v);}catch(e){return d;}},
+  set(k,v){try{localStorage.setItem("yui.v1."+k,JSON.stringify(v));}catch(e){}}};
+
+function toast(msg){const el=$("toast");el.textContent=msg;el.classList.add("on");
+  clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove("on"),1700);}
+const fill=(s,o)=>s.replace(/\{(\w+)\}/g,(_,k)=>o[k]);
+
+/* ============ dates ============ */
+function d2(n){return String(n).padStart(2,"0")}
+function today(){return new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Tokyo",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());}
+function addDays(k,n){return new Date(Date.parse(k+"T00:00:00Z")+n*864e5).toISOString().slice(0,10);}
+function dayDiff(a,b){return Math.round((Date.parse(b+"T00:00:00Z")-Date.parse(a+"T00:00:00Z"))/864e5);}
+function loc(){return S.lang==="ko"?"ko-KR":S.lang==="ja"?"ja-JP":"en-US";}
+function stamp(k){const t=T[S.lang],d=new Date(k+"T00:00:00");
+  return d.toLocaleDateString(loc(),{month:"short",day:"numeric"})+" · "+t.wd[d.getDay()];}
+
+/* Occurrences on one day: one-off events on their date, weekly events every
+   seventh day from d until weekly.until, with that day's override applied. */
+function occOn(k){
+  const out=[];
+  for(const e of EVENTS){
+    if(e.weekly){if(k<e.d||k>e.weekly.until||dayDiff(e.d,k)%7)continue;}
+    else if(e.d!==k)continue;
+    const o=(e.over&&e.over[k])||{};
+    out.push({e,d:k,t:o.t||e.t,b:o.b||e.b});
+  }
+  return out.sort((a,b)=>a.e.time<b.e.time?-1:a.e.time>b.e.time?1:0);
+}
+function upcoming(from,n){
+  const out=[];let k=from;
+  for(let i=0;i<180&&out.length<n;i++){out.push(...occOn(k));k=addDays(k,1);}
+  return out.slice(0,n);
+}
+
+/* RFC 5545: escape text, fold lines at 75 octets, and carry the time zone. */
+function icsEsc(s){return s.replace(/\\/g,"\\\\").replace(/;/g,"\\;").replace(/,/g,"\\,").replace(/\r?\n/g,"\\n");}
+function icsFold(line){
+  const enc=new TextEncoder();let out="",cur="",lim=75;
+  for(const ch of line){
+    if(enc.encode(cur+ch).length>lim){out+=cur+"\r\n ";cur="";lim=74;}
+    cur+=ch;
+  }
+  return out+cur;
+}
+function downloadICS(o){
+  const t=T[S.lang],e=o.e,dt=(k,h)=>k.replace(/-/g,"")+"T"+h.replace(":","")+"00";
+  const now=new Date().toISOString().replace(/[-:]/g,"").replace(/\.\d+/,"");
+  const ics=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//YUI//EN",
+   "BEGIN:VTIMEZONE","TZID:Asia/Tokyo","BEGIN:STANDARD","DTSTART:19700101T000000",
+   "TZOFFSETFROM:+0900","TZOFFSETTO:+0900","TZNAME:JST","END:STANDARD","END:VTIMEZONE",
+   "BEGIN:VEVENT","UID:"+e.id+"-"+o.d+"@yui","DTSTAMP:"+now,
+   "DTSTART;TZID=Asia/Tokyo:"+dt(o.d,e.time),"DTEND;TZID=Asia/Tokyo:"+dt(o.d,e.end),
+   "SUMMARY:"+icsEsc(o.t[S.lang]),"LOCATION:"+icsEsc(e.place[S.lang]),
+   "DESCRIPTION:"+icsEsc(o.b[S.lang]),"END:VEVENT","END:VCALENDAR"].map(icsFold).join("\r\n");
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob([ics],{type:"text/calendar"}));
+  a.download=e.id+"-"+o.d+".ics";a.click();URL.revokeObjectURL(a.href);
+  toast(t.addedIcs);
+}
+
+/* ============ chrome ============ */
+const LNAME={ja:"日本語",en:"English",ko:"한국어"};
+const TABS=["home","learn","map","cal"];
+const TABOF={home:0,learn:1,lesson:1,collection:1,map:2,cal:3,event:3};
+const PARENT={learn:"home",map:"home",cal:"home",lesson:"learn",collection:"learn",event:"cal"};
+const ROOTS=["home","learn","map","cal"];
+function renderLang(){
   const t=T[S.lang];
-  const full=e.cap&&e.going>=e.cap;
-  const chips=[];
-  if(e.repeat)chips.push(`<span class="chip rep">↻ ${t.weekly}</span>`);
-  if(e.cap)chips.push(`<span class="chip${full?" full":""}">${full?t.full:e.going+"/"+e.cap}</span>`);
-  else if(e.going>3)chips.push(`<span class="chip">${t.going} ${e.going}${t.people}</span>`);
-  return `<button class="ev ${e.kind}" data-e="${e.id}">
+  $("lang").innerHTML=`<button class="globe" data-menu aria-expanded="${S.menu}" aria-label="${t.aLang}">
+      <span class="g">🌐</span>${LNAME[S.lang]}<span class="v">▼</span></button>
+    <div class="langmenu" ${S.menu?"":"hidden"}>
+      ${["en","ja","ko"].map(l=>`<button data-l="${l}" aria-pressed="${S.lang===l}">${LNAME[l]}</button>`).join("")}
+    </div>`;
+}
+function renderTabs(){
+  const t=T[S.lang];
+  $("tabbar").innerHTML=t.tabs.map((lab,i)=>
+    `<button data-t="${i}" aria-pressed="${TABOF[S.view]===i}"><i>${t.tabIcon[i]}</i>${lab}</button>`).join("");
+  $("ttl").textContent=t.appName;
+  $("sub").textContent=t.appSub;
+}
+function backBar(title,right){
+  const t=T[S.lang];
+  return `<div class="bar"><button class="back" data-back aria-label="${t.back}">‹</button>
+      <h1>${title}</h1>${right?`<span class="right">${right}</span>`:""}</div>`;
+}
+
+/* ============ views ============ */
+function home(){
+  const t=T[S.lang];
+  const got=ENDINGS.filter(e=>S.cg[e.id]).length;
+  const nx=upcoming(today(),1)[0];
+  return `<div class="hhead"><h1>${t.homeT}</h1></div>
+    <div class="hcards">
+      <button class="hcard jp" data-go="learn"><i>あ</i><span><b>${t.homeJp}</b><em>${t.homeJpS}</em>
+        <small>${fill(t.homeCol,{n:got,m:ENDINGS.length})}</small></span></button>
+      <button class="hcard map" data-go="map"><i>◉</i><span><b>${t.homeMap}</b><em>${t.homeMapS}</em></span></button>
+      <button class="hcard cal" data-go="cal"><i>▦</i><span><b>${t.homeCal}</b><em>${t.homeCalS}</em>
+        <small>${nx?t.homeNext+" · "+stamp(nx.d)+" "+esc(nx.t[S.lang]):t.homeNone}</small></span></button>
+    </div>`;
+}
+
+function evRow(o){
+  const t=T[S.lang],e=o.e;
+  const chip=e.weekly?`<div class="chips"><span class="chip rep">↻ ${fill(t.weeklyOn,{d:t.wd[new Date(e.d+"T00:00:00").getDay()]})}</span></div>`:"";
+  return `<button class="ev ${e.kind}" data-e="${e.id}|${o.d}">
     <span class="clock">${e.time}</span>
-    <h3>${esc(e.t[S.lang])}</h3>
+    <h3>${esc(o.t[S.lang])}</h3>
     <p class="sub">${esc(e.place[S.lang])} · ${esc(HOSTS[e.host][S.lang].split("（")[0].split(" (")[0])}</p>
-    ${chips.length?`<div class="chips">${chips.join("")}</div>`:""}
+    ${chip}
   </button>`;
 }
 
-function loc(){return S.lang==="ko"?"ko-KR":S.lang==="ja"?"ja-JP":"en-US";}
-
 function calendar(){
-  const t=T[S.lang];
-  const cur=S.month||TODAY.slice(0,7);
+  const t=T[S.lang],now=today();
+  const cur=S.month||now.slice(0,7);
   const [y,m]=cur.split("-").map(Number);
-  const first=new Date(y,m-1,1), lead=first.getDay();
-  const dim=new Date(y,m,0).getDate();
+  const first=new Date(y,m-1,1),lead=first.getDay(),dim=new Date(y,m,0).getDate();
   const cells=[];
   for(let i=0;i<lead;i++)cells.push(null);
   for(let d=1;d<=dim;d++)cells.push(y+"-"+d2(m)+"-"+d2(d));
@@ -1447,167 +1303,136 @@ function calendar(){
   const head=t.wdShort.map((w,i)=>`<div class="wd${i===0?" sun":""}">${w}</div>`).join("");
   const grid=cells.map(k=>{
     if(!k)return `<div class="cell out"></div>`;
-    const evs=EVENTS.filter(e=>e.d===k);
-    const dots=evs.slice(0,3).map(e=>`<span class="cd ${e.kind}"></span>`).join("");
-    return `<button class="cell${k===TODAY?" today":""}" data-d="${k}" aria-pressed="${S.day===k}">
+    const dots=occOn(k).slice(0,3).map(o=>`<span class="cd ${o.e.kind}"></span>`).join("");
+    return `<button class="cell${k===now?" today":""}" data-d="${k}" aria-pressed="${S.day===k}">
       <b>${+k.slice(-2)}</b><span class="cdots">${dots}</span></button>`;}).join("");
   const sel=S.day&&S.day.startsWith(cur)?S.day:null;
-  const stamp=k=>{const d=new Date(k+"T00:00:00");
-    return d.toLocaleDateString(loc(),{month:"short",day:"numeric"})+" · "+t.wd[d.getDay()];};
   let below;
   if(sel){
-    const evs=EVENTS.filter(e=>e.d===sel);
+    const list=occOn(sel);
     below=`<div class="daylabel">${stamp(sel)}</div>`+
-      (evs.length?evs.map(evRow).join(""):`<p class="empty">${t.noEv}</p>`);
+      (list.length?list.map(evRow).join(""):`<p class="empty">${t.noEv}</p>`);
   }else{
-    below=EVENTS.filter(e=>e.d>=TODAY).slice(0,3)
-      .map(e=>`<div class="daylabel">${stamp(e.d)}</div>`+evRow(e)).join("");
+    const list=upcoming(now,3);
+    below=list.length?list.map(o=>`<div class="daylabel">${stamp(o.d)}</div>`+evRow(o)).join("")
+      :`<p class="empty">${t.homeNone}</p>`;
   }
   return `<div class="mnav">
-      <button data-mv="-1" aria-label="prev">‹</button>
+      <button data-mv="-1" aria-label="${t.aPrev}">‹</button>
       <h1>${label}</h1>
-      <button data-mv="1" aria-label="next">›</button></div>
+      <button data-mv="1" aria-label="${t.aNext}">›</button></div>
     <div class="wdrow">${head}</div>
     <div class="grid">${grid}</div>
     ${below}`;
 }
 
+function curOcc(){return occOn(S.eday||"").find(o=>o.e.id===S.eid);}
 function evDetail(){
-  const t=T[S.lang],e=EVENTS.find(x=>x.id===S.eid);
-  const d=new Date(e.d+"T00:00:00");
+  const t=T[S.lang],o=curOcc();
+  if(!o)return backBar(t.evT)+`<p class="empty">${t.noEv}</p>`;
+  const e=o.e,d=new Date(o.d+"T00:00:00");
   const when=d.toLocaleDateString(loc(),{month:"long",day:"numeric"})+" ("+t.wd[d.getDay()]+") "+e.time+"–"+e.end;
-  const on=!!S.going[e.id],cnt=e.going+(on?1:0);
-  const full=e.cap&&cnt>=e.cap&&!on;
-  return `<div class="bar"><button class="back" data-back aria-label="${t.back}">‹</button><h1>${t.evT}</h1></div>
-    <div class="evwrap">
+  return backBar(t.evT)+`<div class="evwrap">
       <div class="when">${when}</div>
-      <h1>${esc(e.t[S.lang])}</h1>
+      <h1>${esc(o.t[S.lang])}</h1>
       <dl class="facts">
         <div><dt>${t.host}</dt><dd>${esc(HOSTS[e.host][S.lang])}</dd></div>
         <div><dt>${t.where}</dt><dd>${esc(e.place[S.lang])}</dd></div>
-        ${e.cap?`<div><dt>${t.cap}</dt><dd>${cnt} / ${e.cap}${full?" — "+t.full:""}</dd></div>`
-               :`<div><dt>${t.going}</dt><dd>${cnt}${t.people}</dd></div>`}
       </dl>
-      <div class="body">${esc(e.b[S.lang])}</div>
-      <div class="evbtns">
-        <button class="go" data-go="${e.id}" aria-pressed="${on}" ${full?"disabled":""}>${on?"✓ "+t.joined:t.join}</button>
-        <button data-ics="${e.id}">${t.ics}</button>
-      </div>
+      <div class="body">${esc(o.b[S.lang])}</div>
+      <div class="evbtns"><button class="go" data-ics>${t.ics}</button></div>
     </div>`;
 }
 
-let LMAP=null,LCLUSTER=null,LPINS={};
+/* ---- map ---- */
+/* Leaflet is created once. Its container (LBOX) lives outside render(): each
+   render writes an empty #lmapslot and mountMap() moves LBOX back into it, so
+   changing language or view never destroys the map. Map controls call
+   updateMap(), which patches the containers and layers in place. */
+let LBOX=null,LMAP=null,LCLUSTER=null,LPINS={},LME=null,LPREF=null,PREFGEO=null,PREFLOAD=null,LEAFLET=null;
 
-function pcardHTML(){
-  const t=T[S.lang],sel=S.pl?PLACES.find(p=>p.id===S.pl):null;
-  if(!sel)return "";
-  return `<div class="pcard">
-    <div class="pcat" style="color:${CATCOLOR[sel.cat]}">${t.cats[sel.cat]} \u00B7 ${t.walk} ${sel.min}${t.mins}</div>
-    <h3>${esc(sel.n[S.lang])}</h3><p>${esc(sel.d[S.lang])}</p>
-    <div class="pby">${t.addedBy} \u00B7 ${esc(sel.by)}</div>
-    <a class="glink" href="${GMAP}${sel.gid}" target="_blank" rel="noopener">${t.openMap}</a></div>`;
+function ref(){return S.locState==="ok"&&S.loc?S.loc:HOME;}
+function distM(a,b){
+  const r=Math.PI/180,dl=(b.lat-a.lat)*r,dn=(b.lng-a.lng)*r;
+  const h=Math.sin(dl/2)**2+Math.cos(a.lat*r)*Math.cos(b.lat*r)*Math.sin(dn/2)**2;
+  return 12742e3*Math.asin(Math.sqrt(h));
 }
-function plistHTML(list){
+/* Straight-line distance x1.25 for streets, at 78 m/min (the hill up to campus). */
+function walkMin(p){return Math.max(1,Math.round(distM(ref(),p)*1.25/78));}
+const NEAR_M=3000;
+function shownPlaces(){
+  let list;
+  if(S.mode==="near")list=PLACES.filter(p=>distM(ref(),p)<=NEAR_M).sort((a,b)=>distM(ref(),a)-distM(ref(),b));
+  else if(S.pref)list=PLACES.filter(p=>p.pref===S.pref);
+  else list=[];
+  return list.filter(p=>!S.cat||p.cat===S.cat);
+}
+function prefName(code){const p=PREFS.find(x=>x[0]===code);return p?p[{ja:1,en:2,ko:3}[S.lang]]:code;}
+
+function modesHTML(){
   const t=T[S.lang];
-  return list.map(p=>`<li><button data-pl="${p.id}" aria-pressed="${S.pl===p.id}">
-    <span class="dotc" style="background:${CATCOLOR[p.cat]}"></span>
-    <b>${esc(p.n[S.lang])}</b><span class="pmin">${p.min}${t.mins}</span></button></li>`).join("");
+  return ["near","japan"].map(m=>`<button data-mode="${m}" aria-pressed="${S.mode===m}">${m==="near"?t.modeNear:t.modeJapan}</button>`).join("");
+}
+function statusHTML(){
+  const t=T[S.lang];
+  if(S.mode==="japan"){
+    if(S.pref)return `<div class="prefbar"><b>${esc(prefName(S.pref))}</b><button data-pref="">${t.prefAll}</button></div>`;
+    return `<p class="mmsg">${t.prefPick}</p>`+(S.prefFail?`<p class="mmsg">${t.prefFail}</p>`:"");
+  }
+  switch(S.locState){
+    case "ask":return `<div class="notice"><b>${t.locAskT}</b><p>${t.locAskB}</p>
+      <div class="nbtns"><button class="go" data-loc="use">${t.locUse}</button><button data-loc="skip">${t.locSkip}</button></div></div>`;
+    case "wait":return `<p class="mmsg">${t.locWait}</p>`;
+    case "denied":return `<p class="mmsg">${t.locDenied}</p>`;
+    case "fail":return `<p class="mmsg">${t.locFail}<button data-loc="use">${t.locRetry}</button></p>`;
+    default:return "";
+  }
 }
 function chipsHTML(){
   const t=T[S.lang];
+  if(S.mode==="japan"&&!S.pref)return "";
   return `<button class="fchip" data-cat="" aria-pressed="${!S.cat}">${t.allCat}</button>`+
     Object.keys(t.cats).map(c=>`<button class="fchip" data-cat="${c}" aria-pressed="${S.cat===c}"
       style="--c:${CATCOLOR[c]}">${t.cats[c]}</button>`).join("");
 }
-
+function pcardHTML(){
+  const t=T[S.lang],p=S.pl?PLACES.find(x=>x.id===S.pl):null;
+  if(!p)return "";
+  const walk=S.mode==="near"?" \u00B7 "+fill(t.walkAbout,{n:walkMin(p)}):"";
+  return `<div class="pcard">
+    <div class="pcat" style="color:${CATCOLOR[p.cat]}">${t.cats[p.cat]}${walk}</div>
+    <h3>${esc(p.n[S.lang])}</h3>${p.d?`<p>${esc(p.d[S.lang])}</p>`:""}
+    ${p.by?`<div class="pby">${t.addedBy} \u00B7 ${esc(t.by[p.by]||p.by)}</div>`:""}
+    ${p.gid?`<a class="glink" href="${GMAP}${encodeURIComponent(p.gid)}" target="_blank" rel="noopener">${t.openMap}</a>`:""}</div>`;
+}
+function listHTML(){
+  const t=T[S.lang];
+  if(S.mode==="japan"&&!S.pref){
+    const groups={};
+    PREFS.forEach(p=>{(groups[regionOf(p[0])]=groups[regionOf(p[0])]||[]).push(p);});
+    return Object.keys(t.regions).map(r=>`<div class="sect">${t.regions[r]}</div><div class="preflist">${
+      groups[r].map(p=>{const n=PLACES.filter(x=>x.pref===p[0]).length;
+        return `<button data-pref="${p[0]}"${n?' class="has"':""}>${esc(prefName(p[0]))}${n?`<small>${fill(t.prefCount,{n})}</small>`:""}</button>`;}).join("")
+    }</div>`).join("");
+  }
+  const list=shownPlaces();
+  if(!list.length)return `<p class="empty">${S.mode==="near"?t.nearEmpty:t.prefEmpty}</p>`;
+  return `<ul class="plist">`+list.map(p=>`<li><button data-pl="${p.id}" aria-pressed="${S.pl===p.id}">
+    <span class="dotc" style="background:${CATCOLOR[p.cat]}"></span>
+    <b>${esc(p.n[S.lang])}</b>${S.mode==="near"?`<span class="pmin">${fill(t.walkAbout,{n:walkMin(p)})}</span>`:""}</button></li>`).join("")+`</ul>`;
+}
 function mapView(){
   const t=T[S.lang];
-  return `<div class="maphead"><h1>${t.mapT}</h1><p>${t.mapS}</p></div>
+  return `<div class="maphead"><h1>${t.mapT}</h1></div>
+    <div class="seg" id="mmodes">${modesHTML()}</div>
+    <div id="mstatus">${statusHTML()}</div>
     <div class="filters" id="mfilters">${chipsHTML()}</div>
-    <div id="lmap"></div>
+    <div class="lmapslot" id="lmapslot"><p class="maperr">${t.mapLoading}</p></div>
     <div id="pcardwrap">${pcardHTML()}</div>
-    <ul class="plist" id="plist">${plistHTML(PLACES.filter(p=>!S.cat||p.cat===S.cat))}</ul>`;
+    <div id="plist">${listHTML()}</div>`;
 }
 
-function pinIcon(p){
-  return L.divIcon({className:"pinw"+(S.pl===p.id?" on":""),
-    html:`<span class="pindot" style="background:${CATCOLOR[p.cat]}"></span>`,
-    iconSize:[15,15],iconAnchor:[7,7]});
-}
-
-function initMap(){
-  const box=$("lmap");
-  if(!box)return;
-  if(typeof L==="undefined"||!L.markerClusterGroup){
-    box.innerHTML=`<p class="maperr">${T[S.lang].mapFail}</p>`;return;
-  }
-  LMAP=L.map("lmap",{scrollWheelZoom:false,zoomControl:true});
-  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{
-    maxZoom:19,attribution:'&copy; OpenStreetMap'}).addTo(LMAP);
-
-  L.marker([HOME.lat,HOME.lng],{icon:L.divIcon({className:"homew",
-    html:`<b>${T[S.lang].here}</b>`,iconSize:[32,32],iconAnchor:[16,16]}),
-    zIndexOffset:1000}).addTo(LMAP);
-
-  LCLUSTER=L.markerClusterGroup({
-    maxClusterRadius:42,showCoverageOnHover:false,spiderfyDistanceMultiplier:1.4,
-    iconCreateFunction:c=>L.divIcon({className:"clw",
-      html:`<div class="cl">${c.getChildCount()}</div>`,iconSize:[34,34]})});
-  LMAP.addLayer(LCLUSTER);
-  drawPins();
-  setTimeout(()=>LMAP&&LMAP.invalidateSize(),60);
-}
-
-function drawPins(fit){
-  if(!LCLUSTER)return;
-  LCLUSTER.clearLayers();LPINS={};
-  const list=PLACES.filter(p=>!S.cat||p.cat===S.cat);
-  list.forEach(p=>{
-    const m=L.marker([p.lat,p.lng],{icon:pinIcon(p),title:p.n[S.lang]});
-    m.on("click",()=>{S.pl=S.pl===p.id?null:p.id;updateMap(true);});
-    LPINS[p.id]=m;LCLUSTER.addLayer(m);
-  });
-  if(fit!==false){
-    const pts=list.map(p=>[p.lat,p.lng]).concat([[HOME.lat,HOME.lng]]);
-    LMAP.fitBounds(L.latLngBounds(pts).pad(0.12),{maxZoom:16});
-  }
-}
-
-function updateMap(fromPin){
-  if($("mfilters"))$("mfilters").innerHTML=chipsHTML();
-  if($("pcardwrap"))$("pcardwrap").innerHTML=pcardHTML();
-  if($("plist"))$("plist").innerHTML=plistHTML(PLACES.filter(p=>!S.cat||p.cat===S.cat));
-  if(!LMAP)return;
-  if(fromPin){
-    Object.keys(LPINS).forEach(id=>{
-      const p=PLACES.find(x=>x.id===id);if(p)LPINS[id].setIcon(pinIcon(p));});
-    const sel=S.pl&&PLACES.find(p=>p.id===S.pl);
-    if(sel)LMAP.setView([sel.lat,sel.lng],Math.max(LMAP.getZoom(),16),{animate:true});
-  }else drawPins();
-}
-
-function profiles(){
-  const t=T[S.lang];
-  const title=pid=>{const p=POSTS.find(x=>x.id===pid);return p?p.t[S.lang]:"";};
-  const reqs=REQS.length?REQS.map(r=>`<div class="req">
-      <p class="rline"><b>${r.room} ${esc(r.name)}</b>${t.exAsk.startsWith("would")?" ":""}${t.exAsk}</p>
-      <p class="rfrom">${t.fromPost} · ${esc(title(r.pid))}</p>
-      <div class="btns">
-        <button class="ok" data-acc="${r.id}">${t.accept}</button>
-        <button data-dec="${r.id}">${t.decline}</button></div>
-    </div>`).join(""):`<p class="empty">${t.noReq}</p>`;
-  const exch=EXCH.length?EXCH.map(x=>`<div class="exch">
-      <div class="xmain"><b>${esc(x.name)}</b><span class="xroom">${t.room} ${x.room}</span>
-        <a href="https://instagram.com/${x.insta.replace("@","")}" target="_blank" rel="noopener">${x.insta}</a></div>
-      <p class="rfrom">${t.fromPost} · ${esc(title(x.pid))}</p>
-      <button class="cut" data-cut="${x.id}">${t.unlink}</button>
-    </div>`).join(""):`<p class="empty">${t.noExch}</p>`;
-  return `<div class="bar"><button class="back" data-back aria-label="${t.back}">‹</button><h1>${t.profT}</h1></div>
-    <div class="ra-head"><h1>${t.profT}</h1><p>${t.profS}</p></div>
-    <div class="sect">${t.reqIn}${REQS.length?" · "+REQS.length:""}</div>${reqs}
-    <div class="sect">${t.exchL}</div>${exch}`;
-}
-
+/* ---- Japanese ---- */
 function learn(){
   const t=T[S.lang];
   const row=l=>`<button class="lesson" data-lesson="${l.id}">
@@ -1620,21 +1445,18 @@ function learn(){
     ${LESSONS.map(row).join("")}
     <div class="sect">${t.colT}</div>
     <button class="colrow" data-col>
-      <span class="colthumbs">${ENDINGS.map(e=>
-        `<i class="${S.cg[e.id]?"on":""}"></i>`).join("")}</span>
+      <span class="colthumbs">${ENDINGS.map(e=>`<i class="${S.cg[e.id]?"on":""}"></i>`).join("")}</span>
       <span class="colmain"><b>${t.colOpen}</b><em>${got} / ${ENDINGS.length}</em></span>
     </button>`;
 }
 
 function collection(){
-  const t=T[S.lang];
-  return `<div class="bar"><button class="back" data-back aria-label="${t.back}">‹</button>
-      <h1>${t.colT}</h1>
-      <span class="right">${ENDINGS.filter(e=>S.cg[e.id]).length} / ${ENDINGS.length}</span></div>
+  const t=T[S.lang],got=ENDINGS.filter(e=>S.cg[e.id]).length;
+  return backBar(t.colT,got+" / "+ENDINGS.length)+`
     <div class="ra-head"><h1>${t.colT}</h1><p>${t.colS}</p></div>
+    ${got?"":`<p class="cempty" style="padding-top:14px">${t.colEmpty}</p>`}
     <div class="cgrid">${ENDINGS.map(e=>{
-      if(!S.cg[e.id])return `<div class="card lock"><div class="cgart"></div>
-        <b>${t.locked}</b></div>`;
+      if(!S.cg[e.id])return `<div class="card lock"><div class="cgart"></div><b>${t.locked}</b></div>`;
       return `<div class="card"><div class="cgart">${e.img?`<img src="${e.img}" alt="">`
         :`<p>${esc(e.s)}</p><small>${t.artTodo}</small>`}</div>
         <b>${esc(e.t[S.lang])}</b><q>${esc(e.jp)}</q>
@@ -1643,6 +1465,7 @@ function collection(){
 
 function lesson(){
   const t=T[S.lang],l=LESSONS.find(x=>x.id===S.lid);
+  if(!l)return learn();
   if(l.vn)return vnView();
   const cuts=l.cuts.map((c,i)=>`<figure class="cut">
       ${c.img?`<img src="${c.img}" alt="">`
@@ -1653,8 +1476,7 @@ function lesson(){
   const ex=l.ex.map(e=>`<div class="expr">
       <b>${esc(e.jp)}</b><span class="rd">${esc(e.rd)}</span>
       <p>${esc(e.g[S.lang])}</p></div>`).join("");
-  return `<div class="bar"><button class="back" data-back aria-label="${t.back}">‹</button>
-      <h1>${t.lvL} ${l.lv}</h1></div>
+  return backBar(t.lvL+" "+l.lv)+`
     <div class="lhead"><h1>${esc(l.t[S.lang])}</h1><p>${esc(l.d[S.lang])}</p></div>
     <div class="cuts">${cuts}</div>
     <div class="sect">${t.exprT}</div>${ex}`;
@@ -1662,9 +1484,7 @@ function lesson(){
 
 function vnView(){
   const t=T[S.lang],v=S.vn;
-  const bar=`<div class="bar"><button class="back" data-back aria-label="${t.back}">‹</button>
-      <h1>${t.lvL} 8</h1></div>`;
-
+  const bar=backBar(t.lvL+" 8");
   if(!v.route){
     return bar+`<div class="lhead"><h1>${t.vnPick}</h1></div>
       <div class="routes">${["osaka","kyoto"].map(k=>`
@@ -1674,9 +1494,7 @@ function vnView(){
           <span>${t.vnStart} →</span>
         </button>`).join("")}</div>`;
   }
-
   const R=VN[v.route],done=v.i>=R.scenes.length;
-
   if(done){
     const best=v.score>=4;
     const card=ENDINGS.find(e=>e.route===v.route&&e.best===best);
@@ -1692,20 +1510,16 @@ function vnView(){
           <button data-col>${t.colT}</button></div>
       </div>`;
   }
-
   const sc=R.scenes[v.i];
-  const dots=R.scenes.map((_,i)=>
-    `<i class="${i<v.i?"past":i===v.i?"now":""}"></i>`).join("");
+  const dots=R.scenes.map((_,i)=>`<i class="${i<v.i?"past":i===v.i?"now":""}"></i>`).join("");
   const body=v.picked===null
-    ? `<div class="opts">${sc.opts.map((o,i)=>
-        `<button data-opt="${i}">${esc(o.jp)}</button>`).join("")}</div>`
+    ? `<div class="opts">${sc.opts.map((o,i)=>`<button data-opt="${i}">${esc(o.jp)}</button>`).join("")}</div>`
     : (()=>{const o=sc.opts[v.picked];
         return `<div class="opts">${sc.opts.map((x,i)=>
           `<button class="chosen${i===v.picked?" me":""}" disabled>${esc(x.jp)}</button>`).join("")}</div>
           <div class="fb ${o.ok?"ok":"hm"}"><span>${o.ok?"○":"△"}</span>
             <p>${esc(o.fb[S.lang])}</p></div>
           <button class="submit" data-vnnext>${t.vnNext}</button>`;})();
-
   return bar+`<div class="vnwrap">
       <div class="vndots">${dots}</div>
       <div class="cgart">${sc.img?`<img src="${sc.img}" alt="">`
@@ -1715,145 +1529,175 @@ function vnView(){
     </div>`;
 }
 
-function sheet(){
-  const t=T[S.lang],sh=S.sheet;
-  if(!sh)return "";
-  if(sh.kind==="ex"){
-    const p=POSTS.find(x=>x.id===sh.pid);
-    return `<div class="scrim" data-close></div>
-     <div class="sheet" role="dialog" aria-modal="true">
-       <h2>${t.exReq}</h2>
-       <div class="quoted2">${esc(p.t[S.lang])}</div>
-       <div class="warnbox2">${t.exWarn.replace("{r}",ME.room).replace("{n}",ME.name)}</div>
-       <button class="submit" data-exsend="${sh.pid}">${t.exSend}</button>
-       <button class="scancel" data-close>${t.repCancel}</button>
-     </div>`;
+const VIEWS={home,learn,lesson,collection,map:mapView,cal:calendar,event:evDetail};
+
+/* ============ map runtime ============ */
+function loadScript(src){return new Promise((ok,no)=>{const s=document.createElement("script");
+  s.src=src;s.onload=ok;s.onerror=no;document.head.appendChild(s);});}
+function loadLeaflet(){
+  if(!LEAFLET){
+    ["vendor/leaflet/leaflet.css","vendor/leaflet.markercluster/MarkerCluster.css"].forEach(h=>{
+      const l=document.createElement("link");l.rel="stylesheet";l.href=h;document.head.appendChild(l);});
+    LEAFLET=loadScript("vendor/leaflet/leaflet.js")
+      .then(()=>loadScript("vendor/leaflet.markercluster/leaflet.markercluster.js"))
+      .catch(e=>{LEAFLET=null;throw e;});
   }
-  return `<div class="scrim" data-close></div>
-   <div class="sheet" role="dialog" aria-modal="true">
-     <h2>${sh.kind==="post"?t.repT:t.repC}</h2>
-     <p class="swhy">${t.repWhy}</p>
-     <div class="quoted2">${esc(sh.quoted.slice(0,80))}${sh.quoted.length>80?"…":""}</div>
-     <div class="reasons">${Object.keys(t.reasons).map(k=>
-       `<button data-why="${k}">${t.reasons[k]}</button>`).join("")}</div>
-     <p class="snote">${t.repNote}</p>
-     <button class="scancel" data-close>${t.repCancel}</button>
-   </div>`;
+  return LEAFLET;
+}
+function pinIcon(p){
+  return L.divIcon({className:"pinw"+(S.pl===p.id?" on":""),
+    html:`<span class="pindot" style="background:${CATCOLOR[p.cat]}"></span>`,iconSize:[15,15],iconAnchor:[7,7]});
+}
+function mountMap(){
+  const slot=$("lmapslot");if(!slot)return;
+  if(LBOX){slot.innerHTML="";slot.appendChild(LBOX);LMAP.invalidateSize();return;}
+  loadLeaflet().then(()=>{if(S.view==="map"&&!LBOX)initMap();})
+    .catch(()=>{const s=$("lmapslot");if(s)s.innerHTML=`<p class="maperr">${T[S.lang].mapFail}</p>`;});
+}
+function initMap(){
+  const slot=$("lmapslot");if(!slot)return;
+  LBOX=document.createElement("div");LBOX.id="lmap";
+  slot.innerHTML="";slot.appendChild(LBOX);
+  LMAP=L.map(LBOX,{scrollWheelZoom:false,zoomControl:true});
+  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,
+    attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors'}).addTo(LMAP);
+  L.marker([HOME.lat,HOME.lng],{icon:L.divIcon({className:"homew",html:"<b>結</b>",iconSize:[32,32],iconAnchor:[16,16]}),
+    zIndexOffset:1000,interactive:false}).addTo(LMAP);
+  LCLUSTER=L.markerClusterGroup({maxClusterRadius:42,showCoverageOnHover:false,spiderfyDistanceMultiplier:1.4,
+    iconCreateFunction:c=>L.divIcon({className:"clw",html:`<div class="cl">${c.getChildCount()}</div>`,iconSize:[34,34]})});
+  LMAP.addLayer(LCLUSTER);
+  syncMap(true);
+  setTimeout(()=>LMAP&&LMAP.invalidateSize(),60);
+}
+function prefStyle(f){
+  const c=f.properties.c,has=PLACES.some(p=>p.pref===c),on=S.pref===c;
+  return {color:on?"#B03A34":"#3D6A92",weight:on?2:1,fillColor:has?"#1D3E5C":"#8FB2C7",fillOpacity:on?.45:has?.3:.12};
+}
+function syncMap(fit){
+  if(!LMAP)return;
+  LCLUSTER.clearLayers();LPINS={};
+  shownPlaces().forEach(p=>{
+    const m=L.marker([p.lat,p.lng],{icon:pinIcon(p),title:p.n[S.lang]});
+    m.on("click",()=>{S.pl=S.pl===p.id?null:p.id;updateMap(false,true);});
+    LPINS[p.id]=m;LCLUSTER.addLayer(m);
+  });
+  const showMe=S.mode==="near"&&S.locState==="ok"&&S.loc;
+  if(showMe){
+    if(!LME)LME=L.marker([S.loc.lat,S.loc.lng],{icon:L.divIcon({className:"mew",html:"<i></i>",iconSize:[22,22],iconAnchor:[11,11]}),
+      zIndexOffset:900,interactive:false});
+    LME.setLatLng([S.loc.lat,S.loc.lng]);if(!LMAP.hasLayer(LME))LME.addTo(LMAP);
+  }else if(LME&&LMAP.hasLayer(LME))LMAP.removeLayer(LME);
+  if(S.mode==="japan"&&PREFGEO){
+    if(!LPREF)LPREF=L.geoJSON(PREFGEO,{style:prefStyle,
+      onEachFeature:(f,layer)=>layer.on("click",()=>{S.pref=f.properties.c;S.pl=null;updateMap(true);})});
+    LPREF.setStyle(prefStyle);
+    if(!LMAP.hasLayer(LPREF))LPREF.addTo(LMAP);
+  }else if(LPREF&&LMAP.hasLayer(LPREF))LMAP.removeLayer(LPREF);
+  if(!fit)return;
+  if(S.mode==="near"){
+    const r=ref(),pts=shownPlaces().slice(0,8).map(p=>[p.lat,p.lng]).concat([[r.lat,r.lng]]);
+    LMAP.fitBounds(L.latLngBounds(pts).pad(.15),{maxZoom:16});
+  }else if(S.pref){
+    let b=null;
+    if(LPREF)LPREF.eachLayer(l=>{if(l.feature.properties.c===S.pref)b=l.getBounds();});
+    const pts=shownPlaces().map(p=>[p.lat,p.lng]);
+    if(b)LMAP.fitBounds(b,{padding:[8,8]});
+    else if(pts.length)LMAP.fitBounds(L.latLngBounds(pts).pad(.2),{maxZoom:14});
+  }else LMAP.fitBounds(JAPAN_BOUNDS);
+}
+/* fromPin: only the selection changed, so keep the view and restyle the pins. */
+function updateMap(fit,fromPin){
+  ["mmodes","mstatus","mfilters","pcardwrap","plist"].forEach(id=>{const el=$(id);
+    if(el)el.innerHTML={mmodes:modesHTML,mstatus:statusHTML,mfilters:chipsHTML,pcardwrap:pcardHTML,plist:listHTML}[id]();});
+  if(!LMAP)return;
+  if(fromPin){
+    Object.keys(LPINS).forEach(id=>{const p=PLACES.find(x=>x.id===id);if(p)LPINS[id].setIcon(pinIcon(p));});
+    const sel=S.pl&&PLACES.find(p=>p.id===S.pl);
+    if(sel)LMAP.setView([sel.lat,sel.lng],Math.max(LMAP.getZoom(),15),{animate:true});
+  }else syncMap(fit);
+}
+function locate(){
+  if(typeof navigator==="undefined"||!navigator.geolocation){S.locState="fail";updateMap(true);return;}
+  S.locState="wait";updateMap(false);
+  navigator.geolocation.getCurrentPosition(
+    pos=>{S.loc={lat:pos.coords.latitude,lng:pos.coords.longitude};S.locState="ok";if(S.view==="map")updateMap(true);},
+    err=>{S.locState=err.code===1?"denied":"fail";if(S.view==="map")updateMap(true);},
+    {enableHighAccuracy:false,timeout:10000,maximumAge:300000});
+}
+function ensurePrefs(){
+  if(PREFGEO||PREFLOAD)return;
+  PREFLOAD=fetch("data/japan-prefectures.geojson").then(r=>r.ok?r.json():Promise.reject(r.status))
+    .then(g=>{PREFGEO=g;S.prefFail=false;if(S.view==="map")updateMap(S.mode==="japan");})
+    .catch(()=>{PREFLOAD=null;S.prefFail=true;if(S.view==="map")updateMap(false);});
+}
+/* Entering the map: ask for location only after the notice was accepted once. */
+function enterMap(){
+  if(S.mode==="near"&&S.locState==="idle")locate();
+  if(S.mode==="japan")ensurePrefs();
 }
 
-function fadeBoards(){
-  const n=$("boards"),w=$("boardwrap");
-  if(!n||!w)return;
-  const max=n.scrollWidth-n.clientWidth;
-  w.dataset.l=n.scrollLeft>2?"1":"0";
-  w.dataset.r=(max>2&&n.scrollLeft<max-2)?"1":"0";
-}
-
+/* ============ render & navigation ============ */
 function dragScroll(el){
   if(!el||el._ds)return; el._ds=1;
   let down=false,x0=0,s0=0,moved=false,endedAt=0;
-  el.addEventListener("pointerdown",e=>{
-    if(e.pointerType!=="mouse")return;
-    down=true;moved=false;x0=e.clientX;s0=el.scrollLeft;
-  });
-  el.addEventListener("pointermove",e=>{
-    if(!down)return;
-    const d=e.clientX-x0;
-    if(!moved&&Math.abs(d)<4)return;
-    moved=true;el.scrollLeft=s0-d;e.preventDefault();
-  });
+  el.addEventListener("pointerdown",e=>{if(e.pointerType!=="mouse")return;down=true;moved=false;x0=e.clientX;s0=el.scrollLeft;});
+  el.addEventListener("pointermove",e=>{if(!down)return;const d=e.clientX-x0;
+    if(!moved&&Math.abs(d)<4)return;moved=true;el.scrollLeft=s0-d;e.preventDefault();});
   const up=()=>{if(!down)return;down=false;if(moved)endedAt=Date.now();};
-  el.addEventListener("pointerup",up);
-  el.addEventListener("pointerleave",up);
-  el.addEventListener("pointercancel",up);
-  el.addEventListener("click",e=>{
-    if(Date.now()-endedAt<120){e.preventDefault();e.stopPropagation();}
-  },true);
+  el.addEventListener("pointerup",up);el.addEventListener("pointerleave",up);el.addEventListener("pointercancel",up);
+  el.addEventListener("click",e=>{if(Date.now()-endedAt<120){e.preventDefault();e.stopPropagation();}},true);
 }
 
-
 function render(){
+  const root=ROOTS.includes(S.view);
   document.documentElement.lang=S.lang;
-  document.body.dataset.top=["feed","cal","map","learn"].includes(S.view)?"ai":"washi";
-  renderLang();renderBoards();renderTabs();
-  const v={feed:feed,post:detail,compose:compose,reports:reports,cal:calendar,event:evDetail,map:mapView,profiles:profiles,
-               learn:learn,lesson:lesson,collection:collection}[S.view];
-  $("main").innerHTML=v()+sheet();
-  $("fab").style.display=S.view==="feed"?"":"none";
-  $("raflag").style.display=(S.isRA&&S.view==="feed")?"":"none";
-  $("profbtn").style.display=S.view==="feed"?"":"none";
-  $("profbtn").className="raflag"+(REQS.length?" hasdot":"");
-  document.querySelector("header").style.display=["feed","cal","map","learn"].includes(S.view)?"":"none";
-  $("boardwrap").style.display=S.view==="feed"?"":"none";
-  if(S.view!=="map"&&LMAP){LMAP.remove();LMAP=null;LCLUSTER=null;}
-  if(S.view==="map"&&!LMAP)initMap();
-  dragScroll($("boards"));dragScroll($("mfilters"));
-  const bn=$("boards");
-  if(bn&&!bn._fd){bn._fd=1;
-    bn.addEventListener("scroll",fadeBoards,{passive:true});
-    addEventListener("resize",fadeBoards);}
-  fadeBoards();setTimeout(fadeBoards,60);
-  window.scrollTo(0,0);
+  document.body.dataset.top=root?"ai":"washi";
+  renderLang();renderTabs();
+  $("main").innerHTML=VIEWS[S.view]();
+  document.querySelector("header").style.display=root?"":"none";
+  if(S.view==="map")mountMap();
+  dragScroll($("mfilters"));
+}
+function snap(){return {v:S.view,lid:S.lid,eid:S.eid,eday:S.eday,prev:S.prevView};}
+function go(view,replace){
+  S.prevView=replace?S.prevView:S.view;S.view=view;S.menu=false;
+  try{history[replace?"replaceState":"pushState"](snap(),"");}catch(e){}
+  render();window.scrollTo(0,0);
+  if(view==="map")enterMap();
 }
 
 /* ============ events ============ */
-document.addEventListener("change",e=>{
-  if(e.target.dataset.cb!==undefined){S.cboard=CBOARDS[e.target.selectedIndex];render();}
-});
 document.addEventListener("click",e=>{
-  const g=e.target.closest("g.pin");
-  if(g){S.pl=S.pl===g.dataset.pl?null:g.dataset.pl;render();return;}
   const b=e.target.closest("button");if(!b)return;
   const t=T[S.lang];
-  if(b.hasAttribute("data-menu")){S.menu=!S.menu;render();return;}
-  if(S.menu)S.menu=false;
-  if(b.dataset.l){S.lang=b.dataset.l;render();}
-  else if(b.dataset.b){S.board=b.dataset.b;S.tab=0;render();}
-  else if(b.dataset.p){S.pid=+b.dataset.p;S.view="post";render();}
-  else if(b.hasAttribute("data-back")){S.view="feed";render();}
-  else if(b.dataset.tr){const id=+b.dataset.tr;S.tr[id]=S.tr[id]==="orig"?"tr":"orig";render();}
-  else if(b.dataset.like){const p=POSTS.find(x=>x.id===+b.dataset.like);
-    p.liked=!p.liked;p.likes+=p.liked?1:-1;render();}
-  else if(b.dataset.repPost){const p=POSTS.find(x=>x.id===+b.dataset.repPost);
-    if(S.mine["p"+p.id])return toast(t.repAlready);
-    S.sheet={kind:"post",pid:p.id,quoted:p.t[S.lang]};render();}
-  else if(b.dataset.repCmt){const[pid,ci]=b.dataset.repCmt.split(":");
-    if(S.mine["c"+pid+"-"+ci])return toast(t.repAlready);
-    const c=POSTS.find(x=>x.id===+pid).c[+ci];
-    S.sheet={kind:"cmt",pid:+pid,ci:+ci,quoted:c.t[S.lang]};render();}
-  else if(b.hasAttribute("data-close")){S.sheet=null;render();}
-  else if(b.dataset.why){const sh=S.sheet;
-    const key=sh.kind==="post"?"p"+sh.pid:"c"+sh.pid+"-"+sh.ci;
-    S.mine[key]=true;
-    const hit=S.reps.find(r=>r.kind===sh.kind&&r.pid===sh.pid&&r.ci===sh.ci&&r.why===b.dataset.why);
-    if(hit)hit.n++;
-    else S.reps.unshift({id:++repSeq,why:b.dataset.why,kind:sh.kind,
-      pid:sh.pid,ci:sh.ci,n:1,quoted:sh.quoted});
-    S.sheet=null;S.view="feed";render();toast(t.repDone);}
-  else if(b.hasAttribute("data-submit")){
-    const ti=$("ct").value.trim(),bo=$("cx").value.trim();
-    if(!ti||!bo)return;
-    POSTS.unshift({id:Date.now(),board:S.cboard,src:S.lang,min:0,likes:0,liked:false,
-      t:{ja:ti,en:ti,ko:ti},b:{ja:bo,en:bo,ko:bo},c:[]});
-    S.board="all";S.tab=0;S.view="feed";render();toast(t.posted);}
-  else if(b.dataset.keep){S.reps=S.reps.filter(r=>r.id!=b.dataset.keep);render();toast(t.kept);}
-  else if(b.dataset.hide){const r=S.reps.find(x=>x.id==b.dataset.hide);
-    if(r&&r.kind==="post"&&r.pid){const p=POSTS.find(x=>x.id===r.pid);if(p)p.hidden=true;}
-    S.reps=S.reps.filter(x=>x.id!=b.dataset.hide);render();toast(t.hidden);}
-  else if(b.dataset.e){S.eid=b.dataset.e;S.view="event";render();}
+  if(b.hasAttribute("data-menu")){S.menu=!S.menu;renderLang();return;}
+  if(S.menu){S.menu=false;renderLang();}
+  if(b.dataset.l){S.lang=b.dataset.l;store.set("lang",S.lang);render();}
+  else if(b.dataset.t!==undefined){const v=TABS[+b.dataset.t];
+    if(v==="learn")S.lid=null;
+    if(v==="cal"){S.day=null;S.month=null;}
+    go(v);}
+  else if(b.dataset.go){go(b.dataset.go);}
+  else if(b.hasAttribute("data-back")){const p=PARENT[S.view]||"home";
+    if(S.prevView===p)history.back();else go(p,true);}
+  /* calendar */
+  else if(b.dataset.e){const[id,day]=b.dataset.e.split("|");S.eid=id;S.eday=day;go("event");}
   else if(b.dataset.d){S.day=S.day===b.dataset.d?null:b.dataset.d;render();}
-  else if(b.dataset.mv){const[y,m]=(S.month||TODAY.slice(0,7)).split("-").map(Number);
+  else if(b.dataset.mv){const[y,m]=(S.month||today().slice(0,7)).split("-").map(Number);
     const nd=new Date(y,m-1+ +b.dataset.mv,1);
     S.month=nd.getFullYear()+"-"+d2(nd.getMonth()+1);render();}
-  else if(b.dataset.cat!==undefined&&b.classList.contains("fchip")){
-    S.cat=b.dataset.cat;S.pl=null;LMAP?updateMap():render();}
-  else if(b.dataset.pl){S.pl=S.pl===b.dataset.pl?null:b.dataset.pl;
-    LMAP?updateMap(true):render();}
-  else if(b.hasAttribute("data-ra")){S.view="reports";render();}
-  else if(b.hasAttribute("data-prof")){S.view="profiles";render();}
-  else if(b.dataset.lesson){S.lid=b.dataset.lesson;
-    S.vn={route:null,i:0,picked:null,score:0};S.view="lesson";render();}
-  else if(b.hasAttribute("data-col")){S.view="collection";render();}
+  else if(b.hasAttribute("data-ics")){const o=curOcc();if(o)downloadICS(o);}
+  /* map */
+  else if(b.dataset.mode){S.mode=b.dataset.mode;S.pl=null;S.cat="";enterMap();updateMap(true);}
+  else if(b.dataset.loc){
+    if(b.dataset.loc==="use"){store.set("loc","use");locate();}
+    else{store.set("loc","skip");S.locState="skip";updateMap(true);}}
+  else if(b.dataset.pref!==undefined){S.pref=b.dataset.pref||null;S.pl=null;S.cat="";updateMap(true);}
+  else if(b.dataset.cat!==undefined&&b.classList.contains("fchip")){S.cat=b.dataset.cat;S.pl=null;updateMap(false);}
+  else if(b.dataset.pl){S.pl=S.pl===b.dataset.pl?null:b.dataset.pl;updateMap(false,true);}
+  /* Japanese */
+  else if(b.dataset.lesson){S.lid=b.dataset.lesson;S.vn={route:null,i:0,picked:null,score:0};go("lesson");}
+  else if(b.hasAttribute("data-col")){go("collection");}
   else if(b.dataset.route){S.vn={route:b.dataset.route,i:0,picked:null,score:0};render();}
   else if(b.dataset.opt!==undefined){const v=S.vn;
     v.picked=+b.dataset.opt;
@@ -1866,39 +1710,26 @@ document.addEventListener("click",e=>{
       const fresh=!S.cg[card.id];S.cg[card.id]=true;
       const other=v.route==="osaka"?"kyoto":"osaka";
       if(ENDINGS.some(e=>e.route===other&&S.cg[e.id]))S.cg.e_both=true;
+      store.set("cg",S.cg);
       render();toast(fresh?t.vnGot:t.vnHave);
     }else render();}
   else if(b.hasAttribute("data-vnreset")){S.vn={route:null,i:0,picked:null,score:0};render();}
-  else if(b.dataset.ex){
-    if(sentToday>=DAILY_LIMIT)return toast(t.exLimit);
-    S.sheet={kind:"ex",pid:+b.dataset.ex};render();}
-  else if(b.dataset.exsend){const pid=+b.dataset.exsend;
-    sentToday++;S.sent[pid]=true;S.sheet=null;render();toast(t.exSent);}
-  else if(b.dataset.acc){const r=REQS.find(x=>x.id===b.dataset.acc);
-    REQS=REQS.filter(x=>x.id!==b.dataset.acc);
-    EXCH.unshift({id:"x"+(++exSeq),name:r.name,room:r.room,insta:r.insta,pid:r.pid,at:0});
-    render();toast(t.exOk);}
-  else if(b.dataset.dec){REQS=REQS.filter(x=>x.id!==b.dataset.dec);render();toast(t.exNo);}
-  else if(b.dataset.cut){EXCH=EXCH.filter(x=>x.id!==b.dataset.cut);render();toast(t.exCut);}
-  else if(b.dataset.go){const ev=EVENTS.find(x=>x.id===b.dataset.go);
-    S.going[ev.id]=!S.going[ev.id];render();if(S.going[ev.id])toast(t.joinedT);}
-  else if(b.dataset.ics){downloadICS(EVENTS.find(x=>x.id===b.dataset.ics));}
-  else if(b.dataset.t!==undefined){S.tab=+b.dataset.t;
-    S.view=["feed","cal","learn","map"][S.tab];
-    if(S.tab===0)S.board="all";
-    if(S.tab===2)S.lid=null;
-    if(S.tab===1){S.day=null;S.month=null;}
-    if(S.tab===3)S.pl=null;
-    render();}
-  else if(b.id==="fab"){S.cboard="free";S.view="compose";render();}
 });
 
-/* Manifest shortcuts land here: ?tab=1 opens Events, ?compose=1 opens the composer. */
+/* Manifest shortcuts land here: ?v=learn|map|cal opens that tab. Shortcuts from
+   the old board app keep working: ?tab=1 was Events, ?compose=1 goes home.
+   Everything below this marker has side effects; the headless test cuts here. */
 const q=new URLSearchParams(location.search);
-if(q.get("tab")==="1"){S.tab=1;S.view="cal";}
-if(q.get("compose")==="1"){S.view="compose";}
-
+S.lang=store.get("lang","en");if(!T[S.lang])S.lang="en";
+S.cg=store.get("cg",{})||{};
+{const c=store.get("loc",null);S.locState=c==="use"?"idle":c==="skip"?"skip":"ask";}
+S.view=ROOTS.includes(q.get("v"))?q.get("v"):q.get("tab")==="1"?"cal":"home";
+try{history.replaceState(snap(),"");}catch(e){}
+addEventListener("popstate",e=>{const st=e.state;if(!st||!VIEWS[st.v])return;
+  S.view=st.v;S.lid=st.lid;S.eid=st.eid;S.eday=st.eday;S.prevView=st.prev;S.menu=false;
+  render();if(S.view==="map")enterMap();});
 render();
+if(S.view==="map")enterMap();
 
 if("serviceWorker" in navigator){
   addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}));

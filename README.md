@@ -1,63 +1,66 @@
-# YUI Board
+# YUI
 
-A community app for residents of **GLOBAL COMMONS 結 -YUI-**, the international
-residence hall on Kansai Gaidai's Gotenyama campus (about 650 residents, Japanese
-students and exchange students sharing units).
+An app for residents of **GLOBAL COMMONS 結 -YUI-**, the international residence
+hall on Kansai Gaidai's Gotenyama campus (about 650 residents, Japanese students
+and exchange students sharing units).
 
-The problem it addresses: what residents need to know is scattered across
-Instagram DMs, noticeboards and word of mouth, and it disappears every time the
-exchange students turn over. This gathers it into four places so that what one
-resident works out stays available to the next.
+> The app name is a placeholder until a new one is chosen. Change `appName` in `T`
+> (`index.html`), the `<title>`, and `manifest.webmanifest`.
 
-## Current state
+## Current state: the MLP
 
-`index.html` is a **mobile-first prototype running on mock data** — a single
-static page, no backend. Posting works in the session and is gone on reload.
-That is expected; the backend is not wired up yet.
-
-## Tabs
+A mobile-first PWA with **no backend and no accounts**. Scope and reasoning are in
+[`docs/02-requirements/PRD-MLP.md`](docs/02-requirements/PRD-MLP.md).
 
 | Tab | What it holds |
 |---|---|
-| Home | Anonymous board — general, meetups, unit & floor, market, lost & found |
-| Calendar | Month grid; GIP Tuesdays, office events, resident-organised trips. Exports .ics |
-| Japanese | Eight comic episodes of everyday Japanese + a branching Osaka/Kyoto scene with collectible endings |
-| Map | Leaflet + OpenStreetMap, clustered pins, walking times measured from 結 |
+| Home | Shortcuts to the three features, collection progress, next event |
+| Japanese | Seven comic episodes of everyday Japanese + a branching Osaka/Kyoto conversation game with collectible ending cards |
+| Map | **Near me** (default, uses the device location after a notice) or **All of Japan** (pick a prefecture on a boundary map or from a list). Curated places only |
+| Calendar | Month grid of dorm events, weekly series, export to your own calendar (.ics) |
 
-Plus: a report flow with reasons and an operator queue, and profile exchange for
-market handovers (anonymous until both sides accept).
+What the app remembers — ending cards, language, the location choice — is kept in
+this device's browser storage only (`yui.v1.*` keys). If storage is blocked the
+app still works and forgets on reload.
+
+The comic panels and ending cards are placeholders: each carries a scene note to
+draw from (`s`), and an `img` field replaces the placeholder when artwork exists.
+
+## Adding data
+
+- **Places** — append to `PLACES` in `index.html`. Each needs `id`, `pref` (JIS
+  prefecture code, e.g. `"27"` Osaka), `cat`, `lat`, `lng` and a name in `ja`/`en`/`ko`;
+  description, `by` and Google `gid` are optional.
+- **Events** — append to `EVENTS`. Weekly events are written once with
+  `weekly.until`, and `over` replaces a single week's title or text.
 
 ## Design decisions worth keeping
 
-- **Trilingual (en / ja / ko), English default.** Each post stores the language it
-  was written in and shows a translate/original toggle. UI strings live in the `T`
-  object; post bodies will be machine-translated on write, not on read.
-- **Anonymity is structural, not cosmetic.** `schema.sql` keeps a post's text and
-  its author in separate tables, and the author table has no RLS policy at all —
-  nothing reachable through PostgREST can read it. Writes go through
-  `SECURITY DEFINER` functions so both rows land in one transaction.
-- **Residents are anonymous; the operator is not.** Every hide is signed in
-  `mod_actions`. Reporters are recorded but invisible, including to the operator.
-- **Room numbers are stored, never exposed.** The UI shows a floor.
-- **No Google Maps API.** Place cards link out to Google Maps by `place_id`, which
-  costs nothing. The map itself is OSM tiles.
+- **Trilingual (en / ja / ko), English default.** Every UI string lives in `T`.
+- **Nothing leaves the device except map requests.** Location is only used on the
+  device; map tiles come from OpenStreetMap and reveal the area being viewed, which
+  the location notice says.
+- **No Google Maps API.** Place cards link out to Google Maps by `place_id`.
+- **Created once, kept alive.** The Leaflet map survives re-renders and language
+  changes; filters and selection patch it in place.
 
 ## Files
 
 ```
-index.html             the whole prototype
-schema.sql             Postgres / Supabase schema, RLS policies, write functions
-manifest.webmanifest   PWA manifest (relative paths — works under a subpath)
-sw.js                  service worker; bump CACHE on every deploy
-icon-*.png             app icons
+index.html                       the app
+vendor/leaflet*/                 Leaflet 1.9.4 + markercluster 1.5.3 (BSD-2 / MIT)
+data/japan-prefectures.geojson   prefecture boundaries — Natural Earth, public domain, simplified
+manifest.webmanifest             PWA manifest (relative paths — works under a subpath)
+sw.js                            service worker; bump CACHE on every deploy
+icon-*.png                       app icons
+docs/                            planning documents (see docs/README.md)
+schema.sql                       backend design for the earlier board plan — on hold
 ```
 
 ## Running it
 
-Open `index.html` in a browser. There is no build step.
-
-For the service worker and install prompt to work the page must be served over
-HTTPS or from `localhost`:
+Serve the folder — the map and prefecture data are fetched, so `file://` is not
+enough, and location needs HTTPS or `localhost`:
 
 ```
 python -m http.server 8000
@@ -71,10 +74,8 @@ relative paths so a project subpath (`/<repo>/`) works without edits.
 **Bump `CACHE` in `sw.js` on every deploy.** Without that, phones that already
 installed the app keep showing the old build.
 
-## Next
+## On hold
 
-- Supabase project in the Tokyo region; apply `schema.sql` as a migration
-- Translation on write (Azure Translator F0 — 2M characters/month, stops rather
-  than bills when the quota runs out)
-- Replace mock data with live queries; keep `service_role` out of the client
-- Artwork for the Japanese episodes (each panel carries a scene note to generate from)
+The anonymous board, reports and profile exchange — with the Supabase schema, the
+translate-on-write path and the architecture docs — are paused, not deleted. See
+`docs/02-requirements/PRD.md` (v0.4), `docs/architecture/` and `docs/adr/`.
