@@ -97,7 +97,6 @@ header{
 }
 .langmenu button{display:block;width:100%;text-align:left;padding:11px 14px;font-size:13.5px;color:var(--sumi)}
 .langmenu button[aria-pressed="true"]{background:var(--card);color:var(--ai);font-weight:600}
-.langmenu p{padding:9px 14px 10px;font-size:11px;line-height:1.5;color:var(--sumi-faint);border-top:1px solid var(--line)}
 .langmenu[hidden]{display:none}
 main{flex:1;position:relative}
 /* ---------- detail ---------- */
@@ -114,9 +113,9 @@ main{flex:1;position:relative}
   width:100%;background:var(--ai);color:#fff;padding:13px;
   border-radius:6px;font-size:14.5px;font-weight:600;
 }
-.ra-head{padding:16px 18px;background:var(--ai);color:#DCE6ED}
-.ra-head h1{font-size:16px;font-weight:600}
-.ra-head p{font-size:12px;color:var(--asagi);margin-top:3px}
+.sechead{padding:16px 18px;background:var(--ai);color:#DCE6ED}
+.sechead h1{font-size:16px;font-weight:600}
+.sechead p{font-size:12px;color:var(--asagi);margin-top:3px}
 .empty{padding:60px 34px;text-align:center;color:var(--sumi-faint);font-size:13.5px;line-height:1.7}
 /* ---------- calendar ---------- */
 .mnav{display:flex;align-items:center;gap:6px;padding:14px 12px 10px}
@@ -185,7 +184,6 @@ main{flex:1;position:relative}
 .ev .chips{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
 .chip{font-size:11px;padding:2px 7px;border-radius:3px;background:var(--card);border:1px solid var(--line);color:var(--sumi-soft)}
 .chip.rep{border-color:var(--asagi);color:var(--ai-mid)}
-.chip.full{border-color:#D8B0AD;color:var(--beni)}
 
 .evwrap{padding:20px 18px}
 .evwrap .when{font-size:12.5px;color:var(--beni);font-weight:600;margin-bottom:6px}
@@ -198,7 +196,6 @@ main{flex:1;position:relative}
 .evbtns{display:flex;gap:9px;margin-top:20px}
 .evbtns button{flex:1;padding:12px;border-radius:6px;font-size:13.5px;font-weight:600;border:1px solid var(--line);background:var(--card);color:var(--sumi-soft)}
 .evbtns .go{background:var(--ai);border-color:var(--ai);color:#fff}
-.evbtns .go[aria-pressed="true"]{background:var(--card);border-color:var(--ai);color:var(--ai)}
 .sect{padding:16px 18px 7px;font-size:12px;font-weight:600;color:var(--sumi-faint);
   background:var(--washi-deep)}
 /* ---------- lessons ---------- */
@@ -307,7 +304,8 @@ main{flex:1;position:relative}
 header{padding-bottom:14px}
 .crest-text{min-width:0}
 .crest-text b,.crest-text span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.globe{white-space:nowrap;min-height:36px}
+.globe{white-space:nowrap;min-height:44px}
+.fchip{min-height:44px}
 /* Korean wraps at spaces, not mid-word. */
 html[lang="ko"] body{word-break:keep-all;overflow-wrap:anywhere}
 .bar .back{min-width:44px;min-height:44px;display:flex;align-items:center;justify-content:center;
@@ -424,6 +422,8 @@ const T = {
    aLang:"言語",
    aPrev:"前の月",
    aNext:"次の月",
+   aZoomIn:"ズームイン",
+   aZoomOut:"ズームアウト",
    learnT:"生活の日本語",
    learnS:"寮で実際に出会う場面から",
    lvL:"レベル",
@@ -497,6 +497,8 @@ const T = {
    aLang:"Language",
    aPrev:"Previous month",
    aNext:"Next month",
+   aZoomIn:"Zoom in",
+   aZoomOut:"Zoom out",
    learnT:"Everyday Japanese",
    learnS:"Scenes you will actually meet in the dorm",
    lvL:"Level",
@@ -570,6 +572,8 @@ const T = {
    aLang:"언어",
    aPrev:"이전 달",
    aNext:"다음 달",
+   aZoomIn:"확대",
+   aZoomOut:"축소",
    learnT:"생활 일본어",
    learnS:"기숙사에서 실제로 만나는 장면",
    lvL:"레벨",
@@ -1230,10 +1234,11 @@ function downloadICS(o){
    "BEGIN:VEVENT","UID:"+e.id+"-"+o.d+"@yui","DTSTAMP:"+now,
    "DTSTART;TZID=Asia/Tokyo:"+dt(o.d,e.time),"DTEND;TZID=Asia/Tokyo:"+dt(o.d,e.end),
    "SUMMARY:"+icsEsc(o.t[S.lang]),"LOCATION:"+icsEsc(e.place[S.lang]),
-   "DESCRIPTION:"+icsEsc(o.b[S.lang]),"END:VEVENT","END:VCALENDAR"].map(icsFold).join("\r\n");
+   "DESCRIPTION:"+icsEsc(o.b[S.lang]),"END:VEVENT","END:VCALENDAR"].map(icsFold).join("\r\n")+"\r\n";
   const a=document.createElement("a");
   a.href=URL.createObjectURL(new Blob([ics],{type:"text/calendar"}));
-  a.download=e.id+"-"+o.d+".ics";a.click();URL.revokeObjectURL(a.href);
+  /* revoking at once cancels the download in some browsers */
+  a.download=e.id+"-"+o.d+".ics";a.click();setTimeout(()=>URL.revokeObjectURL(a.href),10000);
   toast(t.addedIcs);
 }
 
@@ -1283,7 +1288,7 @@ function evRow(o){
   const t=T[S.lang],e=o.e;
   const chip=e.weekly?`<div class="chips"><span class="chip rep">↻ ${fill(t.weeklyOn,{d:t.wd[new Date(e.d+"T00:00:00").getDay()]})}</span></div>`:"";
   return `<button class="ev ${e.kind}" data-e="${e.id}|${o.d}">
-    <span class="clock">${e.time}</span>
+    <span class="clock">${esc(e.time)}</span>
     <h3>${esc(o.t[S.lang])}</h3>
     <p class="sub">${esc(e.place[S.lang])} · ${esc(HOSTS[e.host][S.lang].split("（")[0].split(" (")[0])}</p>
     ${chip}
@@ -1331,7 +1336,7 @@ function evDetail(){
   const t=T[S.lang],o=curOcc();
   if(!o)return backBar(t.evT)+`<p class="empty">${t.noEv}</p>`;
   const e=o.e,d=new Date(o.d+"T00:00:00");
-  const when=d.toLocaleDateString(loc(),{month:"long",day:"numeric"})+" ("+t.wd[d.getDay()]+") "+e.time+"–"+e.end;
+  const when=d.toLocaleDateString(loc(),{month:"long",day:"numeric"})+" ("+t.wd[d.getDay()]+") "+esc(e.time)+"–"+esc(e.end);
   return backBar(t.evT)+`<div class="evwrap">
       <div class="when">${when}</div>
       <h1>${esc(o.t[S.lang])}</h1>
@@ -1349,7 +1354,10 @@ function evDetail(){
    render writes an empty #lmapslot and mountMap() moves LBOX back into it, so
    changing language or view never destroys the map. Map controls call
    updateMap(), which patches the containers and layers in place. */
-let LBOX=null,LMAP=null,LCLUSTER=null,LPINS={},LME=null,LPREF=null,PREFGEO=null,PREFLOAD=null,LEAFLET=null;
+let LBOX=null,LMAP=null,LCLUSTER=null,LPINS={},LME=null,LHOMEM=null,LZOOM=null,LPREF=null,PREFGEO=null,PREFLOAD=null,LEAFLET=null;
+/* Set when location or boundaries arrive while the map is off screen, so the
+   next mountMap() redraws and refits. MODEVIEW keeps each mode's last view. */
+let MAPSTALE=false;const MODEVIEW={};
 
 function ref(){return S.locState==="ok"&&S.loc?S.loc:HOME;}
 function distM(a,b){
@@ -1453,11 +1461,11 @@ function learn(){
 function collection(){
   const t=T[S.lang],got=ENDINGS.filter(e=>S.cg[e.id]).length;
   return backBar(t.colT,got+" / "+ENDINGS.length)+`
-    <div class="ra-head"><h1>${t.colT}</h1><p>${t.colS}</p></div>
+    <div class="sechead"><h1>${t.colT}</h1><p>${t.colS}</p></div>
     ${got?"":`<p class="cempty" style="padding-top:14px">${t.colEmpty}</p>`}
     <div class="cgrid">${ENDINGS.map(e=>{
       if(!S.cg[e.id])return `<div class="card lock"><div class="cgart"></div><b>${t.locked}</b></div>`;
-      return `<div class="card"><div class="cgart">${e.img?`<img src="${e.img}" alt="">`
+      return `<div class="card"><div class="cgart">${e.img?`<img src="${esc(e.img)}" alt="">`
         :`<p>${esc(e.s)}</p><small>${t.artTodo}</small>`}</div>
         <b>${esc(e.t[S.lang])}</b><q>${esc(e.jp)}</q>
         <p>${esc(e.n[S.lang])}</p></div>`;}).join("")}</div>`;
@@ -1468,7 +1476,7 @@ function lesson(){
   if(!l)return learn();
   if(l.vn)return vnView();
   const cuts=l.cuts.map((c,i)=>`<figure class="cut">
-      ${c.img?`<img src="${c.img}" alt="">`
+      ${c.img?`<img src="${esc(c.img)}" alt="">`
             :`<div class="cutph"><span>${i+1}</span><p>${esc(c.s)}</p>
                <small>${t.artTodo}</small></div>`}
       <figcaption>${esc(c.jp)}</figcaption>
@@ -1483,8 +1491,8 @@ function lesson(){
 }
 
 function vnView(){
-  const t=T[S.lang],v=S.vn;
-  const bar=backBar(t.lvL+" 8");
+  const t=T[S.lang],v=S.vn,l=LESSONS.find(x=>x.id===S.lid);
+  const bar=backBar(t.lvL+" "+(l?l.lv:""));
   if(!v.route){
     return bar+`<div class="lhead"><h1>${t.vnPick}</h1></div>
       <div class="routes">${["osaka","kyoto"].map(k=>`
@@ -1499,7 +1507,7 @@ function vnView(){
     const best=v.score>=4;
     const card=ENDINGS.find(e=>e.route===v.route&&e.best===best);
     return bar+`<div class="vnend">
-        <div class="cgart big">${card.img?`<img src="${card.img}" alt="">`
+        <div class="cgart big">${card.img?`<img src="${esc(card.img)}" alt="">`
           :`<p>${esc(card.s)}</p><small>${t.artTodo}</small>`}</div>
         <h1>${esc(card.t[S.lang])}</h1>
         <q>${esc(card.jp)}</q>
@@ -1522,7 +1530,7 @@ function vnView(){
           <button class="submit" data-vnnext>${t.vnNext}</button>`;})();
   return bar+`<div class="vnwrap">
       <div class="vndots">${dots}</div>
-      <div class="cgart">${sc.img?`<img src="${sc.img}" alt="">`
+      <div class="cgart">${sc.img?`<img src="${esc(sc.img)}" alt="">`
         :`<p>${esc(sc.s)}</p><small>${t.artTodo}</small>`}</div>
       <div class="vnline"><b>${esc(R.name[S.lang])}</b><p>${esc(sc.jp)}</p></div>
       ${body}
@@ -1533,10 +1541,11 @@ const VIEWS={home,learn,lesson,collection,map:mapView,cal:calendar,event:evDetai
 
 /* ============ map runtime ============ */
 function loadScript(src){return new Promise((ok,no)=>{const s=document.createElement("script");
-  s.src=src;s.onload=ok;s.onerror=no;document.head.appendChild(s);});}
+  s.src=src;s.onload=ok;s.onerror=e=>{s.remove();no(e);};document.head.appendChild(s);});}
 function loadLeaflet(){
   if(!LEAFLET){
     ["vendor/leaflet/leaflet.css","vendor/leaflet.markercluster/MarkerCluster.css"].forEach(h=>{
+      if(document.querySelector(`link[href="${h}"]`))return;
       const l=document.createElement("link");l.rel="stylesheet";l.href=h;document.head.appendChild(l);});
     LEAFLET=loadScript("vendor/leaflet/leaflet.js")
       .then(()=>loadScript("vendor/leaflet.markercluster/leaflet.markercluster.js"))
@@ -1550,7 +1559,8 @@ function pinIcon(p){
 }
 function mountMap(){
   const slot=$("lmapslot");if(!slot)return;
-  if(LBOX){slot.innerHTML="";slot.appendChild(LBOX);LMAP.invalidateSize();return;}
+  if(LBOX){slot.innerHTML="";slot.appendChild(LBOX);LMAP.invalidateSize();
+    labelMap();syncMap(MAPSTALE);MAPSTALE=false;return;}
   loadLeaflet().then(()=>{if(S.view==="map"&&!LBOX)initMap();})
     .catch(()=>{const s=$("lmapslot");if(s)s.innerHTML=`<p class="maperr">${T[S.lang].mapFail}</p>`;});
 }
@@ -1558,17 +1568,28 @@ function initMap(){
   const slot=$("lmapslot");if(!slot)return;
   LBOX=document.createElement("div");LBOX.id="lmap";
   slot.innerHTML="";slot.appendChild(LBOX);
-  LMAP=L.map(LBOX,{scrollWheelZoom:false,zoomControl:true});
+  LMAP=L.map(LBOX,{scrollWheelZoom:false,zoomControl:false});
+  LZOOM=L.control.zoom().addTo(LMAP);
   L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,
     attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors'}).addTo(LMAP);
-  L.marker([HOME.lat,HOME.lng],{icon:L.divIcon({className:"homew",html:"<b>結</b>",iconSize:[32,32],iconAnchor:[16,16]}),
-    zIndexOffset:1000,interactive:false}).addTo(LMAP);
+  LHOMEM=L.marker([HOME.lat,HOME.lng],{zIndexOffset:1000,interactive:false}).addTo(LMAP);
+  labelMap();
   LCLUSTER=L.markerClusterGroup({maxClusterRadius:42,showCoverageOnHover:false,spiderfyDistanceMultiplier:1.4,
     iconCreateFunction:c=>L.divIcon({className:"clw",html:`<div class="cl">${c.getChildCount()}</div>`,iconSize:[34,34]})});
   LMAP.addLayer(LCLUSTER);
-  syncMap(true);
+  syncMap(true);MAPSTALE=false;
   setTimeout(()=>LMAP&&LMAP.invalidateSize(),60);
 }
+/* Strings Leaflet draws itself, refreshed on every mount so a language change reaches them. */
+function labelMap(){
+  const t=T[S.lang];
+  LHOMEM.setIcon(L.divIcon({className:"homew",html:`<b>${esc(t.here)}</b>`,iconSize:[32,32],iconAnchor:[16,16]}));
+  const zi=LBOX.querySelector(".leaflet-control-zoom-in"),zo=LBOX.querySelector(".leaflet-control-zoom-out");
+  if(zi){zi.title=t.aZoomIn;zi.setAttribute("aria-label",t.aZoomIn);}
+  if(zo){zo.title=t.aZoomOut;zo.setAttribute("aria-label",t.aZoomOut);}
+  if(LME)LME.setIcon(meIcon());
+}
+function meIcon(){return L.divIcon({className:"mew",html:`<i title="${esc(T[S.lang].youHere)}"></i>`,iconSize:[22,22],iconAnchor:[11,11]});}
 function prefStyle(f){
   const c=f.properties.c,has=PLACES.some(p=>p.pref===c),on=S.pref===c;
   return {color:on?"#B03A34":"#3D6A92",weight:on?2:1,fillColor:has?"#1D3E5C":"#8FB2C7",fillOpacity:on?.45:has?.3:.12};
@@ -1583,13 +1604,12 @@ function syncMap(fit){
   });
   const showMe=S.mode==="near"&&S.locState==="ok"&&S.loc;
   if(showMe){
-    if(!LME)LME=L.marker([S.loc.lat,S.loc.lng],{icon:L.divIcon({className:"mew",html:"<i></i>",iconSize:[22,22],iconAnchor:[11,11]}),
-      zIndexOffset:900,interactive:false});
+    if(!LME)LME=L.marker([S.loc.lat,S.loc.lng],{icon:meIcon(),zIndexOffset:900,interactive:false});
     LME.setLatLng([S.loc.lat,S.loc.lng]);if(!LMAP.hasLayer(LME))LME.addTo(LMAP);
   }else if(LME&&LMAP.hasLayer(LME))LMAP.removeLayer(LME);
   if(S.mode==="japan"&&PREFGEO){
     if(!LPREF)LPREF=L.geoJSON(PREFGEO,{style:prefStyle,
-      onEachFeature:(f,layer)=>layer.on("click",()=>{S.pref=f.properties.c;S.pl=null;updateMap(true);})});
+      onEachFeature:(f,layer)=>layer.on("click",()=>{S.pref=f.properties.c;S.pl=null;S.cat="";updateMap(true);})});
     LPREF.setStyle(prefStyle);
     if(!LMAP.hasLayer(LPREF))LPREF.addTo(LMAP);
   }else if(LPREF&&LMAP.hasLayer(LPREF))LMAP.removeLayer(LPREF);
@@ -1620,15 +1640,25 @@ function locate(){
   if(typeof navigator==="undefined"||!navigator.geolocation){S.locState="fail";updateMap(true);return;}
   S.locState="wait";updateMap(false);
   navigator.geolocation.getCurrentPosition(
-    pos=>{S.loc={lat:pos.coords.latitude,lng:pos.coords.longitude};S.locState="ok";if(S.view==="map")updateMap(true);},
-    err=>{S.locState=err.code===1?"denied":"fail";if(S.view==="map")updateMap(true);},
+    pos=>{S.loc={lat:pos.coords.latitude,lng:pos.coords.longitude};S.locState="ok";delete MODEVIEW.near;mapChanged();},
+    err=>{S.locState=err.code===1?"denied":"fail";mapChanged();},
     {enableHighAccuracy:false,timeout:10000,maximumAge:300000});
 }
 function ensurePrefs(){
   if(PREFGEO||PREFLOAD)return;
   PREFLOAD=fetch("data/japan-prefectures.geojson").then(r=>r.ok?r.json():Promise.reject(r.status))
-    .then(g=>{PREFGEO=g;S.prefFail=false;if(S.view==="map")updateMap(S.mode==="japan");})
-    .catch(()=>{PREFLOAD=null;S.prefFail=true;if(S.view==="map")updateMap(false);});
+    .then(g=>{PREFGEO=g;S.prefFail=false;mapChanged();})
+    .catch(()=>{PREFLOAD=null;S.prefFail=true;mapChanged();});
+}
+/* Async results: apply now if the map is on screen, otherwise on the next mount. */
+function mapChanged(){if(S.view==="map")updateMap(true);else MAPSTALE=true;}
+/* Switching mode returns to where that mode was left; the first visit fits. */
+function setMode(m){
+  if(LMAP)MODEVIEW[S.mode]={c:LMAP.getCenter(),z:LMAP.getZoom()};
+  S.mode=m;S.pl=null;S.cat="";enterMap();
+  const v=MODEVIEW[m];
+  updateMap(!v||!LMAP);
+  if(v&&LMAP)LMAP.setView(v.c,v.z,{animate:false});
 }
 /* Entering the map: ask for location only after the notice was accepted once. */
 function enterMap(){
@@ -1668,15 +1698,16 @@ function go(view,replace){
 
 /* ============ events ============ */
 document.addEventListener("click",e=>{
-  const b=e.target.closest("button");if(!b)return;
+  const b=e.target.closest("button");
+  if(S.menu&&!(b&&b.hasAttribute("data-menu"))){S.menu=false;renderLang();}
+  if(!b)return;
   const t=T[S.lang];
   if(b.hasAttribute("data-menu")){S.menu=!S.menu;renderLang();return;}
-  if(S.menu){S.menu=false;renderLang();}
   if(b.dataset.l){S.lang=b.dataset.l;store.set("lang",S.lang);render();}
   else if(b.dataset.t!==undefined){const v=TABS[+b.dataset.t];
     if(v==="learn")S.lid=null;
     if(v==="cal"){S.day=null;S.month=null;}
-    go(v);}
+    go(v,v===S.view);}
   else if(b.dataset.go){go(b.dataset.go);}
   else if(b.hasAttribute("data-back")){const p=PARENT[S.view]||"home";
     if(S.prevView===p)history.back();else go(p,true);}
@@ -1688,7 +1719,7 @@ document.addEventListener("click",e=>{
     S.month=nd.getFullYear()+"-"+d2(nd.getMonth()+1);render();}
   else if(b.hasAttribute("data-ics")){const o=curOcc();if(o)downloadICS(o);}
   /* map */
-  else if(b.dataset.mode){S.mode=b.dataset.mode;S.pl=null;S.cat="";enterMap();updateMap(true);}
+  else if(b.dataset.mode){if(b.dataset.mode!==S.mode)setMode(b.dataset.mode);}
   else if(b.dataset.loc){
     if(b.dataset.loc==="use"){store.set("loc","use");locate();}
     else{store.set("loc","skip");S.locState="skip";updateMap(true);}}
@@ -1723,8 +1754,10 @@ const q=new URLSearchParams(location.search);
 S.lang=store.get("lang","en");if(!T[S.lang])S.lang="en";
 S.cg=store.get("cg",{})||{};
 {const c=store.get("loc",null);S.locState=c==="use"?"idle":c==="skip"?"skip":"ask";}
-S.view=ROOTS.includes(q.get("v"))?q.get("v"):q.get("tab")==="1"?"cal":"home";
-try{history.replaceState(snap(),"");}catch(e){}
+{const st=history.state;
+  if(st&&VIEWS[st.v]){S.view=st.v;S.lid=st.lid;S.eid=st.eid;S.eday=st.eday;S.prevView=st.prev;}
+  else S.view=ROOTS.includes(q.get("v"))?q.get("v"):q.get("tab")==="1"?"cal":"home";}
+try{history.replaceState(snap(),"",location.pathname);}catch(e){}
 addEventListener("popstate",e=>{const st=e.state;if(!st||!VIEWS[st.v])return;
   S.view=st.v;S.lid=st.lid;S.eid=st.eid;S.eday=st.eday;S.prevView=st.prev;S.menu=false;
   render();if(S.view==="map")enterMap();});

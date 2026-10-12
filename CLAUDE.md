@@ -107,6 +107,10 @@ const f=new Function("document","window","console","setTimeout","clearTimeout","
       for(const picked of [null,0]){ S.vn.picked=i<VN[route].scenes.length?picked:null;
         try{ if(/undefined/.test(vnView())) out.push(route+" scene "+i+" suspicious"); }
         catch(e){ out.push(route+" scene "+i+" "+e.message); } } } }
+  // the runtime is not rendered here, but a deleted or renamed function should still fail
+  for(const fn of ["render","go","mountMap","initMap","syncMap","updateMap","labelMap","setMode",
+    "locate","enterMap","ensurePrefs","mapChanged","downloadICS","occOn","upcoming","today"])
+    try{ if(typeof eval(fn)!=="function") throw 0; }catch(e){ out.push("missing function: "+fn); }
   // every view in VIEWS was covered
   for(const v in VIEWS) if(!cases.some(c=>c[1]===v)) out.push("view not tested: "+v);
   return out;`);

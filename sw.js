@@ -1,5 +1,5 @@
 /* Bump CACHE on every deploy — it is what forces phones to pick up new code. */
-const CACHE = "yui-v2";
+const CACHE = "yui-v3";
 
 const SHELL = [
   "./",
@@ -48,8 +48,11 @@ self.addEventListener("fetch", e => {
     e.respondWith(
       fetch(req)
         .then(res => {
-          const copy = res.clone();
-          caches.open(CACHE).then(c => c.put(req, copy));
+          // never keep an error page: it would be served offline
+          if (res.ok) {
+            const copy = res.clone();
+            caches.open(CACHE).then(c => c.put(req, copy));
+          }
           return res;
         })
         .catch(() => caches.match(req, { ignoreSearch: req.mode === "navigate" })
@@ -61,8 +64,10 @@ self.addEventListener("fetch", e => {
   // Static assets: cache first.
   e.respondWith(
     caches.match(req).then(r => r || fetch(req).then(res => {
-      const copy = res.clone();
-      caches.open(CACHE).then(c => c.put(req, copy));
+      if (res.ok) {
+        const copy = res.clone();
+        caches.open(CACHE).then(c => c.put(req, copy));
+      }
       return res;
     }))
   );
