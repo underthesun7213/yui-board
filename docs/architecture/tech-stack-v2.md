@@ -279,7 +279,7 @@ Supabase 공식 가이드는 GitHub Actions 에서 `supabase/setup-cli` → 로�
 | Leaflet 1.9.4 + markercluster 1.5.3 | 유지, npm 의존성으로 | §2.4, ADR-0013 결정 1 의 "vendor 수동" 은 대체 |
 | OSM 표준 타일 | 유지 | tech-stack.md §5 (2026-10-11) 판정 그대로. 일본 전체가 대상(Q-Y6)이 되어도 사용자 수 규모는 같다(*추정*). URL 은 설정 상수로 |
 | 도도부현 경계 `data/japan-prefectures.geojson` | 유지. **같은 파일을 DB 에도 넣어** 서버가 좌표 → 도도부현을 판정 (PostGIS) | Y-M6 "좌표로 자동 판정", Y-A5 "좌표(일본 안)" — 서버가 판정해야 화면을 거치지 않은 요청에도 같은 규칙이 선다(ERD v2 §4.6) |
-| PostGIS | Supabase 확장으로 사용 (*일반 지식 — Supabase 확장 목록에서 Y-2 착수 때 확인*) | 위 |
+| PostGIS | Supabase 확장으로 사용 (*일반 지식 — Supabase 확장 목록에서 Y-2 착수 때 확인*). **`create extension postgis with schema extensions`** — `public` 에 깔면 `ST_*` 함수가 Data API RPC 로 노출된다 `[재검토 #3]` | 위 |
 
 ---
 
