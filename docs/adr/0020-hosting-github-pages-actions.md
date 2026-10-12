@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| 상태 | 제안됨 |
+| 상태 | 승인됨 (2026-10-12, 책임자 — PRD D21) |
 | 날짜 | 2026-10-12 |
 | 근거 | PRD-YUNABI v2.3 §7 "호스팅"(같은 주소 유지)·"호환"(`yui-v*` 캐시 정리), Y-B3, Y-S3, Y-S4, Y-S8, D19 |
 | 관련 | [tech-stack-v2 §6](../architecture/tech-stack-v2.md#6-호스팅), [RFC-0003 §18.2·§20](../architecture/rfc/0003-yunabi-v2.md), [ADR-0008](0008-hosting.md)(부분 재사용), ADR-0022 |
