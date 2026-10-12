@@ -45,3 +45,25 @@ jobs:
       - run: npm run test:e2e
         env:
           CI: '1'
+  db:
+    needs: quality
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+      - name: Postgres 16 with pgTAP and PostGIS
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q postgresql-16 postgresql-16-pgtap postgresql-16-postgis-3 libtap-parser-sourcehandler-pgtap-perl
+      - name: Supabase Auth and PostgREST binaries
+        run: sudo mkdir -p /opt/yunabi-local && sudo chown "$USER" /opt/yunabi-local && scripts/local-stack/fetch-bins.sh
+      - run: npm ci
+      - run: npm run test:db
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:backend
+        env:
+          CI: '1'

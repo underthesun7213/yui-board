@@ -47,7 +47,11 @@ type Handle = {
   location: { get(): { state: string; refreshing: boolean } };
   mapUi: { get(): { mode: string; pref: string | null; tileFail: boolean } };
   data: {
-    get(): { status: string; places: { id: number; name: string; description: string }[] };
+    get(): {
+      status: string;
+      places: { id: number; name: string; description: string }[];
+      overrides: unknown[];
+    };
     set(p: { places: unknown[] }): void;
   };
   map(): {

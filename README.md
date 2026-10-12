@@ -11,11 +11,11 @@ Design: [RFC-0003](docs/architecture/rfc/0003-yunabi-v2.md),
 
 ## Where it is
 
-**Y-1 (this build): the rewrite.** React 19 + Vite + TypeScript, with the v1.3
-features unchanged. Until the backend arrives (Y-2) the app reads the v1.3
-sample data from `tests/fixtures/` (fixture mode — no `VITE_SUPABASE_URL`).
-Places and events will be shared and registered by users from Y-2 on; there is
-no production deploy before then (D23).
+**Y-2 (this build): shared data.** Places and events live in Supabase and
+anyone can add them; an anonymous account is made on the first post, with no
+sign-up screen. Reports, auto-hide and the admin console come in Y-3; the
+first production deploy follows the security check (D23). Without
+`VITE_SUPABASE_URL` the app runs on the v1.3 sample data in `tests/fixtures/`.
 
 | Tab | What it holds |
 |---|---|
@@ -42,13 +42,27 @@ A real deploy builds with the published address, which the CSP trusts instead
 of the whole `github.io` origin: `YUNABI_ORIGIN=https://<user>.github.io/yui-board/ npm run build`.
 `npm run build` refuses to run without one.
 
+## Local backend
+
+```
+scripts/local-stack/fetch-bins.sh   # once: Supabase Auth + PostgREST binaries
+npm run db:start:seed               # Postgres 16 + Auth + PostgREST on :54321, sample data
+VITE_SUPABASE_URL=http://127.0.0.1:54321 \
+VITE_SUPABASE_PUBLISHABLE_KEY="$(node -e 'import("./scripts/local-stack/keys.mjs").then(k=>console.log(k.ANON_KEY))')" \
+npm run dev
+```
+
+Needs `postgresql-16`, `postgresql-16-pgtap` and `postgresql-16-postgis-3`.
+
 ## Checks
 
 ```
 npm run lint         # ESLint, including the security rules (ADR-0016)
 npm run typecheck
 npm test             # unit tests + render check (every screen × language × state)
-npm run test:e2e     # Playwright on a production build, 375px
+npm run test:e2e     # Playwright on a production build, 375px (fixture mode)
+npm run test:db      # database: permissions, rules, limits (pgTAP)
+npm run test:backend # Playwright against the local backend
 ```
 
 In a Claude cloud session run browser tests with

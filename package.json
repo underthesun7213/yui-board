@@ -20,7 +20,8 @@
     "db:start": "scripts/local-stack/start.sh",
     "db:start:seed": "scripts/local-stack/start.sh --seed",
     "db:stop": "scripts/local-stack/stop.sh",
-    "test:db": "scripts/local-stack/start.sh && pg_prove -h 127.0.0.1 -p 54322 -U postgres -d postgres supabase/tests/*.test.sql"
+    "test:db": "scripts/local-stack/start.sh && pg_prove -h 127.0.0.1 -p 54322 -U postgres -d postgres supabase/tests/*.test.sql",
+    "test:backend": "playwright test -c playwright.backend.config.ts"
   },
   "dependencies": {
     "@supabase/auth-js": "2.117.3",

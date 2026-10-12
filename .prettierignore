@@ -7,3 +7,4 @@ public/data
 schema.sql
 legacy
 dist-e2e
+dist-e2e-backend

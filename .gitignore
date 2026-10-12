@@ -27,3 +27,4 @@ test-results/
 playwright-report/
 .vite/
 .local-stack/
+dist-e2e-backend/

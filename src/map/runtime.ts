@@ -284,7 +284,8 @@ function sync(a: Applied) {
   const m = map!;
   cluster!.clearLayers();
   pins.clear();
-  for (const p of shown(a)) {
+  /* choosing a spot in the place form: a clean map, so every tap lands */
+  for (const p of a.picking ? [] : shown(a)) {
     const mk = lf.marker([p.lat, p.lng], {
       icon: pinIcon(p, a.pl === p.id),
       title: p.name,
