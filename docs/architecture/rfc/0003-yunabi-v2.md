@@ -21,6 +21,19 @@
 - **D26 — 기숙사 공인 IP 확인과 SMTP 설정은 뒤로 미룬다.** 출시 전 점검 항목으로 §17.6a 에 모았다.
 - D21(관리자 콘솔 별도 출처 — ADR-0020 승인), D22(디자인 방향 A "맑은 하늘"), D23(첫 배포는 Y-2 이후 — §20 과 같음)은 이 RFC 의 제안과 같아 OQ-B·OQ-D 를 해결로 표시했다.
 
+**개정 (2026-10-12, React 전환 문서 검토 반영).** 검토("보완 필요")의 지적 1~11 을 반영하고 `[검토 R-n]` 을 달았다(R-n = 검토 지적 번호. 이 RFC 의 런북 R-n·리스크 R-n 과는 다른 번호다). 승인된 ADR-0023 은 고치지 않고 보완 결정을 [ADR-0024](../../adr/0024-react-switch-review-fixes.md)(제안됨)에 모았다.
+- R-1: 홈 예산 100 KB (실측)
+- R-2: `getServerSnapshot`
+- R-3: `prerender` 렌더 검사
+- R-4: Leaflet 인자 린트
+- R-5: `detach` 세대
+- R-6: flat config 선택자
+- R-7: 지연 라우트 오류 경계·전환
+- R-8: 버전
+- R-9: TOTP 복구 런북
+- R-10: 부재 중 숨김의 사용자 문구·OQ-21
+- R-11: history state
+
 ---
 
 ## 1. 배경과 문제
@@ -51,7 +64,7 @@ v1.3 은 서버 없이 직접 넣은 장소·일정을 보여주는 단일 HTML 
 
 | 속성 | 목표 | 측정 | 근거 |
 |---|---|---|---|
-| 첫 화면 크기 `[D24]` | 홈 진입 JS+CSS gzip **75 KB 이하**(*제안* — react+react-dom 약 42~45 KB + 앱 셸·홈·i18n 약 20 KB + CSS 약 8 KB, *추정*. Svelte 안에서는 60 KB 였다). 지도(60 KB)·쓰기(50 KB)·레슨(30 KB)·관리 코드는 별도 청크. Y-1 첫 주 실측으로 확정(ADR-0023 결정 9, RE-Q2) | CI 에서 `vite build` 결과 크기 검사(초과 시 실패) | Y-C1, RFC-0002 §12 |
+| 첫 화면 크기 `[D24]` `[검토 R-1]` | 홈 진입 JS+CSS gzip **100 KB 이하**. **실측:** react + react-dom 19.3.0(`createRoot` 만, 운영 빌드, 압축) = 67.2 KB. 여기에 앱 셸·홈·i18n 약 20 KB + CSS 약 8 KB(*추정*)를 더하면 약 95 KB 다. 첫 판의 75 KB 는 React 18 시기 3자 수치(42~45 KB)에 기댄 것이라 도달할 수 없었다. Svelte 안에서는 60 KB 였다. ADR-0023 RE-Q2("Y-1 첫 주 실측으로 확정")는 이 실측으로 닫는다(ADR-0024 결정 1). 지도(60 KB)·쓰기(50 KB)·레슨(30 KB)·관리 코드는 별도 청크이고 따로 잰다 | CI 에서 `vite build` 결과 크기 검사(초과 시 실패) | Y-C1, RFC-0002 §12 |
 | 지도 유지 | 탭 왕복·언어 변경 후 같은 Leaflet 인스턴스, 진입 시 내 주위 | E2E | Y-M1, Y-M2 |
 | 공유 반영 | 등록·숨김이 다른 기기의 **지도·캘린더 화면 진입 시 즉시**, 이미 열린 화면은 **30초 이내** | E2E (두 브라우저 컨텍스트) | Y-M6, Y-K4, Y-R3 — PRD 의 "10초" 와의 차이는 OQ-1 |
 | 오프라인 | 마지막 스냅샷과 갱신 시각 표시, 쓰기 비활성 | E2E (오프라인 에뮬레이션) | Y-C3 |
@@ -187,11 +200,11 @@ flowchart LR
 | v1.3 규칙 | v2 의 형태 | 강제 수단 |
 |---|---|---|
 | 모든 문자열은 `T` 에 3개 언어 | `src/i18n/{en,ja,ko}.ts`, `en` 이 타입 원본 | 타입(`satisfies Messages`) + 단위 테스트 |
-| `esc()` 로 이스케이프 `[D24]` | JSX 텍스트 보간은 React 가 이스케이프. `dangerouslySetInnerHTML` 금지, `ref` 로 `innerHTML` 에 쓰는 우회도 금지. **Leaflet 의 HTML 경로**(`bindTooltip`·`bindPopup`·`setContent`·`L.divIcon({html})`)에는 문자열을 넘기지 않고 `textContent` 로 만든 DOM 노드만 `[검토 #12]` | ESLint **`react/no-danger: error`** + `src/**` 의 `no-restricted-syntax`(`innerHTML`·`outerHTML` 대입, `insertAdjacentHTML`, `document.write`) + `src/map/**` 의 `no-restricted-syntax`(위 Leaflet API 의 문자열·템플릿 리터럴 인자 금지) (Y-S4). (이전 안: `svelte/no-at-html-tags`) |
+| `esc()` 로 이스케이프 `[D24]` | JSX 텍스트 보간은 React 가 이스케이프. `dangerouslySetInnerHTML` 금지, `ref` 로 `innerHTML` 에 쓰는 우회도 금지. **Leaflet 의 HTML 경로**(`bindTooltip`·`bindPopup`·`setContent`·`L.divIcon({html})`)에는 문자열을 넘기지 않고 `textContent` 로 만든 DOM 노드만 `[검토 #12]` | ESLint **`react/no-danger: error`** + `src/**` 의 `no-restricted-syntax`(`innerHTML`·`outerHTML` 대입 — 계산된 키 `el['innerHTML']` 포함, `dangerouslySetInnerHTML`·`innerHTML` 을 객체 키로 쓰기, `insertAdjacentHTML`, `document.write`) + `src/map/**` 의 `no-restricted-syntax`. `src/map/**` 규칙은 다음과 같다 `[검토 R-4]`. (Y-S4. 이전 안: `svelte/no-at-html-tags`)<br>· `bindTooltip`·`bindPopup`·`setContent`·`setTooltipContent`·`setPopupContent` 의 첫 인자와 `L.popup/tooltip({content})` 는 **`textNode(…)` 호출만** 허용한다(`layers.ts` 의 DOM 팩토리 이름 목록). 그 밖의 식은 모두 오류다(`bindTooltip(p.name)` 도 오류).<br>· `divIcon` 은 `icons.ts` 에서만 부르고, `html` 은 문자열 리터럴 상수만.<br>· flat config 는 `src/map/**` 블록이 `src/**` 의 옵션을 **바꾸므로** HTML 선택자를 다시 펼쳐 넣는다 `[검토 R-6]`. 선택자 전문은 ADR-0016 결정 2 |
 | `\uXXXX` 는 스크립트 안에서만 | 해당 없음(모든 문자열이 TS) | — |
 | 한국어 기준 폭 | 그대로 | E2E 375px × ko 넘침 검사 |
 | 지도는 한 번 만들고 `render()` 를 넘어 산다 | 지도 런타임은 React 밖 모듈 싱글턴, 컴포넌트는 슬롯만. **StrictMode 의 effect 이중 실행에도 `L.map` 1회**(§9) `[D24]` | 단위 테스트(attach·detach 순서) + E2E(`.leaflet-container` 1개) |
-| 뷰는 바깥 세계를 건드리지 않는다 | **화면 컴포넌트는 `localStorage`·`navigator`·`fetch`·`L` 을 직접 쓰지 않는다** — `src/platform/`, `src/api/`, `src/map/` 만. 화면 컴포넌트의 effect 는 동작 함수(`actions/`) 호출과 `MapSlot` 의 attach/detach 뿐 | ESLint `no-restricted-globals`/`no-restricted-imports` (features·ui 폴더 대상). 렌더 검사가 node 에서 `renderToString` 으로 도는 것이 이 규칙의 실행 검사 |
+| 뷰는 바깥 세계를 건드리지 않는다 | **화면 컴포넌트는 `localStorage`·`navigator`·`fetch`·`L` 을 직접 쓰지 않는다** — `src/platform/`, `src/api/`, `src/map/` 만. 화면 컴포넌트의 effect 는 동작 함수(`actions/`) 호출과 `MapSlot` 의 attach/detach 뿐 | ESLint `no-restricted-globals`/`no-restricted-imports` (features·ui 폴더 대상). 렌더 검사가 node 에서 `prerender`(`react-dom/static`)로 도는 것이 이 규칙의 실행 검사 `[검토 R-3]` |
 | 위치는 안내 후에만 | `location` 상태 기계 그대로 | 단위 테스트 |
 | `CACHE` 를 올린다 | Workbox 사전 캐시 해시로 자동 | — (규칙 폐기) |
 
@@ -235,7 +248,7 @@ React 판. 첫 판(Svelte)과의 차이: `*.svelte` → `*.tsx`, `state/*.svelte
 │  │  ├─ calendar/(MonthGrid, DayList, EventDetail, EventForm, OccurrenceForm)
 │  │  ├─ report/ReportSheet  me/MyItems  legal/(Terms, Privacy, Contact)
 │  ├─ ui/                     Header, TabBar, BackBar, LangMenu, Toast, Sheet, ArtImage, Button, FrameGuard (*.tsx)
-│  ├─ admin/                  관리자 콘솔 전용 (main.tsx, Login, MfaEnroll, Queue, ItemDetail, Accounts, AuditLog)
+│  ├─ admin/                  관리자 콘솔 전용 (main.tsx, Login(TOTP 요소 선택), MfaEnroll(요소 이름), Queue, ItemDetail, Accounts, AuditLog)
 │  ├─ styles/                 tokens.css(디자인 방향 A "맑은 하늘" 토큰 — D22), base.css
 │  └─ sw.ts                   서비스워커 소스 (§18.2)
 ├─ supabase/
@@ -281,6 +294,20 @@ flowchart TD
 
 `App.tsx` 는 v1.3 `render()` 의 역할(헤더 표시 여부 `ROOTS`, `body.dataset.top`, `<html lang>`)을, 라우터는 `go()`·`popstate` 의 역할을 맡는다. `App` 은 `useStore(routeStore)` 로 현재 라우트를 읽어 화면 컴포넌트 하나를 고르고, 지도·폼·법적 페이지·레슨은 `React.lazy` + `Suspense` 로 지연 청크가 된다. `body.dataset`·`<html lang>` 같은 문서 바깥 속성은 컴포넌트 effect 가 아니라 **저장소 구독**(`main.tsx`)으로 맞춘다 — StrictMode 이중 실행과 무관하고 렌더 검사에서도 부수 효과가 없다 `[D24]`.
 
+**지연 라우트의 실패와 전환** `[검토 R-7]` (ADR-0024 결정 6):
+
+- **오류 경계.** 화면 자리는 `<RouteErrorBoundary key={route.name}><Suspense fallback={<RouteLoading data-route-loading/>}>` 로 감싼다.
+  - 잡는 것은 청크 로드 실패다. 오프라인에서 사전 캐시에 없는 청크를 부를 때, 그리고 배포 뒤 옛 탭이 사라진 해시 파일을 부를 때 생긴다. Vite 의 `vite:preloadError` 는 `main.tsx` 가 받아 같은 상태로 보낸다.
+  - 잡으면 문구와 [다시 불러오기] 를 보여 준다. 다시 불러오기는 `actions/app.reload()` 가 맡는다.
+  - 문구 키는 `err.chunk`·`err.reload` 이고 3개 언어로 둔다:
+    - en "Couldn't load this screen. Check your connection and reload." / Reload
+    - ja 「画面を読み込めませんでした。接続を確認して、再読み込みしてください。」 / 再読み込み
+    - ko "화면을 불러오지 못했어요. 연결을 확인하고 다시 불러와 주세요." / 다시 불러오기
+  - 경계는 라우트가 바뀌면 `key` 로 초기화된다.
+- **전환.** 외부 저장소(`useSyncExternalStore`) 값은 Transition 으로 그릴 수 없다(React 가 blocking 갱신으로 되돌린다 — react.dev). 그래서 `App` 은 화면 자리에 그릴 라우트를 React 상태 `shown` 으로 한 겹 두고, `routeStore` 구독에서 `startTransition(() => setShown(next))` 로 맞춘다.
+  - 새 청크를 받는 동안 옛 화면이 그대로 보여서 fallback 이 깜박이지 않는다. fallback 은 첫 진입 때만 보인다.
+  - 헤더·탭 강조는 `useStore(routeStore)` 로 즉시 바뀐다.
+
 ---
 
 ## 6. 라우팅과 뒤로 가기 (제안)
@@ -311,9 +338,9 @@ v1.3 은 URL 을 `./` 로 고정하고 화면을 `history.state` 에만 두었�
 
 | v1.3 (현행, RFC-0002 §5.4, `index.html:1745-1826`) | v2 |
 |---|---|
-| `go(view)` = `pushState(snap())` + `render()` | `navigate(route)` = `pushState({prev}, "", "#…")` + 라우트 상태 갱신 |
+| `go(view)` = `pushState(snap())` + `render()` | `navigate(route)` = `pushState(state, "", "#…")` + 라우트 상태 갱신. `[검토 R-11]` `state` 의 모양은 `{ prev: RouteName \| null, map?: { mode, pref } }` — `map` 은 지도 라우트일 때만 쓰고(§7 `mapUi` 중 `mode`·`pref` 만), `cat`·`pl`·`fitSeq` 등은 메모리 |
 | 같은 탭 다시 누르기 → `replaceState` | 같음 |
-| ‹ : `PARENT[view] === prevView` 이면 `history.back()`, 아니면 `go(parent, true)` | 같음 — `nav.ts` 의 `PARENT` 표(위 표의 "부모"), `history.state.prev` |
+| ‹ : `PARENT[view] === prevView` 이면 `history.back()`, 아니면 `go(parent, true)` | 같음 — `nav.ts` 의 `PARENT` 표(위 표의 "부모"), `history.state.prev`. `[검토 R-11]` 손으로 고친 해시·외부 링크로 들어온 기록은 `history.state === null` 이다. 이때 `prev` 가 없으므로 ‹ 는 `PARENT` 라우트로 `navigate(parent, {replace: true})` 하고, `map` 이 없으면 D14 기본값(near)을 쓴다 |
 | 도도부현 선택 = `pushState(+pf)`, OS 뒤로 가기 → 같은 지도에서 `updateMap` | 같음 — `#/map` 에 머무르며 `state.pref` 만 바뀐 기록 항목. `popstate` 가 지도 → 지도이면 **화면을 다시 만들지 않고** 지도 상태만 바꾼다 |
 | 모드 전환은 기록 항목 아님(`replaceState`) | 같음 |
 | D14: 다른 화면에서 지도로 `go()` 하면 near 로 (`index.html:1747-1753`) | 같음 — `navigate('#/map')` 가 다른 라우트에서 올 때 `mode=near, pref=null, cat='', pl=null`. 위치가 허용 상태면 다시 측위(Y-M1, 권한 창 없음) |
@@ -326,16 +353,19 @@ v1.3 은 URL 을 `./` 로 고정하고 화면을 `history.state` 에만 두었�
 전역 상태 라이브러리(Zustand, Redux 등) 없이 **프레임워크 없는 작은 저장소 + `useSyncExternalStore`** 로 나눈다(ADR-0023 결정 4). v1.3 의 `S` 한 객체를 책임별로 쪼갠 것이다. (이전 안: Svelte 5 룬 `.svelte.ts` 모듈.)
 
 - `state/store.ts`: `createStore<T>(initial)` → `{ get, set(patch | fn), subscribe(fn) → unsubscribe }`. 스냅샷은 불변 객체로 교체하고, 값이 같으면 같은 참조를 유지한다(`getSnapshot` 규칙 — 매번 새 객체를 돌려주면 무한 렌더).
-- `state/useStore.ts`: `useStore(store, selector)` = `useSyncExternalStore(store.subscribe, () => selector(store.get()))`. selector 는 원시값이나 저장소 안의 기존 객체를 돌려줘야 한다(리뷰 규칙 + 단위 테스트).
+- `state/useStore.ts` `[검토 R-2]`: `useStore(store, selector)` 는 `const read = () => selector(store.get())` 를 만들고 `useSyncExternalStore(store.subscribe, read, read)` 를 돌려준다.
+  - **세 번째 인자 `getServerSnapshot` 에 같은 함수를 넘긴다.** 없으면 렌더 검사(`prerender`)와 서버 렌더가 "Missing getServerSnapshot" 으로 실패한다.
+  - `store.subscribe` 는 `createStore` 가 한 번 만든 화살표 함수(`this` 를 쓰지 않음)라 참조가 안정적이다. `.bind()` 나 렌더마다 새로 만든 래퍼를 넘기면 렌더마다 다시 구독하므로 금지한다.
+  - selector 는 원시값이나 저장소 안의 기존 객체를 돌려줘야 한다(리뷰 규칙 + 단위 테스트).
 - **React 밖의 구독자:** 지도 런타임(§9), 라우터, `main.tsx` 의 문서 속성 동기화(`<html lang>`, `body.dataset`), 영속화(`platform/storage` 에 쓰기)는 `store.subscribe` 를 직접 쓴다. 이것이 Context 나 컴포넌트 안 상태를 쓰지 않는 이유다.
 
 | 모듈 | 필드 (v1.3 `S` 대응) | 영속 |
 |---|---|---|
-| `state/route.ts` | 현재 라우트·매개변수, `prev` | history state / 해시 |
+| `state/route.ts` | 현재 라우트·매개변수, `prev` | history state(`{prev, map?}` — §6.2 `[검토 R-11]`) / 해시 |
 | `state/prefs.ts` | `lang` | `yui.v1.lang` |
 | `state/collection.ts` | `cg` (엔딩 카드) | `yui.v1.cg` (모양 검사 유지 — `index.html:1813`) |
 | `state/location.ts` | `locState`(ask/idle/wait/ok/denied/fail/skip), `loc` | 선택만 `yui.v1.loc`, 좌표는 메모리 (Y-P3) |
-| `state/mapUi.ts` | `mode`, `pref`, `cat`, `pl`, `prefFail`, `tileFail`, `fitSeq`(맞춤 요청 번호) | history state |
+| `state/mapUi.ts` | `mode`, `pref`, `cat`, `pl`, `prefFail`, `tileFail`, `fitSeq`(맞춤 요청 번호) | `mode`·`pref` 만 history state 의 `map` 에(나머지는 메모리). state 가 `null` 이면 D14 기본값 `[검토 R-11]` |
 | `state/vn.ts` | `vn` 진행 | 메모리 |
 | `state/calendarUi.ts` | `day`, `month` | 메모리 |
 | `state/data.ts` | `places`, `events`, `overrides`, `fetchedAt`, `status`(idle/loading/ok/offline/error) | IndexedDB 스냅샷 |
@@ -365,7 +395,7 @@ v1.3 은 URL 을 `./` 로 고정하고 화면을 `history.state` 에만 두었�
 |---|---|
 | `map/runtime.ts` | **React 밖의 모듈 싱글턴.** `container: HTMLDivElement`(v1.3 `LBOX`), `map`(`LMAP`), 클러스터, 핀, 내 위치, 경계 레이어, `modeView`(`MODEVIEW`), `stale`(`MAPSTALE`), `currentSlot`, `gen`(세대 번호). `ensure()` 는 `import('leaflet')`·markercluster 를 한 번만 부르는 **메모이즈된 Promise** 이고 `L.map` 을 그 안에서 한 번 만든다(`initMap`). **어떤 경로에서도 `map.remove()` 를 부르지 않는다** |
 | `MapSlot.tsx` `[D24]` | `useRef` 로 빈 슬롯 `div` 를 그리고, `useEffect(() => { runtime.attach(slot); return () => runtime.detach(slot); }, [])`. `attach` = 컨테이너를 슬롯에 붙이고 `invalidateSize()` → `label(lang)` → `sync(stale)` → 저장소 구독 시작. `detach` = 구독 해제 + **떼기만**. (이전 안: Svelte `onMount`/`onDestroy` — 같은 계약) |
-| StrictMode `[D24]` | 개발 모드에서 React 는 effect 를 "설치 → 정리 → 다시 설치" 로 두 번 돌린다. 위 계약에서 이것은 attach → detach → attach 이고, `ensure()` 가 메모이즈되어 **`L.map` 은 한 번만** 생긴다. **경합 가드:** `attach(slot)` 은 `currentSlot = slot; const g = ++gen; await ensure(); if (gen !== g \|\| currentSlot !== slot) return;` 로 그 사이 detach·재attach 된 경우 붙이지 않는다. `detach(slot)` 은 `currentSlot === slot` 일 때만 떼어 낸다 — 지도 화면 ↔ 장소 폼(MAP-04)처럼 새 슬롯이 먼저 붙는 경우 옛 슬롯의 정리가 새 슬롯을 떼지 않게. 컴포넌트 ref 에 인스턴스를 두고 정리에서 `remove()` 하는 흔한 처방은 StrictMode 는 통과하지만 탭을 떠날 때마다 지도를 부숴 Y-M2 를 어기므로 쓰지 않는다. react-leaflet 도 같은 이유(컴포넌트 수명 = 지도 수명)로 쓰지 않는다(ADR-0023 결정 2·3) |
+| StrictMode `[D24]` | 개발 모드에서 React 는 effect 를 "설치 → 정리 → 다시 설치" 로 두 번 돌린다. 위 계약에서 이것은 attach → detach → attach 이고, `ensure()` 가 메모이즈되어 **`L.map` 은 한 번만** 생긴다. **경합 가드:** `attach(slot)` 은 `currentSlot = slot; const g = ++gen; await ensure(); if (gen !== g \|\| currentSlot !== slot) return;` 로 그 사이 detach·재attach 된 경우 붙이지 않는다. `detach(slot)` 은 `currentSlot === slot` 일 때만 동작한다 — 지도 화면 ↔ 장소 폼(MAP-04)처럼 새 슬롯이 먼저 붙는 경우 옛 슬롯의 정리가 새 슬롯을 떼지 않게. **그때 `currentSlot = null; ++gen;` 도 한다** `[검토 R-5]`. 그래서 `ensure()` 를 기다리는 동안 attach → detach 만 일어나면(화면을 바로 떠남) 나중에도 붙이지 않는다. StrictMode 순서는 attach(g=1) → detach(gen=2, slot=null) → attach(g=3) 이고, `ensure()` 가 끝나면 g=3 인 호출만 붙인다 — `L.map` 1회, 붙이기 1회. 컴포넌트 ref 에 인스턴스를 두고 정리에서 `remove()` 하는 흔한 처방은 StrictMode 는 통과하지만 탭을 떠날 때마다 지도를 부숴 Y-M2 를 어기므로 쓰지 않는다. react-leaflet 도 같은 이유(컴포넌트 수명 = 지도 수명)로 쓰지 않는다(ADR-0023 결정 2·3) |
 | 상태 → 지도 `[D24]` | 런타임이 attach 되어 있는 동안 `mapUi`·`data`·`location`·`prefs` 저장소를 **직접 구독**해 `sync()` 한다(React effect 의존성 배열로 지도를 움직이지 않음 — 이중 실행으로 `fitBounds` 가 두 번 불리는 일이 없다). 맞춤은 `mapUi.fitSeq` 증가로 요청한다. 화면 HTML(상태줄·칩·목록·카드)은 React 가 부분 갱신하므로 v1.3 의 `updateMap()`(컨테이너 5개 `innerHTML` 교체)이 필요 없다 |
 | 비동기 결과 | 위치·경계 로드·**데이터 갱신**은 상태만 바꾼다. 런타임이 attach 상태면 구독이 반영하고, 아니면 `runtime.stale = true` → 다음 `attach` 가 맞춤 (v1.3 `mapChanged`/`locChanged`) |
 | D14 / Y-M1 | 라우터가 다른 화면 → `#/map` 일 때 `mapUi.enterNear()`: `modeView.japan` 저장 → near → 저장된 near 화면이 있으면 `setView`, 없으면 맞춤. 위치 상태가 `ok`/`idle` 이면 `locate()` 다시(권한 창 없음 — 이미 허용된 권한만 사용) |
@@ -373,7 +403,7 @@ v1.3 은 URL 을 `./` 로 고정하고 화면을 `history.state` 에만 두었�
 | 장소 등록 | MAP-04 는 **같은 지도 인스턴스**를 쓴다: 폼 라우트에서도 `MapSlot` 을 붙이고 "위치 고르기" 모드(지도 탭 → 임시 마커). [현재 위치] 는 Y-M7 경고 확인 후에만 좌표를 채운다 |
 | 타일 | URL 은 설정 상수(RFC-0002 R-2). 실패 집계·안내(v1.3 `tileFail`) 유지 |
 | 라벨 | 확대 버튼·내 위치·결 마커 문구는 `attach` 때마다 현재 언어로(v1.3 `labelMap`) |
-| 사용자 글 출력 `[검토 #12]` | Leaflet 은 툴팁·팝업·`divIcon` 의 **문자열을 `innerHTML` 로 넣는다** — v1.3 처럼 `esc()` 를 잊으면 그대로 XSS 다. v2 규칙: 핀 이름 같은 사용자 글은 `map/layers.ts` 의 `textNode(name)`(`createElement` + `textContent`)으로 만든 노드로만 넘기고, `divIcon` 의 `html` 은 사용자 글이 없는 고정 마크업(카테고리 색 점)만. 마커 `title` 옵션은 속성이라 안전. 장소 카드·목록은 React 컴포넌트(JSX 텍스트 이스케이프)로 그린다 `[D24]`. 린트와 E2E(이름이 XSS 페이로드인 핀)로 강제 |
+| 사용자 글 출력 `[검토 #12]` | Leaflet 은 툴팁·팝업·`divIcon` 의 **문자열을 `innerHTML` 로 넣는다** — v1.3 처럼 `esc()` 를 잊으면 그대로 XSS 다. v2 규칙: 핀 이름 같은 사용자 글은 `map/layers.ts` 의 `textNode(name)`(`createElement` + `textContent`)으로 만든 노드로만 넘기고, `divIcon` 의 `html` 은 사용자 글이 없는 고정 마크업(카테고리 색 점)만. 마커 `title` 옵션은 속성이라 안전. 장소 카드·목록은 React 컴포넌트(JSX 텍스트 이스케이프)로 그린다 `[D24]`. 린트와 E2E(이름이 XSS 페이로드인 핀)로 강제한다. `[검토 R-4]` 린트는 "리터럴 금지" 가 아니라 **허용 목록**이다: Leaflet HTML API 의 인자와 `content` 옵션은 `textNode(…)` 호출일 때만 통과한다. `divIcon` 은 `icons.ts` 에서 문자열 리터럴 `html` 로만 만든다(ADR-0016 결정 2 L1~L3·ICON_HTML) |
 
 ```mermaid
 sequenceDiagram
@@ -395,7 +425,7 @@ sequenceDiagram
     S->>RT: effect 재실행: attach(slot) — ensure() 메모이즈, L.map 그대로
   end
   alt 처음
-    RT->>RT: import('leaflet') → L.map 1회 (gen·currentSlot 확인 후 붙임)
+    RT->>RT: import('leaflet') → L.map 1회 (gen·currentSlot 확인 후 붙임 — detach 가 gen 을 올렸으면 붙이지 않음)
   else 이미 있음
     RT->>RT: 컨테이너 재부착, invalidateSize, label(lang), sync(stale), 저장소 구독
   end
@@ -504,7 +534,7 @@ sequenceDiagram
 |---|---|
 | 계정 생성 `[검토 #4]` `[재검토 #2]` | 이메일 공급자의 **공개 가입은 끈다.** 책임자가 `app.admin_invites` 에 이메일을 넣고 → Admin API(또는 대시보드)로 이메일+비밀번호 사용자를 만들고 → **그 생성 호출이 돌려준 `user_id` 만**으로 `app.bind_admin(id, email)` 을 실행한다. 이메일로 사용자를 찾아 연결하지 않는다 — 익명 사용자가 그 전에 `updateUser({email})` 로 초대 이메일을 걸어 두면 공격자 계정이 묶이기 때문이다. `bind_admin` 은 `is_anonymous = false`, `email_confirmed_at` 있음, 이메일 일치, 계정이 **초대 뒤에** 생김, 초대 미사용, 같은 이메일의 다른 사용자 없음을 확인하고 아니면 실패한다(ERD v2 §4.5, G-37). `before-user-created` 훅은 `admin_invites` 만 본다(첫 판은 사용자가 생기기 전에 `admins`(user_id FK)를 확인하려 해 관리자를 만들 수 없었다 — 닭과 달걀) |
 | 허용 목록 = 권한의 유일한 근거 `[검토 #4]` | `app.admins(user_id, email, active)` — SQL 로만. 익명 사용자는 `updateUser({email})` 로 **훅을 거치지 않고** 비익명이 될 수 있으므로 "비익명이면 허용 목록에 있다" 는 가정을 버렸다. `require_admin()` 은 `admins` 행으로만 허락한다 |
-| 2단계 `[검토 낮음]` `[D25]` | 관리자는 **책임자 본인 1명**(D25)이므로 계정을 만드는 사람과 쓰는 사람이 같다. **책임자가 계정을 만든 바로 그 자리에서**(공개 가입 OFF 상태, 콘솔의 `MfaEnroll` 화면 또는 같은 세션) TOTP 를 등록한다 — 첫 로그인을 미뤄 두면 비밀번호가 샌 공격자가 먼저 자기 TOTP 를 등록할 수 있다. **TOTP 요소를 2개 등록한다:** ① 평소 쓰는 휴대폰 인증 앱 ② 예비 — 다른 기기의 인증 앱이나 오프라인으로 보관하는 TOTP 비밀(암호 관리자·종이 금고 등, 휴대폰과 따로). Supabase 는 **백업 코드가 없고** 공식 문서가 "두 번째 TOTP 요소" 를 복구 수단으로 안내한다(사용자당 최대 10개 — tech-stack-v2 §5.5). 이후 매 로그인 TOTP. 관리 RPC 는 JWT `aal = 'aal2'` 가 아니면 거절. 분실 복구는 §17.7 R-7 |
+| 2단계 `[검토 낮음]` `[D25]` | 관리자는 **책임자 본인 1명**(D25)이므로 계정을 만드는 사람과 쓰는 사람이 같다. **책임자가 계정을 만든 바로 그 자리에서**(공개 가입 OFF 상태, 콘솔의 `MfaEnroll` 화면 또는 같은 세션) TOTP 를 등록한다 — 첫 로그인을 미뤄 두면 비밀번호가 샌 공격자가 먼저 자기 TOTP 를 등록할 수 있다. **TOTP 요소를 2개 등록한다:** ① 평소 쓰는 휴대폰 인증 앱 ② 예비 — 다른 기기의 인증 앱이나 오프라인으로 보관하는 TOTP 비밀(종이 금고 등). 예비는 휴대폰과 따로 둔다. **관리자 비밀번호와도 따로 둔다** `[검토 R-9]` — 비밀번호를 저장한 암호 관리자에 예비 TOTP 비밀까지 넣으면, 그 금고 하나가 털릴 때 두 요소가 함께 넘어간다. Supabase 는 **백업 코드가 없고** 공식 문서가 "두 번째 TOTP 요소" 를 복구 수단으로 안내한다(사용자당 최대 10개 — tech-stack-v2 §5.5). 이후 매 로그인 TOTP. 관리 RPC 는 JWT `aal = 'aal2'` 가 아니면 거절. 분실 복구는 §17.7 R-7.<br>**요소 선택** `[검토 R-9]`: 요소가 2개이므로 콘솔이 하나를 골라 챌린지해야 한다(`mfa.challenge({factorId})`).<br>· `MfaEnroll` 은 등록할 때 `friendlyName` 을 받는다(예: "주 휴대폰", "예비").<br>· `Login` 은 비밀번호 확인 뒤 `mfa.listFactors()` 의 검증된 TOTP 요소를 이름과 함께 보여 주고 **책임자가 고르게** 한다. 첫 요소를 자동으로 고르면, 휴대폰을 잃었을 때 예비로 로그인할 수 없다(R-7 ①).<br>· 화면 문구는 3개 언어(OQ-9) |
 | 세션 만료 | 대시보드의 비활동·최대 수명(timebox)은 **Pro 기능으로 보인다**(검토의 확인). 그래서 무료 플랜에서는 (1) `require_admin()` 의 서버 검사 — `auth.sessions` 의 현재 세션 행이 **있고** 생성 12시간 이내가 아니면 예외(행 없음·클레임 없음도 거절, ERD v2 §7.3) — 가 **유일한 서버 측 만료**이고, (2) 콘솔은 세션을 `sessionStorage` 에 둔다(창을 닫으면 끝) |
 | 실패 안전 `[검토 #3]` | 모든 `admin_*` 의 첫 문장이 `perform app.require_admin()` 이고 실패는 예외다. 반환값을 확인할 필요가 없으니 확인을 잊을 수 없다. 카탈로그 검사·pgTAP 가 모든 `admin_%` 를 실패 경우 7가지와 교차 검증(G-30) |
 | CAPTCHA 와의 관계 `[검토 #5]` | Supabase CAPTCHA 는 **비밀번호 로그인에도 적용**된다. 스위치를 켜는 순간 관리자가 잠기지 않게, 콘솔 로그인 화면에도 Turnstile 위젯을 두고(사이트 키는 빌드에 포함) 콘솔 CSP 가 Turnstile 을 허용한다. 출시 전 점검표에 "스위치 ON 상태에서 관리자 로그인" 시험 |
@@ -688,7 +718,7 @@ DB 에서는 열 조합이다(ERD v2 §4.2): `deleted_at`, `auto_hidden_at`, `su
 | T-05a | E | **`PUBLIC` 의 기본 EXECUTE** 로 `anon` 이 쓰기 RPC·`ops_health` 를 부름 `[검토 #2, critical]` — 첫 판은 `anon`·`authenticated` 만 회수 | A1, A6 | `revoke execute … from public` + `postgres`·`supabase_admin` 의 기본 권한에서 `PUBLIC` EXECUTE 회수, 허용 역할에만 명시 GRANT | S1 | `checks` ③④⑨⑩ (`has_function_privilege`, PUBLIC 포함), G-03, HTTP 직접 요청 |
 | T-06 | T | SQL 주입 | A1, A2 | 정적 SQL·매개변수만, 동적 `EXECUTE` 금지(마이그레이션 검사), PostgREST 매개변수화 | S5 | 마이그레이션 `checks`, 비정상 입력 세트 |
 | T-07 | T | 저장형 XSS (장소 이름·설명에 스크립트) → 다른 사용자 토큰 탈취 | A5 | JSX 텍스트 보간(React 이스케이프), `dangerouslySetInnerHTML`(`react/no-danger`)·`innerHTML` 대입 린트 금지 `[D24]`, 링크는 서버 허용 목록 + 클라이언트도 `https:` 확인 후 `rel="noopener noreferrer"`, meta CSP `script-src` 를 **앱 경로로 한정** | S4 | E2E: 페이로드 세트 등록 → `dialog`·`securitypolicyviolation` 0 |
-| T-07a | T | **Leaflet 을 거친 XSS** `[검토 #12]`: `bindTooltip`·`bindPopup`·`L.divIcon({html})` 은 문자열을 `innerHTML` 로 넣는다 — 프레임워크의 HTML 금지 규칙(`react/no-danger`, 이전 안의 `svelte/no-at-html-tags`)이 잡지 못한다 | A5 | `src/map/` 에 ESLint `no-restricted-syntax`: 이 세 API 에 **문자열·템플릿 리터럴 인자 금지**(DOM 노드만). 사용자 글은 `document.createElement` + `textContent` 로 만든 노드로만 넘긴다. `divIcon` 의 `html` 은 사용자 글이 없는 고정 마크업만. 핀 제목은 `marker` 의 `title` 옵션(속성) | S4 | 린트 + E2E: 이름이 XSS 페이로드인 핀을 띄우고 툴팁·클러스터·선택까지 `dialog`·위반 0 |
+| T-07a | T | **Leaflet 을 거친 XSS** `[검토 #12]`: `bindTooltip`·`bindPopup`·`L.divIcon({html})` 은 문자열을 `innerHTML` 로 넣는다 — 프레임워크의 HTML 금지 규칙(`react/no-danger`, 이전 안의 `svelte/no-at-html-tags`)이 잡지 못한다 | A5 | `src/map/` 에 ESLint `no-restricted-syntax` `[검토 R-4]`. 첫 판은 "문자열·템플릿 리터럴 인자 금지" 였는데, 이것으로는 `bindTooltip(p.name)` 이 통과한다. 이제는 **허용 목록**이다.<br>· `bindTooltip`·`bindPopup`·`setContent`·`setTooltipContent`·`setPopupContent` 의 첫 인자와 `L.popup/tooltip` 의 `content` 는 `textNode(…)` 호출(`layers.ts` 의 DOM 팩토리)일 때만 허용하고, 그 밖의 식은 모두 오류다.<br>· `textNode` 는 `document.createElement` + `textContent` 로 노드를 만든다.<br>· `divIcon` 은 `icons.ts` 에서만, `html` 은 문자열 리터럴 상수만(ADR-0016 결정 2 의 L1~L3·ICON_HTML 선택자).<br>· `src/map/**` 블록은 `src/**` 의 HTML 선택자를 다시 포함한다(flat config 덮어쓰기 `[검토 R-6]`). 핀 제목은 `marker` 의 `title` 옵션(속성) | S4 | 린트 + E2E: 이름이 XSS 페이로드인 핀을 띄우고 툴팁·클러스터·선택까지 `dialog`·위반 0 |
 | T-08 | T | `javascript:`·데이터 URL 링크 | A5 | 서버 정규식(§13.2) + 클라이언트 URL 파서 이중 | S4, S5 | pgTAP + 단위 |
 | T-09 | T | 공급망: 악성·취약 npm 의존성 | A5, A4 | 잠금 파일, `npm ci`, `npm audit --audit-level=high` 실패 처리, Dependabot, 런타임 의존성 최소(react, react-dom, Leaflet, markercluster, auth-js, postgrest-js, workbox — 라우터·상태·i18n·지도 래퍼 라이브러리 없음 `[D24]`) | S6 | CI |
 | T-10 | T | 배포 산출물 변조·비밀값 탈취 (CI 탈취, 포크 PR) | A5, A4 | `main` 보호 규칙(PR + CI 통과), Actions 권한 최소(`permissions:` 명시), 서드파티 액션은 커밋 SHA 고정. **비밀값은 `main` 전용 Environment(필수 검토자)에만** — PR 워크플로는 비밀값 없이 돈다. **`pull_request_target` 금지.** 마이그레이션은 계정 전체 권한인 `SUPABASE_ACCESS_TOKEN`(PAT) 대신 **`--db-url`(프로젝트 DB 연결 문자열)** 을 우선 `[검토 #9]` | S2, S6 | 저장소 설정 점검표, 워크플로 린트(`pull_request_target` 검색) |
@@ -771,9 +801,9 @@ D25(관리자 = 책임자 1명)로 아래 모든 절차의 실행자는 책임�
 | R-3 쓰기 폭주 | `rate_limited_*` 급증 | 대상 IP 범위 확인(키뿐이라 원 IP 는 Supabase 로그에서) → 필요 시 CAPTCHA ON, 계정 정지 | — |
 | R-4 관리자 의심 로그인 | `admin_denied` 급증 | 관리자 비밀번호 교체, TOTP 재등록, 세션 무효화(대시보드) | 직접 호출 거절은 DB 에 안 남고 API 로그에만 — 감시가 읽을 수 있는지 Y-2 확인(ERD v2 OQ-E7) `[재검토 #5]` |
 | R-5 관리자 계정 만들기 `[D25]` | 출시 전 1회 (책임자 본인) | 초대 행 → Admin API 생성 → **반환된 id 로** `bind_admin` → **그 자리에서 책임자가 자기 TOTP 2개 등록**(§12.2). `admin_bind_conflict` 면 같은 이메일의 다른 사용자(익명 전환 흔적)를 조사·삭제 후 재시도 `[재검토 #2]`. D25 로 **두 번째 관리자는 없다** — 이 절차는 계정을 다시 만들 때(복구 R-7 ③, 백업 복구 후)와 나중에 대리인을 둘 때(OQ-19)만 쓴다 | 이메일로 사용자를 찾아 연결하지 않는다 |
-| R-6 관리자 재설정 메일이 안 옴 | — | 기본 SMTP 의 시간당 발신 한도가 익명 이메일 연결 요청에 소모됐을 수 있다 → 책임자가 대시보드에서 비밀번호 직접 재설정 `[재검토 #4]` | 관리자 1명(D25)이라 이 절차로 충분. 사용자 SMTP 는 D26 으로 출시 전 결정(§17.6a) |
-| R-7 TOTP 기기 분실 `[D25]` | 책임자가 휴대폰을 잃음 | ① **예비 TOTP 요소**(§12.2 ②)로 로그인 → 콘솔에서 잃은 요소 삭제 → 새 기기에 요소 등록(다시 2개). ② 예비도 없을 때(break-glass): Supabase **대시보드**(책임자의 Supabase 계정 — 이 계정 자체의 2단계 인증이 전제, §17.6a)에서 관리자 **비밀번호를 먼저 교체** → 신뢰하는 로컬 터미널에서 secret 키로 `auth.admin.mfa.listFactors` → `deleteFactor({id, userId})`(검증된 요소를 지우면 그 사용자의 **모든 세션이 로그아웃** — 공식 문서) → 곧바로 콘솔에 새 비밀번호로 로그인해 TOTP 2개 재등록 → `mod_actions` 에 메모(콘솔 첫 조치로 "MFA 재설정" 기록). ③ Supabase 계정 접근까지 잃으면 Supabase 지원 절차 — 이 동안 관리 기능 없음(자동 숨김은 계속 동작) | ② 에서 요소가 0개인 동안은 비밀번호만 아는 사람이 먼저 등록할 수 있다(T-03a) → 비밀번호 교체를 먼저, 재등록까지 몇 분 안에. secret 키를 브라우저에 넣지 않는다 |
-| R-8 책임자 부재 (휴가·병가) `[D25]` | 대리 관리자가 없다 | **대리인 없음이 기본.** 시스템 쪽은 사람 없이 안전하게 기운다: 신고 3건 자동 숨김은 계속 동작(잘못 숨겨진 항목은 돌아올 때까지 숨김), 빈도 제한·전역 상한·정리 작업도 자동. 부재 전에: ① 감시 경보 메일이 휴대폰으로 오는지 확인 ② 공격이 걱정되는 긴 부재(2주 이상, 학기 초 제외)면 CAPTCHA 스위치를 **미리 ON** 하는 것을 고려(사람은 위젯 통과, 개인정보 문구 TS-Q6 필요) ③ SYS-04 연락처 페이지의 응답 기간 문구(예: "보통 7일 안에")가 부재 기간과 맞는지 확인. 돌아와서: 관리자 화면의 숨김·신고 대기열 처리, R-1 대량 숨김 흔적 확인 | 대리 관리자를 두려면 R-5 로 두 번째 계정(+ 그 사람의 TOTP 2개) — 그때는 SMTP·프로젝트 멤버·방침 문구를 다시 본다(OQ-19). 장기 부재·연락 두절 시 Supabase·GitHub·Cloudflare 계정 접근을 누가 이어받는지는 정해져 있지 않다(OQ-20) |
+| R-6 관리자 재설정 메일이 안 옴 | — | 기본 SMTP 의 시간당 발신 한도가 익명 이메일 연결 요청에 소모됐을 수 있다 → 책임자가 신뢰하는 로컬 터미널에서 secret 키로 `auth.admin.updateUserById(userId, {password})` 를 실행해 비밀번호를 직접 바꾼다 `[재검토 #4]`. 대시보드에서 비밀번호를 직접 지정하는 기능은 확인하지 못해 이 경로를 쓴다 `[검토 R-9]` | 관리자 1명(D25)이라 이 절차로 충분. 사용자 SMTP 는 D26 으로 출시 전 결정(§17.6a) |
+| R-7 TOTP 기기 분실 `[D25]` | 책임자가 휴대폰을 잃음 | ① 콘솔 `Login` 에서 **예비 TOTP 요소를 골라**(§12.2 요소 선택 `[검토 R-9]`) 로그인 → 콘솔에서 잃은 요소 삭제 → 새 기기에 요소 등록(다시 2개). ② 예비도 없을 때(break-glass): 신뢰하는 로컬 터미널 **한 곳에서** secret 키로 모두 실행한다. secret 키는 Supabase 대시보드(책임자의 Supabase 계정 — 이 계정 자체의 2단계 인증이 전제, §17.6a)에서 꺼낸다. 순서: 먼저 `auth.admin.updateUserById(userId, {password})` 로 관리자 **비밀번호를 교체**한다(대시보드 직접 지정은 확인 못 함 `[검토 R-9]`) → `auth.admin.mfa.listFactors` → `deleteFactor({id, userId})`(검증된 요소를 지우면 그 사용자의 **모든 세션이 로그아웃** — 공식 문서) → 곧바로 콘솔에 새 비밀번호로 로그인해 TOTP 2개 재등록 → `mod_actions` 에 메모(콘솔 첫 조치로 "MFA 재설정" 기록). ③ Supabase 계정 접근까지 잃으면 Supabase 지원 절차 — 이 동안 관리 기능 없음(자동 숨김은 계속 동작) | ② 에서 요소가 0개인 동안은 비밀번호만 아는 사람이 먼저 등록할 수 있다(T-03a) → 비밀번호 교체를 먼저, 재등록까지 몇 분 안에. secret 키를 브라우저에 넣지 않는다 |
+| R-8 책임자 부재 (휴가·병가) `[D25]` | 대리 관리자가 없다 | **대리인 없음이 기본.** 시스템 쪽은 사람 없이 안전하게 기운다: 신고 3건 자동 숨김은 계속 동작(잘못 숨겨진 항목은 돌아올 때까지 숨김), 빈도 제한·전역 상한·정리 작업도 자동. 부재 전에: ① 감시 경보 메일이 휴대폰으로 오는지 확인 ② 공격이 걱정되는 긴 부재(2주 이상, 학기 초 제외)면 CAPTCHA 스위치를 **미리 ON** 하는 것을 고려(사람은 위젯 통과, 개인정보 문구 TS-Q6 필요) ③ SYS-04 연락처 페이지의 응답 기간 문구(예: "보통 7일 안에")가 부재 기간과 맞는지 확인. 돌아와서: 관리자 화면의 숨김·신고 대기열 처리, R-1 대량 숨김 흔적 확인.<br>**사용자에게 보이는 것** `[검토 R-10]`: 부재 중 잘못 숨겨진 항목은 책임자가 돌아올 때까지 숨겨져 있다(책임자 수용 여부 OQ-21). 문구는 *초안*이고 문구 확정은 기획이 한다. 키는 `me.hiddenReview`·`legal.replyTime`, 3개 언어(Y-C2).<br>· ME-02 의 `hidden_review` 항목 설명 — en "Under review — this isn't visible to others right now. It may reappear after the admin checks it. Checking can take a few days." / ja 「確認中 — 現在ほかの人には表示されていません。管理者の確認後、再び表示されることがあります。確認まで数日かかる場合があります。」 / ko "검토 중 — 지금은 다른 사람에게 보이지 않아요. 관리자가 확인한 뒤 다시 보일 수 있어요. 확인까지 며칠 걸릴 수 있어요." 숨김 원인(신고·정지)은 구별하지 않는다(M-14).<br>· SYS-04 응답 기간 — en "We usually reply within 7 days. It may take longer while the admin is away." / ja 「通常7日以内に返信します。管理者の不在中は、さらに時間がかかることがあります。」 / ko "보통 7일 안에 답장드려요. 관리자가 자리를 비운 동안에는 더 걸릴 수 있어요." "7일" 은 PL-5 에서 정하는 값이다 | 대리 관리자를 두려면 R-5 로 두 번째 계정(+ 그 사람의 TOTP 2개) — 그때는 SMTP·프로젝트 멤버·방침 문구를 다시 본다(OQ-19). 장기 부재·연락 두절 시 Supabase·GitHub·Cloudflare 계정 접근을 누가 이어받는지는 정해져 있지 않다(OQ-20) |
 
 ### 17.5 백업·복구 (Y-S9)
 
@@ -800,9 +830,9 @@ D25(관리자 = 책임자 1명)로 아래 모든 절차의 실행자는 책임�
 |---|---|---|---|---|
 | PL-1 | **기숙사 공인 IP/CIDR** `[D26]` | `app.ip_tiers` 비어 있음 → 기숙사도 기본 쓰기 한도 **IP 당 5분 60**. Auth 익명 로그인은 프로젝트 전체 150/시간(범위와 무관) | 기숙사 관리 측에 공인 IP/CIDR 확인 → `ip_tiers` 에 등록(5분 600). 확인이 안 되면: 학기 초 오리엔테이션 주간에 `app.settings` 의 기본 한도를 일시적으로 올리고 `rate_limited` 경보를 지켜본다 — 이 대안을 택했다는 것을 점검 기록에 남긴다. 기숙사 범위 부하 시험(§17.6 3a)은 등록한 값으로 | OQ-E, TS-Q5, SE-Q8 |
 | PL-2 | **관리자 메일용 SMTP** `[D26]` | Supabase 기본 SMTP. 관리자 비밀번호 재설정 메일이 막히면 R-6(대시보드 직접 재설정) | 사용자 SMTP 를 둘지 결정. 관리자 1명(D25)이면 R-6 으로 충분하다는 것이 설계 제안 — 두지 않기로 하면 그 결정을 점검 기록에 남긴다. 두기로 하면 제공자·발신 주소·SPF/DKIM 설정과 Auth 발신 한도 확인 | OQ-G, ERD v2 OQ-E9, SE-Q10, TS-Q13 |
-| PL-3 | 관리자 TOTP 2개 등록 `[D25]` | — | R-5 로 계정 생성 직후 요소 2개(주 + 예비) 등록, 예비의 보관 장소를 책임자만 아는 곳에 기록. **R-7 ① 모의 실행**(예비로 로그인 → 요소 교체) | §12.2, R-7 |
+| PL-3 | 관리자 TOTP 2개 등록 `[D25]` | — | R-5 로 계정 생성 직후 요소 2개(주 + 예비)를 이름을 붙여 등록한다. 예비 TOTP 비밀은 **휴대폰과도, 관리자 비밀번호를 둔 금고와도 다른 곳**에 두고, 그 보관 장소를 책임자만 아는 곳에 기록한다 `[검토 R-9]`. **R-7 ① 모의 실행**(로그인 화면에서 예비 요소를 골라 로그인 → 요소 교체). **R-7 ② 모의 실행**(로컬 스택에서 `updateUserById` → `deleteFactor` → 재등록) | §12.2, R-7 |
 | PL-4 | Supabase·GitHub·Cloudflare **계정 자체의 2단계 인증** `[D25]` | — | 세 계정 모두 2단계 인증 켜짐 확인(관리자 TOTP 를 잃었을 때 R-7 ② 의 마지막 근거가 Supabase 계정이다. 각 서비스의 2단계 인증 지원은 *일반 지식 — 출시 전 확인*) | R-7, T-10 |
-| PL-5 | 부재 대비 `[D25]` | — | 감시 경보가 휴대폰 메일로 오는지 시험(§17.6 알림 시험과 같이), SYS-04 의 응답 기간 문구 확정, R-8 확인 | R-8, Y-P6 |
+| PL-5 | 부재 대비 `[D25]` | — | 감시 경보가 휴대폰 메일로 오는지 시험(§17.6 알림 시험과 같이), SYS-04 의 응답 기간 문구와 ME-02 "검토 중" 설명 확정(R-8 초안 `[검토 R-10]`), R-8 확인, OQ-21 책임자 답 기록 | R-8, Y-P6, OQ-21 |
 
 ---
 
@@ -848,8 +878,8 @@ D25(관리자 = 책임자 1명)로 아래 모든 절차의 실행자는 책임�
 | 층 | 도구 | 대상 | 실행 |
 |---|---|---|---|
 | 단위 | Vitest | `domain/**`, `platform/storage`, `api/errors`, i18n 키, 그림 파일 이름 | `npm test` |
-| 렌더 검사 `[D24]` | Vitest (node) + `react-dom/server` `renderToString` | 모든 라우트 × en/ja/ko × 상태 조합(v1.3 헤드리스 검사 케이스: 위치 7상태, 일본 전체·도도부현, 일정 회차, 컬렉션 빈/가득, 분기 게임 모든 장면 × 선택 전후) — 예외, `undefined`·`NaN`·`[object Object]`, 라우트 표 누락. 저장소에 상태를 넣고 `<App/>` 을 그린다(지연 청크는 검사에서 직접 import). (이전 안: `svelte/server`) | `npm test` |
-| 지도 런타임 `[D24]` | Vitest (node, Leaflet 가짜) | attach→detach→attach(StrictMode 순서)에서 `L.map` 1회, `ensure()` 중 detach 시 붙이지 않음, 옛 슬롯 detach 가 새 슬롯을 떼지 않음, 저장소 변경 → `sync` 1회 | `npm test` |
+| 렌더 검사 `[D24]` `[검토 R-3]` | Vitest (node) + `react-dom/static` **`prerender`** | 모든 라우트 × en/ja/ko × 상태 조합(v1.3 헤드리스 검사 케이스: 위치 7상태, 일본 전체·도도부현, 일정 회차, 컬렉션 빈/가득, 분기 게임 모든 장면 × 선택 전후) — 예외, `undefined`·`NaN`·`[object Object]`, 라우트 표 누락. 저장소에 상태를 넣고 `<App/>` 을 그린다.<br>· `prerender` 는 `React.lazy` 청크가 준비될 때까지 기다린다. 첫 판의 `renderToString` 은 fallback 만 그려 검사가 아무것도 검사하지 않고 통과했다. 그래서 첫 판의 "지연 청크는 검사에서 직접 import" 는 없앤다.<br>· **추가 실패 조건:** `onError` 호출, 출력의 `<!--$!-->`(클라이언트 렌더로 넘어간 경계), 로딩 fallback 표지 `data-route-loading`.<br>· `useStore` 가 `getServerSnapshot` 을 넘겨야 그려진다 `[검토 R-2]`.<br>(이전 안: `svelte/server`) | `npm test` |
+| 지도 런타임 `[D24]` | Vitest (node, Leaflet 가짜) | attach→detach→attach(StrictMode 순서)에서 `L.map` 1회·붙이기 1회, `ensure()` 중 attach→detach 만 일어나면 붙이지 않음(`detach` 의 `++gen` `[검토 R-5]`), 옛 슬롯 detach 가 새 슬롯을 떼지 않음, 저장소 변경 → `sync` 1회 | `npm test` |
 | 컴포넌트 `[D24]` | Vitest + React Testing Library (브라우저 모드 기본, jsdom 허용) | 폼 검증 표시, 신고 시트, `<StrictMode>` 로 감싼 `MapSlot` 재부착, `FrameGuard` | `npm test` |
 | E2E (고정 데이터) | Playwright Chromium 375px | v1.3 50개 검사 범주(RFC-0002 §11.2) + Y-M5/K3 빈 상태 + 오프라인 + 375px 3개 언어 넘침 + CSP 위반 수집. Supabase 는 `page.route` 로 `tests/fixtures` 응답 | `npm test` |
 | DB | pgTAP (`supabase test db`) | ERD v2 §9 권한 매트릭스, 검증, 빈도, 신고·숨김·보호·정지, 감사 기록, 정리 | `npm run test:db` |
@@ -921,7 +951,8 @@ flowchart LR
 | # | 리스크 | 가능성/영향 | 대응 |
 |---|---|---|---|
 | R-1 | 프레임워크 선택이 유지보수 인력과 맞지 않음 | ~~중/중~~ 낮음/중 | **D24 로 React 확정**(인력·자료가 가장 넓음). 도메인·지도·라우터·상태를 React 밖에 두어 교체 비용을 줄임 |
-| R-1a | React 첫 화면이 예산(75 KB)을 넘음 `[D24]` | 중/낮음 | Y-1 첫 주 실측(ADR-0023 RE-Q2), 언어·레슨 지연 청크 |
+| R-1a | React 첫 화면이 예산(**100 KB** — 실측 재기준 `[검토 R-1]`)을 넘음 `[D24]` | 중/낮음 | 실측 결과 홈 약 95 KB 라 여유가 약 5 KB 다. CI 크기 검사로 바로 알아채고, 넘으면 언어·레슨 지연 청크 → 책임자 보고(ADR-0024 결정 1) |
+| R-1b | 배포 직후 옛 탭이 사라진 청크를 불러 빈 화면 `[검토 R-7]` | 중/낮음 | `RouteErrorBoundary` + `vite:preloadError` → 다시 불러오기 안내(§5.3) |
 | R-13 | **관리자 1명(D25) — 대리 없음, 단일 장애점** | 중/중 | 시스템은 사람 없이 숨김 쪽으로 기울어 안전(R-8), TOTP 예비 요소(R-7), 계정 2단계 인증(§17.6a PL-4). 장기 부재 승계는 OQ-20 |
 | R-2 | 기숙사 NAT 로 익명 로그인 IP 한도에 걸림 | 중/중 (학기 초) | OQ-5, 한도 조정, 오류 시 입력 유지 |
 | R-3 | `github.io` 출처 공유 (다른 프로젝트 페이지) | 낮음/중 | 관리자 분리, 사용자 토큰 피해 작음. 사용자 도메인 도입 시 해소(출처 변경 비용 있음) |
@@ -949,7 +980,7 @@ flowchart LR
 | D21 | 관리자 콘솔 별도 출처(Cloudflare) | §4.2, §17.3, ADR-0020(승인됨) | ZAP 헤더 |
 | D22 | 디자인 방향 A "맑은 하늘" | §5.2 `styles/tokens.css` ([references-yunabi](../../06-design/references-yunabi.md)) | 시각 검토 |
 | D23 | 첫 배포는 Y-2 이후 | §20, ADR-0020 결정 5 | — |
-| D24 | React (Vite + TS) | §5·§6·§7·§8·§9·§17.3·§19, ADR-0023 | 린트·렌더·E2E |
+| D24 | React (Vite + TS) | §5·§6·§7·§8·§9·§17.3·§19, ADR-0023, ADR-0024(검토 보완) | 린트·렌더(`prerender`)·E2E |
 | D25 | 관리자 = 책임자 1명 | §12.2, §17.7 R-5·R-7·R-8, §17.6a PL-3~5 | 점검표, R-7 모의 실행 |
 | D26 | 기숙사 IP·SMTP 미룸 | §17.6a PL-1·PL-2 | 출시 전 점검 기록 |
 | Y-B1, Y-B2 | 이름·로고 | 현행 유지(`8ce701a`), `public/` 아이콘 | E2E |
@@ -1007,6 +1038,7 @@ flowchart LR
 | OQ-G | **사용자 SMTP** 를 둘지 `[재검토 #4]`. **D26: 뒤로 미룸 → 출시 전 항목 §17.6a PL-2.** 관리자 1명(D25)이므로 설계 제안은 "두지 않고 R-6" | R-6 으로 충분 |
 | OQ-19 `[D25]` | 대리 관리자를 언젠가 둘 것인가(방학·장기 출장). 두면 R-5 로 두 번째 계정, 그 사람의 TOTP 2개, 사용자 SMTP(OQ-G), 방침의 "관리자" 범위 문구를 다시 본다 | 지금은 두지 않음(D25) |
 | OQ-20 `[D25]` | **승계:** 책임자가 장기간 연락이 안 될 때 Supabase·GitHub·Cloudflare·`yunabi-ops`·백업 `age` 개인 키에 누가 접근하는가. 지금은 아무도 없다 → 서비스는 자동으로 계속 돌지만 일시정지(B-4)·장애·삭제 요청(Y-P6)에 대응할 사람이 없다 | 봉인한 비상 접근 문서를 믿을 수 있는 사람에게 맡길지 책임자가 결정 |
+| OQ-21 `[검토 R-10]` | **책임자 부재 중 잘못 숨겨진 항목은 돌아올 때까지 숨겨져 있다** — 대리인이 없으므로(D25, R-8), 신고 3건으로 숨겨진 정상 항목은 부재 기간 내내 다른 사용자에게 보이지 않는다. 등록자는 ME-02 에서 "검토 중" 과 "며칠 걸릴 수 있음" 안내만 본다(R-8 문구 초안). 이것을 받아들이는가 | 받아들임 — 숨김 쪽으로 기우는 것이 안전하다. 긴 부재 전에 R-8 ② 와 SYS-04 문구를 맞춘다 |
 
 ### PRD 에 대한 지적 (PRD 는 고치지 않음)
 

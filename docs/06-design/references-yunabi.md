@@ -6,7 +6,7 @@
 | 작성일 | 2026-10-12 |
 | 근거 | [PRD-YUNABI v2.3](../02-requirements/PRD-YUNABI.md), [디자인 시스템 v0.1](design-system.md), 현행 화면 캡처 8장(home, ending, ko-home, ko-calendar, map-notice, map-near, map-japan, map-osaka), 로고 `assets/brand/yunabi-mark.svg` |
 | 레퍼런스 원본 | github.com/kwakseongjae/oh-my-design (MIT), 커밋 `c0ec4385616d1fb5b0e7ca6a6bb66ff5a3d57f96` (2026-10-01), `design-md/<id>/DESIGN.md` |
-| 관련 | [ADR-0023](../adr/0023-frontend-framework-react.md) (React + Vite + TS, 첫 화면 gzip 75 KB 목표 — 처음 제안이던 Svelte·60 KB 는 D24 로 대체) |
+| 관련 | [ADR-0023](../adr/0023-frontend-framework-react.md) (React + Vite + TS — 처음 제안이던 Svelte·60 KB 는 D24 로 대체), [ADR-0024](../adr/0024-react-switch-review-fixes.md) (첫 화면 gzip 목표를 실측으로 **100 KB** 재기준 — react-dom 19.3.0 만 67.2 KB, 첫 판의 75 KB 를 대체 제안 `[검토 R-1]`. 이 문서 본문의 "75 KB 예산" 은 이 값으로 읽는다) |
 
 이 문서는 재작성(D19) 전에 시각 방향을 정하기 위한 **레퍼런스 연구**다. 토큰을 확정하지 않는다. 방향이 정해지면 §7 의 방법으로 프로젝트 `DESIGN.md` 를 만들고, 그 파일이 디자인의 기준이 된다.
 

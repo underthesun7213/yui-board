@@ -13,6 +13,14 @@
 
 > **개정 (2026-10-12, 책임자 결정 D24~D26 반영).** 설계는 Svelte 5 를 제안했으나(ADR-0015, 아래 §2.1~§2.4 는 그 비교 기록으로 남긴다) 책임자가 **React** 를 택했다(D24 → [ADR-0023](../adr/0023-frontend-framework-react.md), 승인됨). React 에 맞춘 선정은 §2.5, 도구·테스트·린트는 §3·§4·§5.6 에서 고쳤다. 관리자는 책임자 1명(D25 — §6.3), 기숙사 IP 확인·SMTP 설정은 출시 전 항목으로 미룸(D26 — §9 TS-Q5, TS-Q13). `[D24]`·`[D25]`·`[D26]` 표시.
 
+> **개정 (2026-10-12, React 전환 문서 검토 반영).** 검토("보완 필요")의 지적 1~11 을 반영했다. 고친 곳에 `[검토 R-n]` 을 달았다(R-n = 검토 지적 번호). 바뀐 것은 다음과 같다.
+> - 홈 예산을 실측으로 100 KB 로 다시 정했다(R-1).
+> - 렌더 검사를 `prerender` 로 바꿨다(R-3).
+> - ESLint 선택자 전문(R-4, R-6)과 지도 경합 가드(R-5)를 보완했다.
+> - Y-1 설치 버전을 고정했다(R-8, 부록).
+>
+> 승인된 ADR-0023 은 본문을 고치지 않았다. 보완 결정은 [ADR-0024](../adr/0024-react-switch-review-fixes.md)(제안됨)에 있다.
+
 > **사실 확인 방법과 한계.** 2026-10-12 에 웹 검색으로 확인했다. 이 환경에서 WebFetch 는 DNS 오류(`ENOTFOUND supabase.com`)로 실패해 공식 페이지를 직접 열지 못했다(2026-10-11 과 같음). 그래서 수치는 **검색 결과가 인용한 공식 문서 발췌**나 **3자 자료**에서 가져왔고, 표마다 "신뢰도" 를 적었다. 가격·한도·버전은 **구현 착수(Y-1) 때 공식 페이지에서 다시 확인**한다. *추정* 은 추정이라고 표시했다.
 
 ---
@@ -21,10 +29,10 @@
 
 | 영역 | 선정 | 핵심 이유 | 근거 ID | ADR |
 |---|---|---|---|---|
-| UI 프레임워크 `[D24]` | **React 19.2** (메타 프레임워크 없이 Vite SPA). 지도 런타임·라우터·상태 저장소·i18n 은 React 밖의 TS 모듈, react-leaflet·React Router·Zustand·i18next 없음 | **책임자 결정 D24.** 설계 제안은 Svelte 5 였다(83 대 80, §2.3 — 기록으로 남김). React 로 바뀌는 것과 그 대가는 §2.5 | D24, D19, Y-C1, G5 | [0023](../adr/0023-frontend-framework-react.md) (승인됨) — [0015](../adr/0015-frontend-framework-svelte.md) 폐기됨 |
+| UI 프레임워크 `[D24]` | **React 19.3.0** `[검토 R-8]` (메타 프레임워크 없이 Vite SPA). 지도 런타임·라우터·상태 저장소·i18n 은 React 밖의 TS 모듈, react-leaflet·React Router·Zustand·i18next 없음 | **책임자 결정 D24.** 설계 제안은 Svelte 5 였다(83 대 80, §2.3 — 기록으로 남김). React 로 바뀌는 것과 그 대가는 §2.5 | D24, D19, Y-C1, G5 | [0023](../adr/0023-frontend-framework-react.md) (승인됨) — [0015](../adr/0015-frontend-framework-svelte.md) 폐기됨 |
 | 빌드·언어 | **Vite 8 + `@vitejs/plugin-react` + TypeScript (strict)** | PRD §7 이 Vite·TS 를 지정. Vite 8 은 2026-03-12 안정판 | D19, D24 | [0016](../adr/0016-toolchain-test-ci.md) |
-| 테스트 | **Vitest 4.1** (단위 + `react-dom/server` 렌더 검사) + **React Testing Library** (컴포넌트) + **Playwright** (E2E) + **pgTAP** (`supabase test db`) | v1.3 헤드리스 검사를 `renderToString` 렌더 검사로 옮긴다(§4). Vitest 4.1 은 Vite 8 지원 | §7 품질 | 0016, 0023 |
-| 린트·포맷 | **ESLint 9 (flat, 고정) + typescript-eslint + eslint-plugin-react(`react/no-danger`) + eslint-plugin-react-hooks 7 + Prettier**, 타입 검사 `tsc -b` | `eslint-plugin-react` 7.37.5 는 ESLint 10 과 호환되지 않는다는 자료 → 9 에 고정(ADR-0023 RE-Q4) | §7 품질, Y-S4 | 0016, 0023 |
+| 테스트 | **Vitest 5.0.3** `[검토 R-8]` (단위 + `react-dom/static` `prerender` 렌더 검사) + **React Testing Library** (컴포넌트) + **Playwright 1.64.0** (E2E) + **pgTAP** (`supabase test db`) | v1.3 헤드리스 검사를 렌더 검사로 옮긴다(§4). 지연 라우트까지 그리려고 `renderToString` 대신 `prerender` 를 쓴다 `[검토 R-3]` | §7 품질 | 0016, 0023, 0024 |
+| 린트·포맷 | **ESLint 9.39.5 (flat, 고정) + typescript-eslint 8.71.1 + eslint-plugin-react 7.37.5(`react/no-danger`) + eslint-plugin-react-hooks 7.1.1 + Prettier 3.9.10**, 타입 검사 `tsc -b`(**TypeScript 6.0.3**) `[검토 R-8]` | `eslint-plugin-react` 7.37.5 는 ESLint 10 과 호환되지 않는다는 자료 → 9 에 고정(ADR-0023 RE-Q4). typescript-eslint 8.71.1 의 peer 가 `typescript <6.1.0` → TS 7 을 쓰지 않는다 | §7 품질, Y-S4 | 0016, 0023, 0024 |
 | CI | **GitHub Actions** | 저장소가 GitHub 에 있고, Pages 배포도 같은 경로 | §7 품질 | 0016 |
 | 백엔드 | **Supabase** (Postgres + Auth 익명 로그인 + PostgREST, 도쿄 리전) | 익명 로그인 기본 제공, RLS·정의자 함수로 서버 검증·빈도 제한·자동 숨김을 DB 안에서 강제, 이전 조사·설계 재사용 | D16~D18, Y-A\*, Y-R\* | [0018](../adr/0018-backend-supabase-anonymous.md) |
 | 공유 데이터 | 장소·일정은 서버에서 읽고 쓴다 (ADR-0009 일부 대체) | D16 | Y-M4, Y-K2 | [0017](../adr/0017-shared-data-server.md) |
@@ -57,7 +65,7 @@
 
 | 항목 | 내용 | 신뢰도 | 출처 |
 |---|---|---|---|
-| React 런타임 크기 | react + react-dom gzip 약 42~45 KB (라우터·상태 관리 제외) | 3자 다수 | [resumelens](https://www.resumelens.org/blog/react/react-vs-vue-vs-svelte-2026), [tech-insider](https://tech-insider.org/solidjs-vs-react-vs-svelte-2026/) |
+| React 런타임 크기 | 첫 판 값: react + react-dom gzip 약 42~45 KB(3자 다수 — React 18 시기 수치). **실측 `[검토 R-1]`: react + react-dom 19.3.0, `createRoot` 만, 운영 빌드, 압축 후 gzip 67.2 KB**(라우터·상태 관리 제외) | 첫 판 3자 → **Y-1 실측으로 대체** | [resumelens](https://www.resumelens.org/blog/react/react-vs-vue-vs-svelte-2026), [tech-insider](https://tech-insider.org/solidjs-vs-react-vs-svelte-2026/), Y-1 실측(ADR-0024) |
 | Vue 런타임 크기 | 전체 VDOM 런타임 gzip 약 46 KB, Vapor 런타임 약 34 KB (자료 간 편차 큼) | 3자 | [arc.dev](https://arc.dev/employer-blog/svelte-vs-vue-vs-solidjs/) |
 | Svelte 5 | 작업 대부분이 컴파일 시점. 최소 앱 gzip 2~5 KB | 3자 | [pkgpulse](https://www.pkgpulse.com/guides/solidjs-vs-svelte-5-vs-react-reactivity-2026), [arc.dev](https://arc.dev/employer-blog/svelte-vs-vue-vs-solidjs/) |
 | Solid | 코어 gzip 약 6~8 KB | 3자 | [tech-insider](https://tech-insider.org/solidjs-vs-react-vs-svelte-2026/) |
@@ -97,7 +105,7 @@
 
 결정과 근거 전문은 [ADR-0023](../adr/0023-frontend-framework-react.md)(승인됨). ADR-0015 결정 3 의 구조 — 도메인·지도 런타임·라우터·API·플랫폼은 프레임워크 없는 TS — 는 그대로이고, 바뀌는 것은 화면 컴포넌트(`.svelte` → `.tsx`)와 상태 모듈(룬 → 외부 저장소 + `useSyncExternalStore`)이다.
 
-**확인한 버전 (2026-10-12 웹 검색 — 정확한 패치는 Y-1 착수 때 `npm view` 로 확정해 고정):**
+**확인한 버전 (2026-10-12 웹 검색 — 정확한 패치는 Y-1 착수 때 `npm view` 로 확정해 고정):** — `[검토 R-8]` 아래 표는 작성 당시 기록이다. **Y-1 에 실제로 설치한 버전은 부록**(react 19.3.0, vitest 5.0.3, typescript 6.0.3, eslint 9.39.5, eslint-plugin-react-hooks 7.1.1 등)이 기준이다.
 
 | 패키지 | 확인한 것 | 출처 |
 |---|---|---|
@@ -122,10 +130,11 @@
 | i18n | 타입 있는 `en/ja/ko.ts` + `t()` + `useT()`, 서식은 `Intl` | i18next, react-intl | 3개 언어·고정 문자열에 필요 없는 기능, 첫 화면 예산 (6) |
 | XSS | JSX 텍스트만, `react/no-danger: error`, `innerHTML`·`insertAdjacentHTML` 금지, Leaflet HTML API 문자열 금지 유지 | — | Y-S4, `[검토 #12]` (7) |
 | CSP | 운영 빌드에 `'unsafe-eval'` 불필요(3자 다수, E2E 위반 수집으로 확인). meta CSP 는 빌드에만 주입(개발 서버의 Fast Refresh 인라인 스크립트) | — | Y-S4 (8) |
-| 번들 | 홈 진입 JS+CSS gzip **75 KB** 이하(Svelte 안 60 KB → 올림), 지도 60·쓰기 50·레슨 30 KB 청크 | — | react+react-dom 약 42~45 KB (9) |
-| 테스트 | Vitest 4.1 + `react-dom/server` 렌더 검사, RTL, Playwright, pgTAP | `svelte/server` | (10) |
+| 번들 `[검토 R-1]` | 홈 진입 JS+CSS gzip **100 KB** 이하(Svelte 안 60 KB → ADR-0023 의 75 KB → **실측으로 100 KB**, ADR-0024 결정 1). 지도 60·쓰기 50·레슨 30 KB 는 따로 재는 청크 | 75 KB 유지(실측상 도달 불가) | react+react-dom 19.3.0 **실측 67.2 KB** + 앱 약 20 + CSS 약 8 → 홈 약 95 KB. ADR-0023 RE-Q2 는 이 실측으로 닫음 (9) |
+| 테스트 `[검토 R-3]` | Vitest 5.0.3 + `react-dom/static` `prerender` 렌더 검사(지연 라우트까지 기다림, `<!--$!-->`·로딩 fallback 이 있으면 실패), RTL, Playwright, pgTAP | `svelte/server`, `renderToString`(지연 라우트에서 fallback 만 그림) | (10) |
+| 지연 라우트 `[검토 R-7]` | `RouteErrorBoundary`(청크 로드 실패 → 3개 언어 문구 + [다시 불러오기]) + `Suspense`. 이동은 `startTransition` 으로 그려 옛 화면을 유지(외부 저장소 값은 Transition 이 될 수 없으므로 `App` 이 표시할 라우트를 React 상태로 한 겹 둠) | 경계 없음(배포 뒤 옛 탭이 빈 화면) | ADR-0024 결정 6 |
 
-**대가 (D24 로 받아들인 것):** 첫 화면이 Svelte 안보다 약 15 KB(gzip, *추정*) 크다. v1.3 HTML 문자열 뷰를 JSX 로 다시 쓴다. 대신 인력·자료·테스트 생태계가 가장 넓다(§2.3 친숙도 5점).
+**대가 (D24 로 받아들인 것):** 첫 화면이 Svelte 안보다 약 40 KB(gzip, 예산 기준 60 → 100 KB) 크다 `[검토 R-1]`. v1.3 HTML 문자열 뷰를 JSX 로 다시 쓴다. 대신 인력·자료·테스트 생태계가 가장 넓다(§2.3 친숙도 5점).
 
 ---
 
@@ -147,9 +156,9 @@
 | 번들러 | Vite 8 | PRD 지정. 대안 없음 |
 | 언어 | TypeScript `strict`, `noUncheckedIndexedAccess` | v1.3 의 대표적 오류(`T` 키 누락 → `undefined`, `host` 오타 → 화면 예외, RFC-0002 §10.3)를 컴파일 시점에 잡는다 |
 | 타입 검사 `[D24]` | `tsc -b --noEmit` (`.ts` + `.tsx`) | (이전 안: `svelte-check` — Svelte 폐기로 불필요) |
-| 린트 `[D24]` | ESLint 9 flat(**9 에 고정**) + typescript-eslint + `eslint-plugin-react`(flat `recommended` + `jsx-runtime`) + `eslint-plugin-react-hooks` 7(`recommended`). **오류 규칙:** `react/no-danger`(recommended 에 없어 명시), `no-restricted-syntax`(`innerHTML`·`outerHTML` 대입, `insertAdjacentHTML`, `document.write` — `src/**`; Leaflet HTML API 문자열 인자 — `src/map/**`), `no-restricted-globals`·`no-restricted-imports`(`features/`·`ui/` 에서 `localStorage`·`navigator`·`fetch`·`leaflet`), `react-hooks/rules-of-hooks`·`exhaustive-deps` | Biome 2: React 규칙 범위와, `no-restricted-syntax` 같은 AST 선택자 규칙으로 Leaflet API 인자를 막는 방식을 쓸 수 있는지 이번에 확인하지 않음 — 확인된 ESLint 경로를 유지. ESLint 10 으로 가려면 `eslint-plugin-react` → `@eslint-react/eslint-plugin` 교체 필요(ADR-0023 RE-Q4) |
+| 린트 `[D24]` | ESLint 9.39.5 flat(**9 에 고정**) + typescript-eslint 8.71.1 + `eslint-plugin-react` 7.37.5(flat `recommended` + `jsx-runtime`) + `eslint-plugin-react-hooks` 7.1.1(`recommended`) `[검토 R-8]`. **오류 규칙:** `react/no-danger`(recommended 에 없어 명시), `no-restricted-syntax`(`src/**`: `innerHTML`·`outerHTML` 대입(계산된 키 `el['innerHTML']` 포함), `dangerouslySetInnerHTML`·`innerHTML` 을 **객체 키**로 쓰기, `insertAdjacentHTML`, `document.write`. `src/map/**`: Leaflet HTML API 의 인자는 `textNode(…)` 호출만, `divIcon` 은 `icons.ts` 에서 문자열 리터럴 `html` 로만 `[검토 R-4]`), `no-restricted-globals`·`no-restricted-imports`(`features/`·`ui/` 에서 `localStorage`·`navigator`·`fetch`·`leaflet`), `react-hooks/rules-of-hooks`·`exhaustive-deps`. **flat config 주의** `[검토 R-6]`: `src/map/**` 블록의 `no-restricted-syntax` 는 `src/**` 의 옵션을 합치지 않고 **바꾼다**. 그래서 HTML 선택자를 상수 배열로 두고 `src/map/**` 블록에 다시 펼친다. `react/no-danger` 는 JSX 속성만 보므로 객체 키·계산된 멤버 대입은 선택자로 막는다. 선택자 전문은 ADR-0016 결정 2 | Biome 2: React 규칙 범위와, `no-restricted-syntax` 같은 AST 선택자 규칙으로 Leaflet API 인자를 막는 방식을 쓸 수 있는지 이번에 확인하지 않음 — 확인된 ESLint 경로를 유지. ESLint 10 으로 가려면 `eslint-plugin-react` → `@eslint-react/eslint-plugin` 교체 필요(ADR-0023 RE-Q4) |
 | 포맷 `[D24]` | Prettier (플러그인 없음 — JSX 기본 지원) | Biome 포맷터 단독: 린트를 ESLint 로 두는 한 도구가 둘이 되는 것은 같음 |
-| PWA | vite-plugin-pwa `injectManifest` (SW 를 직접 씀) | `generateSW`: v1.3 의 `yui-v*` 캐시 정리·같은 파일명 `sw.js` 유지 같은 맞춤 처리가 어렵다(RFC-0003 §15) |
+| PWA | vite-plugin-pwa **2.0.0** `injectManifest` (SW 를 직접 씀) + workbox-\* 7.4.1 `[검토 R-8]` | `generateSW`: v1.3 의 `yui-v*` 캐시 정리·같은 파일명 `sw.js` 유지 같은 맞춤 처리가 어렵다(RFC-0003 §15) |
 | 백엔드 SDK | `@supabase/postgrest-js` + `@supabase/auth-js` (전체 `supabase-js` 대신), **쓰기 경로에서만 동적 로드** | 읽기는 PostgREST GET 이라 SDK 없이도 된다. Realtime·Storage 를 쓰지 않으므로 전체 SDK 는 과하다(크기 *추정*, TS-Q2). ADR-0003 의 "SDK 없음" 은 단일 파일 전제였다 |
 | 패키지 매니저 | npm (`package-lock.json`) | pnpm 도 무방. 기여자 장벽이 가장 낮은 쪽 |
 | Node | 22 LTS 이상 (CI 와 같은 버전 고정, `.nvmrc`) | — |
@@ -163,9 +172,9 @@ PRD §7: "저장소 안 자동 테스트를 한 명령으로", "초기 데이터
 | 층 | 도구 | 무엇을 | v1.3 에서 온 것 |
 |---|---|---|---|
 | 단위 | Vitest (node) | `src/domain/**`: 반복 일정 전개(`occOn`·`upcoming`), .ics 생성(VTIMEZONE·접기·CRLF), 거리·도보, 도도부현 판정, 입력 검증, 오류 코드 매핑, `store`(저장소 차단·깨진 JSON) | v1.3 헤드리스 검사의 "데이터 검사" 와 .ics 확인 |
-| 렌더 검사 `[D24]` | Vitest (node) + `react-dom/server` 의 `renderToString` | **모든 라우트 × 3개 언어 × 상태 조합**을 HTML 문자열로 렌더해 예외와 `undefined`·`NaN`·`[object Object]` 를 찾는다. 라우트 표의 모든 항목에 케이스가 있는지도 검사. 상태 저장소가 React 밖에 있어(ADR-0023 결정 4) 저장소에 상태를 넣고 `<App/>` 을 그리면 된다. effect 는 서버 렌더에서 돌지 않으므로 `MapSlot` 은 빈 `div` 만 남는다 | CLAUDE.md 헤드리스 검사를 거의 그대로 옮김 (RFC-0002 §11.1). (이전 안: `svelte/server`) |
+| 렌더 검사 `[D24]` `[검토 R-3]` | Vitest (node) + `react-dom/static` 의 **`prerender`** (첫 판: `renderToString` — `React.lazy` 라우트에서 Suspense fallback 만 그려 검사가 아무것도 검사하지 않고 통과하므로 바꿈) | **모든 라우트 × 3개 언어 × 상태 조합**을 HTML 로 렌더해 예외와 `undefined`·`NaN`·`[object Object]` 를 찾는다. `prerender` 는 지연 청크가 준비될 때까지 기다린다. 다음 중 하나라도 있으면 실패다: `onError` 호출, 출력의 `<!--$!-->`(클라이언트 렌더로 넘어간 경계), 로딩 fallback 표지 `data-route-loading`. 라우트 표의 모든 항목에 케이스가 있는지도 검사. 상태 저장소가 React 밖에 있어(ADR-0023 결정 4) 저장소에 상태를 넣고 `<App/>` 을 그리면 된다. 이때 `useStore` 가 `getServerSnapshot` 을 넘겨야 한다 `[검토 R-2]`. effect 는 서버 렌더에서 돌지 않으므로 `MapSlot` 은 빈 `div` 만 남는다 | CLAUDE.md 헤드리스 검사를 거의 그대로 옮김 (RFC-0002 §11.1). (이전 안: `svelte/server`) |
 | i18n | Vitest + 타입 | `ja`·`ko` 가 `en` 의 모든 키를 갖는지(타입 + 실행), 빈 문자열 없음 | v1.3 "모든 문자열 3개 언어" |
-| 지도 런타임 `[D24]` | Vitest (node, Leaflet 가짜) | `attach → detach → attach`(StrictMode 순서)에서 `L.map` 1회, 비동기 `ensure()` 중 detach 되면 붙이지 않음, 옛 슬롯의 detach 가 새 슬롯을 떼지 않음 | ADR-0014 의 단위 테스트판 |
+| 지도 런타임 `[D24]` | Vitest (node, Leaflet 가짜) | `attach → detach → attach`(StrictMode 순서)에서 `L.map` 1회, 비동기 `ensure()` 중 attach → detach 만 일어나면 나중에도 붙이지 않음(`detach` 가 `currentSlot = null`, `++gen` — `[검토 R-5]`), 옛 슬롯의 detach 가 새 슬롯을 떼지 않음 | ADR-0014 의 단위 테스트판 |
 | 컴포넌트 `[D24]` | Vitest + **React Testing Library**(`@testing-library/react` v16), 브라우저 모드(Playwright 프로바이더) 기본, 빠른 것은 jsdom | 폼 검증 메시지, 신고 시트, `<StrictMode>` 로 감싼 `MapSlot` 재부착, `FrameGuard` | — |
 | E2E (고정 데이터) | Playwright, Chromium 375px | v1.3 의 50개 검사 범주(RFC-0002 §11.2) — 내비게이션·저장·지도·위치·일본 전체·.ics·375px·오프라인. 백엔드는 `page.route()` 로 고정 데이터 응답 | **50개 검사의 이전 대상.** 단 스크립트가 저장소에 없어 범주로만 남아 있다 → TS-Q4 |
 | E2E (로컬 백엔드) | Playwright + `supabase start` | 익명 계정 생성(첫 쓰기), 등록·수정·삭제, 빈도 제한, 신고 → 자동 숨김, 관리자 로그인·복원·정지 | 신규 (Y-A\*, Y-R\*) |
@@ -252,7 +261,7 @@ Supabase 공식 가이드는 GitHub Actions 에서 `supabase/setup-cli` → 로�
 |---|---|---|---|---|
 | 무료 플랜 백업 | **플랫폼 백업 없음, PITR 없음.** Pro 는 일일 백업 7일 보관, PITR 은 월 $100 부터. 자체 `pg_dump` 를 권함 (무료 백업이 있다는 소수 자료는 공식 가격 페이지와 어긋나 배제) | 공식 가격 페이지 발췌 + 3자 다수 | [Supabase Pricing](https://supabase.com/pricing), [axonbuild](https://axonbuild.com/blog/supabase-backup/), [backupdrill](https://backupdrill.com/guides/supabase-backup) | Y-S9 |
 | MFA (TOTP) | RLS 에서 JWT 의 `aal` 클레임이 `aal2` 인지 검사하는 공식 패턴. `aal1` = 일반 로그인, `aal2` = 2단계까지 확인. TOTP 는 모든 플랜에서 쓸 수 있다는 3자 언급(전화 MFA 는 유료 추가 기능) | 공식 문서 + 3자 | [Supabase MFA](https://supabase.com/docs/guides/auth/auth-mfa), [MFA via RLS](https://supabase.com/blog/mfa-auth-via-rls) | Y-S3 |
-| MFA 복구 `[D25]` | **백업(복구) 코드 기능이 없다.** 공식 MFA 레퍼런스는 대신 **두 번째 TOTP 요소를 등록**하라고 안내하고, 사용자당 TOTP 요소는 **최대 10개**. 관리 API `auth.admin.mfa.deleteFactor({id, userId})` 로 요소를 지울 수 있고(**secret 키 필요**, 브라우저 금지), 검증된 요소를 지우면 그 사용자의 **모든 세션이 로그아웃**된다 | 공식 문서 (검색 발췌, 2026-10-12) | [Auth MFA API](https://supabase.com/docs/reference/javascript/auth-mfa-api), [admin deleteFactor](https://supabase.com/docs/reference/javascript/auth-admin-mfa-deletefactor) | Y-S3, RFC-0003 §17.7 R-7 |
+| MFA 복구 `[D25]` | **백업(복구) 코드 기능이 없다.** 공식 MFA 레퍼런스는 대신 **두 번째 TOTP 요소를 등록**하라고 안내하고, 사용자당 TOTP 요소는 **최대 10개**. 관리 API `auth.admin.mfa.deleteFactor({id, userId})` 로 요소를 지울 수 있고(**secret 키 필요**, 브라우저 금지), 검증된 요소를 지우면 그 사용자의 **모든 세션이 로그아웃**된다. 비밀번호는 같은 관리 API `auth.admin.updateUserById(userId, {password})` 로 바꾼다. **대시보드에서 비밀번호를 직접 지정하는 기능은 확인하지 못했다** `[검토 R-9]` | 공식 문서 (검색 발췌, 2026-10-12) | [Auth MFA API](https://supabase.com/docs/reference/javascript/auth-mfa-api), [admin deleteFactor](https://supabase.com/docs/reference/javascript/auth-admin-mfa-deletefactor) | Y-S3, RFC-0003 §17.7 R-7 |
 | 세션 만료 | Auth 설정의 비활동 시간 제한·최대 수명(timebox). 다음 토큰 갱신 때 검사되므로 실제 수명은 설정값 + JWT 만료 시간. **Pro 기능으로 보인다**(검토의 확인 — 무료 플랜에는 없다고 본다) | 공식 문서 + 검토 | [User sessions](https://supabase.com/docs/guides/auth/sessions) | Y-S3 — **무료 플랜에서는 DB 함수의 12시간 세션 검사가 유일한 서버 측 만료**(ERD v2 §7.3) |
 | CAPTCHA | 대시보드 Authentication › Bot and Abuse Protection 에서 hCaptcha 또는 Turnstile. 로그인·가입·비밀번호 재설정에 적용 — **즉 관리자 비밀번호 로그인에도 적용**, 클라이언트는 토큰을 같이 보냄. 익명 로그인 문서는 `captchaToken` 옵션을 안내 | 공식 문서 `[검토 확인]` | [Enable CAPTCHA Protection](https://supabase.com/docs/guides/auth/auth-captcha), [Anonymous Sign-Ins](https://supabase.com/docs/guides/auth/auth-anonymous) | Y-S7, Y-S3 `[검토 #5]` |
 | IP 빈도 제한 | 공식 가이드: `request.headers` 의 `x-forwarded-for` 로 IP 를 읽고, 쓰기 요청을 기록해 5분 100회 초과 시 거절하는 `db_pre_request` 예시. **GET·HEAD 는 읽기 복제본으로 갈 수 있어 제한 대상이 아님.** 공식 예시는 **첫 값**을 쓰는데 첫 값은 클라이언트가 위조할 수 있다 → 신뢰 프록시가 붙인 값을 Y-2 에서 실측 | 공식 문서 + 3자. 패턴(쓰기만 센다, 첫 XFF 값 사용)은 `[검토 확인]`, **클라우드에서 `pgrst.db_pre_request` 설정 가능 여부는 `[검토 미확인]`** | [Securing your API](https://supabase.com/docs/guides/api/securing-your-api), [pg_headerkit (dev.to)](https://dev.to/supabase/rate-limiting-supabase-requests-with-postgresql-and-pgheaderkit-409j) | Y-S7 |
@@ -340,12 +349,12 @@ Supabase 공식 가이드는 GitHub Actions 에서 `supabase/setup-cli` → 로�
 
 | # | 질문 | 영향 |
 |---|---|---|
-| ~~TS-Q1~~ | ~~유지보수자는 누구이고 무엇을 아는가~~ — **해결: React (D24, ADR-0023 승인).** 남은 것은 홈 화면 예산 75 KB 실측(ADR-0023 RE-Q2) | ADR-0023 |
+| ~~TS-Q1~~ | ~~유지보수자는 누구이고 무엇을 아는가~~ — **해결: React (D24, ADR-0023 승인).** 홈 화면 예산 실측(ADR-0023 RE-Q2)도 **닫힘** `[검토 R-1]`: react + react-dom 19.3.0 = gzip 67.2 KB, 홈 약 95 KB → 예산 100 KB(ADR-0024 RF-Q1 에서 책임자 확인) | ADR-0023, ADR-0024 |
 | TS-Q2 | `@supabase/auth-js` + `@supabase/postgrest-js` 분리 사용의 실제 크기와 유지 상태 확인 (전체 `supabase-js` 대비) | 첫 쓰기 지연 |
-| TS-Q3 | vite-plugin-pwa 의 Vite 8 호환 버전 확인. 호환이 없으면 SW 를 Vite 의 별도 엔트리로 빌드하고 사전 캐시 목록은 빌드 매니페스트에서 만든다 | RFC-0003 §15 |
+| ~~TS-Q3~~ | **해결 `[검토 R-8]`: vite-plugin-pwa 2.0.0(`injectManifest`) + workbox-\* 7.4.1 을 Y-1 에 설치(Vite 8.3.4).** (원래 질문: vite-plugin-pwa 의 Vite 8 호환 버전 확인. 호환이 없으면 SW 를 Vite 의 별도 엔트리로 빌드하고 사전 캐시 목록은 빌드 매니페스트에서 만든다) | RFC-0003 §15 |
 | TS-Q4 | v1.3 의 Playwright 50개 검사 스크립트가 어디에도 없는가 (RFC-0002 §11.2 "저장소에 없음"). 있으면 그대로 옮기고, 없으면 범주에서 다시 쓴다 | Y-1 완료 기준 |
 | TS-Q5 | **기숙사 Wi-Fi 의 공인 IP/CIDR** — `ip_tiers` 에 넣을 값. 기숙사 관리 측에 확인 `[검토 #6]`. **D26: 뒤로 미룸 — 출시 전 점검 항목**(RFC-0003 §17.6a). 확인 전까지 `ip_tiers` 는 비어 있고 모든 IP 가 기본 한도(5분 60)를 받는다 | B-1 |
-| TS-Q13 | **관리자 메일용 SMTP** (사용자 SMTP 제공자·발신 주소) — **D26: 뒤로 미룸 — 출시 전 점검 항목.** 관리자 1명(D25)이라 그 전까지는 대시보드 직접 재설정 런북(RFC-0003 R-6)으로 충분. 무료 SMTP 제공자의 한도는 이번에 확인하지 않음(tech-stack.md T-2 와 같음) | ADR-0018, RFC-0003 OQ-G |
+| TS-Q13 | **관리자 메일용 SMTP** (사용자 SMTP 제공자·발신 주소) — **D26: 뒤로 미룸 — 출시 전 점검 항목.** 관리자 1명(D25)이라 그 전까지는 관리 API 로 비밀번호를 직접 재설정하는 런북(RFC-0003 R-6 — `auth.admin.updateUserById`, `[검토 R-9]`)으로 충분. 무료 SMTP 제공자의 한도는 이번에 확인하지 않음(tech-stack.md T-2 와 같음) | ADR-0018, RFC-0003 OQ-G |
 | TS-Q10 | `[검토 미확인]` Supabase 클라우드에서 `pgrst.db_pre_request` 를 설정할 수 있는지. 안 되면 IP 한도는 쓰기 RPC 첫 단계에서 `request.headers` 를 읽어 같은 방식으로(트랜잭션 롤백 주의 — 상태 반환 규칙 유지) | B-9 |
 | TS-Q11 | `[검토 미확인]` `before-user-created` 훅이 익명 가입에도 호출되는지 (ERD v2 OQ-E5) | 전역 가입 한도 |
 | TS-Q12 | 익명 로그인 IP 한도를 범위별로 줄 수 있는지 — 없으면 전체 150 | B-1 |
@@ -361,20 +370,24 @@ Supabase 공식 가이드는 GitHub Actions 에서 `supabase/setup-cli` → 로�
 
 ## 부록. 버전 확인 (2026-10-12, `npm view` 로 레지스트리에서 직접 확인)
 
-설계 작성 중에는 웹 검색으로만 버전을 확인했으므로, Y-1 착수 전에 npm 레지스트리에서 다시 확인한 값이다. 실제 고정은 `package-lock.json` 이 한다.
+설계 작성 중에는 웹 검색으로만 버전을 확인했으므로, Y-1 착수 전에 npm 레지스트리에서 다시 확인한 값이다. 실제 고정은 `package-lock.json` 이 한다. `[검토 R-8]` "설치(Y-1)" 열은 저장소 `package.json`(`2.0.0-y1`)에 정확한 버전으로 고정된 값이다(2026-10-12 확인). 본문의 버전 표기는 이 열을 따른다.
 
-| 패키지 | 최신 | 결정 |
-|---|---|---|
-| react, react-dom | 19.3.0 | 사용 |
-| vite | 8.3.4 | 사용 |
-| @vitejs/plugin-react | 6.1.2 (peer: vite ^8) | 사용 — RE-Q5 해결 |
-| typescript | 7.0.2 | **확인 필요**: 7.x 는 새 컴파일러다. typescript-eslint 8.71.1 과 vite 플러그인 호환을 Y-1 첫 주에 확인하고, 안 맞으면 5.x 최신으로 고정 |
-| vitest | 5.0.3 | 사용 (설계 본문의 "4.1" 은 작성 시점 정보 — 5.x 로 시작) |
-| @testing-library/react | 16.3.3 | 사용 |
-| @playwright/test | 1.64.0 | 사용 |
-| eslint | 10.12.0 | **9.x 로 고정** — eslint-plugin-react 7.37.5 의 peer 가 `^9.7` 까지 (RE-Q4 그대로) |
-| eslint-plugin-react-hooks | 7.1.1 | 사용 |
-| typescript-eslint | 8.71.1 | 사용 |
-| prettier | 3.9.10 | 사용 |
-| leaflet | 1.9.4 | 사용 (현재 저장소 vendor 와 같음) |
-| @supabase/supabase-js | 2.117.3 | Y-2 에서 사용 |
+| 패키지 | 최신 | 설치 (Y-1) | 결정 |
+|---|---|---|---|
+| react, react-dom | 19.3.0 | 19.3.0 | 사용 |
+| vite | 8.3.4 | 8.3.4 | 사용 |
+| @vitejs/plugin-react | 6.1.2 (peer: vite ^8) | 6.1.2 | 사용 — RE-Q5 해결 |
+| typescript | 7.0.2 | **6.0.3** | **6.0.3 에 고정** `[검토 R-8]`: typescript-eslint 8.71.1 의 peer 가 `typescript >=4.8.4 <6.1.0` 이라 TS 7 은 지원 밖이다. 5.x 로 내리지 않는다. TS 7 은 typescript-eslint 의 peer 범위가 넓어진 뒤에 |
+| vitest | 5.0.3 | 5.0.3 | 사용 (설계 본문의 "4.1" 은 작성 시점 정보 — 본문도 5.0.3 으로 고침) |
+| @testing-library/react | 16.3.3 | (아직 없음) | 컴포넌트 테스트를 쓸 때 추가 |
+| @playwright/test | 1.64.0 | 1.64.0 | 사용 |
+| eslint | 10.12.0 | **9.39.5** | **9.x 로 고정** — eslint-plugin-react 7.37.5 의 peer 가 `^9.7` 까지 (RE-Q4 그대로). `@eslint/js` 도 9.39.5 |
+| eslint-plugin-react | 7.37.5 | 7.37.5 | 사용 |
+| eslint-plugin-react-hooks | 7.1.1 | 7.1.1 | 사용 |
+| typescript-eslint | 8.71.1 | 8.71.1 | 사용 |
+| prettier | 3.9.10 | 3.9.10 | 사용 |
+| leaflet | 1.9.4 | 1.9.4 | 사용 (현재 저장소 vendor 와 같음) |
+| leaflet.markercluster | — | 1.5.3 | 사용 (vendor 와 같음) |
+| vite-plugin-pwa | — | 2.0.0 | 사용 — `injectManifest`, TS-Q3 해결 |
+| workbox-core·precaching·routing·strategies·window | — | 7.4.1 | 사용 (SW 소스 `src/sw.ts`) |
+| @supabase/supabase-js | 2.117.3 | (아직 없음) | Y-2 에서 사용 |

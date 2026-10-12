@@ -16,7 +16,7 @@
 
 | 문서 | 내용 | 기획 짝 |
 |---|---|---|
-| [tech-stack-v2.md](tech-stack-v2.md) | 기술 검토·선정: 프레임워크(**React 19 — D24**, 첫 비교의 Svelte 5 제안은 기록으로 남김, §2.5 에 React 판 선정·버전 확인), Vite 8·TS, 테스트(Vitest 4.1·React Testing Library·Playwright·pgTAP), 린트(ESLint 9 + react·react-hooks), 백엔드(Supabase 92 / Firebase 72 / Cloudflare 57 / PocketBase 47), 호스팅, 보안 도구·사실 확인(2026-10-12) | PRD-YUNABI §7, §6.1 |
+| [tech-stack-v2.md](tech-stack-v2.md) | 기술 검토·선정: 프레임워크(**React 19 — D24**, 첫 비교의 Svelte 5 제안은 기록으로 남김, §2.5 에 React 판 선정·버전 확인), Vite 8·TS, 테스트(Vitest 5.0.3·React Testing Library·Playwright·pgTAP), 린트(ESLint 9.39.5 + react·react-hooks 7.1.1), TypeScript 6.0.3, Y-1 설치 버전 부록 `[검토 R-8]`, 백엔드(Supabase 92 / Firebase 72 / Cloudflare 57 / PocketBase 47), 호스팅, 보안 도구·사실 확인(2026-10-12) | PRD-YUNABI §7, §6.1 |
 | [rfc/0003-yunabi-v2.md](rfc/0003-yunabi-v2.md) | C4 컨텍스트·컨테이너·신뢰 경계, React 폴더 구조, 자체 라우터·뒤로 가기 대응, 상태(외부 저장소 + `useSyncExternalStore`), i18n(라이브러리 없음), 지도 수명 주기(React 밖 싱글턴 + StrictMode 안전 `MapSlot`), 출시 전 미룬 항목(§17.6a), TOTP 분실·부재 런북, 그림 파일 규칙, 데이터·캐시·오프라인, 익명·관리자 인증, 쓰기 경로·검증, 빈도 제한, 신고·자동 숨김·관리, 개인정보·보관, **위협 모델(STRIDE → Y-S)**, v1.3 이전, 테스트·CI, 배포, 추적표 | PRD-YUNABI 전체 |
 | [erd-v2.md](erd-v2.md) | ERD, 테이블·제약(열마다 근거), 권한·RLS, 함수 시그니처, 정기 작업, 마이그레이션 순서, pgTAP 권한 매트릭스 | 기능 요구 Y-M·K·R·E·A, Y-P5, Y-S |
 | [openapi-v2.yaml](openapi-v2.yaml) | 클라이언트·관리자 API (PostgREST 뷰·RPC, Auth) | 같음 |
@@ -24,14 +24,15 @@
 | ADR | 결정 | 상태 |
 |---|---|---|
 | [0015](../adr/0015-frontend-framework-svelte.md) | Svelte 5 + Vite + TS 정적 SPA (SvelteKit 없음), React 전환 조건 | **폐기됨 — ADR-0023으로 대체됨** (D24) |
-| [0016](../adr/0016-toolchain-test-ci.md) | 도구·테스트·CI (ESLint 9+Prettier, Vitest 4.1+RTL, Playwright, pgTAP, GitHub Actions) — D24 에 맞춰 React 도구로 개정 | 제안됨 |
+| [0016](../adr/0016-toolchain-test-ci.md) | 도구·테스트·CI (ESLint 9.39.5+Prettier, Vitest 5.0.3+RTL, Playwright, pgTAP, GitHub Actions) — D24 에 맞춰 React 도구로 개정, ESLint 선택자 전문·`prerender` 렌더 검사 `[검토 R-3·R-6·R-8]` | 제안됨 |
 | [0017](../adr/0017-shared-data-server.md) | 장소·일정을 서버에 공유 — ADR-0009 일부 대체 | 제안됨 |
 | [0018](../adr/0018-backend-supabase-anonymous.md) | Supabase, 첫 쓰기 때 익명 계정, 관리자 = 허용 목록 + 비밀번호 + TOTP. **ADR-0001~0008 재사용 판정표** | 제안됨 |
 | [0019](../adr/0019-moderation-autohide.md) | 서로 다른 계정 3개 → 자동 숨김, 복원 보호(수정 시 해제), 정지, 감사 기록 (D20 으로 단순화) | 제안됨 |
 | [0020](../adr/0020-hosting-github-pages-actions.md) | 사용자 앱은 같은 GitHub Pages 주소(Actions 배포), 관리자 콘솔은 헤더 가능한 별도 출처(Cloudflare) | **승인됨** (D21) |
 | [0021](../adr/0021-data-access-views-rpc.md) | 테이블 비노출 스키마, 읽기는 공개 뷰, 쓰기는 정의자 RPC | 제안됨 |
 | [0022](../adr/0022-security-baseline.md) | 보안 기준선 Y-S1~S12 (D24·D25·D26 메모 추가) | 제안됨 |
-| [0023](../adr/0023-frontend-framework-react.md) | React 19 + Vite 8 + TS 정적 SPA. 지도 런타임·라우터·상태·i18n 은 React 밖(react-leaflet·React Router·Zustand·i18next 없음), `react/no-danger`, 홈 예산 75 KB | **승인됨** (D24) |
+| [0023](../adr/0023-frontend-framework-react.md) | React 19 + Vite 8 + TS 정적 SPA. 지도 런타임·라우터·상태·i18n 은 React 밖(react-leaflet·React Router·Zustand·i18next 없음), `react/no-danger`, 홈 예산 75 KB(→ ADR-0024 가 실측으로 100 KB 대체 제안) | **승인됨** (D24) — 본문은 그대로, 보완은 ADR-0024 |
+| [0024](../adr/0024-react-switch-review-fixes.md) | React 전환 검토 보완: 홈 예산 **100 KB**(react-dom 19.3.0 실측 67.2 KB), `useStore` 의 `getServerSnapshot`, `prerender` 렌더 검사, Leaflet 인자 허용 목록 린트, `detach` 세대, 지연 라우트 오류 경계·전환, history state, 버전 고정(TS 6.0.3) | 제안됨 |
 
 ADR-0009 의 상태 줄을 "ADR-0017으로 일부 대체됨" 으로 바꿨다(본문 그대로). ADR-0011(정적 데이터)·ADR-0013(빌드 없음)도 v2 에서 사실상 대체되지만 상태 줄은 책임자 확인 후 바꾼다(RFC-0003 OQ-15).
 
@@ -39,7 +40,20 @@ ADR-0009 의 상태 줄을 "ADR-0017으로 일부 대체됨" 으로 바꿨다(�
 
 **결정된 것 (D21~D26):** 프레임워크 = React, 관리자 콘솔 = Cloudflare 별도 출처, 관리자 = 책임자 1명, 첫 배포 = Y-2 이후. **출시 전으로 미룬 것 (D26):** 기숙사 공인 IP/CIDR(OQ-E → §17.6a PL-1), 관리자 메일용 SMTP(OQ-G → PL-2).
 
-**아직 책임자 결정이 필요한 것:** ADR-0023 의 세부 방침 확정 범위(RE-Q1)와 홈 예산 75 KB 실측(RE-Q2), 반영 시간 "10초" 해석(RFC-0003 OQ-1), 비공개 운영 저장소(OQ-F), 스크립트 대량 숨김의 수동 복원 비용 수용(OQ-17), `goo.gl/maps` 제외(OQ-16), 대리 관리자(OQ-19), 책임자 장기 부재 시 승계(OQ-20). 전체 목록은 RFC-0003 §24.
+**React 전환 문서 검토 반영 (2026-10-12):** 검토("보완 필요")의 지적 11건을 ADR-0016·tech-stack-v2·RFC-0003 에 반영했고, 고친 곳에 `[검토 R-n]` 을 달았다. 승인된 ADR-0023 은 상태 줄에 메모만 달았고, 보완 결정은 새 ADR-0024(제안됨)에 있다. ADR-0023 RE-Q2(홈 예산 실측)는 실측으로 닫혔다: react + react-dom 19.3.0 = 67.2 KB, 홈 약 95 KB → 예산 100 KB.
+
+**아직 책임자 결정이 필요한 것:**
+- ADR-0023 의 세부 방침 확정 범위(RE-Q1)
+- 홈 예산 100 KB 승인(ADR-0024 RF-Q1)
+- 반영 시간 "10초" 해석(RFC-0003 OQ-1)
+- 비공개 운영 저장소(OQ-F)
+- 스크립트 대량 숨김의 수동 복원 비용 수용(OQ-17)
+- `goo.gl/maps` 제외(OQ-16)
+- 대리 관리자(OQ-19)
+- 책임자 장기 부재 시 승계(OQ-20)
+- 부재 중 잘못 숨겨진 항목이 계속 숨겨지는 것의 수용(OQ-21)
+
+전체 목록은 RFC-0003 §24.
 
 ## MLP (현행)
 
