@@ -9,6 +9,8 @@
 | 짝 문서 | [RFC-0003](rfc/0003-yunabi-v2.md), [ERD v2](erd-v2.md), [openapi-v2.yaml](openapi-v2.yaml), ADR [0015](../adr/0015-frontend-framework-svelte.md)~[0022](../adr/0022-security-baseline.md) |
 | 이어받는 문서 | [tech-stack.md](tech-stack.md) (보류, 2026-10-11) — Supabase 키 체계·GRANT·RLS 조사를 재사용하고, 바뀌었을 수 있는 사실은 다시 확인했다 |
 
+> **개정 (2026-10-12, 보안 검토 반영).** 독립 보안 검토(기준 `da55060`, "보완 필요")가 Supabase 관련 사실을 따로 확인했다. 그 결과로 아래 표의 "신뢰도" 를 고쳤다(`[검토 확인]` = 검토도 확인, `[검토 미확인]` = 검토도 확인 못 함 — 열린 질문으로 유지). 설계 변경은 `[검토 #n]` 표시.
+
 > **사실 확인 방법과 한계.** 2026-10-12 에 웹 검색으로 확인했다. 이 환경에서 WebFetch 는 DNS 오류(`ENOTFOUND supabase.com`)로 실패해 공식 페이지를 직접 열지 못했다(2026-10-11 과 같음). 그래서 수치는 **검색 결과가 인용한 공식 문서 발췌**나 **3자 자료**에서 가져왔고, 표마다 "신뢰도" 를 적었다. 가격·한도·버전은 **구현 착수(Y-1) 때 공식 페이지에서 다시 확인**한다. *추정* 은 추정이라고 표시했다.
 
 ---
@@ -158,13 +160,13 @@ Supabase 공식 가이드는 GitHub Actions 에서 `supabase/setup-cli` → 로�
 | 항목 | 값 | 신뢰도 | 출처 |
 |---|---|---|---|
 | Supabase 익명 로그인 | `signInAnonymously()`. 익명 사용자도 **`authenticated` 역할**을 받고, 영구 사용자와 구분하려면 JWT 의 `is_anonymous` 를 검사한다 | 공식 문서 (검색 발췌) | [Supabase: Anonymous Sign-Ins](https://supabase.com/docs/guides/auth/auth-anonymous) |
-| 익명 로그인 빈도 제한 | **IP 당 시간당 30회**(버스트 30), 대시보드에서 변경 가능 | 공식 문서 2곳 | [Rate limits](https://supabase.com/docs/guides/auth/rate-limits), [Production Checklist](https://supabase.com/docs/guides/deployment/going-into-prod) |
-| CAPTCHA | 익명 로그인 남용 방지로 invisible CAPTCHA 또는 **Cloudflare Turnstile** 을 "강하게 권장", `captchaToken` 옵션 | 공식 문서 | 위 두 문서, [signInAnonymously](https://supabase.com/docs/reference/javascript/auth-signinanonymously) |
+| 익명 로그인 빈도 제한 | **IP 당 시간당 30회**(버스트 30), 대시보드에서 변경 가능. 범위(CIDR)별 설정 기능은 찾지 못함 — 프로젝트 전체에 한 값으로 본다 | 공식 문서 2곳 `[검토 확인]` (범위별 설정 여부는 미확인) | [Rate limits](https://supabase.com/docs/guides/auth/rate-limits), [Production Checklist](https://supabase.com/docs/guides/deployment/going-into-prod) |
+| CAPTCHA | 익명 로그인 남용 방지로 invisible CAPTCHA 또는 **Cloudflare Turnstile** 을 "강하게 권장", `captchaToken` 옵션 | 공식 문서 `[검토 확인]` | 위 두 문서, [signInAnonymously](https://supabase.com/docs/reference/javascript/auth-signinanonymously) |
 | 익명 사용자 자동 정리 | **아직 없음.** `auth.users` 에서 `is_anonymous` 이고 오래된 행을 SQL 로 지우라고 안내. 익명 사용자 남용으로 DB 가 커질 수 있다고 경고 | 공식 문서 | [Anonymous Sign-Ins](https://supabase.com/docs/guides/auth/auth-anonymous) |
 | 익명 사용자와 MAU | MAU = 결제 주기 안에 로그인하거나 토큰을 갱신한 서로 다른 사용자. 익명 사용자가 MAU 에 들어가는지 명시한 공식 문구는 찾지 못함 — 익명 사용자도 `auth.users` 행과 세션이 있으므로 **들어간다고 가정**한다(*추정*) | 공식 문서 + 추론 | [Manage MAU usage](https://supabase.com/docs/guides/platform/manage-your-usage/monthly-active-users) |
-| 무료 플랜 | DB 500 MB, MAU 50,000, 활성 프로젝트 2개, **1주 비활동 시 일시정지**. egress 는 자료마다 다름(5 GB+5 GB 캐시 / 2 GB) | 3자 다수 | [uibakery](https://uibakery.io/blog/supabase-pricing), [makerkit](https://makerkit.dev/blog/saas/supabase-pricing), [jetadmin](https://www.jetadmin.io/blog/supabase-pricing-2026-guide-to-plans-limits-and-real-world-costs/) |
+| 무료 플랜 | DB 500 MB, MAU 50,000, 활성 프로젝트 2개, **1주 비활동 시 일시정지**. egress 는 자료마다 다름(5 GB+5 GB 캐시 / 2 GB) | 3자 다수. **일시정지 조건(무엇을 "활동" 으로 보나)은 `[검토 미확인]`** — TS-Q7 | [uibakery](https://uibakery.io/blog/supabase-pricing), [makerkit](https://makerkit.dev/blog/saas/supabase-pricing), [jetadmin](https://www.jetadmin.io/blog/supabase-pricing-2026-guide-to-plans-limits-and-real-world-costs/) |
 | Pro | 조직당 월 $25 | 3자 | [nocode.mba](https://www.nocode.mba/articles/supabase-pricing) |
-| API 키 | 레거시 `anon`/`service_role` 키는 **2026년 말까지 폐기 예정**(정확한 날짜 없음). 대체는 `sb_publishable_…`(브라우저) / `sb_secret_…`(서버). 병행 가능 | 공식 문서 | [API keys](https://supabase.com/docs/guides/getting-started/api-keys), [Migrating to new API keys](https://supabase.com/docs/guides/getting-started/migrating-to-new-api-keys) — 2026-10-11 조사와 같음 |
+| API 키 | 레거시 `anon`/`service_role` 키는 **2026년 말까지 폐기 예정**(정확한 날짜 없음). 대체는 `sb_publishable_…`(브라우저) / `sb_secret_…`(서버). 병행 가능 | 공식 문서(검색 발췌). **폐기 일정은 `[검토 미확인]`** — 설계는 일정과 무관하게 처음부터 새 키만 쓰므로 영향 없음 | [API keys](https://supabase.com/docs/guides/getting-started/api-keys), [Migrating to new API keys](https://supabase.com/docs/guides/getting-started/migrating-to-new-api-keys) — 2026-10-11 조사와 같음 |
 | Data API 노출 기본값 | **2026-05-30 부터 새 프로젝트**는 `public` 의 새 테이블을 Data API 에 자동 노출하지 않는다. 역할별 GRANT 가 필요. **기존 프로젝트는 2026-10-30** 부터(3자 자료, 날짜 해석이 자료마다 다름) | 공식 토론·체인지로그 | [Breaking Change Discussion #45329](https://github.com/orgs/supabase/discussions/45329), [Developer Update May 2026](https://supabase.com/changelog/45702-developer-update-may-2026) — 2026-10-11 에 "공식 공지 미확인" 이던 것이 확인됨 |
 | pg_cron | Supabase Cron 모듈. 동시 작업 8개 이하, 작업당 10분 이하 권장. 무료 플랜에서 쓸 수 있다는 3자 자료(공식 문구는 플랜 언급 없음) | 공식 문서 + 3자 | [Supabase Cron](https://supabase.com/docs/guides/cron), [crontap 가이드](https://crontap.com/guides/supabase-cron-jobs) |
 | Firebase 익명 인증 | Spark 에서 사용 가능. IP 당 시간당 계정 생성 100개, 익명 계정 총 1억 개 한도. Identity Platform 으로 올리면 Spark 는 일 활성 3,000명 제한. 익명 계정은 과금·사용량 할당에서 제외 | 공식 문서 발췌 + 3자 | [Firebase Auth limits](https://firebase.google.com/docs/auth/limits), [Firebase Auth](https://firebase.google.com/docs/auth), [Logto 2026](https://blog.logto.io/firebase-authentication-pricing) |
@@ -195,10 +197,10 @@ Supabase 공식 가이드는 GitHub Actions 에서 `supabase/setup-cli` → 로�
 
 | # | 주의점 | 설계 반영 |
 |---|---|---|
-| B-1 | 익명 로그인 IP 당 시간당 30회. **기숙사 Wi-Fi 가 공인 IP 하나(NAT)로 나간다면** 학기 초 첫 쓰기가 몰릴 때 정상 사용자가 막힌다(*추정* — 기숙사 네트워크 구성 미확인) | 첫 쓰기 때만 계정을 만들므로(Y-A1) 읽기만 하는 사람은 영향 없음. 한도를 대시보드에서 올릴지는 열린 질문 TS-Q5 |
-| B-2 | CAPTCHA(Turnstile)는 자동화 공격을 줄이지만 기기 신호가 Cloudflare 로 간다 — Y-P1·Y-S12 에 영향 | **기본은 끈다(D20).** Supabase "Bot and Abuse Protection" 에서 Turnstile 을 켜면 서버가 토큰을 요구하고, 클라이언트는 그 오류를 받으면 위젯을 띄워 다시 시도한다 — 재배포 없이 켜는 **스위치**(Y-S7, ADR-0022) |
-| B-8 | 무료 플랜에 **자동 백업이 없다**(§5.5) | GitHub Actions 주간 `pg_dump` → 암호화 보관, 출시 전 복구 리허설(Y-S9, ADR-0022) |
-| B-9 | PostgREST 에는 IP 단위 빈도 제한이 기본으로 없다 | Supabase 공식 패턴: `db_pre_request` 함수가 쓰기 요청(POST 등)의 IP 를 세어 거절(§5.5, Y-S7). IP 는 해시로 1시간만 보관(Y-S12) |
+| B-1 | 익명 로그인 IP 당 시간당 30회. **기숙사 Wi-Fi 가 공인 IP 하나(NAT)로 나간다면** 학기 초 오리엔테이션처럼 첫 쓰기가 몰릴 때 정상 사용자가 막힌다(*추정* — 기숙사 네트워크 구성 미확인) | `[검토 #6]` 기숙사 공인 IP/CIDR 를 확인해(TS-Q5) `app.ip_tiers` 에 평문으로 두고, 쓰기 IP 한도는 그 범위에 5분 600(기본 60). Auth 의 익명 로그인 한도는 범위별 설정이 확인되지 않아 **전체를 시간당 150 으로** 올리고, 계정 한도(Y-A3)와 전역 가입 한도(시간당 200)를 주 방어로 둔다(RFC-0003 §14) |
+| B-2 | CAPTCHA(Turnstile)는 자동화 공격을 줄이지만 기기 신호가 Cloudflare 로 간다 — Y-P1·Y-S12 에 영향 | **기본은 끈다(D20).** Supabase "Bot and Abuse Protection" 에서 Turnstile 을 켜면 서버가 토큰을 요구하고, 클라이언트는 그 오류를 받으면 위젯을 띄워 다시 시도한다 — **Turnstile 사이트 키가 빌드에 미리 들어 있을 때만** 재배포 없이 켜는 **스위치**다(`[검토 확인]`). 켜면 **관리자 비밀번호 로그인에도 적용**되므로 콘솔에도 위젯·CSP 허용을 둔다 `[검토 #5]` (Y-S7, ADR-0022) |
+| B-8 | 무료 플랜에 **자동 백업이 없다**(§5.5) | **비공개 운영 저장소**의 GitHub Actions 주간 덤프(토큰·세션·MFA 표와 솔트 제외) → `age` 암호화 보관, 출시 전 복구 리허설(Y-S9, ADR-0022). 공개 저장소의 아티팩트는 누구나 받을 수 있어 쓰지 않는다 `[검토 #9]` |
+| B-9 | PostgREST 에는 IP 단위 빈도 제한이 기본으로 없다 | Supabase 공식 패턴: `db_pre_request` 함수가 쓰기 요청의 IP 를 세어 거절(§5.5, Y-S7). `[검토 #1·#7]` **쓰기 RPC 경로만** 세고(읽기 전용 RPC 는 GET), IP 는 공식 예시의 첫 `x-forwarded-for` 값(위조 가능) 대신 **신뢰 프록시가 덧붙인 값**, IPv6 는 /64 단위. 가명 처리한 키로 1시간 보관(Y-S12). 클라우드에서 이 설정이 가능한지는 `[검토 미확인]` (TS-Q10) |
 | B-3 | 익명 사용자 자동 정리 없음 | Y-P5 "1년 활동 없는 익명 계정 삭제" 를 pg_cron 작업으로(ERD v2 §6) |
 | B-4 | 무료 프로젝트 1주 비활동 일시정지 → pg_cron 도 멈춤 | 방학 중 정지 위험. 운영 문서에 재개 절차. 정지가 반복되면 Pro (TS-Q7) |
 | B-5 | 레거시 키 폐기 (2026년 말) | 처음부터 publishable/secret 키만 쓴다. 클라이언트에는 publishable 만(Y-S2) |
@@ -211,9 +213,9 @@ Supabase 공식 가이드는 GitHub Actions 에서 `supabase/setup-cli` → 로�
 |---|---|---|---|---|
 | 무료 플랜 백업 | **플랫폼 백업 없음, PITR 없음.** Pro 는 일일 백업 7일 보관, PITR 은 월 $100 부터. 자체 `pg_dump` 를 권함 (무료 백업이 있다는 소수 자료는 공식 가격 페이지와 어긋나 배제) | 공식 가격 페이지 발췌 + 3자 다수 | [Supabase Pricing](https://supabase.com/pricing), [axonbuild](https://axonbuild.com/blog/supabase-backup/), [backupdrill](https://backupdrill.com/guides/supabase-backup) | Y-S9 |
 | MFA (TOTP) | RLS 에서 JWT 의 `aal` 클레임이 `aal2` 인지 검사하는 공식 패턴. `aal1` = 일반 로그인, `aal2` = 2단계까지 확인. TOTP 는 모든 플랜에서 쓸 수 있다는 3자 언급(전화 MFA 는 유료 추가 기능) | 공식 문서 + 3자 | [Supabase MFA](https://supabase.com/docs/guides/auth/auth-mfa), [MFA via RLS](https://supabase.com/blog/mfa-auth-via-rls) | Y-S3 |
-| 세션 만료 | Auth 설정의 비활동 시간 제한·최대 수명(timebox). 다음 토큰 갱신 때 검사되므로 실제 수명은 설정값 + JWT 만료 시간. **플랜 제한 여부는 확인 못 함** | 공식 문서 | [User sessions](https://supabase.com/docs/guides/auth/sessions) | Y-S3 — 플랜과 무관하게 DB 함수가 세션 나이를 직접 검사하도록 설계(ADR-0022) |
-| CAPTCHA | 대시보드 Authentication › Bot and Abuse Protection 에서 hCaptcha 또는 Turnstile. 로그인·가입·비밀번호 재설정에 적용, 클라이언트는 토큰을 같이 보냄. 익명 로그인 문서는 `captchaToken` 옵션을 안내 | 공식 문서 | [Enable CAPTCHA Protection](https://supabase.com/docs/guides/auth/auth-captcha), [Anonymous Sign-Ins](https://supabase.com/docs/guides/auth/auth-anonymous) | Y-S7 |
-| IP 빈도 제한 | 공식 가이드: `request.headers` 의 `x-forwarded-for` 로 IP 를 읽고, 쓰기 요청을 기록해 5분 100회 초과 시 거절하는 `db_pre_request` 예시. **GET·HEAD 는 읽기 복제본으로 갈 수 있어 제한 대상이 아님.** `x-forwarded-for` 첫 값은 위조 가능성이 있어 어느 값을 믿을지 Y-2 에서 실측 | 공식 문서 + 3자 | [Securing your API](https://supabase.com/docs/guides/api/securing-your-api), [pg_headerkit (dev.to)](https://dev.to/supabase/rate-limiting-supabase-requests-with-postgresql-and-pgheaderkit-409j) | Y-S7 |
+| 세션 만료 | Auth 설정의 비활동 시간 제한·최대 수명(timebox). 다음 토큰 갱신 때 검사되므로 실제 수명은 설정값 + JWT 만료 시간. **Pro 기능으로 보인다**(검토의 확인 — 무료 플랜에는 없다고 본다) | 공식 문서 + 검토 | [User sessions](https://supabase.com/docs/guides/auth/sessions) | Y-S3 — **무료 플랜에서는 DB 함수의 12시간 세션 검사가 유일한 서버 측 만료**(ERD v2 §7.3) |
+| CAPTCHA | 대시보드 Authentication › Bot and Abuse Protection 에서 hCaptcha 또는 Turnstile. 로그인·가입·비밀번호 재설정에 적용 — **즉 관리자 비밀번호 로그인에도 적용**, 클라이언트는 토큰을 같이 보냄. 익명 로그인 문서는 `captchaToken` 옵션을 안내 | 공식 문서 `[검토 확인]` | [Enable CAPTCHA Protection](https://supabase.com/docs/guides/auth/auth-captcha), [Anonymous Sign-Ins](https://supabase.com/docs/guides/auth/auth-anonymous) | Y-S7, Y-S3 `[검토 #5]` |
+| IP 빈도 제한 | 공식 가이드: `request.headers` 의 `x-forwarded-for` 로 IP 를 읽고, 쓰기 요청을 기록해 5분 100회 초과 시 거절하는 `db_pre_request` 예시. **GET·HEAD 는 읽기 복제본으로 갈 수 있어 제한 대상이 아님.** 공식 예시는 **첫 값**을 쓰는데 첫 값은 클라이언트가 위조할 수 있다 → 신뢰 프록시가 붙인 값을 Y-2 에서 실측 | 공식 문서 + 3자. 패턴(쓰기만 센다, 첫 XFF 값 사용)은 `[검토 확인]`, **클라우드에서 `pgrst.db_pre_request` 설정 가능 여부는 `[검토 미확인]`** | [Securing your API](https://supabase.com/docs/guides/api/securing-your-api), [pg_headerkit (dev.to)](https://dev.to/supabase/rate-limiting-supabase-requests-with-postgresql-and-pgheaderkit-409j) | Y-S7 |
 | meta CSP 의 한계 | `frame-ancestors`, `sandbox`, `report-uri` 는 meta 로 지정할 수 없고(무시됨), Report-Only 도 meta 불가. meta 는 `<head>` 안에 있어야 하고 그 뒤 내용에만 적용 | 3자 보안 도구 문서 + Chromium 리뷰 | [Invicti](https://www.invicti.com/invalid-content-security-policy-csp-directive-identified-in-meta-elements), [Chromium review](https://codereview.chromium.org/1835463002), [content-security-policy.com](https://content-security-policy.com/examples/meta) | Y-S4 |
 | GitHub 비밀 검사 | 공개 저장소에서 비밀 검사 알림과 **push protection 무료** | GitHub 공식 블로그 | [Push protection GA](https://github.blog/news-insights/product-news/push-protection-is-generally-available-and-free-for-all-public-repositories/) | Y-S2 |
 | ZAP baseline | `zaproxy/action-baseline` 은 대상 URL 에 수동(passive) 스캔. PR 마다 돌려도 안전하다는 설명. 버전·옵션은 저장소에서 확인할 것 | 3자 | [zap-baseline (tessl)](https://tessl.io/registry/testland/zap-baseline), [qaskills 2026](https://qaskills.sh/blog/owasp-zap-api-security-testing-guide-2026) | Y-S11 |
@@ -227,7 +229,8 @@ Supabase 공식 가이드는 GitHub Actions 에서 `supabase/setup-cli` → 로�
 | DB 권한 테스트 | pgTAP — 역할(`anon`, 익명 `authenticated`, 다른 사용자, 관리자 aal1/aal2)마다 직접 요청 거절 확인 | §4 | Y-S1, Y-S5 |
 | HTTP 권한 테스트 | Playwright `request` 컨텍스트로 로컬 Supabase REST 를 직접 호출(화면 거치지 않음) | §4 | Y-S1 |
 | 동적 스캔 | OWASP ZAP baseline (스테이징 빌드 대상, 출시 전·주간) | 수동 스캔이라 운영 DB 를 건드리지 않는다. 능동 스캔(full)은 로컬 스택 대상으로만 | Y-S11 |
-| 정적 분석 | ESLint 보안 관련 규칙(`no-eval`, `svelte/no-at-html-tags`), TS strict. CodeQL(공개 저장소 무료 — *일반 지식*)은 선택 | | Y-S4, Y-S5 |
+| CI 비밀값 격리 `[검토 #9]` | 비밀값은 `main` 전용 Environment(필수 검토자)에만, `pull_request_target` 금지, 마이그레이션은 PAT 대신 `--db-url`, 백업·감시는 비공개 저장소 | 공개 저장소의 PR·아티팩트·로그 경로로 비밀값·덤프가 새지 않게 | Y-S2, Y-S9 |
+| 정적 분석 | ESLint 보안 관련 규칙(`no-eval`, `svelte/no-at-html-tags`, `src/map` 의 Leaflet HTML API 문자열 금지 `[검토 #12]`), TS strict. CodeQL(공개 저장소 무료 — *일반 지식*)은 선택 | | Y-S4, Y-S5 |
 
 ---
 
@@ -261,7 +264,7 @@ Supabase 공식 가이드는 GitHub Actions 에서 `supabase/setup-cli` → 로�
 
 | 한계 | 영향 | 대응 |
 |---|---|---|
-| 응답 헤더 불가 → CSP 는 meta 만. `frame-ancestors`·`report-uri` 불가(§5.5) | 사용자 앱이 다른 사이트의 iframe 안에 들어갈 수 있다(클릭재킹). CSP 위반을 서버로 보고받을 수 없다 | meta CSP 로 `script-src 'self'` 등은 강제한다. 클릭재킹: 앱이 `window.top !== window.self` 이면 쓰기 버튼을 비활성화하고 "새 창에서 열기" 만 보인다(약한 방어지만 쓰기 경로를 막음). CSP 위반: E2E 가 `securitypolicyviolation` 이벤트를 수집해 0 인지 확인(Y-S4 수락 기준) |
+| 응답 헤더 불가 → CSP 는 meta 만. `frame-ancestors`·`report-uri` 불가(§5.5) | 사용자 앱이 다른 사이트의 iframe 안에 들어갈 수 있다(클릭재킹). CSP 위반을 서버로 보고받을 수 없다 | meta CSP 로 `script-src` 등은 강제한다 — 단 `'self'` 는 `<user>.github.io` 의 **다른 Pages 프로젝트까지** 믿으므로 `https://<user>.github.io/yui-board/assets/` 처럼 **경로를 한정**한다 `[검토 #13]`(RFC-0003 §17.3). 클릭재킹: 앱이 `window.top !== window.self` 이면 쓰기 버튼을 비활성화하고 "새 창에서 열기" 만 보인다(약한 방어지만 쓰기 경로를 막음). CSP 위반: E2E 가 `securitypolicyviolation` 이벤트를 수집해 0 인지 확인(Y-S4 수락 기준) |
 | `<user>.github.io` **출처를 같은 GitHub 사용자의 다른 프로젝트 페이지와 공유** (RFC-0002 R-6) | 그 사용자의 다른 페이지에 XSS 가 있으면 `localStorage` 의 세션 토큰을 읽을 수 있다 | 익명 사용자 토큰은 피해가 작다(그 계정의 항목 수정 정도). **관리자 세션은 이 출처에 두지 않는다** → 관리자 콘솔은 별도 출처 |
 | HSTS 를 우리가 설정할 수 없음 | — | `github.io` 는 HTTPS 강제(저장소 설정 "Enforce HTTPS"). HSTS preload 목록 포함 여부는 *일반 지식, 미확인* (SB-Q4) |
 
@@ -301,10 +304,13 @@ Supabase 공식 가이드는 GitHub Actions 에서 `supabase/setup-cli` → 로�
 | TS-Q2 | `@supabase/auth-js` + `@supabase/postgrest-js` 분리 사용의 실제 크기와 유지 상태 확인 (전체 `supabase-js` 대비) | 첫 쓰기 지연 |
 | TS-Q3 | vite-plugin-pwa 의 Vite 8 호환 버전 확인. 호환이 없으면 SW 를 Vite 의 별도 엔트리로 빌드하고 사전 캐시 목록은 빌드 매니페스트에서 만든다 | RFC-0003 §15 |
 | TS-Q4 | v1.3 의 Playwright 50개 검사 스크립트가 어디에도 없는가 (RFC-0002 §11.2 "저장소에 없음"). 있으면 그대로 옮기고, 없으면 범주에서 다시 쓴다 | Y-1 완료 기준 |
-| TS-Q5 | 기숙사 Wi-Fi 의 공인 IP 구성. NAT 하나면 익명 로그인 한도(30/시간/IP)를 올릴지 | B-1 |
+| TS-Q5 | **기숙사 Wi-Fi 의 공인 IP/CIDR** — `ip_tiers` 에 넣을 값. 기숙사 관리 측에 확인 `[검토 #6]` | B-1 |
+| TS-Q10 | `[검토 미확인]` Supabase 클라우드에서 `pgrst.db_pre_request` 를 설정할 수 있는지. 안 되면 IP 한도는 쓰기 RPC 첫 단계에서 `request.headers` 를 읽어 같은 방식으로(트랜잭션 롤백 주의 — 상태 반환 규칙 유지) | B-9 |
+| TS-Q11 | `[검토 미확인]` `before-user-created` 훅이 익명 가입에도 호출되는지 (ERD v2 OQ-E5) | 전역 가입 한도 |
+| TS-Q12 | 익명 로그인 IP 한도를 범위별로 줄 수 있는지 — 없으면 전체 150 | B-1 |
 | TS-Q6 | CAPTCHA 스위치를 켤 때 방침에 "Cloudflare(Turnstile)로 기기 신호가 전송됨" 을 미리 적어 둘지 — 켜는 순간 문구가 필요하므로 출시 방침에 조건부로 넣는 것을 제안 | ADR-0022, Y-P1, Y-P4, Y-S7 |
 | SB-Q1 | 관리자 콘솔을 Cloudflare 에 두는 것(계정 하나 추가)을 받아들일지. 거부하면 관리자 화면을 사용자 앱 안에 두고 출처 공유·meta CSP 위험을 감수 | ADR-0020, Y-S3 |
-| SB-Q2 | 백업 덤프 보관 장소: Actions 아티팩트(암호화, 보관 90일 이하)만으로 충분한지, 책임자 개인 저장소로 월 1회 옮길지 | Y-S9 |
+| SB-Q2 | 백업 덤프 보관 장소: 비공개 운영 저장소의 Actions 아티팩트(암호화, 보관 90일 이하)만으로 충분한지, 책임자 개인 저장소로 월 1회 옮길지 | Y-S9 |
 | SB-Q3 | gitleaks 액션의 현재 버전·라이선스 조건 확인 | Y-S2 |
 | SB-Q4 | `github.io` 가 HSTS preload 목록에 있는지 확인 | Y-S8 |
 | TS-Q7 | 무료 플랜 1주 비활동 일시정지를 방학에 받아들일지, Pro($25/월)로 갈지 (tech-stack.md T-5 와 같음) | 가용성, pg_cron 정리 작업 |

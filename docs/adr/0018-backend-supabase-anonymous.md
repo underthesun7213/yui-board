@@ -15,11 +15,17 @@
 
 1. **Supabase**(Postgres + Auth + PostgREST + Cron, 도쿄 리전)를 쓴다. 가중 비교 Supabase 92, Firebase 72, Cloudflare D1+Workers 57, PocketBase 47 (tech-stack-v2 §5.3).
 2. **일반 사용자 = 익명 계정, 첫 쓰기 때 생성.** 앱은 읽기에 계정을 쓰지 않는다(`anon` + publishable 키). 등록·신고 버튼을 처음 누르면 `signInAnonymously()` 후 RPC 를 부른다. 세션은 `localStorage` 키 `yui.auth`. 익명 사용자는 `authenticated` 역할이므로 **익명 여부로 권한을 나누지 않고**, 권한은 RPC 안의 소유·정지 검사와 관리자 허용 목록으로만 판단한다.
-3. **관리자 = 이메일+비밀번호 + TOTP(aal2) + 허용 목록(`app.admins`).** 계정은 책임자가 대시보드에서 만든다. `before-user-created` 훅이 허용 목록 밖의 비익명 가입을 거부한다. 관리 RPC 는 `require_admin()`: 허용 목록·`is_anonymous=false`·`aal2`·세션 생성 12시간 이내(`auth.sessions` 조회 — 플랜 기능과 무관한 서버 만료)를 모두 확인한다. 이메일은 관리자만 저장한다(Y-P1).
+3. **관리자 = 이메일+비밀번호 + TOTP(aal2) + 허용 목록(`app.admins`).** `[보안 검토 #3·#4·#5·낮음 반영, 2026-10-12]`
+   - **생성:** 이메일 공급자의 공개 가입은 끈다. 책임자가 `app.admin_invites` 에 이메일을 넣고 → 대시보드 또는 Admin API 로 사용자를 만들고 → 생긴 `user_id` 로 `app.admins` 행을 넣는다. 가입 훅은 `admin_invites` 만 본다. (첫 판은 훅이 `admins(user_id FK)` 를 사용자가 생기기 **전에** 확인하려 해 관리자를 만들 수 없었다.)
+   - **권한의 근거는 `admins` 행뿐.** 익명 사용자는 `updateUser({email})` 로 훅을 거치지 않고 비익명이 될 수 있으므로 "비익명 = 허용 목록" 가정을 버렸다.
+   - **TOTP 는 책임자가 계정을 만들 때 등록**해 넘긴다 — 첫 로그인 때 등록하게 하면 비밀번호가 샌 공격자가 먼저 자기 TOTP 를 등록할 수 있다.
+   - **`require_admin()` 은 실패 안전:** 클레임·세션 행이 없거나, `aal2` 가 아니거나, 세션 생성 12시간이 지났거나, `admins` 행이 없으면 **예외**. 모든 `admin_*` 의 첫 문장이 `perform app.require_admin()`. 세션 최대 수명·비활동 제한은 Pro 기능으로 보이므로(검토의 확인) **무료 플랜에서는 이 12시간 검사가 유일한 서버 측 만료**다.
+   - **CAPTCHA 스위치를 켜면 비밀번호 로그인에도 적용**되므로 콘솔에 Turnstile 위젯과 CSP 허용을 둔다(ADR-0020).
+   - 이메일은 관리자만 저장한다(Y-P1).
 4. **키:** 클라이언트에는 publishable 키(`sb_publishable_…`)만. secret 키는 GitHub Actions 비밀값(감시·백업)에만. 레거시 `anon`/`service_role` 키는 비활성화(2026년 말 폐기 예정 — 공식 문서).
 5. **가명 ID:** 관리자에게는 uuid 가 아니라 `accounts.ref`(첫 쓰기 때 만든 난수, `a-xxxxxxxxxx`)를 보인다. 계정 정지(Y-R7)는 이 값으로 한다(Y-P2, Q-Y11).
 6. **익명 계정 정리:** Supabase 에 자동 정리가 없으므로(공식 문서) Cron 작업이 쓰기·신고 기준 1년 비활동 계정을 지운다(Y-P5). 소유 행만 cascade 로 사라지고 장소는 남는다.
-7. **자동화된 대량 생성 대응(Y-A4, Y-S7):** Supabase 의 IP 당 익명 로그인 한도(기본 시간당 30), 훅의 전역 시간당 한도(기본 200), 공격 시 켜는 CAPTCHA 스위치(Turnstile, 기본 OFF). 사람 단위의 다중 계정은 막지 않는다(D20).
+7. **자동화된 대량 생성 대응(Y-A4, Y-S7):** Supabase 의 IP 당 익명 로그인 한도(기본 시간당 30 → **150 으로 올림** — 기숙사 NAT, 범위별 설정이 확인되지 않아 전체 값 `[검토 #6]`), 훅의 전역 시간당 한도(기본 200 — 익명 가입에 훅이 도는지는 미확인), 공격 시 켜는 CAPTCHA 스위치(Turnstile, 기본 OFF, 사이트 키는 빌드에 미리 포함). 전역 한도 소진(DoS)은 감시 경보 → CAPTCHA ON 런북으로 대응 `[검토 #11]`. 사람 단위의 다중 계정은 막지 않는다(D20).
 
 ## 고려한 대안
 
@@ -57,4 +63,5 @@
 | BE-Q1 | 관리자 인원·이메일(Q-Y3). 2명 이상이면 관리자 추가 절차(허용 목록 행 + 대시보드 사용자) 런북화 |
 | BE-Q2 | 도쿄 리전이 무료 프로젝트에서 선택 가능한지 (tech-stack-v2 TS-Q8) |
 | BE-Q3 | 익명 로그인 IP 한도를 기숙사 NAT 에 맞춰 올릴지 |
-| BE-Q4 | `before-user-created` 훅이 익명 가입에도 호출되고 `is_anonymous` 를 주는지 (ERD v2 OQ-E5) |
+| BE-Q4 | `before-user-created` 훅이 익명 가입·Admin API 생성에도 호출되고 `is_anonymous` 를 주는지 (ERD v2 OQ-E5) — 보안 검토도 확인 못 함 |
+| BE-Q5 | 공개 이메일 가입을 끈 상태에서 익명 로그인이 계속 되는지 (Y-2 확인) |

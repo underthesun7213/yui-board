@@ -14,8 +14,9 @@ v1.3 은 GitHub Pages 가 저장소 루트를 그대로 서빙한다. v2 는 빌
 ## 결정
 
 1. **사용자 앱:** GitHub Pages 유지. Pages 소스를 "GitHub Actions" 로 바꾸고 `actions/deploy-pages` 로 `dist/` 를 배포한다. 주소·`manifest.id`(`./`)·SW 경로(`./sw.js`)·범위(`./`)는 그대로. Actions 사용자 워크플로 배포는 시간당 10회 빌드 소프트 한도의 예외(GitHub Docs).
-2. **사용자 앱 보안:** meta CSP(RFC-0003 §17.3), "Enforce HTTPS", 클릭재킹 완화(`FrameGuard` — 최상위 창이 아니면 쓰기 비활성), CSP 위반은 E2E 에서 `securitypolicyviolation` 이벤트로 수집.
-3. **관리자 콘솔:** 같은 저장소의 별도 Vite 엔트리를 **Cloudflare Workers 정적 자산**(무료)에 `wrangler` 로 배포한다. `_headers` 로 CSP(`frame-ancestors 'none'` 포함), HSTS, `Referrer-Policy: no-referrer`, `X-Content-Type-Options: nosniff`, `Permissions-Policy`. 관리자 세션은 이 출처의 `sessionStorage` 에만 있다.
+2. **사용자 앱 보안:** meta CSP(RFC-0003 §17.3), "Enforce HTTPS", 클릭재킹 완화(`FrameGuard` — 최상위 창이 아니면 쓰기 비활성), CSP 위반은 E2E 에서 `securitypolicyviolation` 이벤트로 수집. **CSP 출처는 `'self'` 가 아니라 `https://<user>.github.io/yui-board/assets/` 처럼 경로를 한정**한다 — `'self'` 는 같은 사용자의 다른 Pages 프로젝트까지 믿는다 `[보안 검토 #13]`. 경로 한정은 리디렉션 뒤에는 적용되지 않으므로(CSP 사양) 완전한 격리는 사용자 도메인(결정 6)뿐이다.
+3. **관리자 콘솔:** 같은 저장소의 별도 Vite 엔트리를 **Cloudflare Workers 정적 자산**(무료)에 `wrangler` 로 배포한다. `_headers` 로 CSP(`frame-ancestors 'none'` 포함), HSTS, `Referrer-Policy: no-referrer`, `X-Content-Type-Options: nosniff`, `Permissions-Policy`. 관리자 세션은 이 출처의 `sessionStorage` 에만 있다. **콘솔 CSP 와 화면에는 Turnstile 을 허용·포함한다** — Supabase CAPTCHA 스위치는 비밀번호 로그인에도 적용되어, 빼 두면 공격 중 스위치를 켜는 순간 관리자가 잠긴다 `[보안 검토 #5]`. 사이트 키는 빌드에 미리 넣는다.
+3a. **배포 비밀값:** `main` 전용 Environment(필수 검토자)에만. `CLOUDFLARE_API_TOKEN` 은 Workers 배포 권한만. `pull_request_target` 금지 `[보안 검토 #9]`.
 4. **서비스워커 이전:** 새 SW 는 같은 `./sw.js`. 활성화 때 `yui-` 로 시작하는 옛 캐시(`yui-v1`~`yui-v6`)를 지운다. 탐색 network-first 에 3초 시간 제한. 새 버전은 사용자가 눌러야 적용.
 5. **배포 순서:** DB 마이그레이션(수동 승인) → 사용자 앱·관리자 콘솔. 운영 첫 배포는 백엔드가 준비된 Y-2 이후(RFC-0003 OQ-D).
 6. **이전 조건:** 사용자 도메인을 두게 되면 사용자 앱도 헤더를 쓸 수 있는 호스트로 옮긴다 — 출처가 바뀌므로 그 전에 컬렉션 내보내기·가져오기 같은 이전 수단을 만든다.

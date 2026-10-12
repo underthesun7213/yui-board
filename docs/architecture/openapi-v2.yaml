@@ -13,10 +13,16 @@ info:
     - 기본 테이블(`app` 스키마)은 노출되지 않는다. 읽기는 `*_public` 뷰, 쓰기는 `/rpc/*` 뿐이다 (ADR-0021).
     - 모든 요청에 `apikey: <publishable key>` (sb_publishable_…). 쓰기·관리 요청은 추가로
       `Authorization: Bearer <access token>`. secret 키는 클라이언트에 절대 없다 (Y-S2).
-    - RPC 결과: 거절(권한·빈도·정지·소유 아님)은 HTTP 200 + `{"status": "..."}` 로 온다 — 서버가 거절을
-      기록하기 위해 예외를 쓰지 않는다 (RFC-0003 §13.1). 형식 오류는 HTTP 400 + PostgREST 오류 본문,
-      `message` 가 `invalid_<field>`. IP 빈도 초과는 HTTP 429.
-    - 관리 RPC 는 관리자 콘솔(별도 출처)에서만 부르며, JWT 가 `aal2` 여야 한다 (Y-S3).
+    - 2026-10-12 보안 검토(기준 da55060) 반영 개정 — 바뀐 곳에 [검토 #n]:
+      #1 읽기 전용 RPC(data_version, my_items, admin 조회)는 GET — IP 쓰기 한도에 세지 않는다.
+      #3 관리 RPC 권한 실패는 예외(SQLSTATE 42501 → HTTP 401/403). #7 형식 오류도 200 + status.
+      #10 admin_restore_bulk 추가. nit: goo.gl/maps 제거.
+    - 쓰기·신고 RPC 결과: 거절(권한·빈도·정지·소유 아님)과 **형식 오류**는 모두 HTTP 200 + `{"status": "..."}`
+      (형식 오류는 `{"status":"invalid","field":"name"}`) — 서버가 거절을 기록하고 IP 카운트를 남기기 위해
+      예외를 쓰지 않는다 (RFC-0003 §13.1). HTTP 400 은 예상 밖 서버 오류뿐. IP 빈도 초과는 HTTP 429.
+    - 관리 RPC 는 관리자 콘솔(별도 출처)에서만 부르며, JWT 가 `aal2` 이고 admins 허용 목록·세션 12시간
+      조건을 모두 만족하지 않으면 **예외**(42501 → 401/403)로 실패한다 (Y-S3, 실패 안전).
+      `admin_whoami` 만 예외 대신 status 를 돌려주고 거절을 기록한다.
 servers:
   - url: https://{project}.supabase.co
     variables:
@@ -105,9 +111,10 @@ paths:
                     pref: { $ref: '#/components/schemas/PrefCode' }
                     n: { type: integer }
   /rest/v1/rpc/data_version:
-    post:
+    get:
       tags: [read]
       summary: 데이터 판 번호 — 같으면 다시 받지 않는다 (RFC-0003 §11.3)
+      description: "stable 함수. GET 으로 부른다(supabase-js `rpc('data_version', {}, { get: true })`). 30초 폴링이 db_pre_request 의 IP 쓰기 한도를 소진하지 않게 [검토 #1]"
       responses:
         '200':
           description: bigint
@@ -137,9 +144,9 @@ paths:
       responses:
         '200':
           description: 세션 (access_token, refresh_token, user.is_anonymous = true)
-        '400': { description: CAPTCHA 필요·실패 — 클라이언트는 Turnstile 위젯을 띄운다 }
-        '422': { description: 훅이 거절 (전역 한도) }
-        '429': { description: IP 한도 초과 }
+        '400': { description: CAPTCHA 필요·실패 — 클라이언트는 Turnstile 위젯을 띄운다 (사이트 키는 빌드에 미리 포함) }
+        '422': { description: "훅이 거절 (전역 한도) — 익명 가입에 훅이 호출되는지는 미확인 (ERD v2 OQ-E5)" }
+        '429': { description: "IP 한도 초과 (프로젝트 전체 값, 설계는 시간당 150 — RFC-0003 §14)" }
   /rest/v1/rpc/create_place:
     post:
       tags: [write]
@@ -305,9 +312,10 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/WriteResult' }
   /rest/v1/rpc/my_items:
-    post:
+    get:
       tags: [write]
       summary: 내가 등록한 것 (ME-02, Y-R8)
+      description: "stable 함수, GET [검토 #1]. 계정 행을 만들지 않는다."
       security: [ { apikey: [], userJwt: [] } ]
       responses:
         '200':
@@ -373,7 +381,7 @@ paths:
                 p_before: { type: integer, format: int64, nullable: true }
       responses:
         '200':
-          description: 목록. 표를 돌려주는 관리 함수는 권한이 없으면 0행을 돌려주고 security_events 에 기록한다 (예외는 기록을 되돌리므로). 콘솔은 먼저 admin_whoami 로 진입 가능 여부를 확인한다
+          description: 목록. 권한이 없으면 200 이 아니라 401/403 (require_admin 예외, [검토 #3]). 콘솔은 먼저 admin_whoami 로 진입 가능 여부를 확인한다
           content:
             application/json:
               schema:
@@ -407,10 +415,37 @@ paths:
             schema: { $ref: '#/components/schemas/AdminActionInput' }
       responses:
         '200':
-          description: "status: ok | not_found | forbidden"
+          description: "status: ok | not_found"
           content:
             application/json:
               schema: { $ref: '#/components/schemas/StatusOnly' }
+        '401': { $ref: '#/components/responses/AdminDenied' }
+        '403': { $ref: '#/components/responses/AdminDenied' }
+  /rest/v1/rpc/admin_restore_bulk:
+    post:
+      tags: [admin]
+      summary: 기간 안 자동 숨김 일괄 복원 — 대량 신고 공격 런북 (RFC-0003 §17.7 R-1) [검토 #10]
+      security: [ { apikey: [], adminJwt: [] } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [p_since, p_until]
+              properties:
+                p_since: { type: string, format: date-time }
+                p_until: { type: string, format: date-time }
+                p_note: { type: string, maxLength: 500 }
+                p_dry_run: { type: boolean, default: true, description: 기본은 미리보기 }
+      responses:
+        '200':
+          description: "{count, items?} — 항목마다 mod_actions 1행"
+          content:
+            application/json:
+              schema: { type: object }
+        '401': { $ref: '#/components/responses/AdminDenied' }
+        '403': { $ref: '#/components/responses/AdminDenied' }
   /rest/v1/rpc/admin_delete:
     post:
       tags: [admin]
@@ -423,10 +458,12 @@ paths:
             schema: { $ref: '#/components/schemas/AdminActionInput' }
       responses:
         '200':
-          description: "status: ok | not_found | forbidden"
+          description: "status: ok | not_found"
           content:
             application/json:
               schema: { $ref: '#/components/schemas/StatusOnly' }
+        '401': { $ref: '#/components/responses/AdminDenied' }
+        '403': { $ref: '#/components/responses/AdminDenied' }
   /rest/v1/rpc/admin_dismiss:
     post:
       tags: [admin]
@@ -439,10 +476,12 @@ paths:
             schema: { $ref: '#/components/schemas/AdminActionInput' }
       responses:
         '200':
-          description: "status: ok | not_found | forbidden"
+          description: "status: ok | not_found"
           content:
             application/json:
               schema: { $ref: '#/components/schemas/StatusOnly' }
+        '401': { $ref: '#/components/responses/AdminDenied' }
+        '403': { $ref: '#/components/responses/AdminDenied' }
   /rest/v1/rpc/admin_suspend:
     post:
       tags: [admin]
@@ -455,10 +494,12 @@ paths:
             schema: { $ref: '#/components/schemas/AccountActionInput' }
       responses:
         '200':
-          description: "status: ok | not_found | forbidden"
+          description: "status: ok | not_found"
           content:
             application/json:
               schema: { $ref: '#/components/schemas/StatusOnly' }
+        '401': { $ref: '#/components/responses/AdminDenied' }
+        '403': { $ref: '#/components/responses/AdminDenied' }
   /rest/v1/rpc/admin_unsuspend:
     post:
       tags: [admin]
@@ -471,10 +512,12 @@ paths:
             schema: { $ref: '#/components/schemas/AccountActionInput' }
       responses:
         '200':
-          description: "status: ok | not_found | forbidden"
+          description: "status: ok | not_found"
           content:
             application/json:
               schema: { $ref: '#/components/schemas/StatusOnly' }
+        '401': { $ref: '#/components/responses/AdminDenied' }
+        '403': { $ref: '#/components/responses/AdminDenied' }
   /rest/v1/rpc/admin_search:
     post:
       tags: [admin]
@@ -538,7 +581,12 @@ components:
       description: 관리자 access token — is_anonymous = false, aal = aal2, 세션 12시간 이내, admins 허용 목록
   responses:
     InvalidInput:
-      description: 형식 오류. message 가 invalid_<field> (예 invalid_name, invalid_gmaps_url, invalid_location, invalid_date, invalid_time, invalid_weekly_until)
+      description: "예상 밖 서버 오류(DB 제약 위반 등 — 함수 검사의 구멍). 형식 오류는 여기가 아니라 200 + {status:'invalid', field} 로 온다 [검토 #7]. 클라이언트는 일반 오류 문구"
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/PostgrestError' }
+    AdminDenied:
+      description: "관리 권한 실패 — require_admin 예외(SQLSTATE 42501): 허용 목록 밖, 익명, aal1, 세션 행 없음, 세션 12시간 초과 [검토 #3]"
       content:
         application/json:
           schema: { $ref: '#/components/schemas/PostgrestError' }
@@ -576,7 +624,7 @@ components:
           type: string
           nullable: true
           maxLength: 500
-          description: "https 만. google.com/maps, google.co.jp/maps, maps.app.goo.gl, goo.gl/maps (Y-M6)"
+          description: "https 만. google.com/maps, google.co.jp/maps, maps.app.goo.gl (Y-M6). goo.gl/maps 는 지원 종료된 단축 링크라 받지 않는다 [검토 nit] — PRD 확인은 RFC-0003 OQ-16"
         p_lat: { type: number }
         p_lng: { type: number }
         p_lang: { $ref: '#/components/schemas/Lang' }
@@ -644,7 +692,10 @@ components:
       properties:
         status:
           type: string
-          enum: [ok, duplicate, already_reported, not_found, past_event, rate_limited, suspended, forbidden]
+          enum: [ok, duplicate, already_reported, not_found, past_event, rate_limited, suspended, invalid, forbidden]
+        field:
+          type: string
+          description: "status = invalid 일 때 문제 필드 (name, category, description, gmaps_url, location, lang, title, start_date, time, weekly_until, occurs_on, place_text, body) [검토 #7]"
     WriteResult:
       allOf:
         - $ref: '#/components/schemas/StatusOnly'

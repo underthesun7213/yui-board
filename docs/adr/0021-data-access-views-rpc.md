@@ -17,9 +17,10 @@
 2. **읽기 = `public` 의 정의자 뷰**(`places_public`, `events_public`, `event_occurrences_public`, `prefecture_counts`). 공개 열만(소유자·토큰·숨김 열 없음), 공개 조건만, 날짜는 일 단위. 뷰는 사용자 정의 함수를 부르지 않는다.
 3. **쓰기 = `public` 의 정의자 RPC.** 순서: 세션 → 정지 → 빈도(사용자 advisory 잠금) → 멱등 → 형식 → 소유 → 쓰기 → 신고면 재평가. 소유자는 `auth.uid()` 로만. `set search_path = ''`, 동적 SQL 금지.
 4. **소유는 별도 테이블**(`place_owners`, `event_owners`) — ADR-0001 결정 1 재사용. 계정이 지워지면 소유 행만 사라지고 장소는 남는다(Y-P5).
-5. **거절은 기록 + 상태 반환, 형식 오류는 예외**(erd.md §6 의 "실패해도 남아야 하는 기록" 교훈). 소유가 아닌 항목·없는 항목·삭제된 항목은 모두 `not_found`.
-6. 마지막 마이그레이션이 권한을 전부 회수 후 다시 주고, `checks` 마이그레이션이 RLS·권한·EXECUTE 허용 목록·`search_path`·동적 SQL·뷰 열 목록을 검사해 어긋나면 실패한다(ADR-0001 결정 4 재사용).
-7. 헬퍼(`require_writer`, `require_admin`, `pref_of` 등)에는 EXECUTE 를 주지 않는다 — RLS 정책이 없고 정의자 함수 안에서만 부르므로 필요 없다(erd.md 에서 헬퍼 EXECUTE 가 필요했던 이유가 사라짐).
+5. **거절과 형식 오류는 모두 기록 + 상태 반환**(erd.md §6 의 "실패해도 남아야 하는 기록" 교훈). 형식 오류도 `{status:'invalid', field}` — 예외로 던지면 `db_pre_request` 의 IP 카운트까지 롤백되어 잘못된 입력 공격이 IP 한도를 피한다 `[보안 검토 #7]`. 예외는 예상 밖 오류와 **관리 권한 실패**(실패 안전 — ADR-0018)에만. 소유가 아닌 항목·없는 항목·삭제된 항목은 모두 `not_found`.
+5a. **반복해 부르는 읽기 전용 RPC 는 GET:** `data_version`, `my_items` 는 `stable` 이고 GET 으로 부른다. `db_pre_request` 는 쓰기 RPC 경로만 센다 — 첫 판은 30초 폴링이 POST 라 기숙사 NAT 뒤 몇 명의 폴링이 IP 쓰기 한도를 다 써 600명 전원이 429 를 받는 결함이 있었다 `[보안 검토 #1, critical]`.
+6. 마지막 마이그레이션이 권한을 전부 회수 후 다시 주고, `checks` 마이그레이션이 RLS·권한·EXECUTE 허용 목록·`search_path`·동적 SQL·뷰 열 목록을 검사해 어긋나면 실패한다(ADR-0001 결정 4 재사용). **회수 대상에 `PUBLIC` 을 포함한다**: Postgres 는 함수 EXECUTE 를 기본으로 `PUBLIC` 에 주고 Supabase 는 `postgres`·`supabase_admin` 의 기본 권한을 두므로, `anon`·`authenticated` 만 회수하면 `anon` 이 쓰기 RPC·`ops_health` 를 그대로 부를 수 있다. `revoke execute on all functions … from public` + `alter default privileges for role postgres … revoke execute on functions from public`, 검사는 `has_function_privilege` 로 `public`·`anon`·`authenticated` 모두 `[보안 검토 #2, critical]`.
+7. 헬퍼(`require_writer`, `require_admin`, `pref_of` 등)에는 EXECUTE 를 주지 않는다(`PUBLIC` 포함) — RLS 정책이 없고 정의자 함수 안에서만 부르므로 필요 없다(erd.md 에서 헬퍼 EXECUTE 가 필요했던 이유가 사라짐).
 
 ## 고려한 대안
 
