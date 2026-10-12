@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| 상태 | 제안됨 |
+| 상태 | ADR-0017으로 일부 대체됨 |
 | 날짜 | 2026-10-12 |
 | 근거 | PRD-MLP v1.3 §1~§3 (D1~D11 — 특히 D1, D2, D9, G1~G6), ML-P1, ML-K8, Q-M9 |
 | 관련 | [RFC-0002](../architecture/rfc/0002-mlp-client-only.md), [RFC-0001](../architecture/rfc/0001-m1-backend-foundation.md)(보류), ADR-0010~0014 |

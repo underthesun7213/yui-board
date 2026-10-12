@@ -2,9 +2,37 @@
 
 기획 문서([docs/README.md](../README.md))를 이어받는 개발 설계 문서다.
 
-**현재 기준은 MLP 다** ([PRD-MLP](../02-requirements/PRD-MLP.md) v1.3 — v1.2 승인 + 책임자 결정 D8~D11). 서버 없는 클라이언트 단독 PWA 이고, 2026-10-12 구현된 코드(브랜치 머리 `7b6d631` 기준)를 [RFC-0002](rfc/0002-mlp-client-only.md) 가 현행대로 기록한다. 2026-10-11 에 쓴 게시판·백엔드 설계(RFC-0001 등)는 **보류**다 — 지우지 않았다([ADR-0009](../adr/0009-client-only-mlp.md)).
+**다음 기준은 YUNABI v2 다** ([PRD-YUNABI](../02-requirements/PRD-YUNABI.md) v2.3 — D12~D20). 아래 "YUNABI v2 (제안)" 절의 문서가 설계이고 아직 구현되지 않았다. 코드는 여전히 v1.3 MLP(`index.html` @`8ce701a`, 브랜드·D14·D15 반영)다.
+
+**현행 코드의 기준은 MLP 다** ([PRD-MLP](../02-requirements/PRD-MLP.md) v1.3 — v1.2 승인 + 책임자 결정 D8~D11). 서버 없는 클라이언트 단독 PWA 이고, 2026-10-12 구현된 코드(브랜치 머리 `7b6d631` 기준)를 [RFC-0002](rfc/0002-mlp-client-only.md) 가 현행대로 기록한다. 2026-10-11 에 쓴 게시판·백엔드 설계(RFC-0001 등)는 **보류**다 — 지우지 않았다([ADR-0009](../adr/0009-client-only-mlp.md)).
 
 **형식: SAD 대신 RFC 하나 + ADR.** MLP 는 컨테이너가 브라우저 하나뿐이라 아키텍처·저장·지도·캘린더·SW·데이터 형식·테스트를 RFC-0002 한 문서에 모았다. DB·API 가 없으므로 ERD·OpenAPI·인프라 문서는 MLP 용으로 만들지 않았다.
+
+## YUNABI v2 (제안, 2026-10-12)
+
+형식은 RFC 하나 + ADR 에 ERD·OpenAPI 를 따로 둔다(컨테이너 셋: 사용자 PWA, 관리자 콘솔, Supabase).
+
+| 문서 | 내용 | 기획 짝 |
+|---|---|---|
+| [tech-stack-v2.md](tech-stack-v2.md) | 기술 검토·선정: 프레임워크(Svelte 5 제안, React 전환 조건), Vite 8·TS, 테스트(Vitest 4·Playwright·pgTAP), 린트, 백엔드(Supabase 92 / Firebase 72 / Cloudflare 57 / PocketBase 47), 호스팅, 보안 도구·사실 확인(2026-10-12) | PRD-YUNABI §7, §6.1 |
+| [rfc/0003-yunabi-v2.md](rfc/0003-yunabi-v2.md) | C4 컨텍스트·컨테이너·신뢰 경계, 폴더 구조, 라우팅·뒤로 가기 대응, 상태, i18n, 지도 수명 주기, 그림 파일 규칙, 데이터·캐시·오프라인, 익명·관리자 인증, 쓰기 경로·검증, 빈도 제한, 신고·자동 숨김·관리, 개인정보·보관, **위협 모델(STRIDE → Y-S)**, v1.3 이전, 테스트·CI, 배포, 추적표 | PRD-YUNABI 전체 |
+| [erd-v2.md](erd-v2.md) | ERD, 테이블·제약(열마다 근거), 권한·RLS, 함수 시그니처, 정기 작업, 마이그레이션 순서, pgTAP 권한 매트릭스 | 기능 요구 Y-M·K·R·E·A, Y-P5, Y-S |
+| [openapi-v2.yaml](openapi-v2.yaml) | 클라이언트·관리자 API (PostgREST 뷰·RPC, Auth) | 같음 |
+
+| ADR | 결정 | 상태 |
+|---|---|---|
+| [0015](../adr/0015-frontend-framework-svelte.md) | Svelte 5 + Vite + TS 정적 SPA (SvelteKit 없음), React 전환 조건 | 제안됨 |
+| [0016](../adr/0016-toolchain-test-ci.md) | 도구·테스트·CI (ESLint+Prettier, Vitest 4, Playwright, pgTAP, GitHub Actions) | 제안됨 |
+| [0017](../adr/0017-shared-data-server.md) | 장소·일정을 서버에 공유 — ADR-0009 일부 대체 | 제안됨 |
+| [0018](../adr/0018-backend-supabase-anonymous.md) | Supabase, 첫 쓰기 때 익명 계정, 관리자 = 허용 목록 + 비밀번호 + TOTP. **ADR-0001~0008 재사용 판정표** | 제안됨 |
+| [0019](../adr/0019-moderation-autohide.md) | 서로 다른 계정 3개 → 자동 숨김, 복원 보호(수정 시 해제), 정지, 감사 기록 (D20 으로 단순화) | 제안됨 |
+| [0020](../adr/0020-hosting-github-pages-actions.md) | 사용자 앱은 같은 GitHub Pages 주소(Actions 배포), 관리자 콘솔은 헤더 가능한 별도 출처(Cloudflare) | 제안됨 |
+| [0021](../adr/0021-data-access-views-rpc.md) | 테이블 비노출 스키마, 읽기는 공개 뷰, 쓰기는 정의자 RPC | 제안됨 |
+| [0022](../adr/0022-security-baseline.md) | 보안 기준선 Y-S1~S12 | 제안됨 |
+
+ADR-0009 의 상태 줄을 "ADR-0017으로 일부 대체됨" 으로 바꿨다(본문 그대로). ADR-0011(정적 데이터)·ADR-0013(빌드 없음)도 v2 에서 사실상 대체되지만 상태 줄은 책임자 확인 후 바꾼다(RFC-0003 OQ-15).
+
+**구현 전에 책임자 결정이 필요한 것:** 프레임워크 승인(Svelte 또는 React — 유지보수자에 따라), 관리자 콘솔의 별도 호스트(Cloudflare 계정), 관리자 인원·TOTP, 운영 첫 배포 시점(Y-2 이후 제안), 반영 시간 "10초" 해석(RFC-0003 OQ-1). 전체 목록은 RFC-0003 §24.
 
 ## MLP (현행)
 
@@ -17,7 +45,7 @@
 
 | # | 결정 | 상태 |
 |---|---|---|
-| [0009](../adr/0009-client-only-mlp.md) | MLP 는 서버 없는 클라이언트 단독, 백엔드 계획 보류 | 제안됨 |
+| [0009](../adr/0009-client-only-mlp.md) | MLP 는 서버 없는 클라이언트 단독, 백엔드 계획 보류 | ADR-0017으로 일부 대체됨 (공유 데이터 부분) |
 | [0010](../adr/0010-device-storage-localstorage.md) | 기기 저장 = `localStorage` + `yui.v1.*` 키 + 메모리 폴백 (쿠키·sessionStorage 기각) | 제안됨 |
 | [0011](../adr/0011-curated-static-data.md) | 장소·일정은 직접 넣은 정적 데이터, Overpass 등 런타임 검색 기각 | 제안됨 |
 | [0012](../adr/0012-prefecture-boundary-map.md) | 도도부현 경계 = Natural Earth 단순화본, 별도 파일 지연 로드, 같은 지도의 GeoJSON 레이어 | 제안됨 |

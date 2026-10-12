@@ -1,0 +1,60 @@
+# ADR-0018 · 백엔드는 Supabase — 사용자는 첫 쓰기 때 만드는 익명 계정, 관리자는 허용 목록의 이메일+비밀번호+TOTP
+
+| | |
+|---|---|
+| 상태 | 제안됨 |
+| 날짜 | 2026-10-12 |
+| 근거 | PRD-YUNABI v2.3 D17, D18, D20, Y-A1, Y-A2, Y-A5, Y-R5, Y-R7, Y-P1, Y-P2, Y-P5, Y-S2, Y-S3, Y-S7, §7 "백엔드", Q-Y3, Q-Y10, Q-Y11 |
+| 관련 | [tech-stack-v2 §5](../architecture/tech-stack-v2.md#5-백엔드), [RFC-0003 §12](../architecture/rfc/0003-yunabi-v2.md#12-인증-흐름-제안), [ERD v2](../architecture/erd-v2.md), ADR-0017, ADR-0021, ADR-0022, 이전 [tech-stack.md](../architecture/tech-stack.md)·[ADR-0004](0004-login-method.md) |
+
+## 배경
+
+공유 데이터(ADR-0017)에는 계정, "내 항목만 수정", 서버 검증·빈도 제한, 신고 집계, 관리자 로그인이 필요하다. 일반 사용자에게는 로그인 화면이 없어야 하고(D17), 계정은 첫 쓰기 때 만든다(Y-A1, Q-Y10). 관리자는 익명이 아닌 별도 로그인이어야 한다(Y-R5) — 익명 기기 계정은 기기를 잃으면 사라진다. 비용은 무료 또는 저비용.
+
+## 결정
+
+1. **Supabase**(Postgres + Auth + PostgREST + Cron, 도쿄 리전)를 쓴다. 가중 비교 Supabase 92, Firebase 72, Cloudflare D1+Workers 57, PocketBase 47 (tech-stack-v2 §5.3).
+2. **일반 사용자 = 익명 계정, 첫 쓰기 때 생성.** 앱은 읽기에 계정을 쓰지 않는다(`anon` + publishable 키). 등록·신고 버튼을 처음 누르면 `signInAnonymously()` 후 RPC 를 부른다. 세션은 `localStorage` 키 `yui.auth`. 익명 사용자는 `authenticated` 역할이므로 **익명 여부로 권한을 나누지 않고**, 권한은 RPC 안의 소유·정지 검사와 관리자 허용 목록으로만 판단한다.
+3. **관리자 = 이메일+비밀번호 + TOTP(aal2) + 허용 목록(`app.admins`).** 계정은 책임자가 대시보드에서 만든다. `before-user-created` 훅이 허용 목록 밖의 비익명 가입을 거부한다. 관리 RPC 는 `require_admin()`: 허용 목록·`is_anonymous=false`·`aal2`·세션 생성 12시간 이내(`auth.sessions` 조회 — 플랜 기능과 무관한 서버 만료)를 모두 확인한다. 이메일은 관리자만 저장한다(Y-P1).
+4. **키:** 클라이언트에는 publishable 키(`sb_publishable_…`)만. secret 키는 GitHub Actions 비밀값(감시·백업)에만. 레거시 `anon`/`service_role` 키는 비활성화(2026년 말 폐기 예정 — 공식 문서).
+5. **가명 ID:** 관리자에게는 uuid 가 아니라 `accounts.ref`(첫 쓰기 때 만든 난수, `a-xxxxxxxxxx`)를 보인다. 계정 정지(Y-R7)는 이 값으로 한다(Y-P2, Q-Y11).
+6. **익명 계정 정리:** Supabase 에 자동 정리가 없으므로(공식 문서) Cron 작업이 쓰기·신고 기준 1년 비활동 계정을 지운다(Y-P5). 소유 행만 cascade 로 사라지고 장소는 남는다.
+7. **자동화된 대량 생성 대응(Y-A4, Y-S7):** Supabase 의 IP 당 익명 로그인 한도(기본 시간당 30), 훅의 전역 시간당 한도(기본 200), 공격 시 켜는 CAPTCHA 스위치(Turnstile, 기본 OFF). 사람 단위의 다중 계정은 막지 않는다(D20).
+
+## 고려한 대안
+
+| 대안 | 기각 이유 |
+|---|---|
+| Firebase (Auth + Firestore) | 익명 인증은 좋지만 빈도 제한·집계·자동 숨김을 규칙만으로 쓰기 어렵고 Functions 범위가 자료마다 상충. 이전 설계 재사용 불가 |
+| Cloudflare D1 + Workers | 무료 한도 넉넉하지만 인증을 직접 구현. 권한이 모두 애플리케이션 코드 |
+| PocketBase | 익명 로그인 기본 기능을 확인 못 함, 서버 운영 부담 |
+| 앱을 열 때 익명 계정 생성 | Y-A1/Q-Y10 이 첫 쓰기로 정함. 읽기만 하는 사람의 MAU·DB 행이 생기지 않고, Auth 장애·한도가 읽기에 영향을 주지 않는다 |
+| 관리자 = 익명 계정을 SQL 로 승격 | 기기를 잃으면 관리자도 사라진다(Y-R5 의 이유). 2단계 인증 불가(Y-S3) |
+| 관리자 이메일 OTP / 매직 링크 | 메일 발송(SMTP) 설정이 필요. 비밀번호+TOTP 는 메일 없이 2단계를 만족. 비밀번호 재설정만 메일이 필요 — 관리자 1명이면 책임자가 대시보드에서 처리 |
+
+## 결과
+
+- 좋은 점: 로그인 화면 없음, 읽기는 계정·Auth 와 무관, 관리자는 2단계 + 서버 세션 만료. 이전 조사(키 체계, GRANT 명시, 정의자 함수 규칙)를 그대로 쓴다.
+- 나쁜 점: 무료 플랜은 백업이 없고 1주 비활동 시 일시정지(ADR-0022 가 대응). 저장소를 지우면 익명 계정을 잃는다(Y-A2 안내). 기숙사가 공인 IP 하나를 공유하면 IP 한도에 걸릴 수 있다(RFC-0003 OQ-5).
+
+### 이전 ADR 재검토 (ADR-0009 가 "보류" 로 둔 0001~0008)
+
+| ADR | 이 v2 에서 | 어디에 |
+|---|---|---|
+| [0001](0001-structural-anonymity.md) 익명성은 DB 구조로 | **부분 재사용.** 결정 1(본문과 소유자 분리, 무권한 테이블)·2(응답에 uuid 없음)·4(권한 전부 명시 + 점검)는 그대로. 결정 5 의 "운영자에게도 익명" 은 **Y-P2/Q-Y11 로 완화**(관리자는 가명 ID) | ADR-0021, ERD v2 §4.4·§5 |
+| [0002](0002-write-path-and-translation.md) Edge Function 번역 쓰기 | **재사용 안 함** — 번역 없음(Q-Y4). "검증은 DB 함수 안에서" 원칙(결정 4)만 이어받음 | ADR-0021 |
+| [0003](0003-keep-single-file-client.md) 단일 파일 | 이미 대체됨. "SDK 없음" 도 버림(빌드가 있으므로 auth-js·postgrest-js 사용) | tech-stack-v2 §3.2 |
+| [0004](0004-login-method.md) 이메일 OTP + 방 초대 코드 | **사용자에게는 재사용 안 함**(D17 익명). 관리자 로그인에 "허용 목록·`before-user-created` 훅" 아이디어(결정 2)만 재사용, OTP 대신 비밀번호+TOTP | 이 ADR 결정 3 |
+| [0005](0005-exchange-request-redesign.md) 교환 요청 | **해당 없음**(교환 기능 없음). 기법(실패도 남겨야 하는 기록은 예외 대신 반환값, 사용자 단위 advisory 잠금)만 재사용 | RFC-0003 §13.1, ERD v2 §7 |
+| [0006](0006-append-only-moderation-log.md) 운영 기록 추가 전용 | **재사용**. O-Q1(시스템 행위자)은 `actor_kind='system'` 으로 해결. 1년 보관 정리 예외 추가(Y-P5) | ADR-0019, ERD v2 §5.3 |
+| [0007](0007-anonymous-metrics.md) 익명 일별 지표 | **재사용 안 함** — PRD v2 에 지표 요구가 없다(Y-S12 최소화와도 맞음) | — |
+| [0008](0008-hosting.md) GitHub Pages + meta CSP + SRI | **부분 재사용**: GitHub Pages 유지(결정 1), meta CSP(결정 2 — 초안은 새로 씀), 비밀값 저장소 금지(결정 4). SRI(cdnjs)는 해당 없음(외부 스크립트 없음). 이전 조건(결정 5)은 관리자 콘솔에 대해 성립 → 별도 호스트 | ADR-0020 |
+
+## 열린 질문
+
+| # | 질문 |
+|---|---|
+| BE-Q1 | 관리자 인원·이메일(Q-Y3). 2명 이상이면 관리자 추가 절차(허용 목록 행 + 대시보드 사용자) 런북화 |
+| BE-Q2 | 도쿄 리전이 무료 프로젝트에서 선택 가능한지 (tech-stack-v2 TS-Q8) |
+| BE-Q3 | 익명 로그인 IP 한도를 기숙사 NAT 에 맞춰 올릴지 |
+| BE-Q4 | `before-user-created` 훅이 익명 가입에도 호출되고 `is_anonymous` 를 주는지 (ERD v2 OQ-E5) |

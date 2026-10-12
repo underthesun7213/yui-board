@@ -201,7 +201,7 @@ Supabase 공식 가이드는 GitHub Actions 에서 `supabase/setup-cli` → 로�
 | B-9 | PostgREST 에는 IP 단위 빈도 제한이 기본으로 없다 | Supabase 공식 패턴: `db_pre_request` 함수가 쓰기 요청(POST 등)의 IP 를 세어 거절(§5.5, Y-S7). IP 는 해시로 1시간만 보관(Y-S12) |
 | B-3 | 익명 사용자 자동 정리 없음 | Y-P5 "1년 활동 없는 익명 계정 삭제" 를 pg_cron 작업으로(ERD v2 §6) |
 | B-4 | 무료 프로젝트 1주 비활동 일시정지 → pg_cron 도 멈춤 | 방학 중 정지 위험. 운영 문서에 재개 절차. 정지가 반복되면 Pro (TS-Q7) |
-| B-5 | 레거시 키 폐기 (2026년 말) | 처음부터 publishable/secret 키만 쓴다. 클라이언트에는 publishable 만(Y-P1, PRD v2.0 Y-P5 의 "비밀 키는 클라이언트에 없음" 원칙 유지) |
+| B-5 | 레거시 키 폐기 (2026년 말) | 처음부터 publishable/secret 키만 쓴다. 클라이언트에는 publishable 만(Y-S2) |
 | B-6 | 새 테이블 자동 노출 안 됨 (2026-05-30 이후 새 프로젝트) | 이전 설계의 "모든 GRANT 를 마이그레이션이 명시" 원칙과 같은 방향. 기본 테이블은 아예 노출 안 하는 스키마(`app`)에 둔다(ADR-0021) |
 | B-7 | 익명 사용자도 `authenticated` 역할 | 관리자 판정은 역할이 아니라 `admins` 허용 목록 + `is_anonymous = false` + MFA(`aal2`) 로 한다(ADR-0018) |
 
