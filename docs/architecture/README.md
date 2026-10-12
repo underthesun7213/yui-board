@@ -2,7 +2,7 @@
 
 기획 문서([docs/README.md](../README.md))를 이어받는 개발 설계 문서다.
 
-**다음 기준은 YUNABI v2 다** ([PRD-YUNABI](../02-requirements/PRD-YUNABI.md) v2.3 — D12~D20). 아래 "YUNABI v2 (제안)" 절의 문서가 설계이고 아직 구현되지 않았다. 코드는 여전히 v1.3 MLP(`index.html` @`8ce701a`, 브랜드·D14·D15 반영)다.
+**다음 기준은 YUNABI v2 다** ([PRD-YUNABI](../02-requirements/PRD-YUNABI.md) v2.5 — D12~D26). 아래 "YUNABI v2 (제안)" 절의 문서가 설계이고 아직 구현되지 않았다. 코드는 여전히 v1.3 MLP(`index.html` @`8ce701a`, 브랜드·D14·D15 반영)다.
 
 **현행 코드의 기준은 MLP 다** ([PRD-MLP](../02-requirements/PRD-MLP.md) v1.3 — v1.2 승인 + 책임자 결정 D8~D11). 서버 없는 클라이언트 단독 PWA 이고, 2026-10-12 구현된 코드(브랜치 머리 `7b6d631` 기준)를 [RFC-0002](rfc/0002-mlp-client-only.md) 가 현행대로 기록한다. 2026-10-11 에 쓴 게시판·백엔드 설계(RFC-0001 등)는 **보류**다 — 지우지 않았다([ADR-0009](../adr/0009-client-only-mlp.md)).
 
@@ -12,29 +12,34 @@
 
 형식은 RFC 하나 + ADR 에 ERD·OpenAPI 를 따로 둔다(컨테이너 셋: 사용자 PWA, 관리자 콘솔, Supabase).
 
+**책임자 결정 반영 (2026-10-12, PRD v2.5):** D21 관리자 콘솔 별도 출처(ADR-0020 **승인됨**), D22 디자인 방향 A "맑은 하늘", D23 첫 배포는 Y-2 이후, **D24 프레임워크 = React**(ADR-0023 **승인됨**, Svelte 제안 ADR-0015 **폐기됨**), D25 관리자 = 책임자 1명(TOTP 2개·분실 복구·부재 런북 — RFC-0003 §12.2·§17.7 R-7·R-8), D26 기숙사 IP·SMTP 는 출시 전 항목(RFC-0003 §17.6a).
+
 | 문서 | 내용 | 기획 짝 |
 |---|---|---|
-| [tech-stack-v2.md](tech-stack-v2.md) | 기술 검토·선정: 프레임워크(Svelte 5 제안, React 전환 조건), Vite 8·TS, 테스트(Vitest 4·Playwright·pgTAP), 린트, 백엔드(Supabase 92 / Firebase 72 / Cloudflare 57 / PocketBase 47), 호스팅, 보안 도구·사실 확인(2026-10-12) | PRD-YUNABI §7, §6.1 |
-| [rfc/0003-yunabi-v2.md](rfc/0003-yunabi-v2.md) | C4 컨텍스트·컨테이너·신뢰 경계, 폴더 구조, 라우팅·뒤로 가기 대응, 상태, i18n, 지도 수명 주기, 그림 파일 규칙, 데이터·캐시·오프라인, 익명·관리자 인증, 쓰기 경로·검증, 빈도 제한, 신고·자동 숨김·관리, 개인정보·보관, **위협 모델(STRIDE → Y-S)**, v1.3 이전, 테스트·CI, 배포, 추적표 | PRD-YUNABI 전체 |
+| [tech-stack-v2.md](tech-stack-v2.md) | 기술 검토·선정: 프레임워크(**React 19 — D24**, 첫 비교의 Svelte 5 제안은 기록으로 남김, §2.5 에 React 판 선정·버전 확인), Vite 8·TS, 테스트(Vitest 4.1·React Testing Library·Playwright·pgTAP), 린트(ESLint 9 + react·react-hooks), 백엔드(Supabase 92 / Firebase 72 / Cloudflare 57 / PocketBase 47), 호스팅, 보안 도구·사실 확인(2026-10-12) | PRD-YUNABI §7, §6.1 |
+| [rfc/0003-yunabi-v2.md](rfc/0003-yunabi-v2.md) | C4 컨텍스트·컨테이너·신뢰 경계, React 폴더 구조, 자체 라우터·뒤로 가기 대응, 상태(외부 저장소 + `useSyncExternalStore`), i18n(라이브러리 없음), 지도 수명 주기(React 밖 싱글턴 + StrictMode 안전 `MapSlot`), 출시 전 미룬 항목(§17.6a), TOTP 분실·부재 런북, 그림 파일 규칙, 데이터·캐시·오프라인, 익명·관리자 인증, 쓰기 경로·검증, 빈도 제한, 신고·자동 숨김·관리, 개인정보·보관, **위협 모델(STRIDE → Y-S)**, v1.3 이전, 테스트·CI, 배포, 추적표 | PRD-YUNABI 전체 |
 | [erd-v2.md](erd-v2.md) | ERD, 테이블·제약(열마다 근거), 권한·RLS, 함수 시그니처, 정기 작업, 마이그레이션 순서, pgTAP 권한 매트릭스 | 기능 요구 Y-M·K·R·E·A, Y-P5, Y-S |
 | [openapi-v2.yaml](openapi-v2.yaml) | 클라이언트·관리자 API (PostgREST 뷰·RPC, Auth) | 같음 |
 
 | ADR | 결정 | 상태 |
 |---|---|---|
-| [0015](../adr/0015-frontend-framework-svelte.md) | Svelte 5 + Vite + TS 정적 SPA (SvelteKit 없음), React 전환 조건 | 제안됨 |
-| [0016](../adr/0016-toolchain-test-ci.md) | 도구·테스트·CI (ESLint+Prettier, Vitest 4, Playwright, pgTAP, GitHub Actions) | 제안됨 |
+| [0015](../adr/0015-frontend-framework-svelte.md) | Svelte 5 + Vite + TS 정적 SPA (SvelteKit 없음), React 전환 조건 | **폐기됨 — ADR-0023으로 대체됨** (D24) |
+| [0016](../adr/0016-toolchain-test-ci.md) | 도구·테스트·CI (ESLint 9+Prettier, Vitest 4.1+RTL, Playwright, pgTAP, GitHub Actions) — D24 에 맞춰 React 도구로 개정 | 제안됨 |
 | [0017](../adr/0017-shared-data-server.md) | 장소·일정을 서버에 공유 — ADR-0009 일부 대체 | 제안됨 |
 | [0018](../adr/0018-backend-supabase-anonymous.md) | Supabase, 첫 쓰기 때 익명 계정, 관리자 = 허용 목록 + 비밀번호 + TOTP. **ADR-0001~0008 재사용 판정표** | 제안됨 |
 | [0019](../adr/0019-moderation-autohide.md) | 서로 다른 계정 3개 → 자동 숨김, 복원 보호(수정 시 해제), 정지, 감사 기록 (D20 으로 단순화) | 제안됨 |
-| [0020](../adr/0020-hosting-github-pages-actions.md) | 사용자 앱은 같은 GitHub Pages 주소(Actions 배포), 관리자 콘솔은 헤더 가능한 별도 출처(Cloudflare) | 제안됨 |
+| [0020](../adr/0020-hosting-github-pages-actions.md) | 사용자 앱은 같은 GitHub Pages 주소(Actions 배포), 관리자 콘솔은 헤더 가능한 별도 출처(Cloudflare) | **승인됨** (D21) |
 | [0021](../adr/0021-data-access-views-rpc.md) | 테이블 비노출 스키마, 읽기는 공개 뷰, 쓰기는 정의자 RPC | 제안됨 |
-| [0022](../adr/0022-security-baseline.md) | 보안 기준선 Y-S1~S12 | 제안됨 |
+| [0022](../adr/0022-security-baseline.md) | 보안 기준선 Y-S1~S12 (D24·D25·D26 메모 추가) | 제안됨 |
+| [0023](../adr/0023-frontend-framework-react.md) | React 19 + Vite 8 + TS 정적 SPA. 지도 런타임·라우터·상태·i18n 은 React 밖(react-leaflet·React Router·Zustand·i18next 없음), `react/no-danger`, 홈 예산 75 KB | **승인됨** (D24) |
 
 ADR-0009 의 상태 줄을 "ADR-0017으로 일부 대체됨" 으로 바꿨다(본문 그대로). ADR-0011(정적 데이터)·ADR-0013(빌드 없음)도 v2 에서 사실상 대체되지만 상태 줄은 책임자 확인 후 바꾼다(RFC-0003 OQ-15).
 
 **보안 검토 반영 (2026-10-12):** 독립 보안 검토(기준 `da55060`, "보완 필요 — 구조는 견고")의 지적 #1~#14·낮음·nit 를 tech-stack-v2·RFC-0003·ERD v2·openapi-v2·ADR-0018~0022 에 반영했다(각 문서에 `[검토 #n]` 표시). 치명 두 건: 폴링이 기숙사 IP 쓰기 한도를 소진(→ 읽기 RPC 는 GET, 쓰기 RPC 만 계수), `PUBLIC` 의 기본 EXECUTE(→ 회수 + 카탈로그 전수 검사).
 
-**구현 전에 책임자 결정이 필요한 것:** 프레임워크 승인(Svelte 또는 React — 유지보수자에 따라), 관리자 콘솔의 별도 호스트(Cloudflare 계정), 관리자 인원·TOTP, 운영 첫 배포 시점(Y-2 이후 제안), 반영 시간 "10초" 해석(RFC-0003 OQ-1), 기숙사 공인 IP/CIDR(OQ-E), 비공개 운영 저장소(OQ-F), 스크립트 대량 숨김의 수동 복원 비용 수용(OQ-17), `goo.gl/maps` 제외(OQ-16). 전체 목록은 RFC-0003 §24.
+**결정된 것 (D21~D26):** 프레임워크 = React, 관리자 콘솔 = Cloudflare 별도 출처, 관리자 = 책임자 1명, 첫 배포 = Y-2 이후. **출시 전으로 미룬 것 (D26):** 기숙사 공인 IP/CIDR(OQ-E → §17.6a PL-1), 관리자 메일용 SMTP(OQ-G → PL-2).
+
+**아직 책임자 결정이 필요한 것:** ADR-0023 의 세부 방침 확정 범위(RE-Q1)와 홈 예산 75 KB 실측(RE-Q2), 반영 시간 "10초" 해석(RFC-0003 OQ-1), 비공개 운영 저장소(OQ-F), 스크립트 대량 숨김의 수동 복원 비용 수용(OQ-17), `goo.gl/maps` 제외(OQ-16), 대리 관리자(OQ-19), 책임자 장기 부재 시 승계(OQ-20). 전체 목록은 RFC-0003 §24.
 
 ## MLP (현행)
 

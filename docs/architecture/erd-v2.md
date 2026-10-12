@@ -9,6 +9,7 @@
 | 짝 문서 | [RFC-0003](rfc/0003-yunabi-v2.md), [openapi-v2.yaml](openapi-v2.yaml), ADR [0018](../adr/0018-backend-supabase-anonymous.md)·[0019](../adr/0019-moderation-autohide.md)·[0021](../adr/0021-data-access-views-rpc.md)·[0022](../adr/0022-security-baseline.md) |
 | 개정 | **2026-10-12 보안 검토(판정 "보완 필요", 기준 `da55060`) 반영.** 고친 곳에 `[검토 #n]` 표시. 요지: PUBLIC 의 EXECUTE 회수(#2), `require_admin` 실패 안전(#3), 관리자 생성 경로(#4), IP 등급·/64·신뢰 헤더(#6·#7), 형식 오류도 상태 반환(#7), IP 가명 처리·보관(#8), 백업 범위(#9), 일괄 복원(#10), 테스트 보강(#14), 정지된 신고자 제외·`by_owner` 계산 순서·`goo.gl/maps` 제거(낮음·nit) |
 | 재개정 | **보안 재검토(조건부 승인) 반영** — `[재검토 #n]`: 계정 생성 전역 상한을 `require_writer` 에(#1), 관리자 연결 탈취 방지 `bind_admin`(#2), PostGIS 를 `extensions` 스키마에(#3), 익명 이메일 연결이 SMTP 를 소모하는 위험(#4), 관리 RPC 의 남은 감시 공백(#5) |
+| 책임자 결정 (2026-10-12) | **D24(React)** 는 DB 와 무관 — 이 문서에 프레임워크 의존 내용은 없다. **D25(관리자 = 책임자 1명)**: 스키마는 그대로(`admins` 는 여러 행을 허용하지만 운영 행은 1개), 생성 절차·TOTP 문구를 1인 기준으로 고쳤다(§4.5, §7 머리말, OQ-E9). **D26**: 기숙사 IP(`ip_tiers` 값)와 SMTP 는 출시 전 항목(RFC-0003 §17.6a) — `ip_tiers` 가 비어 있어도 함수는 기본 한도로 동작한다 |
 | 이어받는 교훈 | [erd.md](erd.md) (보류): 모든 GRANT 명시(N-1), 열 단위로 식별자 숨김(N-6), 정의자 함수는 필요한 곳에만 + `search_path` 고정, 정책·뷰가 부르는 헬퍼의 EXECUTE(§6.3), 방어 트리거는 invoker(S-1), 실패해도 남아야 하는 기록은 예외 대신 반환값(S-2), 확인 후 쓰기는 잠금 아래(D-10), 지연 만료 |
 
 > 이 문서의 SQL 은 **설계 설명용 조각**이다. 실제 파일은 §8 순서로 `supabase/migrations/` 에 새로 쓴다.
@@ -283,7 +284,7 @@ create type app.item_kind      as enum ('place','event');
   1. `admins.user_id` 는 **Admin API 생성 호출(`auth.admin.createUser`)이 돌려준 `user_id` 만** 쓴다. 이메일로 사용자를 조회해 연결하지 않는다(대시보드에서 만들었다면 생성 화면이 보여 준 id 를 바로 기록).
   2. `admins` 행은 SQL 함수 `app.bind_admin(p_user_id uuid, p_email citext)`(책임자가 SQL 편집기에서 실행, 클라이언트 EXECUTE 없음)로만 넣는다. 함수는 `auth.users` 에서 그 id 의 **`is_anonymous = false`**, **`email_confirmed_at is not null`**, **`email = p_email`**, **`created_at > admin_invites.invited_at`**(초대 뒤에 생긴 계정), 초대가 아직 `used_at is null` 인지 확인하고, 하나라도 아니면 예외. 성공하면 `used_at` 을 채운다.
   3. 같은 이메일을 가진 다른 `auth.users` 행이 있으면(익명 전환 시도 흔적) 예외. 예외 메시지 `admin_bind_conflict` 를 본 책임자는 그 행을 조사·삭제한 뒤 다시 실행한다(런북).
-- 생성 절차(런북): 이메일 공급자의 **공개 가입은 끈다** → 초대 행 추가 → Admin API 또는 대시보드로 사용자 생성(비밀번호, 이메일 확인 처리) → 반환된 id 로 `bind_admin` → **책임자가 그 자리에서 TOTP 를 등록**한 뒤 관리자에게 넘긴다(비밀번호가 새도 공격자가 먼저 자기 TOTP 를 등록하지 못하게 — `[검토 낮음]`). 공개 가입을 끈 상태에서 익명 로그인이 계속 되는지, Admin API 생성에도 훅이 도는지는 Y-2 확인(OQ-E5).
+- 생성 절차(런북): 이메일 공급자의 **공개 가입은 끈다** → 초대 행 추가 → Admin API 또는 대시보드로 사용자 생성(비밀번호, 이메일 확인 처리) → 반환된 id 로 `bind_admin` → **책임자가 그 자리에서 TOTP 를 등록**한다(비밀번호가 새도 공격자가 먼저 자기 TOTP 를 등록하지 못하게 — `[검토 낮음]`). **D25:** 관리자는 책임자 본인 1명이라 "넘기는" 단계는 없고, 요소를 **2개**(주 + 예비) 등록한다 — Supabase 에는 백업 코드가 없다(사용자당 TOTP 요소 최대 10개 — 공식 문서, 2026-10-12 확인. RFC-0003 §12.2·R-7). 공개 가입을 끈 상태에서 익명 로그인이 계속 되는지, Admin API 생성에도 훅이 도는지는 Y-2 확인(OQ-E5).
 
 **`app.reports`**: `place_id bigint references app.places on delete cascade`, `event_id bigint references app.events on delete cascade`, `check (num_nonnulls(place_id, event_id) = 1)`, `reporter_id uuid references app.accounts on delete set null`, `reason app.report_reason not null`, `by_owner boolean not null` (**INSERT 전에** 소유 테이블과 비교해 계산해 넣는다 — 기본값에 기대지 않는다 `[검토 nit]`), `resolution text not null default 'open' check (resolution in ('open','restored','deleted','dismissed'))`, `created_at`, `resolved_at`. 유일: `unique (place_id, reporter_id)`, `unique (event_id, reporter_id)` (null 신고자는 여럿 가능 — 삭제된 계정). 인덱스: `(place_id) where resolution='open'`, `(event_id) where resolution='open'`. **자유 서술 메모 없음**(신고자 개인정보·추가 노출 경로 방지 — Y-S12, OQ-E3).
 
@@ -395,7 +396,7 @@ revoke truncate, update, delete on app.mod_actions from public, anon, authentica
 
 **형식 오류도 상태로 돌려준다 `[검토 #7]`.** 첫 판은 형식 오류를 예외로 던졌는데, 예외는 같은 트랜잭션의 `ip_hits` 증가(`db_pre_request`)까지 되돌려 **형식 오류로 끝나는 요청은 IP 한도에 세지지 않았다** — 잘못된 입력을 무한히 보내는 공격이 한도를 피한다. 그래서 쓰기·신고 RPC 는 형식 오류를 `{status:'invalid', field:'<name>'}` 로 반환하고 `security_events('invalid_input')` 에 남긴다. 예외는 **예상하지 못한 오류**(DB CHECK 위반 등 — 함수 검사의 구멍)와 **관리 RPC 의 권한 실패**(§7.3, 실패 안전이 우선)에만 쓴다.
 
-**호출 방식 `[검토 #1]`.** 사용자 앱이 반복해 부르는 읽기 전용(`stable`) 함수 `data_version`, `my_items` 는 GET 으로 부른다. 관리 RPC 는 POST 지만 아래 쓰기 RPC 목록에 없어 IP 한도에 세지 않는다(관리자 1~2명, 콘솔은 별도 출처). `db_pre_request` 는 **쓰기 RPC 목록**(`create_*`, `update_*`, `delete_*`, `set_occurrence`, `clear_occurrence`, `submit_report`)의 경로일 때만 센다(`current_setting('request.path', true)` 와 방식으로 판단).
+**호출 방식 `[검토 #1]`.** 사용자 앱이 반복해 부르는 읽기 전용(`stable`) 함수 `data_version`, `my_items` 는 GET 으로 부른다. 관리 RPC 는 POST 지만 아래 쓰기 RPC 목록에 없어 IP 한도에 세지 않는다(관리자 1명 — D25, 콘솔은 별도 출처). `db_pre_request` 는 **쓰기 RPC 목록**(`create_*`, `update_*`, `delete_*`, `set_occurrence`, `clear_occurrence`, `submit_report`)의 경로일 때만 센다(`current_setting('request.path', true)` 와 방식으로 판단).
 
 ### 7.1 쓰기 (`authenticated`)
 
@@ -592,5 +593,5 @@ HTTP 층 같은 케이스(PostgREST 경유)는 `tests/security/` 의 Playwright 
 | OQ-E5 | **미확인(보안 검토도 확인 못 함):** `before-user-created` 훅이 익명 가입·Admin API 생성에도 호출되는지, 페이로드에 `is_anonymous` 가 있는지. 안 되면 전역 한도는 감시 경보 + CAPTCHA 런북으로만 | Y-S7, Y-S3 |
 | OQ-E6 | 백업에 `auth.users`·`auth.identities`·`auth.mfa_factors` 를 넣을지 — 넣지 않으면 복구 후 모든 익명 사용자가 자기 항목을 잃는다. **넣되 토큰·세션 표는 뺀다**(RFC-0003 §17.5 `[검토 #9]`). `mfa_factors` 에는 관리자 TOTP 비밀이 있으므로 넣지 않고 복구 후 TOTP 재등록하는 안도 있다 — 제안: 빼고 재등록 | Y-S9 |
 | OQ-E7 | **남는 공백 두 가지 `[재검토 #5]`:** (1) 관리 RPC 는 실패 때 예외를 던지므로 같은 트랜잭션의 `db_pre_request` 카운트도 롤백된다 — 게다가 관리 RPC 는 쓰기 RPC 목록이 아니라 애초에 세지 않는다. 즉 **관리 RPC 직접 호출은 IP 한도 밖**이다(무차별 대입은 Auth 의 로그인 한도·TOTP 가 막는다는 전제). (2) 콘솔을 거치지 않은 `admin_*` 직접 호출의 거절(42501)은 DB 에 남지 않고 **Supabase API 로그에만** 남는다. Y-2 에서 확인: 감시 워크플로가 그 로그를 읽을 수 있는지(Management API·Log Explorer, 무료 플랜 보관 기간). 못 읽으면 이 두 신호는 감시 대상에서 빠진다는 것을 수용된 잔여 위험으로 기록 | Y-S7, Y-S10 |
-| OQ-E9 | 익명 사용자의 이메일 연결 요청(`updateUser({email})`)도 프로젝트 SMTP 로 확인 메일을 보낸다. 기본 발신은 시간당 몇 통뿐이라 이것으로 **관리자 비밀번호 재설정 메일이 막힐 수 있다** `[재검토 #4]` — 사용자 SMTP 를 둘지, 런북에 위험과 우회(책임자가 대시보드에서 비밀번호 직접 재설정)를 적을지. 제안: 런북에 기록 + 관리자가 2명 이상이 되면 사용자 SMTP | Y-S3 |
+| OQ-E9 | 익명 사용자의 이메일 연결 요청(`updateUser({email})`)도 프로젝트 SMTP 로 확인 메일을 보낸다. 기본 발신은 시간당 몇 통뿐이라 이것으로 **관리자 비밀번호 재설정 메일이 막힐 수 있다** `[재검토 #4]` — 사용자 SMTP 를 둘지, 런북에 위험과 우회(책임자가 대시보드에서 비밀번호 직접 재설정)를 적을지. 제안: 런북에 기록 + 관리자가 2명 이상이 되면 사용자 SMTP. **D25(관리자 1명)·D26(SMTP 는 출시 전 항목)** — 런북 R-6 으로 운영, 사용자 SMTP 여부는 RFC-0003 §17.6a PL-2 에서 결정 | Y-S3 |
 | OQ-E8 | `xff_trusted_hops` 실측값과, 기숙사 공인 IP/CIDR (`ip_tiers` 에 넣을 값) | Y-S7 |

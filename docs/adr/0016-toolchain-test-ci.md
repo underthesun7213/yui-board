@@ -5,7 +5,8 @@
 | 상태 | 제안됨 |
 | 날짜 | 2026-10-12 |
 | 근거 | PRD-YUNABI v2.3 D19, §7 "품질"·"테스트 데이터", 마일스톤 Y-1 완료 기준(옮긴 브라우저 검사 통과), Y-C2, Y-S2, Y-S4~S6, Y-S11 |
-| 관련 | [tech-stack-v2 §3·§4·§5.6](../architecture/tech-stack-v2.md), [RFC-0003 §19](../architecture/rfc/0003-yunabi-v2.md#19-테스트-전략과-ci-제안--adr-0016), ADR-0013(빌드 없음 — 대체), [conventions.md](../architecture/conventions.md) |
+| 관련 | [tech-stack-v2 §3·§4·§5.6](../architecture/tech-stack-v2.md), [RFC-0003 §19](../architecture/rfc/0003-yunabi-v2.md#19-테스트-전략과-ci-제안--adr-0016), ADR-0013(빌드 없음 — 대체), [ADR-0023](0023-frontend-framework-react.md)(React), [conventions.md](../architecture/conventions.md) |
+| 개정 | 2026-10-12 — 책임자 결정 D24(React, ADR-0023)에 맞춰 결정 1~3 의 Svelte 도구를 React 도구로 바꿨다(이 ADR 은 아직 "제안됨" 이라 본문을 고쳤다). 첫 판의 Svelte 도구는 각 항목에 "(이전 안: …)" 으로 남겼다 |
 
 ## 배경
 
@@ -13,9 +14,9 @@ v1.3 은 테스트 러너가 없었다: CLAUDE.md 의 `node -e` 헤드리스 검
 
 ## 결정
 
-1. **빌드:** Vite 8 (2026-03-12 안정판), TypeScript `strict` + `noUncheckedIndexedAccess`, 타입 검사 `svelte-check`. 사용자 앱(`vite.config.ts`)과 관리자 콘솔(`vite.admin.config.ts`) 두 빌드.
-2. **린트·포맷:** ESLint 9 flat config + typescript-eslint + eslint-plugin-svelte + Prettier(+ svelte 플러그인). 오류로 두는 규칙: `svelte/no-at-html-tags`, `no-eval`, `no-implied-eval`, `features/`·`ui/` 폴더에서 `localStorage`·`navigator`·`fetch`·`leaflet` 직접 사용 금지(`no-restricted-globals`/`no-restricted-imports` — v1.3 "뷰는 바깥 세계를 건드리지 않는다" 의 구조화).
-3. **테스트 층:** Vitest 4 — 단위(`domain/**` 등), **렌더 검사**(`svelte/server` 로 모든 라우트 × en/ja/ko × 상태 조합을 HTML 로 그려 예외·`undefined`·`NaN`·`[object Object]`·라우트 누락 검사 = v1.3 헤드리스 검사 이전), 컴포넌트(브라우저 모드, Playwright 프로바이더). Playwright E2E(Chromium 375px) — `page.route` 로 `tests/fixtures` 고정 데이터. pgTAP(`supabase test db`) — 권한·검증·신고·감사(ERD v2 §9). 로컬 Supabase 통합 E2E.
+1. **빌드:** Vite 8 (2026-03-12 안정판) + `@vitejs/plugin-react`, TypeScript `strict` + `noUncheckedIndexedAccess`, 타입 검사 `tsc -b --noEmit` (이전 안: `svelte-check`). 사용자 앱(`vite.config.ts`)과 관리자 콘솔(`vite.admin.config.ts`) 두 빌드. meta CSP 는 운영 빌드에만 주입(ADR-0023 결정 8).
+2. **린트·포맷:** ESLint 9 flat config(**9 에 고정** — `eslint-plugin-react` 7.37.5 의 ESLint 10 비호환 보고, ADR-0023 RE-Q4) + typescript-eslint + `eslint-plugin-react` + `eslint-plugin-react-hooks` 7 + Prettier (이전 안: eslint-plugin-svelte, prettier-plugin-svelte). 오류로 두는 규칙: **`react/no-danger`**(이전 안: `svelte/no-at-html-tags`), `innerHTML`·`outerHTML` 대입과 `insertAdjacentHTML`·`document.write` 금지(`no-restricted-syntax`), `src/map/**` 의 Leaflet HTML API 문자열 인자 금지, `react-hooks/rules-of-hooks`, `no-eval`, `no-implied-eval`, `features/`·`ui/` 폴더에서 `localStorage`·`navigator`·`fetch`·`leaflet` 직접 사용 금지(`no-restricted-globals`/`no-restricted-imports` — v1.3 "뷰는 바깥 세계를 건드리지 않는다" 의 구조화).
+3. **테스트 층:** Vitest 4.1 — 단위(`domain/**`, `state/**`, `app/router.ts`, `map/runtime.ts` 의 attach/detach·StrictMode 순서), **렌더 검사**(`react-dom/server` 의 `renderToString` 으로 모든 라우트 × en/ja/ko × 상태 조합을 HTML 로 그려 예외·`undefined`·`NaN`·`[object Object]`·라우트 누락 검사 = v1.3 헤드리스 검사 이전; 이전 안: `svelte/server`), 컴포넌트(**React Testing Library**, 브라우저 모드 Playwright 프로바이더 기본, jsdom 허용). Playwright E2E(Chromium 375px) — `page.route` 로 `tests/fixtures` 고정 데이터. pgTAP(`supabase test db`) — 권한·검증·신고·감사(ERD v2 §9). 로컬 Supabase 통합 E2E.
 4. **v1.3 50개 검사:** 원본 스크립트가 저장소에 없으므로 RFC-0002 §11.2 범주표를 펼쳐 `tests/e2e/v13-parity.spec.ts` 로 다시 쓰고 테스트 이름에 ML-\*/Y-\* ID 를 붙인다. Y-1 완료 = 이 파일 통과.
 5. **명령:** `npm test` = 린트 + 타입 + 단위·렌더·컴포넌트 + E2E(고정 데이터). `npm run test:db`, `npm run test:backend`, `npm run test:security` 는 로컬 Supabase(Docker) 필요.
 6. **CI (GitHub Actions):** PR·push 마다 `quality`(npm ci → 린트 → 타입 → 단위·렌더 → 번들 크기 한도), `e2e`, `security`(`npm audit --audit-level=high` 실패, gitleaks). `supabase/` 변경 또는 `main` 병합 시 `db`(setup-cli → `supabase start` → `db reset` → pgTAP → 통합 E2E → 직접 요청 보안 테스트). `main` 병합 시 빌드 → 산출물 비밀 검사 → 배포(ADR-0020). 예약: 백업·감시·ZAP(ADR-0022).
@@ -25,7 +26,7 @@ v1.3 은 테스트 러너가 없었다: CLAUDE.md 의 `node -e` 헤드리스 검
 
 | 대안 | 기각 이유 |
 |---|---|
-| Biome 2 (린트+포맷 단일 도구) | 빠르지만 Svelte 지원이 부분적(3자 자료, 2026) |
+| Biome 2 (린트+포맷 단일 도구) | 첫 판의 기각 이유는 Svelte 지원이 부분적인 것(3자 자료, 2026). React 로 바뀐 뒤에는 Leaflet API 인자 금지 같은 AST 선택자 규칙을 Biome 로 쓸 수 있는지 확인하지 않아 확인된 ESLint 경로를 유지 |
 | Jest | Vite 설정을 공유하지 못해 변환 설정이 중복. Vitest 가 같은 API |
 | Cypress | Playwright 가 v1.3 검사 도구였고 멀티 컨텍스트(두 기기 반영 시험)·`request` API(직접 요청 보안 테스트)가 있다 |
 | DB 테스트를 JS 통합 테스트로만 | 권한 매트릭스는 역할을 바꿔 가며 SQL 로 확인하는 편이 빠르고 정확하다. erd.md §8 의 방식 |
@@ -35,7 +36,7 @@ v1.3 은 테스트 러너가 없었다: CLAUDE.md 의 `node -e` 헤드리스 검
 
 - 좋은 점: v1.3 의 "문법 검사만으로는 부족하다(함수가 사라져도 통과)" 문제를 타입·렌더 검사·E2E 가 구조적으로 막는다. 권한 규칙이 테스트로 문서화된다.
 - 나쁜 점: 로컬 DB 테스트에 Docker 가 필요하다. CI 시간이 늘어난다(DB 작업은 조건부로 완화). 의존성이 생겨 Dependabot PR 관리가 필요하다.
-- **ADR-0013 처리:** 이 ADR(빌드 도입)과 ADR-0015(Leaflet npm)로 ADR-0013 결정 1·5·6 은 사실상 대체된다. ADR-0013 은 아직 "제안됨" 이라 상태 줄은 바꾸지 않았다 — 승인 후 "ADR-0016으로 대체됨" 으로 바꿀 것을 제안(RFC-0003 OQ-15).
+- **ADR-0013 처리:** 이 ADR(빌드 도입)과 ADR-0015(Leaflet npm — ADR-0015 는 폐기됐고 이 부분은 ADR-0023 이 이어받음)로 ADR-0013 결정 1·5·6 은 사실상 대체된다. ADR-0013 은 아직 "제안됨" 이라 상태 줄은 바꾸지 않았다 — 승인 후 "ADR-0016으로 대체됨" 으로 바꿀 것을 제안(RFC-0003 OQ-15).
 - CLAUDE.md 는 재작성 시점(Y-1)에 새 구조·명령·원칙(RFC-0003 §5.1)으로 다시 쓴다 — 이 ADR 은 코드·CLAUDE.md 를 고치지 않는다.
 
 ## 열린 질문
@@ -43,5 +44,5 @@ v1.3 은 테스트 러너가 없었다: CLAUDE.md 의 `node -e` 헤드리스 검
 | # | 질문 |
 |---|---|
 | TC-Q1 | v1.3 Playwright 50개 검사 원본이 어디에 있는가 (tech-stack-v2 TS-Q4) |
-| TC-Q2 | 번들 크기 한도(홈 진입 gzip 60 KB)를 CI 실패 조건으로 할지 |
+| TC-Q2 | 번들 크기 한도를 CI 실패 조건으로 할지 — React 로 바뀌어 홈 진입 gzip **75 KB** 제안(ADR-0023 결정 9, 이전 안 60 KB) |
 | TC-Q3 | 브랜치 보호·PR 기반 작업을 1~2인 규모에서도 강제할지 (conventions CV-Q1) |

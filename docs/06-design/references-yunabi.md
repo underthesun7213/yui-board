@@ -6,7 +6,7 @@
 | 작성일 | 2026-10-12 |
 | 근거 | [PRD-YUNABI v2.3](../02-requirements/PRD-YUNABI.md), [디자인 시스템 v0.1](design-system.md), 현행 화면 캡처 8장(home, ending, ko-home, ko-calendar, map-notice, map-near, map-japan, map-osaka), 로고 `assets/brand/yunabi-mark.svg` |
 | 레퍼런스 원본 | github.com/kwakseongjae/oh-my-design (MIT), 커밋 `c0ec4385616d1fb5b0e7ca6a6bb66ff5a3d57f96` (2026-10-01), `design-md/<id>/DESIGN.md` |
-| 관련 | [ADR-0015](../adr/0015-frontend-framework-svelte.md) (Svelte 5 + Vite + TS, 첫 화면 gzip 60 KB 목표) |
+| 관련 | [ADR-0023](../adr/0023-frontend-framework-react.md) (React + Vite + TS, 첫 화면 gzip 75 KB 목표 — 처음 제안이던 Svelte·60 KB 는 D24 로 대체) |
 
 이 문서는 재작성(D19) 전에 시각 방향을 정하기 위한 **레퍼런스 연구**다. 토큰을 확정하지 않는다. 방향이 정해지면 §7 의 방법으로 프로젝트 `DESIGN.md` 를 만들고, 그 파일이 디자인의 기준이 된다.
 
@@ -72,7 +72,7 @@ oh-my-design 은 `data/reference-quality.json`(2026-10-01 생성, 521건)에 레
 |---|---|---|---|
 | **Karrot** | ① 내용이 주인공, 크롬은 가볍게: 한 화면에 목록 3–4개가 보이는 밀도. ② 모든 사용자 콘텐츠에 위치 정보(동네)를 메타로 노출 → YUNABI 는 도보 시간·도도부현. ③ 빈 상태 = "왜 비었는지 한 줄 + 부담 없는 버튼 하나", 일러스트 없음. ④ 신뢰는 배지가 아니라 차분함: 첫 화면에 빨간 경고를 두지 않는다. ⑤ 4px 그리드, 16px 좌우 여백. ⑥ 스켈레톤은 최종 카드와 같은 치수, 위치 칸은 확정 전까지 비움 | 오렌지 주색(브랜드 다름). 스프링 금지 원칙은 일본어 게임 영역에는 적용하지 않는다(그곳은 축하가 목적). 48px 제목 스케일(마케팅용) | Y-M5, Y-K3 (빈 상태), Y-M9 (장소 카드), Y-M10·Y-K10 (신고 동선), MAP-01, MAP-02, HOME |
 | **Toss** | ① 행동색 하나를 기능에만(`color.primary` 하나). ② 버튼 상태 계약: loading·disabled·pressed·keyboard focus 를 빠짐없이, loading 중 폭 유지. ③ 큰 터치 버튼(56px, 반경 16)과 작은 버튼 스케일. ④ "가치 먼저, 비용 나중": 등록 화면에서 공개 범위 경고(Y-M7)를 확인 단계에 둔다. ⑤ Core v2 문서 구조 자체(§7) | Toss Product Sans(독점 서체). 금융용 중립 회색 전체. 마케팅 웹 버튼(7px 반경)을 앱에 섞는 것 | Y-M6·Y-K4 (등록 폼), Y-M7 (경고 확인), Y-C4 (재전송), MAP-04, CAL-03 |
-| **디지털청 DADS** | ① 일본어 본문 행간 1.7, 본문 16–17px. ② 채움색과 글자색을 분리하는 2단 파랑(채움은 선명, 글자는 더 진하게). ③ 그림자 없이 회색 면과 헤어라인으로 구분. ④ 44–56px 터치 대상. ⑤ 색만으로 의미 전달 금지. ⑥ 공식 컴포넌트 목록에 ランゲージセレクター, 日付ピッカー／カレンダー, ボトムナビゲーション 이 있음 — 접근성 동작 참고처 | 관공서 파랑 `#0017C1`(브랜드 다름). Noto Sans JP 웹폰트 의무화 — 첫 화면 60 KB 예산(ADR-0015)과 충돌하므로 시스템 서체 우선 | Y-C1 (44px·줄바꿈), Y-C2, 언어 선택, CAL-01, 전체 타이포 |
+| **디지털청 DADS** | ① 일본어 본문 행간 1.7, 본문 16–17px. ② 채움색과 글자색을 분리하는 2단 파랑(채움은 선명, 글자는 더 진하게). ③ 그림자 없이 회색 면과 헤어라인으로 구분. ④ 44–56px 터치 대상. ⑤ 색만으로 의미 전달 금지. ⑥ 공식 컴포넌트 목록에 ランゲージセレクター, 日付ピッカー／カレンダー, ボトムナビゲーション 이 있음 — 접근성 동작 참고처 | 관공서 파랑 `#0017C1`(브랜드 다름). Noto Sans JP 웹폰트 의무화 — 첫 화면 75 KB 예산(ADR-0023)과 충돌하므로 시스템 서체 우선 | Y-C1 (44px·줄바꿈), Y-C2, 언어 선택, CAL-01, 전체 타이포 |
 | **SmartHR** | ① 원시 토큰 / 의미 토큰 2층 구조. ② 비활성 상태는 투명도가 아니라 색 교체(글자 대비가 부모를 따라 흐려지지 않게). ③ 상태 라벨은 글자색+테두리를 함께 바꾸고, 경고만 채움. ④ 알림 박스 4종(info·success·warning·error)을 연한 바탕 + 진한 글자로 | 4–8px 의 업무용 작은 반경(학생 앱에는 딱딱함). 왼쪽 내비게이션 앱 셸 | Y-R8 ("신고로 숨겨짐 — 검토 중" 라벨), Y-C3 (오프라인 배너), Y-A2 안내, ME-02, ADM-01 |
 | **LINE** | ① 번역이 길어 라벨이 잘리면 가로 버튼 묶음을 **세로로** 바꾼다. ② 탭은 가로 스크롤 허용, 선택 탭은 항상 완전히 보이게. ③ 12pt 미만 글자 금지. ④ 팝업은 한 번에 하나, 닫는 길 필수, 긍정 버튼은 오른쪽 또는 위. ⑤ 화면·카드 좌우 16pt | LINE Green, 밑줄형 입력(오류 표시가 약함) | Y-C1, Y-C2, SYS-03 (신고 시트), 위치 안내 카드(Y-M2), 모든 2버튼 묶음 |
 | **Duolingo** *(legacy)* | 원칙만: ① 한 화면 한 행동. ② 정답·오답 피드백 바(연한 바탕 + 진한 글자 + 문장, 색만이 아님). ③ 실수에 친절한 문구. ④ 숫자(모은 카드 수)를 크게 | 수치 토큰 전부(검증 안 됨). 대문자 버튼(일본어·한국어에 의미 없음). 하트·연속 기록 같은 압박 장치. Feather Bold·DIN Next Rounded(독점) | Y-J1 (분기형 게임·컬렉션), JP-03~JP-06 |
@@ -123,7 +123,7 @@ oh-my-design 은 `data/reference-quality.json`(2026-10-01 생성, 521건)에 레
 
 ### 4.3 서체
 
-- **웹폰트를 기본으로 싣지 않는다.** CJK 웹폰트는 첫 화면 60 KB 예산(ADR-0015)을 넘는다. Karrot·SmartHR·LINE·Cookpad 모두 제품 UI 는 시스템 서체다.
+- **웹폰트를 기본으로 싣지 않는다.** CJK 웹폰트는 첫 화면 75 KB 예산(ADR-0023)을 넘는다. Karrot·SmartHR·LINE·Cookpad 모두 제품 UI 는 시스템 서체다.
 - 언어별 스택을 `:lang()` 로 나눈다(DG-10 해결):
   - `ja`: `"Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic UI", "Noto Sans JP", system-ui, sans-serif`
   - `ko`: `"Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", system-ui, sans-serif`
@@ -374,7 +374,7 @@ README 의 설치 예시는 `npx oh-my-design-cli@latest` 로 **버전이 고정
 
 ### 7.3 권장
 
-1. **설치하지 않고 형식만 쓴다.** 방향이 정해지면 저장소 루트에 Core v2 형식의 `YUNABI Design System` `DESIGN.md` 를 사람이 쓴다. 이 문서 §4·§5 의 해당 방향을 옮기고, 토큰마다 결정 ID 를 단다. 재작성 코드의 CSS 변수(또는 Svelte 테마 파일)는 이 문서에서 생성·검사한다. 이 파일이 디자인의 단일 기준이 되고, `design-system.md` 는 "v1.3 추출 기록" 으로 남긴다.
+1. **설치하지 않고 형식만 쓴다.** 방향이 정해지면 저장소 루트에 Core v2 형식의 `YUNABI Design System` `DESIGN.md` 를 사람이 쓴다. 이 문서 §4·§5 의 해당 방향을 옮기고, 토큰마다 결정 ID 를 단다. 재작성 코드의 CSS 변수(또는 React 테마 모듈)는 이 문서에서 생성·검사한다. 이 파일이 디자인의 단일 기준이 되고, `design-system.md` 는 "v1.3 추출 기록" 으로 남긴다.
 2. **전체 번들 설치는 권하지 않는다.** 이유: (a) 훅 4개가 이 저장소의 모든 세션에 상주한다. (b) `CLAUDE.md` 는 이 프로젝트의 작업 규칙 문서인데 외부 도구가 관리 블록을 쓴다. (c) 버전 미고정 `@latest`. (d) 28개 스킬 중 이 프로젝트가 쓸 것은 사실상 DESIGN.md 작성·검증뿐이다.
 3. **도구를 쓰고 싶다면 범위를 좁힌다.** ① 버전 고정 일회성 검증: `npx oh-my-design-cli@2.0.2 design-md validate ./DESIGN.md` (provider-free 라고 문서화됨). ② 스킬이 필요하면 `--global --skills omd-init --skills-only` 처럼 저장소 밖에 두거나, 별도 브랜치에서 시험한 뒤 결과 `DESIGN.md` 만 가져온다. ③ `omd book --static` 은 핸드오프용 단일 HTML 을 만든다고 README 에 적혀 있다 — 디자인 리뷰 자료로 쓸 수 있으나 생성물은 커밋하지 않는다.
 4. 어느 쪽이든 CI 에 **명암비 검사**를 넣는다(이 문서의 계산을 스크립트로). oh-my-design 의 "Proven System" 수준이 요구하는 대비 검사와 같은 일을 의존성 없이 할 수 있다.
