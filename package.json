@@ -16,7 +16,11 @@
     "typecheck": "tsc -b",
     "test": "vitest run",
     "test:e2e": "playwright test",
-    "build:local": "YUNABI_ALLOW_SELF=1 npm run build"
+    "build:local": "YUNABI_ALLOW_SELF=1 npm run build",
+    "db:start": "scripts/local-stack/start.sh",
+    "db:start:seed": "scripts/local-stack/start.sh --seed",
+    "db:stop": "scripts/local-stack/stop.sh",
+    "test:db": "scripts/local-stack/start.sh && pg_prove -h 127.0.0.1 -p 54322 -U postgres -d postgres supabase/tests/*.test.sql"
   },
   "dependencies": {
     "leaflet": "1.9.4",
