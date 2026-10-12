@@ -43,6 +43,7 @@ MLP 는 여기에 경계 데이터(46 KB, ADR-0012)가 더해진다. 책임자�
 ## 결과
 
 - 좋은 점: 첫 화면에 지도 비용 없음. 오프라인 지도(목록·핀·경계). 외부 요청은 타일뿐. 빌드가 없어 배포·검사 방식이 그대로다.
+- 크기 (`78e2b4e`, `wc -c` / `gzip -c | wc -c`, 조정자 측정): 첫 화면 `index.html` 107,247 B (gzip 40,129). 지도 탭에서 더 받는 vendor 4개 합계 197,366 B (gzip 55,196) — `leaflet.js` 147,552 (42,578), `leaflet.markercluster.js` 34,136 (8,791), `leaflet.css` 14,806 (3,558), `MarkerCluster.css` 872 (269). Leaflet 을 `<head>` 에 두었다면 첫 화면 gzip 이 약 95 KB, 지금의 약 2.4배였다.
 - 나쁜 점:
   - 보안 패치를 자동으로 받지 못한다 — 사람이 확인해야 한다.
   - "한 파일만 보면 된다" 는 단순성이 줄었다. CLAUDE.md 가 파일 목록과 `SHELL` 규칙을 적는다(현행).
@@ -55,5 +56,5 @@ MLP 는 여기에 경계 데이터(46 KB, ADR-0012)가 더해진다. 책임자�
 | # | 질문 |
 |---|---|
 | V-Q1 | vendor 갱신 점검 주기(예: 학기마다 Leaflet 보안 공지 확인)와 담당 |
-| V-Q2 | Leaflet 확대/축소 버튼의 영어 `title`("Zoom in/out") 을 `T` 로 바꿀지 — 라이브러리 기본값이라 ML-C4 의 남은 하드코딩 |
+| V-Q2 | Leaflet 확대/축소 버튼의 영어 `title`("Zoom in/out") 을 `T` 로 바꿀지 — **해결**: `labelMap()` 이 마운트마다 `T.aZoomIn/aZoomOut` 로 `title`·`aria-label` 을 바꾼다. 저작자 표시의 "Leaflet" 접두어는 영어로 남는다(수용된 잔여) |
 | V-Q3 | 저장소에 vendor 파일 출처(npm 패키지 버전, 원본 해시)를 기록할지 |

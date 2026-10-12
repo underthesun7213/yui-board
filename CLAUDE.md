@@ -109,11 +109,14 @@ const f=new Function("document","window","console","setTimeout","clearTimeout","
         catch(e){ out.push(route+" scene "+i+" "+e.message); } } } }
   // the runtime is not rendered here, but a deleted or renamed function should still fail
   for(const fn of ["render","go","mountMap","initMap","syncMap","updateMap","labelMap","setMode",
-    "locate","enterMap","ensurePrefs","mapChanged","downloadICS","occOn","upcoming","today"])
+    "locate","locChanged","enterMap","ensurePrefs","mapChanged","selectPref","mainBounds",
+    "downloadICS","occOn","upcoming","today"])
     try{ if(typeof eval(fn)!=="function") throw 0; }catch(e){ out.push("missing function: "+fn); }
   // data that people will edit by hand: a typo here breaks a whole screen
   const L3=(o,w)=>{ for(const l of ["ja","en","ko"]) if(!o||typeof o[l]!=="string"||!o[l]) out.push(w+" missing "+l); };
+  const eids=new Set();
   for(const e of EVENTS){ const w="event "+e.id;
+    if(eids.has(e.id)) out.push(w+" duplicate id"); eids.add(e.id);
     if(!HOSTS[e.host]) out.push(w+" unknown host "+e.host);
     if(!/^\\d{4}-\\d\\d-\\d\\d$/.test(e.d)||!/^\\d\\d:\\d\\d$/.test(e.time)||!/^\\d\\d:\\d\\d$/.test(e.end)) out.push(w+" bad date/time");
     L3(e.t,w+" title"); L3(e.b,w+" body"); L3(e.place,w+" place");

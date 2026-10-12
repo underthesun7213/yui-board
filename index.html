@@ -1793,7 +1793,7 @@ document.addEventListener("click",e=>{
    Everything below this marker has side effects; the headless test cuts here. */
 const q=new URLSearchParams(location.search);
 S.lang=store.get("lang","en");if(!T[S.lang])S.lang="en";
-S.cg=store.get("cg",{})||{};
+{const cg=store.get("cg",{});S.cg=cg&&typeof cg==="object"&&!Array.isArray(cg)?cg:{};}
 {const c=store.get("loc",null);S.locState=c==="use"?"idle":c==="skip"?"skip":"ask";}
 {const st=history.state;
   if(st&&VIEWS[st.v]){S.view=st.v;S.lid=st.lid;S.eid=st.eid;S.eday=st.eday;S.prevView=st.prev;

@@ -21,10 +21,10 @@
 ## 결정 (현행 구현과 같다)
 
 1. **출처: Natural Earth admin-1(States, Provinces)** 의 일본 47개 피처. Natural Earth 는 모든 래스터·벡터 데이터를 **퍼블릭 도메인**으로 두며 사용 허가도 출처 표시도 필요 없다고 밝힌다([Natural Earth Terms of Use 미러](https://public.data.npolar.no/quantarctica/Quantarctica/Basemap/World/1st_ReadMe_NE_50m_Countries_Terms%20of%20Use%20Natural%20Earth.htm), [Debian cartopy copyright](https://metadata-backend.ftp-master.debian.org/changelogs/main/p/python-cartopy/stable_copyright), 2026-10-12 검색 확인. naturalearthdata.com 원문은 이 환경에서 접속되지 않아 미러로 확인). 출처 표시 의무는 없지만 README·`PREFS` 주석에 출처를 적는다(현행).
-2. **단순화:** 개발 시점에 mapshaper 로 한 번 단순화해 저장소에 넣는다. 결과 46 KB, 1줄. 속성은 `{c, ja, en, ko}` 네 개만 남긴다(`c` = JIS 코드 `"01"`~`"47"`). → Natural Earth admin-1 에 있는 **GADM 유래 열**(라이선스 우려가 있으면 지우라고 Natural Earth 가 권함, [Natural Earth 포럼](https://www.naturalearthdata.com/?p=3348), 2026-10-12 검색 확인)이 결과물에 남지 않는다.
+2. **단순화:** 개발 시점에 mapshaper 로 한 번 단순화해 저장소에 넣는다. 원본은 `ne_10m_admin_1_states_provinces.geojson`(nvkelso/natural-earth-vector, master, 2026-10-12 받음)의 `iso_a2 == "JP"` 47개 피처, 명령은 mapshaper 0.6 `-simplify 15% keep-shapes -filter-islands min-area=5km2 … precision=0.0005` — 재현 절차 전체는 `data/README.md`. 결과 46,340 바이트(gzip 12,523), 1줄. 속성은 `{c, ja, en, ko}` 네 개만 남긴다(`c` = JIS 코드 `"01"`~`"47"`). → Natural Earth admin-1 에 있는 **GADM 유래 열**(라이선스 우려가 있으면 지우라고 Natural Earth 가 권함, [Natural Earth 포럼](https://www.naturalearthdata.com/?p=3348), 2026-10-12 검색 확인)이 결과물에 남지 않는다.
 3. **별도 파일** `data/japan-prefectures.geojson`. `index.html` 에 넣지 않는다(ADR-0013).
 4. **지연 로드:** 일본 전체 모드에 처음 들어가는 **동작 처리 코드**(`enterMap()` → `ensurePrefs()`)가 `fetch` 한다. 뷰는 결과(`PREFGEO`)를 읽지도 않는다 — 지도 런타임만 쓴다. 실패하면 `prefFail` 로 문구를 띄우고 다음 진입에 재시도. SW 는 설치 때 사전 캐시하고 이후 network-first.
-5. **같은 Leaflet 인스턴스의 `L.geoJSON` 레이어.** 처음 한 번 만들고 모드를 떠나면 지도에서 떼기만 한다. 스타일 3단계(선택 / 장소 있음 / 없음). 폴리곤을 누르면 `S.pref` 설정 → `updateMap(true)` → 그 경계에 맞춤.
+5. **같은 Leaflet 인스턴스의 `L.geoJSON` 레이어.** 처음 한 번 만들고 모드를 떠나면 지도에서 떼기만 한다. 스타일 3단계(선택 / 장소 있음 / 없음). 폴리곤(또는 목록)을 누르면 `selectPref(code)` → `pushState`(OS 뒤로 가기가 일본 전체로 돌아옴) → `updateMap(true)` → 그 도도부현의 **가장 큰 폴리곤**(`mainBounds()`, 외곽 고리 면적 기준)에 맞춤. 섬(이즈 제도, 아마미, 사키시마)이 맞춤 범위를 바다로 넓히지 않는다.
 6. **도도부현 목록을 늘 함께 둔다** (지방별 8묶음, 장소 수 표시). 작은 도도부현을 손가락으로 누르기 어려운 문제와 데이터 로드 실패를 같이 해결한다(ML-M6).
 
 ## 고려한 대안
@@ -43,7 +43,7 @@
 
 | 출처 | 라이선스 (2026-10-12 검색 기준) | 판단 |
 |---|---|---|
-| **Natural Earth admin-1** | 퍼블릭 도메인, 허가·출처 표시 불필요 (위 결정 1). admin-1 은 10m 축척 테마 | **선택.** 이름 필드(일본어·한국어 포함)와 ISO 3166-2 코드가 있어 변환이 쉽다(*추정 — 변환 절차가 저장소에 기록되지 않음*) |
+| **Natural Earth admin-1** | 퍼블릭 도메인, 허가·출처 표시 불필요 (위 결정 1). admin-1 은 10m 축척 테마 | **선택.** 이름 필드와 ISO 3166-2 코드가 있어 변환이 쉽다 — `c` ← `iso_3166_2`(`JP-27` → `"27"`), `ja` ← `name_ja`, `ko` ← `name_ko`, `en` ← `name`(장음 기호 제거) (`data/README.md`) |
 | 국토수치정보 行政区域 (N03, 국토교통성) | 무상 제공, 다운로드 사이트 이용 규약을 따라야 하고 항목에 따라 민간 정보를 포함한 2차 저작물이라 규약 확인 필요 ([국토교통성 자료](https://www.mlit.go.jp/common/001152704.pdf), [N03 제품 사양](https://nlftp.mlit.go.jp/ksj/gml/product_spec/KS-PS-N03-v4_1.pdf)). CC BY 여부는 이번 검색으로 확인 못 함 | 정밀하지만 시정촌 단위라 크다 — 도도부현 병합·강한 단순화 필요. 라이선스 확인 부담 |
 | 지구지도 일본 (국토지리원) | 국토지리원 콘텐츠는 출처 명시를 요구한다는 설명이 있으나 이 데이터의 규약은 이번 검색으로 확인 못 함 ([국토지리원 Q&A](https://www.gsi.go.jp/LAW/2930-qa.html)) | 출처 표시·규약 확인이 필요해 보류 |
 | GADM | 학술·비상업 사용만 자유, **재배포·상업 사용은 사전 허가 필요**라는 문구가 여러 2차 출처에 인용됨 ([Natural Earth 포럼](https://www.naturalearthdata.com/?p=3348), [OSM legal-talk 2015](https://lists.openstreetmap.org/pipermail/legal-talk/2015-August/008178.html)). gadm.org 원문은 이 환경에서 접속되지 않음 | **기각** — 공개 저장소에 넣는 것 자체가 재배포 |
@@ -55,16 +55,16 @@
 - 좋은 점: 라이선스 부담 없음. 46 KB 로 PRD 목표(150 KB)의 1/3. 첫 화면 비용 0(지연 로드), 오프라인 동작(사전 캐시). 지도 인스턴스 하나에 레이어만 붙였다 뗀다. 목록이 경계 실패·작은 도도부현 문제를 모두 받는다.
 - 나쁜 점:
   - 단순화로 해안선·경계가 거칠다 — 선택용으로는 충분, 측량용 아님.
-  - **맞춤 범위가 피처 전체**라 섬을 포함한 도도부현(도쿄 = 이즈 제도, 파일에 하치조지마 부근 `[139.791, 33.1355]` 좌표 확인. 가고시마, 오키나와)은 바다가 대부분인 화면이 된다 — RFC-0002 OQ-6.
-  - 도도부현 이름이 GeoJSON 속성과 `PREFS` 두 곳에 있다(화면은 `PREFS` 만 씀). 하나를 고치면 다른 하나와 어긋날 수 있다.
+  - **해결:** 이 ADR 첫 판의 "맞춤 범위가 피처 전체라 섬을 포함한 도도부현(도쿄 = 이즈 제도, 파일에 하치조지마 부근 `[139.791, 33.1355]` 좌표. 가고시마, 오키나와)이 바다 화면이 된다" 는 `mainBounds()` 로 해결됐다(Playwright "Tokyo's mainland fit"). 대신 섬에 있는 장소는 맞춤 화면 밖에 있을 수 있다 — 핀은 그대로 보이고 이동하면 된다.
+  - 도도부현 이름이 GeoJSON 속성과 `PREFS` 두 곳에 있다(화면은 `PREFS` 만 씀). `data/README.md` 가 "같은 원본에서 함께 다시 만든다" 고 적어 위험을 줄였지만 코드로 강제되지는 않는다.
   - Natural Earth 의 admin-1 테마 페이지는 이 테마를 아직 beta 로 표시한다([Admin 1 – States, Provinces](https://www.naturalearthdata.com/?p=480), 2026-10-12 검색 요약으로 확인, 원문 접속 불가) — 경계 정확도 보증 없음.
-  - **재현 절차가 저장소에 없다**: 원본 버전·축척, 속성 변환, mapshaper 명령·단순화 비율.
+  - **해결:** 첫 판의 "재현 절차가 저장소에 없다" 는 `data/README.md`(원본·축척·받은 날짜, 속성 변환, mapshaper 명령·단순화 비율)로 해결됐다. 원본이 `master` 브랜치라 같은 명령도 시점에 따라 결과가 다를 수 있다 — 커밋 해시를 적어 두면 완전히 재현된다.
 
 ## 열린 질문
 
 | # | 질문 |
 |---|---|
-| B-Q1 | 재현 절차를 `data/README.md` 에 기록할 것 (NE 버전, 축척, mapshaper 명령, 속성 매핑, 결과 크기) |
-| B-Q2 | 섬이 있는 도도부현의 맞춤 규칙 — 장소 범위 우선 또는 가장 큰 폴리곤 |
+| B-Q1 | 재현 절차를 `data/README.md` 에 기록할 것 — **해결** (`data/README.md`). 남은 것: 원본 natural-earth-vector 커밋 해시 |
+| B-Q2 | 섬이 있는 도도부현의 맞춤 규칙 — **해결** (가장 큰 폴리곤, `mainBounds()`) |
 | B-Q3 | GeoJSON 속성의 이름(`ja/en/ko`)을 지울지 — `PREFS` 와 중복이고 쓰지 않는다. 지우면 몇 KB 줄어든다 |
 | B-Q4 | "Made with Natural Earth" 표시를 지도 저작자 표시에 넣을지 (의무 아님, 예의) |
