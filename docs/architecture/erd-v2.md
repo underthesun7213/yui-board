@@ -272,13 +272,17 @@ create type app.item_kind      as enum ('place','event');
 
 ### 4.5 신고·관리·계정
 
-**`app.accounts`**: `user_id uuid primary key references auth.users on delete cascade`, `ref text not null unique default ('a-' || substr(encode(gen_random_bytes(6),'hex'),1,10))` (관리자에게 보이는 가명, uuid 와 무관한 난수), `created_at`, `last_active_at`, `suspended_at`, `suspended_note text check (char_length(suspended_note) <= 200)`.
+**`app.accounts`** (인덱스 `(created_at)` — 시간당 생성 상한 계산 `[재검토 #1]`): `user_id uuid primary key references auth.users on delete cascade`, `ref text not null unique default ('a-' || substr(encode(gen_random_bytes(6),'hex'),1,10))` (관리자에게 보이는 가명, uuid 와 무관한 난수), `created_at`, `last_active_at`, `suspended_at`, `suspended_note text check (char_length(suspended_note) <= 200)`.
 
 **관리자 — 초대와 권한을 나눈다 `[검토 #4]`.** 첫 판은 `admins(user_id PK → auth.users)` 하나로 가입 훅과 권한을 모두 판단했는데, 훅은 사용자가 **생기기 전에** 돌므로 `admins` 행이 있을 수 없다(닭과 달걀). 또 익명 사용자는 `updateUser({email})` 로 훅을 거치지 않고 비익명이 될 수 있으므로 "비익명이면 허용 목록에 있다" 는 가정은 틀렸다. 그래서:
 
 - **`app.admin_invites`**: `email citext primary key`, `invited_at`, `used_at`. 책임자가 SQL 로 넣는다. 가입 훅은 이 표만 본다(비익명 가입은 초대된 이메일만).
 - **`app.admins`**: `user_id uuid primary key references auth.users on delete restrict`, `email citext not null unique`, `active boolean not null default true`, `added_at`. **사용자 계정이 만들어진 뒤** 책임자가 SQL 로 넣는다(초대의 `used_at` 갱신). **권한 판단은 오직 이 표**(`require_admin`) — 비익명 여부는 추가 조건일 뿐 근거가 아니다.
-- 생성 절차(런북): 이메일 공급자의 **공개 가입은 끈다** → 대시보드 또는 Admin API 로 사용자 생성(비밀번호) → `admins` 행 추가 → **책임자가 그 자리에서 TOTP 를 등록**한 뒤 관리자에게 넘긴다(비밀번호가 새도 공격자가 먼저 자기 TOTP 를 등록하지 못하게 — `[검토 낮음]`). 공개 가입을 끈 상태에서 익명 로그인이 계속 되는지, Admin API 생성에도 훅이 도는지는 Y-2 확인(OQ-E5).
+- **연결 탈취 방지 `[재검토 #2]`:** 익명 사용자는 책임자가 관리자를 만들기 **전에** `updateUser({email})` 로 초대된 이메일을 자기 계정에 걸 수 있다. 런북이 "이메일로 사용자를 찾아 `admins` 에 넣기" 라면 공격자 계정이 관리자가 된다. 그래서:
+  1. `admins.user_id` 는 **Admin API 생성 호출(`auth.admin.createUser`)이 돌려준 `user_id` 만** 쓴다. 이메일로 사용자를 조회해 연결하지 않는다(대시보드에서 만들었다면 생성 화면이 보여 준 id 를 바로 기록).
+  2. `admins` 행은 SQL 함수 `app.bind_admin(p_user_id uuid, p_email citext)`(책임자가 SQL 편집기에서 실행, 클라이언트 EXECUTE 없음)로만 넣는다. 함수는 `auth.users` 에서 그 id 의 **`is_anonymous = false`**, **`email_confirmed_at is not null`**, **`email = p_email`**, **`created_at > admin_invites.invited_at`**(초대 뒤에 생긴 계정), 초대가 아직 `used_at is null` 인지 확인하고, 하나라도 아니면 예외. 성공하면 `used_at` 을 채운다.
+  3. 같은 이메일을 가진 다른 `auth.users` 행이 있으면(익명 전환 시도 흔적) 예외 + 책임자에게 알림(감시 `admin_bind_conflict`).
+- 생성 절차(런북): 이메일 공급자의 **공개 가입은 끈다** → 초대 행 추가 → Admin API 또는 대시보드로 사용자 생성(비밀번호, 이메일 확인 처리) → 반환된 id 로 `bind_admin` → **책임자가 그 자리에서 TOTP 를 등록**한 뒤 관리자에게 넘긴다(비밀번호가 새도 공격자가 먼저 자기 TOTP 를 등록하지 못하게 — `[검토 낮음]`). 공개 가입을 끈 상태에서 익명 로그인이 계속 되는지, Admin API 생성에도 훅이 도는지는 Y-2 확인(OQ-E5).
 
 **`app.reports`**: `place_id bigint references app.places on delete cascade`, `event_id bigint references app.events on delete cascade`, `check (num_nonnulls(place_id, event_id) = 1)`, `reporter_id uuid references app.accounts on delete set null`, `reason app.report_reason not null`, `by_owner boolean not null` (**INSERT 전에** 소유 테이블과 비교해 계산해 넣는다 — 기본값에 기대지 않는다 `[검토 nit]`), `resolution text not null default 'open' check (resolution in ('open','restored','deleted','dismissed'))`, `created_at`, `resolved_at`. 유일: `unique (place_id, reporter_id)`, `unique (event_id, reporter_id)` (null 신고자는 여럿 가능 — 삭제된 계정). 인덱스: `(place_id) where resolution='open'`, `(event_id) where resolution='open'`. **자유 서술 메모 없음**(신고자 개인정보·추가 노출 경로 방지 — Y-S12, OQ-E3).
 
@@ -302,7 +306,7 @@ create type app.item_kind      as enum ('place','event');
 
 **`app.security_events`**: `kind text check (kind in ('forbidden','not_owner','rate_limited_account','rate_limited_ip','suspended_write','admin_denied','signup_throttled','invalid_input'))`, `user_id uuid` (계정 삭제 시 set null), `ip_key bytea` (**48시간 뒤 null** — V-8 과 맞춤 `[검토 #8]`), `detail text check (char_length(detail) <= 200)`. 행은 90일 보관(집계용, IP 연결 없이).
 
-**`app.settings`**: `('report_hide_threshold',3)`, `('place_create_per_day',10)`, `('event_create_per_day',10)`, `('edit_per_day',30)`, `('report_per_day',20)`, `('ip_writes_per_5min',60)`, `('ip_writes_per_5min_dorm',600)` `[검토 #6]`, `('xff_trusted_hops', Y-2 실측)`, `('anon_signups_per_hour',200)`, `('admin_session_hours',12)`, `('deleted_retention_days',30)`. 값 변경은 SQL 로(관리자 콘솔 편집은 범위 밖).
+**`app.settings`**: `('report_hide_threshold',3)`, `('place_create_per_day',10)`, `('event_create_per_day',10)`, `('edit_per_day',30)`, `('report_per_day',20)`, `('ip_writes_per_5min',60)`, `('ip_writes_per_5min_dorm',600)` `[검토 #6]`, `('xff_trusted_hops', Y-2 실측)`, `('anon_signups_per_hour',200)`, `('accounts_per_hour',200)` `[재검토 #1]`, `('admin_session_hours',12)`, `('deleted_retention_days',30)`. 값 변경은 SQL 로(관리자 콘솔 편집은 범위 밖).
 
 **`app.data_version`**: 한 행. 항목·회차·숨김이 바뀌는 문장 트리거가 `v = v + 1`.
 
@@ -484,9 +488,9 @@ end $$;
 | `public.data_version() → bigint` | anon, authenticated | §4.7. `stable`, GET |
 | `public.admin_whoami() → jsonb` | authenticated | 예외 없이 `require_admin` 과 같은 검사를 하고, 실패면 `security_events('admin_denied')` + `{status:'forbidden'}`. 성공이면 이메일·세션 만료 시각 |
 | `public.ops_health() → jsonb` | service_role | 최근 1시간·24시간: `security_events` 종류별 수, 익명 생성 수, 자동 숨김 수, 관리 조치 수, 미처리 신고 24시간 초과 수, 한도에 닿은 IP 창 수, DB 크기 (Y-S10). **숫자만** 돌려준다(IP·계정·항목 내용 없음) — 감시 출력이 노출돼도 방어 상태 외에는 드러나지 않게 |
-| `app.require_writer() → uuid` | 없음 | `auth.uid()` null → `forbidden`; `accounts` 없으면 생성(Y-A1); 정지면 `suspended_write` 기록 후 `suspended`; `last_active_at` 갱신 |
+| `app.require_writer() → uuid` | 없음 | `auth.uid()` null → `forbidden`; `accounts` 없으면 생성(Y-A1) — **생성 직전에 전역 잠금(`pg_advisory_xact_lock(hashtext('accounts:create'))`) 아래 최근 1시간 `accounts.created_at` 수를 세어 `settings('accounts_per_hour')`(기본 200) 이상이면 생성하지 않고 `security_events('signup_throttled')` + `rate_limited`** `[재검토 #1]`; 정지면 `suspended_write` 기록 후 `suspended`; `last_active_at` 갱신 |
 | `app.db_pre_request() → void` | (OQ-E1) | **쓰기 RPC 경로일 때만**(위 목록) `[검토 #1]`: 신뢰 헤더 값(`xff_trusted_hops`)에서 IP 를 얻고 `[검토 #7]`, `ip_tiers` 범위면 `dorm` 한도, 아니면 기본 한도 `[검토 #6]`. 키(IPv6 /64)로 `ip_hits` 증가, 초과면 `raise sqlstate 'PT429'`(PostgREST 상태 코드 지정 방식 — Y-2 확인). 이 증가는 뒤따르는 RPC 가 예외 없이 끝나야 남는다 — 그래서 쓰기 RPC 는 형식 오류도 상태로 반환한다(§7 머리말) |
-| `app.hook_before_user_created(event jsonb) → jsonb` | supabase_auth_admin | 익명: 최근 1시간 익명 생성 수 < `anon_signups_per_hour` 아니면 거절. 비익명: 이메일이 **`admin_invites`** 에 있어야 함 `[검토 #4]`. 이 훅은 가입 경로만 막는다 — 익명 → 이메일 연결(`updateUser`)은 훅을 거치지 않으므로 **권한 판단에 쓰지 않는다**. 익명 가입에도 훅이 도는지·페이로드 형식은 **미확인**(OQ-E5) — 돌지 않으면 전역 한도는 감시 경보 + CAPTCHA 런북으로만 대응 |
+| `app.hook_before_user_created(event jsonb) → jsonb` | supabase_auth_admin | 익명: 최근 1시간 익명 생성 수 < `anon_signups_per_hour` 아니면 거절. **이 훅은 보조다** — 익명 가입에 훅이 도는지 미확인(OQ-E5)이므로 전역 상한의 보장은 `require_writer` 의 계정 생성 상한이 맡는다(계정은 첫 쓰기 때만 생기므로 Auth 와 무관하게 성립) `[재검토 #1]`. 비익명: 이메일이 **`admin_invites`** 에 있어야 함 `[검토 #4]`. 이 훅은 가입 경로만 막는다 — 익명 → 이메일 연결(`updateUser`)은 훅을 거치지 않으므로 **권한 판단에 쓰지 않는다**. 익명 가입에도 훅이 도는지·페이로드 형식은 **미확인**(OQ-E5) — 돌지 않으면 전역 한도는 감시 경보 + CAPTCHA 런북으로만 대응 |
 
 ---
 
