@@ -41,7 +41,7 @@ MLP 는 언어 기억(ML-C2), 모드 전환(ML-M1), 경계 레이어(ML-M5)가 �
 - 좋은 점: BUG-01 이 구조적으로 사라졌다(언어 메뉴·언어 변경·탭 왕복·모드 전환·뒤로 가기 후 같은 인스턴스 — Playwright 로 확인, RFC-0002 §11.2). 타일 재요청이 줄었다. 규칙이 짧다: "지도 컨트롤은 `updateMap()`".
 - 나쁜 점:
   - 두 갈래의 갱신 경로(`render()` / `updateMap()`)를 개발자가 구분해야 한다. 지도 화면에 새 컨트롤을 넣을 때 `updateMap()` 의 컨테이너 목록에도 넣어야 한다.
-  - **해결:** 이 ADR 첫 판의 "재부착 때 레이어를 상태와 맞추지 않는다(화면 밖에서 끝난 위치·경계 로드, 언어 변경 후 라벨)" 는 결정 3·6 의 `labelMap()`·`syncMap(MAPSTALE)`·`MAPSTALE` 로 해결됐다(Playwright "off-map location and boundaries", "translated zoom label"). 핀 `title` 은 `syncMap` 이 핀을 다시 만들 때 바뀌므로, 그 전까지 옛 언어로 남는 경우는 열린 항목으로 둔다(RFC-0002 R-4).
+  - **해결:** 이 ADR 첫 판의 "재부착 때 레이어를 상태와 맞추지 않는다(화면 밖에서 끝난 위치·경계 로드, 언어 변경 후 라벨)" 는 결정 3·6 의 `labelMap()`·`syncMap(MAPSTALE)`·`MAPSTALE` 로 해결됐다(Playwright "off-map location and boundaries", "translated zoom label"). 핀 `title` 도 해결: 언어 변경은 늘 `render()` → `mountMap()` → `syncMap()` 을 거쳐 핀을 현재 언어로 다시 만든다(`index.html:1576`, `:1618-1621`) — RFC-0002 R-4.
   - 갱신 경로가 셋(`render()`/`mountMap()`, `updateMap()`, `popstate` 제자리 갱신)이 되었다. 비동기 결과는 반드시 `mapChanged()`/`locChanged()` 를 거쳐야 한다 — 새 비동기 로더를 넣을 때 지킬 규칙.
   - 떨어진 지도도 메모리에 남는다(한 개, 무시할 수준).
   - `dragScroll()` 이 `#mfilters` 에 직접 리스너를 단다 — "`#main` 안 요소에 리스너 금지" 의 예외. `updateMap()` 은 `#mfilters` 의 내용만 바꾸므로 유지되고, `render()` 때는 새 요소에 `el._ds` 플래그로 한 번만 단다.

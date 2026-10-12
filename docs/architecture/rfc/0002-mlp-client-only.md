@@ -4,27 +4,29 @@
 |---|---|
 | 상태 | 제안됨 |
 | 작성일 | 2026-10-12 |
-| 범위 | [PRD-MLP](../../02-requirements/PRD-MLP.md) v1.2 의 구현과 그 뒤 책임자 결정. 기준 코드: 브랜치 머리 커밋 `78e2b4e` (MLP 구현 `1010992` + 코드 리뷰 수정 `dd094f4`, `04cb476` 이후) |
-| 근거 | PRD-MLP v1.2 (ML-H\*, ML-J\*, ML-M\*, ML-K\*, ML-C\*, ML-P\*, Q-M4~Q-M13), `index.html`(1,818줄), `sw.js`(`CACHE = "yui-v4"`), `manifest.webmanifest`, `vendor/`, `data/japan-prefectures.geojson`, `data/README.md`, `README.md`, `CLAUDE.md`, [QA 리포트](../../08-qa/qa-report.md) (BUG-01) |
+| 범위 | [PRD-MLP](../../02-requirements/PRD-MLP.md) v1.3 (v1.2 승인 + 책임자 결정 D8~D11) 의 구현. 기준 코드: 브랜치 머리 커밋 `7b6d631` (MLP 구현 `1010992` → 코드 리뷰 수정 `dd094f4`, `04cb476`, `78e2b4e` → `68604ad` → `7b6d631`) |
+| 근거 | PRD-MLP v1.3 (D1~D11, ML-H\*, ML-J\*, ML-M\*, ML-K\*, ML-C\*, ML-P\*, Q-M4~Q-M13), `index.html`(1,818줄), `sw.js`(`CACHE = "yui-v5"`), `manifest.webmanifest`, `vendor/`, `data/japan-prefectures.geojson`, `data/README.md`, `README.md`, `CLAUDE.md`, [QA 리포트](../../08-qa/qa-report.md) (BUG-01) |
 | 대체 관계 | [RFC-0001](0001-m1-backend-foundation.md)(백엔드 기반)을 **보류**한다. 지우지 않는다 — [ADR-0009](../../adr/0009-client-only-mlp.md) |
 | 같이 읽는 문서 | ADR [0009](../../adr/0009-client-only-mlp.md) ~ [0014](../../adr/0014-map-container-survives-render.md) |
 
 **문서 형식: SAD 대신 RFC 하나 + ADR.** 컨테이너가 브라우저 하나뿐이고(서버 없음), 개발자 소수, 운영비 0 이다. RFC-0001 §0 의 판단을 그대로 잇는다. ERD·OpenAPI·인프라 문서는 **만들지 않는다** — DB 도 API 도 없다. 데이터 형식은 §10, 배포·캐시는 §9 에 둔다.
 
-**읽는 법:** 이 문서는 대부분 **현행**(지금 코드가 하는 것)이다. 줄 번호는 `index.html` @`78e2b4e` 기준. **제안**·**이탈**·**설계 메모(약점)** 는 따로 표시했다. 이 문서의 첫 판(구현 직후 코드 기준)에서 짚은 약점 중 그 뒤 고쳐진 것은 지우지 않고 **해결** 로 표시하고 고친 곳을 적었다. 코드는 바꾸지 않았다.
+**읽는 법:** 이 문서는 대부분 **현행**(지금 코드가 하는 것)이다. 줄 번호는 `index.html` @`7b6d631` 기준. **제안**·**이탈**·**설계 메모(약점)** 는 따로 표시했다. 이 문서의 첫 판(구현 직후 코드 기준)에서 짚은 약점 중 그 뒤 고쳐진 것은 지우지 않고 **해결** 로 표시하고 고친 곳을 적었다. 코드는 바꾸지 않았다.
 
 ---
 
-## 0. 책임자 결정 (PRD v1.2 이후, PRD 보다 우선)
+## 0. 책임자 결정 (PRD v1.2 승인 뒤 — PRD v1.3 에 D8~D11 로 반영됨)
+
+이 문서의 OD-\* 는 PRD v1.3 §2 의 결정과 이렇게 대응한다: OD-1·OD-2 ↔ **D8**, OD-4 ↔ **D9**, OD-5 ↔ **D10**, OD-6 ↔ **D11**. OD-3(경계 출처)은 Q-M12 답, OD-7 은 D6 재확인이다.
 
 | # | 결정 | PRD 에 미치는 영향 | 기록 |
 |---|---|---|---|
-| OD-1 | 단일 파일 원칙 폐기 (Q-M13: 허용) | §8 "구조" 의 예외가 원칙이 됨 | [ADR-0013](../../adr/0013-drop-single-file-vendor-leaflet.md), ADR-0003 대체 |
-| OD-2 | Leaflet 을 `vendor/` 에 둔다 (Q-M10) | ML-P4 의 CDN 요청 없음, ML-M13 오프라인 해결 | ADR-0013 |
+| OD-1 | 단일 파일 원칙 폐기 (Q-M13: 허용, **D8**) | §8 "구조" 의 예외가 원칙이 됨 | [ADR-0013](../../adr/0013-drop-single-file-vendor-leaflet.md), ADR-0003 대체 |
+| OD-2 | Leaflet 을 `vendor/` 에 둔다 (Q-M10, **D8**) | ML-P4 의 CDN 요청 없음, ML-M13 오프라인 해결 | ADR-0013 |
 | OD-3 | 경계 데이터 = Natural Earth admin-1, 퍼블릭 도메인, mapshaper 로 46 KB (Q-M12) | §8 "경계 데이터" 목표(150 KB 이하) 충족 | [ADR-0012](../../adr/0012-prefecture-boundary-map.md), `data/README.md` |
-| OD-4 | 캘린더 참가 버튼 없음 (Q-M9: 제거) | **ML-K8 제거** | §8 |
-| OD-5 | 앱 이름 미정, "YUI" 는 자리표시 (Q-M5 열림) | `T.*.appName`, `<title>`, manifest | §16 OQ-1 |
-| OD-6 | 제안 채택: 탭바 홈+3 (Q-M7), 언어 기억 (ML-C2), 뒤로 가기 수정 (ML-H4) | ML-H3, ML-C2, ML-H4 확정 | §5.4, §6 |
+| OD-4 | 캘린더 참가 버튼 없음 (Q-M9: 제거, **D9**) | **ML-K8 제거** | §8 |
+| OD-5 | 앱 이름 미정, "YUI" 는 자리표시 (Q-M5 열림, **D10**) | `T.*.appName`, `<title>`, manifest | §16 OQ-1 |
+| OD-6 | 제안 채택: 탭바 홈+3 (Q-M7), 언어 기억 (ML-C2), 뒤로 가기 수정 (ML-H4) — **D11** | ML-H3, ML-C2, ML-H4 확정 | §5.4, §6 |
 | OD-7 | OSM/Overpass 검색 없음, 장소는 직접 넣은 것만 | D6 재확인 | [ADR-0011](../../adr/0011-curated-static-data.md) |
 
 ---
@@ -96,7 +98,7 @@ C4Container
     Container(geojson, "data/japan-prefectures.geojson", "GeoJSON 46 KB", "일본 전체 첫 진입 때 fetch")
     Container(sw, "sw.js", "Service Worker", "SHELL 사전 캐시, 같은 출처만 처리")
     ContainerDb(ls, "localStorage", "Web Storage", "yui.v1.lang / cg / loc")
-    ContainerDb(cache, "CacheStorage", "Cache API", "yui-v4")
+    ContainerDb(cache, "CacheStorage", "Cache API", "yui-v5")
   }
   System_Ext(pages, "GitHub Pages")
   System_Ext(osm, "OSM 타일 서버")
@@ -285,7 +287,7 @@ flowchart TD
 | 키 | 값(JSON) | 쓰는 시점 | 읽는 시점 | 검증 |
 |---|---|---|---|---|
 | `yui.v1.lang` | `"en"` · `"ja"` · `"ko"` | 언어 선택 (`:1747`) | 시작 (`:1795`) | `T[lang]` 없으면 `"en"` |
-| `yui.v1.cg` | `{"e_osaka_best":true, …, "e_both":true}` | 엔딩 도달 (`:1785`) | 시작 (`:1796`) | `|| {}` 만. **모양 검증 없음** |
+| `yui.v1.cg` | `{"e_osaka_best":true, …, "e_both":true}` | 엔딩 도달 (`:1785`) | 시작 (`:1796`) | 일반 객체(배열 아님)가 아니면 `{}` 로 버린다 |
 | `yui.v1.loc` | `"use"` · `"skip"` | 안내·상태줄 버튼 (`:1765-1766`) | 시작 (`:1797`) | 그 외 값은 `ask` |
 
 좌표·진행 중 게임은 저장하지 않는다 (ML-P2). 화면·지도 모드·도도부현은 저장소가 아니라 **브라우저 history state** 로 새로고침을 넘긴다(§5.4) — 앱을 완전히 닫았다 열면(새 history) 홈.
@@ -302,8 +304,8 @@ const store={
 - **메모리 폴백:** 진짜 상태는 늘 `S` 에 있고 `store` 는 기록만 한다. 쓰기가 실패해도 그 세션은 `S` 로 동작하고 새로고침하면 잊는다.
 - **버전:** 접두어 `yui.v1.`. 모양이 바뀌면 `v2` 키를 새로 읽고, 필요하면 시작 코드에서 `v1` 을 옮긴 뒤 지운다(**제안** — 지금은 옮길 코드가 없다).
 
-**설계 메모 (열림):**
-- `cg` 가 객체가 아닌 값(예: 문자열)으로 저장돼 있으면 `S.cg[id]=true` 가 비엄격 모드에서 조용히 무시되어 **카드가 영원히 저장되지 않는다.** 외부에서 값을 넣을 경로는 없으므로 확률은 낮다 → R-9.
+**설계 메모:**
+- **해결** — 첫 판의 "`cg` 가 객체가 아닌 값으로 저장돼 있으면 `S.cg[id]=true` 가 조용히 무시되어 카드가 영원히 저장되지 않는다" 는 시작 코드의 모양 검사로 해결됐다(`index.html:1796`, `typeof cg==="object"` 이고 배열이 아닐 때만 사용) → R-9.
 - `localStorage` 는 **출처(origin) 단위**다. GitHub Pages 프로젝트 사이트(`<user>.github.io/<repo>/`)는 같은 사용자의 다른 프로젝트 페이지와 출처를 공유한다. `yui.v1.` 접두어가 충돌은 막지만 격리는 아니다 → R-6(부분 열림).
 
 ---
@@ -349,11 +351,11 @@ sequenceDiagram
   C->>G: go("map")
   G->>G: pushState, #main = mapView()<br/>locState=ask → 안내 카드, #lmapslot "지도를 불러오고 있습니다…"
   G->>M: mountMap() — LBOX 없음
-  M->>SW: loadLeaflet(): leaflet.css, MarkerCluster.css, leaflet.js → markercluster.js
+  M->>SW: loadLeaflet() 시작 (비동기): leaflet.css, MarkerCluster.css, leaflet.js → markercluster.js
+  G->>M: enterMap() — go() 안에서 동기로, Leaflet 로드보다 먼저. locState=ask 이므로 위치 요청 안 함
   SW-->>M: cache-first (SHELL 사전 캐시)
   M->>M: initMap(): L.map(LBOX), 확대 컨트롤, 타일 레이어(+실패 집계), 結 마커, labelMap()<br/>클러스터, syncMap(true): near, ref=HOME, 3 km 안 핀, fit
   M->>O: 타일 GET (SW 통과하지 않음)
-  G->>M: enterMap() — locState=ask 이므로 위치 요청 안 함
   U->>C: [위치 사용] (data-loc=use)
   C->>C: store.set("loc","use")
   C->>M: locate(): locState=wait, updateMap(false)
@@ -442,7 +444,7 @@ sequenceDiagram
 
 **설계 메모:**
 - **해결** — 첫 판의 "도도부현 맞춤이 피처 전체 범위라 도쿄(이즈 제도 — 파일의 하치조지마 부근 좌표 `[139.791, 33.1355]`)·가고시마·오키나와가 바다 화면이 됨" 은 `mainBounds()`(가장 큰 폴리곤)로 해결됐다(Playwright "Tokyo's mainland fit").
-- **해결** — "재부착 때 레이어·라벨이 상태와 어긋남" 은 `MAPSTALE`·`mapChanged()`·`locChanged()` 와 `mountMap()` 의 `labelMap()`·`syncMap()` 으로 해결됐다(`dd094f4`/`04cb476`). 핀 제목(`title`)은 `syncMap` 이 핀을 다시 만들 때 현재 언어로 바뀐다 — 코드 리뷰 쪽은 "다음 `syncMap` 까지 옛 언어로 남는 경우" 를 열린 항목으로 두었다(R-4).
+- **해결** — "재부착 때 레이어·라벨이 상태와 어긋남" 은 `MAPSTALE`·`mapChanged()`·`locChanged()` 와 `mountMap()` 의 `labelMap()`·`syncMap()` 으로 해결됐다(`dd094f4`/`04cb476`). 핀 제목(`title`)도 해결: 언어 변경은 늘 `render()` → `mountMap()` → `syncMap()` 경로를 타고(`index.html:1576`), `syncMap()` 이 핀을 현재 언어 이름으로 다시 만든다(`:1618-1621`). 핀이 옛 언어로 남는 재현 경로는 찾지 못했다(R-4).
 - 타일 URL 이 코드에 박혀 있다(`:1586`). OSM 타일 정책은 URL 을 하드코딩하지 말라고 권한다(차단 시 대응을 위해) — 웹앱은 재배포가 즉시라 영향은 작지만 상수로 빼 두는 것이 좋다 → R-2.
 - **(수용된 잔여)** 저작자 표시 앞의 "Leaflet" 접두어는 라이브러리 기본값이라 영어로 남는다.
 
@@ -494,7 +496,7 @@ sequenceDiagram
 | 요청 | 전략 | 이유 |
 |---|---|---|
 | 설치 | `SHELL` 12개 사전 캐시: `./`, `index.html`, manifest, 아이콘 4개, `vendor/` 4개, `data/japan-prefectures.geojson`. 끝나면 `skipWaiting()` | 첫 방문 뒤 바로 오프라인 가능 |
-| 활성화 | 이름이 **`yui-` 로 시작하고** `CACHE`(`"yui-v4"`)가 아닌 캐시만 지우고 `clients.claim()` | 옛 빌드 정리. 같은 출처(`github.io`)의 다른 앱 캐시는 건드리지 않음 |
+| 활성화 | 이름이 **`yui-` 로 시작하고** `CACHE`(`"yui-v5"`)가 아닌 캐시만 지우고 `clients.claim()` | 옛 빌드 정리. 같은 출처(`github.io`)의 다른 앱 캐시는 건드리지 않음 |
 | 다른 출처 (OSM 타일, Google) | 처리 안 함 (`return`) — 브라우저 기본 | OSM 타일은 "우리가 캐시할 것이 아님". 대량 다운로드 금지 정책과도 맞음 |
 | 탐색, `*.json`, `*.geojson` | **network-first** → `res.ok` 일 때만 캐시 갱신, 실패하면 캐시(탐색은 `ignoreSearch`) → 그래도 없으면 `index.html` | 재배포가 바로 보이게. 오류 페이지를 캐시해 오프라인에 내보내지 않게 |
 | 그 밖의 같은 출처 GET | **cache-first** → 없으면 네트워크, `res.ok` 일 때만 캐시 | vendor·아이콘은 `CACHE` 버전으로 갱신 |
@@ -555,7 +557,7 @@ PRD §5.2.1 과 일치하고 옛 `min`(고정 도보 시간)은 없다 — 도�
 
 | 필드 | 필수 | 형식 | 헤드리스 검사 |
 |---|---|---|---|
-| `id` | O | 고유 문자열 — .ics UID 와 파일명에 쓰임 | **중복 검사 없음** (장소만 검사) |
+| `id` | O | 고유 문자열 — .ics UID 와 파일명에 쓰임 | 중복 검사 |
 | `kind` | O | 색 구분 CSS 클래스. 스타일이 있는 값: `gip`·`office`·`student`. 그 외(예: `ra`)는 기본색 | — |
 | `d` | O | `YYYY-MM-DD` (반복이면 첫 회) | 형식 |
 | `time`, `end` | O | `HH:MM` 24시간, 도쿄 시각. 같은 날 안 | 형식 |
@@ -568,7 +570,8 @@ PRD §5.2.1 과 일치하고 옛 `min`(고정 도보 시간)은 없다 — 도�
 
 - **해결** — 첫 판의 "형식 검사 없음"(`cat` 오타 → `undefined`, `host` 오타 → 캘린더 전체 예외 등)은 CLAUDE.md 헤드리스 검사의 데이터 검사로 해결됐다(§11.1).
 - 3개 언어를 다 못 채운 데이터(Q-M8)는 이제 **검사가 막는다**(배포 전 실패). 화면 쪽 언어 폴백은 없다 — 2차 데이터가 한 언어로만 오면 번역해 넣어야 한다 → OQ-18.
-- 남은 공백(작음): 일정 `id` 중복, `weekly.until` 형식, `over` 키의 날짜가 실제 회차인지, `end > time`, `kind` 값은 검사하지 않는다.
+- 일정 `id` 중복도 이제 검사한다 (CLAUDE.md, **해결**).
+- 남은 공백(작음): `weekly.until` 형식, `over` 키의 날짜가 실제 회차인지, `end > time`, `kind` 값은 검사하지 않는다.
 - 2차 데이터가 많아지면 `index.html` 이 데이터 파일이 된다. 경계 데이터처럼 `data/places.json` 으로 빼는 안이 있다 → OQ-4.
 
 ---
@@ -585,12 +588,12 @@ Node 에서 `<script>` 를 `/* Manifest shortcuts` 앞까지 잘라 `new Functio
 | 지도 | near × `locState` 7종(`ok` 는 도쿄 좌표), near + 선택 장소, japan + 경계 실패, pref 27 + 카테고리 + 선택, pref 13(장소 없음) |
 | 언어 | 위 전부 × en/ja/ko |
 | 분기 게임 | 두 루트, 각 장면 × (선택 전 / 선택 후), 엔딩 |
-| 런타임 존재 | `render`, `go`, `mountMap`, `initMap`, `syncMap`, `updateMap`, `labelMap`, `setMode`, `locate`, `enterMap`, `ensurePrefs`, `mapChanged`, `downloadICS`, `occOn`, `upcoming`, `today` 가 함수로 존재 (실행은 안 함) |
-| 데이터 | `EVENTS`: `host`, 날짜·시각 형식, `t`/`b`/`place` 3개 언어, 취소 아닌 `over` 3개 언어. `PLACES`: id 중복, `cat`, `pref`, 좌표 범위, `by`, `n`/`d` 3개 언어 |
+| 런타임 존재 | `render`, `go`, `mountMap`, `initMap`, `syncMap`, `updateMap`, `labelMap`, `setMode`, `locate`, `locChanged`, `enterMap`, `ensurePrefs`, `mapChanged`, `selectPref`, `mainBounds`, `downloadICS`, `occOn`, `upcoming`, `today` (19개)가 함수로 존재 (실행은 안 함) |
+| 데이터 | `EVENTS`: id 중복, `host`, 날짜·시각 형식, `t`/`b`/`place` 3개 언어, 취소 아닌 `over` 3개 언어. `PLACES`: id 중복, `cat`, `pref`, 좌표 범위, `by`, `n`/`d` 3개 언어 |
 | 탐지 | 예외, 출력에 `undefined`·`NaN`·`[object Object]` |
 | 자기 점검 | `VIEWS` 의 모든 화면에 케이스가 있는지 |
 
-잡는 것: 뷰가 바깥 세계를 건드림, 지운 함수(뷰·런타임), 빠진 번역 키, 상태 조합별 예외, 손으로 넣은 데이터의 오타. 못 잡는 것: 지도·위치·저장소·SW·레이아웃·클릭 흐름. 런타임 존재 목록은 손으로 관리한다 — 리뷰 뒤 생긴 `selectPref`·`mainBounds`·`locChanged` 는 지금 목록에 없다 (OQ-19).
+잡는 것: 뷰가 바깥 세계를 건드림, 지운 함수(뷰·런타임), 빠진 번역 키, 상태 조합별 예외, 손으로 넣은 데이터의 오타. 못 잡는 것: 지도·위치·저장소·SW·레이아웃·클릭 흐름. 런타임 존재 목록은 손으로 관리한다 — 리뷰 뒤 생긴 `selectPref`·`mainBounds`·`locChanged` 도 이제 목록에 있다 (OQ-19 **해결**). 새 런타임 함수를 만들면 목록에 더해야 한다.
 
 ### 11.2 Playwright 브라우저 검사 (작업 보고 기준)
 
@@ -621,11 +624,11 @@ Chromium 헤드리스, 375px, `python3 -m http.server` 로 서빙. **50개 검�
 
 ## 12. 성능 (파일 크기)
 
-`78e2b4e` 에서 `wc -c` 와 `gzip -c | wc -c` 로 잰 값(조정자 측정, 이 세션에는 셸이 없어 직접 재지 못함).
+`wc -c` 와 `gzip -c | wc -c` 로 잰 값(조정자 측정, 이 세션에는 셸이 없어 직접 재지 못함). `index.html` 은 `7b6d631`, 나머지 파일은 `78e2b4e` 에서 쟀다 — 그 뒤 바뀐 것은 `index.html` 과 `sw.js` 뿐이다.
 
 | 파일 | 바이트 | gzip | 언제 받나 |
 |---|---|---|---|
-| `index.html` | 107,247 | 40,129 | 첫 화면 |
+| `index.html` | 107,305 | 40,162 | 첫 화면 |
 | `vendor/leaflet/leaflet.js` | 147,552 | 42,578 | 지도 탭 첫 진입 (SW 설치 때 사전 캐시) |
 | `vendor/leaflet.markercluster/leaflet.markercluster.js` | 34,136 | 8,791 | 같음 |
 | `vendor/leaflet/leaflet.css` | 14,806 | 3,558 | 같음 |
@@ -634,10 +637,10 @@ Chromium 헤드리스, 375px, `python3 -m http.server` 로 서빙. **50개 검�
 
 | 묶음 | 바이트 | gzip |
 |---|---|---|
-| 첫 화면 (`index.html`, 아이콘·manifest 제외) | 107,247 | 40,129 |
+| 첫 화면 (`index.html`, 아이콘·manifest 제외) | 107,305 | 40,162 |
 | 지도 탭 추가분 (vendor 4개) | 197,366 | 55,196 |
 | 일본 전체 추가분 | 46,340 | 12,523 |
-| 합계 (위 6개) | 350,953 | 107,848 |
+| 합계 (위 6개) | 351,011 | 107,881 |
 
 - 첫 화면은 `index.html`·manifest·아이콘만 받는다. Leaflet 은 지도 탭, 경계는 일본 전체 첫 진입 때 페이지가 불러온다(§9.3 의 SW 사전 캐시는 별개).
 - 지도 라이브러리가 첫 화면에 들어갔다면 첫 화면 gzip 이 약 2.4배(40 KB → 95 KB)였다 — ADR-0013 의 지연 로드 근거.
@@ -673,12 +676,12 @@ CSP 는 없다. ADR-0008 의 CSP 초안은 cdnjs·Supabase 기준이라 맞지 �
 | R-1 | 그림이 모두 자리표시이고, 장면 메모(`s`)가 **영어로만** 모든 언어 사용자에게 보인다. `<title>`·meta description·manifest 도 영어만 | 높음/높음 — "lovable" 공백 | **열림.** Q-M4. 그 전까지 `s` 를 숨기거나 `T` 로 (ML-C 원칙과의 충돌) |
 | R-2 | OSM 타일 서버 정책: 무거운 사용 차단, 보증 없음, URL 하드코딩 비권장 | 낮음(650명)/중간 | **열림.** 저작자 표시·실패 문구 완료. URL 상수화, 대체 제공자 목록 준비 ([정책](https://operations.osmfoundation.org/policies/tiles/), 2026-10-12 검색 확인) |
 | R-3 | 저장소가 지워지면 컬렉션이 사라짐. Safari 의 스크립트 저장소 7일 제한(홈 화면 앱은 자체 카운터 — 예외가 늘 성립하는지는 버그 보고 있음) | 중간/중간 | **열림.** ADR-0010. 홈 화면 설치 안내 |
-| R-4 | 지도 재부착 때 레이어·라벨이 상태와 어긋남 | — | **해결** (`MAPSTALE`, `mapChanged`/`locChanged`, `mountMap` 의 `labelMap`·`syncMap`). 핀 제목이 다음 `syncMap` 까지 옛 언어인 경우는 코드 리뷰가 열어 둠 |
+| R-4 | 지도 재부착 때 레이어·라벨·핀 제목이 상태와 어긋남 | — | **해결** (`MAPSTALE`, `mapChanged`/`locChanged`, `mountMap` 의 `labelMap`·`syncMap`. 언어 변경은 늘 `render → mountMap → syncMap` 으로 핀을 다시 만든다, §7.5) |
 | R-5 | iOS standalone 에서 `.ics` 다운로드 | 중간/중간 (성공 지표 "1분 안에 캘린더에 넣기") | **열림.** 실기기 확인. 해제 지연(10초)·CRLF 는 반영됨 |
 | R-6 | `github.io` 출처 공유 | 낮음/중간 | **부분 해결.** SW 캐시 삭제는 `yui-` 접두어로 한정(`sw.js:31`). `localStorage` 공유는 열림 — 사용자 도메인 또는 사용자 사이트 저장소 고려 |
-| R-7 | 데이터 형식 오류 하나가 화면 전체를 깨뜨림 (특히 `host`) | — | **해결** — 헤드리스 데이터 검사(§11.1). 일정 id 중복 등 작은 공백은 §10.3 |
+| R-7 | 데이터 형식 오류 하나가 화면 전체를 깨뜨림 (특히 `host`) | — | **해결** — 헤드리스 데이터 검사(§11.1, 일정·장소 id 중복 포함). 남은 작은 공백은 §10.3 |
 | R-8 | 일정 갱신 담당 없음 → 캘린더가 빔. 현재 표본 일정은 9월이고 GIP 반복만 12-22 까지 | 높음/중간 | **열림.** Q-M11 |
-| R-9 | 저장된 `cg` 의 모양 검증 없음 | 낮음/중간 | **열림.** 시작 때 객체인지 확인 |
+| R-9 | 저장된 `cg` 의 모양 검증 없음 | — | **해결** — 시작 때 일반 객체가 아니면 버림 (`index.html:1796`) |
 | R-10 | Leaflet 1.9.4 는 2023-05 이후 안정판 갱신이 없고 2.0 은 알파 (2026-10-12 검색). vendor 는 수동 갱신 | 낮음/낮음 | **열림.** ADR-0013 재검토 조건 |
 | R-11 | 부수 효과 경계가 주석 문자열 (§4.3) | 낮음/중간 | **열림.** OQ-9 |
 | R-12 | Playwright 검사가 저장소에 없어 재현 불가 | 중간/중간 | **열림.** OQ-10 |
@@ -687,9 +690,27 @@ CSP 는 없다. ADR-0008 의 CSP 초안은 cdnjs·Supabase 기준이라 맞지 �
 
 ---
 
-## 15. 추적표 — PRD-MLP v1.2 ↔ 설계·현행
+## 15. 추적표 — PRD-MLP v1.3 ↔ 설계·현행
 
 상태: **구현** / **부분** / **미구현** / **제거**(책임자 결정) / **이탈**(PRD 와 다름).
+
+**책임자 결정 (PRD v1.3 §2)**
+
+| ID | 결정 | 이 문서 | 현행 |
+|---|---|---|---|
+| D1 | 게시판 제거 | — | 구현 (ML-H5) |
+| D2 | 세 기능 | §4 | 구현 |
+| D3 | 컬렉션 기기 기록 | §6, ADR-0010 | 구현 (ML-J5) |
+| D4 | 내 주위 / 일본 전체 | §5.3 | 구현 (ML-M1) |
+| D5 | 실제 도도부현 경계 지도 | §7.4~7.5, ADR-0012 | 구현 (ML-M5) |
+| D6 | 직접 넣은 장소만 | §10, ADR-0011 (OD-7) | 구현 (ML-M8) |
+| D7 | 홈에서 시작 | §5.4 | 구현 (ML-H1) |
+| D8 | 단일 파일 원칙 없음, 라이브러리·경계 데이터 별도 파일 | OD-1, OD-2, ADR-0013, ADR-0012 | 구현 |
+| D9 | 참가 버튼 없음 | OD-4, §8.2 | 구현 (ML-K8 제거) |
+| D10 | 앱 이름 미정, "YUI" 임시 | OD-5, OQ-1 | 자리표시 |
+| D11 | 탭바 홈+3, 언어 기억, 뒤로 가기 수정 | OD-6, §5.4, §6 | 구현 (ML-H3, ML-C2, ML-H4) |
+
+**요구사항**
 
 | ID | 요구사항 (요약) | 상태 | 현행 위치 / 메모 |
 |---|---|---|---|
@@ -773,4 +794,5 @@ CSP 는 없다. ADR-0008 의 CSP 초안은 cdnjs·Supabase 기준이라 맞지 �
 | OQ-16 | 경계 데이터의 재현 절차 | **해결** — `data/README.md` (NE `ne_10m_admin_1_states_provinces`, 속성 변환, mapshaper 명령) |
 | OQ-17 | network-first 에 시간 제한(예: 3초 후 캐시)을 둘지. SW 캐시 삭제 범위 | **부분 해결** — 캐시 삭제는 `yui-` 접두어로 한정. 시간 제한은 열림 |
 | OQ-18 | 2차 데이터가 한 언어로만 올 때 — 검사가 막는 지금 방식(번역 필수)으로 갈지, 화면 폴백(해당 언어 → 일본어 → 영어)을 둘지 (Q-M8) | **열림** |
-| OQ-19 | 헤드리스 검사의 런타임 존재 목록에 `selectPref`, `mainBounds`, `locChanged` 를, 데이터 검사에 일정 id 중복을 더할지 | **열림** — 작은 변경 |
+| OQ-19 | 헤드리스 검사의 런타임 존재 목록에 `selectPref`, `mainBounds`, `locChanged` 를, 데이터 검사에 일정 id 중복을 더할지 | **해결** — 둘 다 CLAUDE.md 검사에 들어감 |
+| OQ-20 | ADR 상태값 확인: (a) `architect` 규칙의 상태 목록(제안됨 → 승인됨 → 폐기됨 / 대체됨)에 **"보류" 가 없다** — 0001·0002·0004~0007 에 쓴 "보류 (ADR-0009)" 를 받아들일지, 아니면 "폐기됨" 이나 "제안됨" 유지로 할지. (b) ADR-0003 을 "ADR-0013으로 대체됨" 으로 바꿨는데 ADR-0013 은 아직 **제안됨**이다 — 대체 관계는 0013 승인 뒤에 성립하는 것이 맞다. 0001~0007 의 상태를 책임자가 확정해 줄 것 (0001 은 OQ-15 와 함께) | **열림** — 책임자 확인 |

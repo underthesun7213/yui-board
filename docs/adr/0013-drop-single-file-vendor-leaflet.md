@@ -4,8 +4,8 @@
 |---|---|
 | 상태 | 제안됨 |
 | 날짜 | 2026-10-12 |
-| 근거 | PRD-MLP Q-M10, Q-M13 (책임자 답: 둘 다 허용), §8 "구조"·"지도 라이브러리"·"첫 화면", ML-M13, ML-P4 |
-| 관련 | [ADR-0003](0003-keep-single-file-client.md) (**이 ADR 로 대체**), ADR-0008 결정 3, ADR-0012, [RFC-0002 §4.3, §9](../architecture/rfc/0002-mlp-client-only.md) |
+| 근거 | PRD-MLP v1.3 **D8** (Q-M10, Q-M13 책임자 답: 둘 다 허용), §8 "구조"·"지도 라이브러리"·"첫 화면", ML-M13, ML-P4 |
+| 관련 | [ADR-0003](0003-keep-single-file-client.md) (**이 ADR 로 대체** — 이 ADR 이 아직 제안됨이라 대체 관계 확정은 책임자 확인 필요, RFC-0002 OQ-20), ADR-0008 결정 3, ADR-0012, [RFC-0002 §4.3, §9](../architecture/rfc/0002-mlp-client-only.md) |
 
 ## 배경
 
@@ -43,7 +43,7 @@ MLP 는 여기에 경계 데이터(46 KB, ADR-0012)가 더해진다. 책임자�
 ## 결과
 
 - 좋은 점: 첫 화면에 지도 비용 없음. 오프라인 지도(목록·핀·경계). 외부 요청은 타일뿐. 빌드가 없어 배포·검사 방식이 그대로다.
-- 크기 (`78e2b4e`, `wc -c` / `gzip -c | wc -c`, 조정자 측정): 첫 화면 `index.html` 107,247 B (gzip 40,129). 지도 탭에서 더 받는 vendor 4개 합계 197,366 B (gzip 55,196) — `leaflet.js` 147,552 (42,578), `leaflet.markercluster.js` 34,136 (8,791), `leaflet.css` 14,806 (3,558), `MarkerCluster.css` 872 (269). Leaflet 을 `<head>` 에 두었다면 첫 화면 gzip 이 약 95 KB, 지금의 약 2.4배였다.
+- 크기 (`wc -c` / `gzip -c | wc -c`, 조정자 측정 — `index.html` 은 `7b6d631`, vendor 는 `78e2b4e`): 첫 화면 `index.html` 107,305 B (gzip 40,162). 지도 탭에서 더 받는 vendor 4개 합계 197,366 B (gzip 55,196) — `leaflet.js` 147,552 (42,578), `leaflet.markercluster.js` 34,136 (8,791), `leaflet.css` 14,806 (3,558), `MarkerCluster.css` 872 (269). Leaflet 을 `<head>` 에 두었다면 첫 화면 gzip 이 약 95 KB, 지금의 약 2.4배였다.
 - 나쁜 점:
   - 보안 패치를 자동으로 받지 못한다 — 사람이 확인해야 한다.
   - "한 파일만 보면 된다" 는 단순성이 줄었다. CLAUDE.md 가 파일 목록과 `SHELL` 규칙을 적는다(현행).

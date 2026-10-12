@@ -17,7 +17,7 @@
 - 헤드리스 검사는 `localStorage` 가 없는 Node 에서 뷰를 실행한다 (PRD §8 "검증").
 - 저장하는 데이터는 수백 바이트다.
 
-## 결정 (현행 구현과 같다, `index.html:1179-1181`, `:1722-1725`)
+## 결정 (현행 구현과 같다 — `index.html` @`7b6d631`: `store` `:1191-1193`, 시작 코드의 복원 `:1795-1797`)
 
 1. **`localStorage`** 를 쓴다. 키는 `yui.v1.<이름>`, 값은 JSON.
    - `yui.v1.lang` — `"en"|"ja"|"ko"`
@@ -32,7 +32,7 @@
 
 | 대안 | 장점 | 단점 / 기각 이유 |
 |---|---|---|
-| **쿠키** | 오래된 브라우저까지 지원 | 쿠키는 도메인·경로가 맞는 **요청마다 자동으로 실려 서버(GitHub Pages)로 간다**(일반 지식). Web Storage 는 쿠키와 달리 서버로 보내지지 않는다([MDN Web Storage API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Storage_API) 및 미러, 2026-10-12 검색 확인). 쿠키는 ML-P1 "우리 쪽 서버로 아무것도 보내지 않는다" 와 맞지 않는다. 크기 제한이 작고, 만료·SameSite 관리가 필요하며, 쿠키 동의 논의를 부른다 |
+| **쿠키** | 오래된 브라우저까지 지원 | 쿠키는 도메인·경로가 맞는 **요청마다 자동으로 실려 서버(GitHub Pages)로 간다**(일반 지식). Web Storage 는 쿠키와 달리 서버로 보내지지 않는다([MDN Web Storage API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Storage_API) — 검색 결과에는 MDN 원문 대신 미러가 나와 그것으로 확인: [univ-mlv.fr 의 MDN 미러](https://www-igm.univ-mlv.fr/~forax/MDN/developer.mozilla.org/en-US/docs/Web/API/Web_Storage_API.html), [DevDocs 계열 w3cub](https://docs.w3cub.com/dom/web_storage_api), 2026-10-12). 쿠키는 ML-P1 "우리 쪽 서버로 아무것도 보내지 않는다" 와 맞지 않는다. 크기 제한이 작고, 만료·SameSite 관리가 필요하며, 쿠키 동의 논의를 부른다 |
 | **sessionStorage** | 같은 API | 탭(페이지 세션)이 닫히면 지워진다(같은 출처). 앱 재시작 후 유지(ML-J5)를 못 한다 |
 | IndexedDB | 큰 데이터, 비동기, 구조화 | 수백 바이트에 과하다. 비동기라 첫 `render()` 전에 기다려야 하고, 헤드리스 검사에 스텁이 더 필요하다 |
 | Cache API / 파일 | SW 와 같은 저장소 | 키-값 용도가 아니다 |
@@ -46,7 +46,7 @@
   - 저장소는 사용자·브라우저가 지울 수 있다. 내보내기는 범위 밖(PRD §12). 기기를 바꾸면 컬렉션이 없다.
   - Safari 는 스크립트가 쓴 저장소(localStorage 포함)를 **Safari 를 7일 쓰는 동안 그 사이트와 상호작용이 없으면** 지운다. 홈 화면 웹앱은 Safari 와 별도로 자기 사용 일수를 센다고 WebKit 이 설명했으나, 홈 화면 앱에서도 7일 뒤 지워졌다는 보고가 있다([WebKit 발표 요약 — Search Engine Land](https://searchengineland.com/what-safaris-7-day-cap-on-script-writeable-storage-means-for-pwa-developers-332519), [WebKit Bug 237350](https://bugs.webkit.org/show_bug.cgi?id=237350), 2026-10-12 검색 확인. WebKit 원문은 이번 검색에서 직접 확인하지 못함). → 실기기 확인, 홈 화면 설치 안내.
   - `localStorage` 는 출처 단위다. `<user>.github.io/<repo>/` 로 배포하면 같은 사용자의 다른 프로젝트 페이지가 같은 저장소를 읽고 쓸 수 있다. 접두어는 충돌만 막는다(민감한 데이터가 없어 영향은 작다).
-  - 저장된 값의 모양을 검사하지 않는다(`cg` 가 객체가 아니면 이후 저장이 조용히 실패) — RFC-0002 R-9.
+  - **해결:** 이 ADR 첫 판의 "저장된 값의 모양을 검사하지 않는다(`cg` 가 객체가 아니면 이후 저장이 조용히 실패)" 는 시작 코드가 일반 객체(배열 아님)일 때만 `cg` 를 쓰도록 바뀌어 해결됐다(`index.html:1796`) — RFC-0002 R-9.
 
 ## 열린 질문
 
@@ -55,4 +55,4 @@
 | S-Q1 | 컬렉션 내보내기·복원(예: 코드 문자열)이 "lovable" 에 필요한가 — 지금은 범위 밖 |
 | S-Q2 | iOS 홈 화면 앱에서 7일 제한이 실제로 적용되는지 실기기로 확인할 것 |
 | S-Q3 | 앱 이름이 바뀌어도 키 접두어 `yui.` 는 유지할 것 (바꾸면 기존 컬렉션을 잃는다) |
-| S-Q4 | 시작 때 `cg` 가 일반 객체인지 확인하는 한 줄을 넣을 것인가 |
+| S-Q4 | 시작 때 `cg` 가 일반 객체인지 확인하는 한 줄을 넣을 것인가 — **해결** (`index.html:1796`) |
