@@ -34,9 +34,13 @@ Node 22 or later.
 ```
 npm install
 npm run dev          # http://localhost:5173
-npm run build        # typecheck, build to dist/, check bundle budgets
+npm run build:local  # typecheck, build to dist/ with a 'self' CSP, check bundle budgets
 npm run preview      # serve dist/
 ```
+
+A real deploy builds with the published address, which the CSP trusts instead
+of the whole `github.io` origin: `YUNABI_ORIGIN=https://<user>.github.io/yui-board/ npm run build`.
+`npm run build` refuses to run without one.
 
 ## Checks
 

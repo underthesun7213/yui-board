@@ -1,4 +1,4 @@
-import { Suspense, useDeferredValue } from 'react';
+import { Suspense, useDeferredValue, useEffect } from 'react';
 import { reload } from '../actions/app';
 import { Home } from '../features/home/Home';
 import { useT } from '../i18n/useT';
@@ -8,7 +8,7 @@ import { ScreenBoundary } from '../ui/ErrorBoundary';
 import { Header } from '../ui/Header';
 import { TabBar } from '../ui/TabBar';
 import { Toast } from '../ui/Toast';
-import { ROOTS } from './routes';
+import { formatRoute, ROOTS } from './routes';
 import { Calendar, Collection, EventDetail, LearnList, Lesson, MapScreen } from './screens';
 
 function Screen({ r }: { r: Route }) {
@@ -37,6 +37,11 @@ export function App() {
   /* While a new screen's chunk loads, the old screen stays up instead of
      flashing "Loading" (store updates cannot be transitions themselves). */
   const shown = useDeferredValue(r);
+  /* a new screen starts at the top, once it is the one on screen */
+  const shownKey = formatRoute(shown);
+  useEffect(() => {
+    scrollTo(0, 0);
+  }, [shownKey]);
   const failed = (
     <div className="chunkfail" role="alert">
       <p>{m.chunkFail}</p>

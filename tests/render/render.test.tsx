@@ -16,7 +16,7 @@ import {
 } from '../../src/domain/types';
 import { calendarUi } from '../../src/state/calendarUi';
 import { collection } from '../../src/state/collection';
-import { setData } from '../../src/state/data';
+import { data, setData } from '../../src/state/data';
 import { location, type LocState } from '../../src/state/location';
 import { mapUi } from '../../src/state/mapUi';
 import { prefs } from '../../src/state/prefs';
@@ -48,6 +48,7 @@ async function html(): Promise<string> {
 }
 
 function reset() {
+  data.set({ status: 'ok' });
   mapUi.set({
     mode: 'near',
     pref: null,
@@ -63,13 +64,13 @@ function reset() {
   vn.set(VN_START);
 }
 
-type Case = [name: string, r: Route, setup?: () => void];
+type Case = [name: string, r: Route, setup?: () => void, mark?: RegExp];
 const cases: Case[] = [
   ['home', { name: 'home' }],
   ['home-cards', { name: 'home' }, () => collection.set({ cg: { e_osaka_best: true } })],
   ['learn', { name: 'learn' }],
   ['lesson', { name: 'lesson', lid: 'l1' }],
-  ['lesson-unknown', { name: 'lesson', lid: 'zz' }],
+  ['lesson-unknown', { name: 'lesson', lid: 'zz' }, undefined, /class="lesson"/],
   ['collection-empty', { name: 'collection' }],
   [
     'collection-full',
@@ -86,8 +87,11 @@ const cases: Case[] = [
   ],
   ['event', { name: 'event', id: GIP, date: '2026-09-22' }],
   ['event-weekly', { name: 'event', id: GIP, date: '2026-10-13' }],
-  ['event-missing', { name: 'event', id: GIP, date: '2026-10-14' }],
-  ['event-cancelled', { name: 'event', id: GIP, date: '2026-10-20' }],
+  ['event-missing', { name: 'event', id: GIP, date: '2026-10-14' }, undefined, /class="empty"/],
+  ['event-cancelled', { name: 'event', id: GIP, date: '2026-10-20' }, undefined, /class="empty"/],
+  ['home-loading', { name: 'home' }, () => data.set({ status: 'loading' }), /class="dstatus"/],
+  ['cal-data-error', { name: 'cal' }, () => data.set({ status: 'error' }), /class="dstatus warn"/],
+  ['map-data-error', { name: 'map' }, () => data.set({ status: 'error' }), /class="dstatus warn"/],
   ['map-near-pl', { name: 'map' }, () => (location.set({ state: 'skip' }), mapUi.set({ pl: 1 }))],
   ['map-japan', { name: 'map' }, () => mapUi.set({ mode: 'japan', prefFail: true })],
   [
@@ -109,15 +113,15 @@ for (const st of ['ask', 'idle', 'wait', 'ok', 'denied', 'fail', 'skip'] as LocS
 const MARK: Record<Route['name'], RegExp> = {
   home: /class="hcards"/,
   learn: /class="lesson"/,
-  lesson: /class="(cut|lesson|route|vnwrap|vnend)"/,
+  lesson: /class="(cut|route|vnwrap|vnend)"/,
   collection: /class="cgrid"/,
   map: /class="seg"/,
   cal: /class="mnav"/,
-  event: /class="bar"/,
+  event: /class="evwrap"/,
 };
 const BAD = /undefined|NaN|\[object Object\]/;
-function check(out: string) {
-  expect(out).toMatch(MARK[route.get().route.name]);
+function check(out: string, mark?: RegExp) {
+  expect(out).toMatch(mark ?? MARK[route.get().route.name]);
   expect(out).not.toContain('<!--$!-->');
   expect(out).not.toContain('data-route-loading');
   const m = out.match(/.{0,60}(undefined|NaN|\[object Object\]).{0,30}/);
@@ -126,12 +130,12 @@ function check(out: string) {
 }
 
 describe.each(['en', 'ja', 'ko'] as const)('%s', (lang) => {
-  it.each(cases)('%s', async (_n, r, setup) => {
+  it.each(cases)('%s', async (_n, r, setup, mark) => {
     reset();
     prefs.set({ lang });
     route.set({ route: r, prev: null });
     setup?.();
-    check(await html());
+    check(await html(), mark);
   });
 
   it.each(['osaka', 'kyoto'] as const)('plays the %s route through', async (k) => {

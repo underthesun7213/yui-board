@@ -271,14 +271,35 @@ test.describe('map', () => {
     expect(
       await y(page, (a) => !!a.map().prefLayer && a.map().map!.hasLayer(a.map().prefLayer!)),
     ).toBe(true);
+    /* each mode comes back where it was last left, every round trip, after
+       the position has settled */
+    const settle = () =>
+      page.waitForFunction(
+        () =>
+          !window.__yunabi.location.get().refreshing &&
+          window.__yunabi.location.get().state === 'ok',
+      );
+    const zoom = () => y(page, (a) => a.map().map!.getZoom());
+    const setZoom = (z: number) =>
+      page.evaluate((zz) => window.__yunabi.map().map!.setZoom(zz, { animate: false }), z);
     await tap(page, '[data-mode="near"]');
+    await settle();
     await page.waitForTimeout(600);
-    await page.evaluate(() => window.__yunabi.map().map!.setZoom(17, { animate: false }));
+    await setZoom(17);
     await tap(page, '[data-mode="japan"]');
     await page.waitForTimeout(300);
+    await setZoom(7);
+    await tap(page, '[data-mode="near"]');
+    await page.waitForTimeout(2000);
+    await settle();
+    expect(await zoom()).toBe(17);
+    await setZoom(15);
+    await tap(page, '[data-mode="japan"]');
+    await page.waitForTimeout(300);
+    expect(await zoom()).toBe(7);
     await tap(page, '[data-mode="near"]');
     await page.waitForTimeout(300);
-    expect(await y(page, (a) => a.map().map!.getZoom())).toBe(17);
+    expect(await zoom()).toBe(15);
     await tap(page, '.globe');
     await tap(page, '[data-l="ko"]');
     expect(
@@ -321,6 +342,23 @@ test.describe('map', () => {
     await tap(page, '.prefbar [data-pref=""]');
     expect(await y(page, (a) => [a.mapUi.get().mode, a.mapUi.get().pref])).toEqual(['japan', null]);
   });
+});
+
+test('Y-M2 a map that failed to load offers a reload that brings it back', async ({
+  page,
+  context,
+  errors,
+}) => {
+  let block = true;
+  await context.route('**/assets/leaflet-src-*.js', (r) => (block ? r.abort() : r.continue()));
+  await page.goto('./#/map');
+  await expect(page.locator('.maperr')).toHaveCount(1);
+  /* the blocked request is the one expected error */
+  errors.splice(0, errors.length, ...errors.filter((e) => !/ERR_FAILED/.test(e)));
+  block = false;
+  await tap(page, '.maperr button');
+  await mapReady(page);
+  await expect(page.locator('.maperr')).toHaveCount(0);
 });
 
 test.describe('map tiles failing', () => {

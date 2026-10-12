@@ -115,10 +115,8 @@ main {
 .crest-text span {
   display: block;
   font-size: 12px;
+  line-height: 1.35;
   color: var(--on-navy-muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 @media (max-width: 360px) {
   .crest-text span {
@@ -636,6 +634,9 @@ main {
   height: 44px;
   line-height: 44px;
   font-size: 22px;
+}
+.maperr .secondary {
+  margin-top: 12px;
 }
 .maperr {
   padding: 56px 24px;
@@ -1180,4 +1181,22 @@ main {
   color: var(--mist);
   font-weight: 700;
   text-decoration: underline;
+}
+.dstatus {
+  margin: 12px var(--gutter) 0;
+  font-size: 14px;
+  color: var(--muted);
+}
+.dstatus.warn {
+  padding: 10px 14px;
+  border-radius: var(--r-s);
+  background: var(--warning-bg);
+  color: var(--warning-fg);
+}
+.dstatus button {
+  min-height: 44px;
+  color: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }

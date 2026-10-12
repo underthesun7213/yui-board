@@ -19,7 +19,8 @@ export default defineConfig({
   },
   projects: [{ name: 'chromium', use: { browserName: 'chromium' } }],
   webServer: {
-    command: `npx vite build --logLevel error && npx vite preview --port ${PORT} --strictPort --host 127.0.0.1`,
+    /* a separate folder: the e2e build carries the test handle and must never be deployed */
+    command: `npx vite build --outDir dist-e2e --logLevel error && npx vite preview --outDir dist-e2e --port ${PORT} --strictPort --host 127.0.0.1`,
     env: { VITE_E2E: '1', YUNABI_ORIGIN: BASE },
     url: BASE,
     reuseExistingServer: !process.env.CI,

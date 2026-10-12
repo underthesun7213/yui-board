@@ -8,6 +8,7 @@ import { collection } from '../../state/collection';
 import { data } from '../../state/data';
 import { prefs } from '../../state/prefs';
 import { useStore } from '../../state/useStore';
+import { DataStatus } from '../../ui/DataStatus';
 
 export function Home() {
   const m = useT();
@@ -21,6 +22,7 @@ export function Home() {
       <div className="hhead">
         <h1>{m.homeT}</h1>
       </div>
+      <DataStatus />
       <div className="hcards">
         <button className="hcard jp" onClick={() => go({ name: 'learn' })}>
           <i aria-hidden="true">あ</i>

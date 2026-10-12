@@ -11,6 +11,7 @@ desktop.ini
 # node, if a toolchain arrives later
 node_modules/
 dist/
+dist-e2e/
 .next/
 out/
 

@@ -30,6 +30,16 @@ registerRoute(
   }),
 );
 
+/* Upgrading from v1.3 (its caches are named yui-*): take over at once rather
+   than asking to reload into the version already on screen. */
+self.addEventListener('install', (e) => {
+  e.waitUntil(
+    caches.keys().then((ks) => {
+      if (ks.some((k) => k.startsWith('yui-'))) return self.skipWaiting();
+    }),
+  );
+});
+
 self.addEventListener('activate', (e) => {
   /* v1.3 caches (yui-v1 … yui-v6) */
   e.waitUntil(

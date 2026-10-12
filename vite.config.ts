@@ -32,6 +32,16 @@ function csp(): string {
 const metaCsp = (): Plugin => ({
   name: 'yunabi-meta-csp',
   apply: 'build',
+  /* A build without the published address would ship a CSP that trusts the
+     whole github.io origin; refuse unless that is asked for explicitly. */
+  configResolved() {
+    if (ORIGIN && !/^https?:\/\/[^/]+\/(.*\/)?$/.test(ORIGIN))
+      throw new Error(`YUNABI_ORIGIN must be a full URL ending in "/" (got ${ORIGIN})`);
+    if (!ORIGIN && !process.env.YUNABI_ALLOW_SELF)
+      throw new Error(
+        "Set YUNABI_ORIGIN (e.g. https://<user>.github.io/yui-board/) or YUNABI_ALLOW_SELF=1 for a local build with 'self'.",
+      );
+  },
   transformIndexHtml: () => [
     {
       tag: 'meta',

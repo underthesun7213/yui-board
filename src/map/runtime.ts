@@ -59,6 +59,8 @@ let prefGeo: unknown = null;
 const pins = new Map<number, Leaflet.Marker>();
 const modeView: Partial<Record<'near' | 'japan', View>> = {};
 let applied: Applied | null = null;
+/** the mode the map was last showing, to save its view when the mode changes */
+let seenMode: 'near' | 'japan' | null = null;
 let currentSlot: HTMLElement | null = null;
 let gen = 0;
 let handlers: MapHandlers = { onPin() {}, onPref() {} };
@@ -176,13 +178,11 @@ const attached = () => !!currentSlot && !!container?.isConnected;
 function onChange() {
   if (!map) return;
   const next = snapshot();
-  if (!attached()) {
-    /* keep the view the old mode was left at; the rest waits for attach */
-    if (applied && next.mode !== applied.mode && !modeView[applied.mode])
-      modeView[applied.mode] = view();
-    return;
-  }
-  apply(next);
+  /* Leaving a mode saves where it was left, attached or not, every time. */
+  if (seenMode && next.mode !== seenMode) modeView[seenMode] = view();
+  seenMode = next.mode;
+  /* the rest waits for the next attach */
+  if (attached()) apply(next);
 }
 
 const view = (): View => ({ c: map!.getCenter(), z: map!.getZoom() });
@@ -190,6 +190,7 @@ const view = (): View => ({ c: map!.getCenter(), z: map!.getZoom() });
 function apply(next: Applied) {
   const prev = applied;
   applied = next;
+  seenMode = next.mode;
   stats.syncs++;
   if (!prev || prev.lang !== next.lang) label(next);
   const onlyPin =
@@ -205,13 +206,20 @@ function apply(next: Applied) {
   sync(next);
   if (!prev) return fit(next);
   if (prev.mode !== next.mode) {
-    if (attached() && !modeView[prev.mode]) modeView[prev.mode] = view();
+    /* back to where this mode was left; the first visit fits */
     const v = modeView[next.mode];
-    if (v && prev.fitSeq === next.fitSeq) map!.setView(v.c, v.z, { animate: false });
+    if (v && prev.fitSeq === next.fitSeq)
+      afterZoom(() => map!.setView(v.c, v.z, { animate: false }));
     else fit(next);
     return;
   }
-  if (prev.fitSeq !== next.fitSeq || prev.prefReady !== next.prefReady || prev.pref !== next.pref)
+  if (
+    prev.fitSeq !== next.fitSeq ||
+    prev.prefReady !== next.prefReady ||
+    prev.pref !== next.pref ||
+    /* places arrived after the map (a slow first load) */
+    (!prev.places.length && next.places.length)
+  )
     fit(next);
 }
 
@@ -285,22 +293,26 @@ function sync(a: Applied) {
   } else if (prefLayer && m.hasLayer(prefLayer)) m.removeLayer(prefLayer);
 }
 
-/* Leaflet drops a new view requested while a zoom animation is running, so a
-   fit asked for mid-animation (pick a prefecture, then quickly go back) waits
-   for the animation and then fits whatever is current. */
-let fitPending = false;
-function fit(a: Applied) {
+/* Leaflet drops a new view requested while a zoom animation is running (pick
+   a prefecture, then quickly go back), so a view change asked for mid-
+   animation waits for it. Only the latest request runs. */
+let pendingView: (() => void) | null = null;
+function afterZoom(fn: () => void) {
   const m = map!;
-  if ((m as unknown as { _animatingZoom?: boolean })._animatingZoom) {
-    if (!fitPending) {
-      fitPending = true;
-      m.once('zoomend', () => {
-        fitPending = false;
-        if (applied) fit(applied);
-      });
-    }
-    return;
-  }
+  if (!(m as unknown as { _animatingZoom?: boolean })._animatingZoom) return fn();
+  if (!pendingView)
+    m.once('zoomend', () => {
+      const f = pendingView;
+      pendingView = null;
+      f?.();
+    });
+  pendingView = fn;
+}
+function fit(a: Applied) {
+  afterZoom(() => fitNow(applied ?? a));
+}
+function fitNow(a: Applied) {
+  const m = map!;
   const lf = L!;
   if (a.mode === 'near') {
     const r = ref(a);

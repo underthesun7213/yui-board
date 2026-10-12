@@ -15,7 +15,8 @@
     "format:check": "prettier --check .",
     "typecheck": "tsc -b",
     "test": "vitest run",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "build:local": "YUNABI_ALLOW_SELF=1 npm run build"
   },
   "dependencies": {
     "leaflet": "1.9.4",

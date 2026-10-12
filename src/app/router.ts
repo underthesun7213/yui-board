@@ -40,7 +40,6 @@ export function navigate(to: Route, opts: { replace?: boolean } = {}) {
     mapUi.set({ mode: 'near', pref: null, cat: '', pl: null });
   route.set({ route: to, prev: opts.replace ? from.prev : from.route.name });
   write(!!opts.replace, formatRoute(to));
-  if (typeof scrollTo === 'function') scrollTo(0, 0);
   hook(to, from.route, 'push');
 }
 

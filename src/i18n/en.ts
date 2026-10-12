@@ -101,15 +101,13 @@ export const en = {
     en: 'English',
     ko: 'Korean',
   },
-  writtenIn: 'Written in {l}',
-  dataOffline: 'Offline — showing what was saved on {t}.',
   dataError: 'Could not load the latest places and events.',
-  dataEmpty: 'Nothing here yet.',
   pastEv: 'Past',
   moreN: '+{n}',
   aTabs: 'Main',
   aPlaces: 'Places',
-  aLoaded: 'Updated {t}',
+  aModes: 'Map area',
+  aCats: 'Categories',
 };
 
 export type Messages = typeof en;

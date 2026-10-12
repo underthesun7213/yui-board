@@ -6,3 +6,4 @@ public/data
 *.md
 schema.sql
 legacy
+dist-e2e

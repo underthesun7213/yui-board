@@ -7,6 +7,7 @@ import { calendarUi } from '../../state/calendarUi';
 import { data } from '../../state/data';
 import { prefs } from '../../state/prefs';
 import { useStore } from '../../state/useStore';
+import { DataStatus } from '../../ui/DataStatus';
 import { EventRow } from './EventRow';
 
 export function Calendar() {
@@ -26,6 +27,7 @@ export function Calendar() {
   const list = sel ? occOn(schedule, sel) : upcoming(schedule, now, 3);
   return (
     <>
+      <DataStatus />
       <div className="mnav">
         <button aria-label={m.aPrev} onClick={() => moveMonth(-1)}>
           ‹

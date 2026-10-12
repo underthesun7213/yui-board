@@ -3,7 +3,7 @@
 import { readFileSync } from 'node:fs';
 import { gzipSync } from 'node:zlib';
 
-const DIST = 'dist/';
+const DIST = (process.env.DIST ?? 'dist') + '/';
 const manifest = JSON.parse(readFileSync(DIST + '.vite/manifest.json', 'utf8'));
 const KB = 1024;
 const BUDGETS = [

@@ -1,4 +1,4 @@
-import type { EventSeries, OccurrenceOverride, Place } from '../domain/types';
+import { CATEGORIES, type EventSeries, type OccurrenceOverride, type Place } from '../domain/types';
 
 export interface Snapshot {
   places: Place[];
@@ -7,9 +7,11 @@ export interface Snapshot {
 }
 
 const hm = (t: string | null) => (t ? t.slice(0, 5) : t);
+const CATS = new Set<string>(CATEGORIES);
 function normalize(s: Snapshot): Snapshot {
   return {
-    places: s.places,
+    /* a category this build does not know cannot be drawn; skip it */
+    places: s.places.filter((p) => CATS.has(p.category)),
     events: s.events.map((e) => ({
       ...e,
       start_time: hm(e.start_time)!,

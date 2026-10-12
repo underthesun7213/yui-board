@@ -19,7 +19,13 @@ export function createStore<T extends object>(initial: T): Store<T> {
     if (!changed) return;
     const prev = state;
     state = { ...state, ...p };
-    for (const fn of [...subs]) fn(state, prev);
+    /* one failing subscriber must not stop the others (React's included) */
+    for (const fn of [...subs])
+      try {
+        fn(state, prev);
+      } catch (e) {
+        console.error(e);
+      }
   };
   const subscribe = (fn: (s: T, prev: T) => void) => {
     subs.add(fn);

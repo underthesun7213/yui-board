@@ -1,5 +1,6 @@
 import 'leaflet/dist/leaflet.css';
 import 'leaflet.markercluster/dist/MarkerCluster.css';
+import { reload } from '../../actions/app';
 import {
   selectPref,
   setCat,
@@ -20,6 +21,7 @@ import { location } from '../../state/location';
 import { mapUi } from '../../state/mapUi';
 import { prefs } from '../../state/prefs';
 import { useStore } from '../../state/useStore';
+import { DataStatus } from '../../ui/DataStatus';
 import { LangBadge } from '../../ui/LangText';
 
 export function MapScreen() {
@@ -31,9 +33,20 @@ export function MapScreen() {
         <h1>{m.mapT}</h1>
       </div>
       <ModeBar />
+      <DataStatus />
       <StatusBar />
       <CategoryChips />
-      {mapFail ? <p className="maperr">{m.mapFail}</p> : <MapSlot loading={m.mapLoading} />}
+      {mapFail ? (
+        /* a failed chunk import stays failed until the page reloads */
+        <div className="maperr" role="alert">
+          <p>{m.mapFail}</p>
+          <button className="secondary" onClick={reload}>
+            {m.reload}
+          </button>
+        </div>
+      ) : (
+        <MapSlot loading={m.mapLoading} />
+      )}
       <PlaceCard />
       <PlaceList />
     </>
@@ -44,7 +57,7 @@ function ModeBar() {
   const m = useT();
   const mode = useStore(mapUi, (s) => s.mode);
   return (
-    <div className="seg" role="group">
+    <div className="seg" role="group" aria-label={m.aModes}>
       {(['near', 'japan'] as const).map((k) => (
         <button key={k} data-mode={k} aria-pressed={mode === k} onClick={() => setMode(k)}>
           {k === 'near' ? m.modeNear : m.modeJapan}
@@ -127,7 +140,7 @@ function CategoryChips() {
   const cat = useStore(mapUi, (s) => s.cat);
   if (mode === 'japan' && !pref) return null;
   return (
-    <div className="filters" role="group">
+    <div className="filters" role="group" aria-label={m.aCats}>
       <button className="fchip" aria-pressed={!cat} onClick={() => setCat('')}>
         {m.allCat}
       </button>

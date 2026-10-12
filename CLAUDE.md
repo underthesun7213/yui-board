@@ -51,13 +51,15 @@ To add a screen: a component in `features/`, a route in `state/route.ts` and
 - **Japanese is the shortest language, Korean the longest.** Size against Korean.
 - **Ask before using location.** Locating runs only after the notice was accepted.
 - **Device storage keys stay `yui.v1.*`** — installed copies read them.
+- **The e2e build (`dist-e2e/`) carries a test handle on `window`.** Never
+  deploy it; deploys come from `npm run build` into `dist/`.
 
 ## Testing
 
 Before saying a change works:
 
 ```bash
-npm run lint && npm run typecheck && npm test && npm run build
+npm run lint && npm run typecheck && npm test && npm run build:local
 CHROMIUM_PATH=/opt/pw-browsers/chromium npm run test:e2e   # cloud session
 ```
 
