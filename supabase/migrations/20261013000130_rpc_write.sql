@@ -5,20 +5,33 @@
 
 -- ---------- shared validation ----------
 
+-- Text people write. Rejects control characters (a newline only where the
+-- field allows several lines), invisible and direction-changing characters
+-- that can disguise text, and — when required — text with nothing visible.
 create function app.check_text(p_value text, p_min integer, p_max integer, p_single_line boolean)
 returns boolean
 language sql immutable set search_path = '' as $$
   select p_value is not null
      and char_length(p_value) between p_min and p_max
-     and (not p_single_line or p_value !~ '[[:cntrl:]]')
-     and (p_single_line or p_value !~ '[\x01-\x08\x0b\x0c\x0e-\x1f\x7f]')
+     and p_value !~ '[\u0080-\u009f\u00ad\u061c\u180e\u200b-\u200f\u2028-\u202e\u2060-\u206f\ufeff\ufff9-\ufffb]'
+     and (case when p_single_line then p_value !~ '[[:cntrl:]]'
+               else p_value !~ '[\x01-\x08\x0b-\x1f\x7f]' end)
+     and (p_min = 0 or p_value ~ '[^[:space:]\u00a0\u3000]')
+$$;
+
+-- Trims ASCII and the spaces people actually type (no-break, ideographic).
+create function app.trim_text(p_value text) returns text
+language sql immutable set search_path = '' as $$
+  select regexp_replace(coalesce(p_value, ''), '^[[:space:]\u00a0\u3000]+|[[:space:]\u00a0\u3000]+$', '', 'g')
 $$;
 
 create function app.check_maps_url(p_url text) returns boolean
 language sql immutable set search_path = '' as $$
   select p_url is null
       or (char_length(p_url) <= 500
-          and p_url ~ '^https://((www\.)?google\.(com|co\.jp)/maps([/?#]|$)|maps\.app\.goo\.gl/)')
+          and p_url ~ '^https://((www\.)?google\.(com|co\.jp)/maps([/?#]|$)|maps\.app\.goo\.gl/)'
+          and p_url !~* '(/|%2f)(\.|%2e){1,2}(/|%2f|\?|#|$)'
+          and p_url !~ '[\\[:space:]]')
 $$;
 
 -- Ends of an occurrence in Japan time.
@@ -40,9 +53,9 @@ declare
   found_id bigint;
   v_pref char(2);
   new_id bigint;
-  url text := nullif(btrim(coalesce(p_gmaps_url, '')), '');
+  url text := nullif(app.trim_text(p_gmaps_url), '');
   descr text := coalesce(p_description, '');
-  nm text := btrim(coalesce(p_name, ''));
+  nm text := app.trim_text(p_name);
 begin
   st := app.require_writer();
   if st <> 'ok' then return jsonb_build_object('status', st); end if;
@@ -59,7 +72,7 @@ begin
   if not app.check_text(descr, 0, 500, false) then return app.invalid('description'); end if;
   if not app.check_maps_url(url) then return app.invalid('gmaps_url'); end if;
   if p_lang is null then return app.invalid('lang'); end if;
-  if p_lat is null or p_lng is null or p_lat <> p_lat or p_lng <> p_lng then return app.invalid('location'); end if;
+  if not (p_lat between -90 and 90 and p_lng between -180 and 180) then return app.invalid('location'); end if;  -- NaN and infinity fail too
   v_pref := app.pref_of(p_lat, p_lng);
   if v_pref is null then return app.invalid('location'); end if;
   if not app.take_quota('place_create', 'place_create_per_day') then
@@ -101,9 +114,9 @@ declare
   st text;
   p app.places;
   v_pref char(2);
-  url text := nullif(btrim(coalesce(p_gmaps_url, '')), '');
+  url text := nullif(app.trim_text(p_gmaps_url), '');
   descr text := coalesce(p_description, '');
-  nm text := btrim(coalesce(p_name, ''));
+  nm text := app.trim_text(p_name);
 begin
   st := app.require_writer();
   if st <> 'ok' then return jsonb_build_object('status', st); end if;
@@ -114,7 +127,7 @@ begin
   if not app.check_text(descr, 0, 500, false) then return app.invalid('description'); end if;
   if not app.check_maps_url(url) then return app.invalid('gmaps_url'); end if;
   if p_lang is null then return app.invalid('lang'); end if;
-  if p_lat is null or p_lng is null or p_lat <> p_lat or p_lng <> p_lng then return app.invalid('location'); end if;
+  if not (p_lat between -90 and 90 and p_lng between -180 and 180) then return app.invalid('location'); end if;  -- NaN and infinity fail too
   v_pref := app.pref_of(p_lat, p_lng);
   if v_pref is null then return app.invalid('location'); end if;
   if not app.take_quota('edit', 'edit_per_day') then return jsonb_build_object('status', 'rate_limited'); end if;
@@ -145,6 +158,12 @@ end $$;
 
 -- ---------- events ----------
 
+-- A time of day on the minute, before midnight (24:00 is not a time in .ics).
+create function app.check_time(p_time time) returns boolean
+language sql immutable set search_path = '' as $$
+  select p_time is not null and p_time < '24:00' and extract(second from p_time) = 0
+$$;
+
 create function app.check_event(
   p_title text, p_start_date date, p_start_time time, p_end_time time, p_weekly_until date,
   p_place_text text, p_body text, p_lang app.ui_lang
@@ -153,7 +172,8 @@ language sql stable set search_path = '' as $$
   select case
     when not app.check_text(p_title, 1, 60, true) then 'title'
     when p_start_date is null then 'start_date'
-    when p_start_time is null or p_end_time is null or p_end_time <= p_start_time then 'time'
+    when p_start_date > app.tokyo_today() + 365 then 'start_date'
+    when not app.check_time(p_start_time) or not app.check_time(p_end_time) or p_end_time <= p_start_time then 'time'
     when p_weekly_until is not null and not (p_weekly_until > p_start_date
          and p_weekly_until <= p_start_date + 175 and (p_weekly_until - p_start_date) % 7 = 0) then 'weekly_until'
     when not app.check_text(p_place_text, 0, 60, true) then 'place_text'
@@ -173,8 +193,8 @@ declare
   found_id bigint;
   bad text;
   new_id bigint;
-  tt text := btrim(coalesce(p_title, ''));
-  pt text := btrim(coalesce(p_place_text, ''));
+  tt text := app.trim_text(p_title);
+  pt text := app.trim_text(p_place_text);
   bd text := coalesce(p_body, '');
 begin
   st := app.require_writer();
@@ -186,6 +206,7 @@ begin
   bad := app.check_event(tt, p_start_date, p_start_time, p_end_time, p_weekly_until, pt, bd, p_lang);
   if bad is not null then return app.invalid(bad); end if;
   if p_start_date < app.tokyo_today() then return app.invalid('start_date'); end if;
+  if app.ends_at(p_start_date, p_end_time) < now() then return app.invalid('time'); end if;
   if not app.take_quota('event_create', 'event_create_per_day') then
     return jsonb_build_object('status', 'rate_limited');
   end if;
@@ -224,8 +245,8 @@ declare
   e app.events;
   bad text;
   today date := app.tokyo_today();
-  tt text := btrim(coalesce(p_title, ''));
-  pt text := btrim(coalesce(p_place_text, ''));
+  tt text := app.trim_text(p_title);
+  pt text := app.trim_text(p_place_text);
   bd text := coalesce(p_body, '');
 begin
   st := app.require_writer();
@@ -250,6 +271,10 @@ begin
   where o.event_id = p_id
     and (p_weekly_until is null or o.occurs_on < p_start_date or o.occurs_on > p_weekly_until
          or (o.occurs_on - p_start_date) % 7 <> 0);
+  -- a week whose own times would now end before they start goes back to the series times
+  update app.event_occurrences o set start_time = null, end_time = null
+  where o.event_id = p_id
+    and coalesce(o.end_time, p_end_time) <= coalesce(o.start_time, p_start_time);
   perform app.evaluate_item('event', p_id);
   return jsonb_build_object('status', 'ok');
 end $$;
@@ -287,8 +312,8 @@ declare
   st text;
   e app.events;
   bad text;
-  tt text := nullif(btrim(coalesce(p_title, '')), '');
-  pt text := nullif(btrim(coalesce(p_place_text, '')), '');
+  tt text := nullif(app.trim_text(p_title), '');
+  pt text := nullif(app.trim_text(p_place_text), '');
   bd text := nullif(p_body, '');
 begin
   st := app.require_writer();
@@ -302,7 +327,9 @@ begin
   end if;
   if p_cancelled is null then return app.invalid('cancelled'); end if;
   if tt is not null and not app.check_text(tt, 1, 60, true) then return app.invalid('title'); end if;
-  if coalesce(p_end_time, e.end_time) <= coalesce(p_start_time, e.start_time) then return app.invalid('time'); end if;
+  if (p_start_time is not null and not app.check_time(p_start_time))
+     or (p_end_time is not null and not app.check_time(p_end_time))
+     or coalesce(p_end_time, e.end_time) <= coalesce(p_start_time, e.start_time) then return app.invalid('time'); end if;
   if pt is not null and not app.check_text(pt, 0, 60, true) then return app.invalid('place_text'); end if;
   if bd is not null and not app.check_text(bd, 0, 500, false) then return app.invalid('body'); end if;
   if not app.take_quota('edit', 'edit_per_day') then return jsonb_build_object('status', 'rate_limited'); end if;
@@ -327,7 +354,10 @@ begin
   if e.id is null then return jsonb_build_object('status', 'not_found'); end if;
   bad := app.check_occurrence(e, p_occurs_on);
   if bad is not null then return app.invalid(bad); end if;
-  if app.ends_at(p_occurs_on, e.end_time) < now() then return jsonb_build_object('status', 'past_event'); end if;
+  if app.ends_at(p_occurs_on, coalesce((select o.end_time from app.event_occurrences o
+                                        where o.event_id = p_event_id and o.occurs_on = p_occurs_on), e.end_time)) < now() then
+    return jsonb_build_object('status', 'past_event');
+  end if;
   if not app.take_quota('edit', 'edit_per_day') then return jsonb_build_object('status', 'rate_limited'); end if;
   delete from app.event_occurrences where event_id = p_event_id and occurs_on = p_occurs_on;
   return jsonb_build_object('status', 'ok');
@@ -357,4 +387,23 @@ language sql stable security definer set search_path = '' as $$
   from app.events e join app.event_owners o on o.event_id = e.id
   where o.owner_id = auth.uid()
   order by 5 desc, 2 desc
+$$;
+
+-- One's own item in full, also while hidden, for the edit form (Y-E1).
+-- Read-only, GET; never creates an account.
+create function public.my_place(p_id bigint) returns jsonb
+language sql stable security definer set search_path = '' as $$
+  select jsonb_build_object('id', p.id, 'name', p.name, 'category', p.category, 'description', p.description,
+                            'gmaps_url', p.gmaps_url, 'lat', p.lat, 'lng', p.lng, 'pref', p.pref, 'lang', p.lang)
+  from app.places p join app.place_owners o on o.place_id = p.id
+  where p.id = p_id and o.owner_id = auth.uid() and p.deleted_at is null
+$$;
+
+create function public.my_event(p_id bigint) returns jsonb
+language sql stable security definer set search_path = '' as $$
+  select jsonb_build_object('id', e.id, 'title', e.title, 'start_date', e.start_date, 'start_time', e.start_time,
+                            'end_time', e.end_time, 'weekly_until', e.weekly_until, 'place_text', e.place_text,
+                            'body', e.body, 'lang', e.lang)
+  from app.events e join app.event_owners o on o.event_id = e.id
+  where e.id = p_id and o.owner_id = auth.uid() and e.deleted_at is null
 $$;

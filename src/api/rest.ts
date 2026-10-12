@@ -38,6 +38,18 @@ async function get<T>(path: string): Promise<T> {
   return (await r.json()) as T;
 }
 
+/* The hosted API answers at most 1000 rows per request; read page after
+   page so nothing is cut off silently. The order makes the pages stable. */
+const PAGE = 1000;
+async function getAll<T>(path: string): Promise<T[]> {
+  const out: T[] = [];
+  for (let offset = 0; ; offset += PAGE) {
+    const page = await get<T[]>(`${path}&limit=${PAGE}&offset=${offset}`);
+    out.push(...page);
+    if (page.length < PAGE) return out;
+  }
+}
+
 export async function readAll(): Promise<Snapshot> {
   if (FIXTURE_MODE) {
     const [p, e, o] = await Promise.all([
@@ -52,14 +64,14 @@ export async function readAll(): Promise<Snapshot> {
     });
   }
   const [places, events, overrides] = await Promise.all([
-    get<Place[]>(
+    getAll<Place>(
       'places_public?select=id,name,category,description,gmaps_url,lat,lng,pref,lang,created_on,edited_on&order=id',
     ),
-    get<EventSeries[]>(
+    getAll<EventSeries>(
       'events_public?select=id,title,start_date,start_time,end_time,weekly_until,place_text,body,lang,created_on,edited_on&order=id',
     ),
-    get<OccurrenceOverride[]>(
-      'event_occurrences_public?select=event_id,occurs_on,cancelled,title,start_time,end_time,place_text,body',
+    getAll<OccurrenceOverride>(
+      'event_occurrences_public?select=event_id,occurs_on,cancelled,title,start_time,end_time,place_text,body&order=event_id,occurs_on',
     ),
   ]);
   return normalize({ places, events, overrides });

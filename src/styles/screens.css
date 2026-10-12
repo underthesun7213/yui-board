@@ -1457,3 +1457,7 @@ main {
 .my .btns {
   margin-top: 8px;
 }
+.captcha {
+  margin-top: 16px;
+  min-height: 65px;
+}

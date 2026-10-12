@@ -1,6 +1,5 @@
 import { downloadIcs } from '../../actions/calendar';
 import { go } from '../../actions/nav';
-import { deleteEvent } from '../../actions/write';
 import { session } from '../../state/session';
 import { formatDay, tokyoToday, weekday } from '../../domain/calendar/dates';
 import { findOcc } from '../../domain/calendar/occurrences';
@@ -78,7 +77,10 @@ export function EventDetail({ id, date }: { id: number; date: string }) {
                 {m.editWeek}
               </button>
             )}
-            <button className="secondary" onClick={() => void deleteEvent(e.id)}>
+            <button
+              className="secondary"
+              onClick={() => void import('../../actions/write').then((w) => w.deleteEvent(e.id))}
+            >
               {m.del}
             </button>
           </div>

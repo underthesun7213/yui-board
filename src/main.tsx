@@ -1,7 +1,6 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { startData } from './actions/data';
-import { refreshMine } from './actions/write';
 import { enterMap, ensurePrefs } from './actions/map';
 import { watchForUpdates } from './actions/update';
 import { App } from './app/App';
@@ -51,7 +50,8 @@ onRouteChange((to, from, how) => {
 });
 startRouter();
 void startData();
-void refreshMine();
+/* what this browser posted: only with an account, and off the first screen's bundle */
+void import('./actions/write').then((w) => w.refreshMine());
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

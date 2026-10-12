@@ -1,7 +1,7 @@
 -- Events: Y-K4~K9, G-23 (all four views), G-29, data_version.
 begin;
 \ir _helpers.sql
-select plan(27);
+select plan(36);
 
 create temp table ids (k text primary key, v uuid);
 insert into ids values ('a', tests.user()), ('b', tests.user());
@@ -26,6 +26,16 @@ select is((public.create_event(gen_random_uuid(), '', tests.today(), '17:00', '1
   'title', 'title required');
 select is((public.create_event(gen_random_uuid(), 'x', tests.today(), '17:00', '19:00', null, repeat('a', 61), '', 'en'))->>'field',
   'place_text', 'place at most 60');
+-- M3: sane dates and times
+select is((tests.ev(tests.today() + 366))->>'field', 'start_date', 'not more than a year ahead');
+select is((public.create_event(gen_random_uuid(), 'x', 'infinity', '17:00', '19:00', null, '', '', 'en'))->>'field',
+  'start_date', 'not infinity');
+select is((public.create_event(gen_random_uuid(), 'x', tests.today() + 1, '23:00', '24:00', null, '', '', 'en'))->>'field',
+  'time', '24:00 is not a time');
+select is((public.create_event(gen_random_uuid(), 'x', tests.today() + 1, '10:00:30', '11:00', null, '', '', 'en'))->>'field',
+  'time', 'whole minutes only');
+select is((public.create_event(gen_random_uuid(), 'x', tests.today(), '00:00', '00:01', null, '', '', 'en'))->>'field',
+  'time', 'a slot that already ended today');
 
 -- Y-K6: weekly, same weekday, at most 26 times
 insert into r select 'w', tests.ev(tests.today() + 1, tests.today() + 1 + 175);
@@ -52,6 +62,13 @@ select is((public.update_event(tests.r('w'), 'Board games', tests.today() + 2, '
   'ok', 'move a series that has not started');
 select is((select count(*)::int from public.event_occurrences_public where event_id = tests.r('w')), 0, 'stray week changes removed');
 
+-- M2: a week change whose times no longer fit the edited series goes back to the series times
+select public.set_occurrence(tests.r('w'), tests.today() + 9, false, null, null, '20:00', null, null);
+select is((public.update_event(tests.r('w'), 'Board games', tests.today() + 2, '20:30', '21:30', tests.today() + 2 + 7, '', '', 'en'))->>'status',
+  'ok', 'series moved later than the week''s own end');
+select ok((select coalesce(o.end_time, '21:30') > coalesce(o.start_time, '20:30') from public.event_occurrences_public o
+           where o.event_id = tests.r('w') and o.occurs_on = tests.today() + 9), 'the week never ends before it starts');
+
 -- Y-K8: only the owner
 select tests.as_owner();
 select tests.as_user(tests.id('b'));
@@ -59,6 +76,24 @@ select is((public.update_event(tests.r('w'), 'mine', tests.today() + 2, '17:00',
   'not_found', 'B cannot edit A''s event');
 select is((public.set_occurrence(tests.r('w'), tests.today() + 2, true, null, null, null, null, null))->>'status',
   'not_found', 'B cannot cancel A''s week');
+
+-- a week that is over cannot be changed or reset
+select tests.as_owner();
+insert into app.events (title, start_date, start_time, end_time, weekly_until, lang)
+  values ('Running', tests.today() - 7, '00:00', '00:01', tests.today() + 7, 'en') returning id \gset run_
+insert into app.event_owners (event_id, owner_id, client_token) values (:run_id, tests.id('a'), gen_random_uuid());
+select tests.as_user(tests.id('a'));
+select is((public.set_occurrence(:run_id, tests.today() - 7, true, null, null, null, null, null))->>'status',
+  'past_event', 'cannot cancel a week that is over');
+select is((public.clear_occurrence(:run_id, tests.today() - 7))->>'status', 'past_event', 'cannot reset a week that is over');
+
+-- data_version moves when something public changes
+select tests.as_owner();
+create temp table v0 as select public.data_version() as v;
+grant select on v0 to public;
+select tests.as_user(tests.id('a'));
+select public.create_event(gen_random_uuid(), 'bump', tests.today() + 3, '10:00', '11:00', null, '', '', 'en');
+select ok(public.data_version() > (select v from v0), 'data_version goes up on a new event');
 
 -- G-29 / Y-K9: an event that is over cannot be edited, but can be deleted
 select tests.as_owner();
@@ -83,10 +118,12 @@ select is((select count(*)::int from public.events_public where id = tests.r('h'
 update app.events set suspension_hidden_at = null, deleted_at = now(), deleted_by = 'owner' where id = tests.r('h');
 select is((select count(*)::int from public.event_occurrences_public where event_id = tests.r('h')), 0, 'deleted event''s weeks not public');
 
--- data_version moves on every change
-select ok((select public.data_version()) > 0, 'data_version counts changes');
+-- G-23: prefecture_counts leaves hidden places out
 select tests.as_owner();
-select is((select count(*)::int from public.prefecture_counts where n < 0), 0, 'prefecture_counts is sane');
+create temp table pc as select coalesce((select n from public.prefecture_counts where pref = '27'), 0) as n;
+insert into app.places (name, category, lat, lng, pref, lang, auto_hidden_at)
+  values ('hidden one', 'food', 34.82, 135.65, '27', 'en', now());
+select is(coalesce((select n from public.prefecture_counts where pref = '27'), 0), (select n from pc), 'a hidden place is not counted');
 
 select * from finish();
 rollback;

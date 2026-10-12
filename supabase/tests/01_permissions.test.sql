@@ -1,7 +1,7 @@
 -- G-01, G-02, G-03, G-12, G-20: who can reach what.
 begin;
 \ir _helpers.sql
-select plan(15);
+select plan(17);
 
 -- G-01: no client role reads or writes any app table
 select tests.as_anon();
@@ -37,7 +37,8 @@ select set_eq(
     where n.nspname in ('public', 'app') and has_function_privilege('authenticated', p.oid, 'execute')$$,
   array['public.data_version', 'public.my_items', 'public.create_place', 'public.update_place',
         'public.delete_place', 'public.create_event', 'public.update_event', 'public.delete_event',
-        'public.set_occurrence', 'public.clear_occurrence', 'app.db_pre_request'],
+        'public.set_occurrence', 'public.clear_occurrence', 'public.my_place', 'public.my_event',
+        'app.db_pre_request'],
   'authenticated may execute exactly these');
 select is_empty(
   $$select p.proname from pg_proc p where p.pronamespace in ('public'::regnamespace, 'app'::regnamespace)
@@ -49,6 +50,12 @@ select is_empty(
 select columns_are('public', 'places_public',
   array['id', 'name', 'category', 'description', 'gmaps_url', 'lat', 'lng', 'pref', 'lang', 'created_on', 'edited_on'],
   'places_public columns');
+
+-- M1: a function created later is not executable by PUBLIC (global default)
+create function public.later_added() returns integer language sql as $$ select 1 $$;
+create function app.later_added() returns integer language sql as $$ select 1 $$;
+select ok(not has_function_privilege('anon', 'public.later_added()', 'execute'), 'a new public function is closed by default');
+select ok(not has_function_privilege('authenticated', 'app.later_added()', 'execute'), 'a new app function is closed by default');
 
 select * from finish();
 rollback;

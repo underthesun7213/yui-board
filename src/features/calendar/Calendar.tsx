@@ -17,6 +17,7 @@ export function Calendar() {
   const day = useStore(calendarUi, (s) => s.day);
   const month = useStore(calendarUi, (s) => s.month);
   const schedule = useStore(data, (s) => s.schedule);
+  const loaded = useStore(data, (s) => !!s.fetchedAt);
   const now = tokyoToday();
   const cur = month ?? now.slice(0, 7);
   const loc = LOCALE[lang];
@@ -90,7 +91,7 @@ export function Calendar() {
             <EventRow o={o} today={now} />
           </div>
         ))
-      ) : (
+      ) : !loaded ? null : (
         <div className="empty">
           <p>{schedule.events.length ? m.homeNone : m.emptyEvents}</p>
           <button className="primary" onClick={() => go({ name: 'eventNew' })}>

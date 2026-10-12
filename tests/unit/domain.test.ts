@@ -9,6 +9,7 @@ import { makeSchedule, occOn, upcoming } from '../../src/domain/calendar/occurre
 import { HOME, mainBounds, regionOf, shownPlaces, walkMin } from '../../src/domain/geo/geo';
 import { PREFS } from '../../src/domain/geo/prefs';
 import { buildIcs, icsEsc, icsFold } from '../../src/domain/ics';
+import { checkEvent, checkPlace } from '../../src/domain/validation';
 import type { EventSeries, OccurrenceOverride, Place } from '../../src/domain/types';
 import { en } from '../../src/i18n/en';
 import { ja } from '../../src/i18n/ja';
@@ -59,6 +60,9 @@ describe('calendar', () => {
 });
 
 describe('ics', () => {
+  it('turns a lone carriage return into an escaped newline too', () => {
+    expect(icsEsc('a\rDESCRIPTION:x')).toBe('a\\nDESCRIPTION:x');
+  });
   it('escapes RFC 5545 text', () => {
     expect(icsEsc('a;b,c\\d\ne')).toBe('a\\;b\\,c\\\\d\\ne');
   });
@@ -185,5 +189,44 @@ describe('art', () => {
     for (const e of ENDINGS) slots.add(endingKey(e.id));
     for (const k of Object.keys(ART))
       expect(slots.has(k), `src/art/${k} matches no slot`).toBe(true);
+  });
+});
+
+describe('validation mirrors the server', () => {
+  const place = {
+    name: 'x',
+    category: 'food',
+    description: '',
+    gmaps_url: '',
+    lat: 34.82,
+    lng: 135.65,
+    lang: 'en',
+  };
+  it('refuses disguised text', () => {
+    expect(checkPlace({ ...place, name: 'a\u202eb' })).toBe('name');
+    expect(checkPlace({ ...place, name: 'a\u200bb' })).toBe('name');
+    expect(checkPlace({ ...place, name: '\u3000\u3000' })).toBe('name');
+    expect(checkPlace({ ...place, description: 'a\rb' })).toBe('description');
+    expect(checkPlace({ ...place, description: 'a\nb\tc' })).toBe(null);
+  });
+  it('refuses tricky links', () => {
+    expect(checkPlace({ ...place, gmaps_url: 'https://www.google.com/maps/../url?q=x' })).toBe(
+      'gmaps_url',
+    );
+    expect(checkPlace({ ...place, gmaps_url: 'https://maps.app.goo.gl/abc' })).toBe(null);
+  });
+  it('keeps events within a year', () => {
+    const e = {
+      title: 't',
+      start_date: '2027-12-01',
+      start_time: '10:00',
+      end_time: '11:00',
+      weekly_until: null,
+      place_text: '',
+      body: '',
+      lang: 'en',
+    };
+    expect(checkEvent(e, '2026-10-12')).toBe('start_date');
+    expect(checkEvent({ ...e, start_date: '2026-10-20' }, '2026-10-12')).toBe(null);
   });
 });

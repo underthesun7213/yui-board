@@ -6,7 +6,7 @@ declare
   want_auth text[] := array[
     'public.data_version', 'public.my_items', 'public.create_place', 'public.update_place', 'public.delete_place',
     'public.create_event', 'public.update_event', 'public.delete_event', 'public.set_occurrence',
-    'public.clear_occurrence', 'app.db_pre_request'];
+    'public.clear_occurrence', 'public.my_place', 'public.my_event', 'app.db_pre_request'];
   want_anon text[] := array['public.data_version', 'app.db_pre_request'];
   want_service text[] := array['public.ops_health'];
   got text[];
@@ -79,6 +79,12 @@ begin
     and (a.grantee = 0 or a.grantee in ('anon'::regrole, 'authenticated'::regrole))
     and (d.defaclnamespace <> 0 or d.defaclrole = 'postgres'::regrole);
   if bad is not null then raise exception 'check 9 (default EXECUTE) failed: %', bad; end if;
+  -- … and the global default for postgres exists and leaves PUBLIC out
+  if not exists (
+    select 1 from pg_default_acl d
+    where d.defaclrole = 'postgres'::regrole and d.defaclnamespace = 0 and d.defaclobjtype = 'f'
+      and not exists (select 1 from aclexplode(d.defaclacl) a where a.grantee = 0 and a.privilege_type = 'EXECUTE')
+  ) then raise exception 'check 9b (global default: no PUBLIC EXECUTE) failed'; end if;
 
   -- ⑫ no extension in public
   select string_agg(extname, ', ') into bad from pg_extension where extnamespace = 'public'::regnamespace;

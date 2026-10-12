@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { back } from '../../app/router';
-import { dropDraft, explain, openDraft, saveDraft, saveEvent } from '../../actions/write';
+import { dropDraft, explain, loadOwn, openDraft, saveDraft, saveEvent } from '../../actions/write';
 import { addDays, tokyoToday } from '../../domain/calendar/dates';
-import { LANGS, type Lang } from '../../domain/types';
+import { LANGS, type EventSeries, type Lang } from '../../domain/types';
 import { checkEvent, lastWeekMax, LIMITS, type EventInput } from '../../domain/validation';
 import { LANG_NAME } from '../../i18n';
 import { useT } from '../../i18n/useT';
@@ -12,17 +12,40 @@ import { prefs } from '../../state/prefs';
 import { session } from '../../state/session';
 import { useStore } from '../../state/useStore';
 import { BackBar } from '../../ui/BackBar';
+import { Captcha } from '../../ui/Captcha';
 import { describedBy, Field, WriteBlocked } from '../../ui/Field';
 
+/* Editing: the public copy, or one's own hidden event from the server (Y-E1). */
 export function EventForm({ id }: { id?: number }) {
   const m = useT();
-  const lang = useStore(prefs, (s) => s.lang);
   const events = useStore(data, (s) => s.events);
   const mine = useStore(session, (s) => (id ? !!s.mineEvents[id] : true));
+  const pub = id ? events.find((e) => e.id === id) : undefined;
+  const [own, setOwn] = useState<EventSeries | null | undefined>(undefined);
+  useEffect(() => {
+    if (id && !pub) void loadOwn<EventSeries>('event', id).then(setOwn);
+  }, [id, pub]);
+  if (id && !pub && own === undefined) return <BackBar title={m.editEvent} />;
+  const editing = pub ?? own ?? undefined;
+  return (
+    <EventFormBody key={editing?.id ?? 'new'} id={id} editing={editing} mine={mine || !!own} />
+  );
+}
+
+function EventFormBody({
+  id,
+  editing,
+  mine,
+}: {
+  id?: number;
+  editing?: EventSeries;
+  mine: boolean;
+}) {
+  const m = useT();
+  const lang = useStore(prefs, (s) => s.lang);
   const hasAccount = useStore(session, (s) => s.hasAccount);
   const framed = useStore(session, (s) => s.framed);
   const online = useStore(net, (s) => s.online);
-  const editing = id ? events.find((e) => e.id === id) : undefined;
   const today = tokyoToday();
 
   const [draft] = useState(() =>
@@ -228,6 +251,7 @@ export function EventForm({ id }: { id?: number }) {
 
         {!hasAccount && !id && <p className="note">{m.accountNote}</p>}
         <WriteBlocked online={online} framed={framed} />
+        <Captcha />
         {err && !err.field && (
           <p className="err" role="alert">
             {err.msg}

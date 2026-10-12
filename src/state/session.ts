@@ -10,6 +10,11 @@ export interface Session {
   mineEvents: Record<number, true>;
   /** framed in another page: writes are off (T-24) */
   framed: boolean;
+  /** the server asked for a CAPTCHA on account creation (Y-S7) */
+  captchaRequired: boolean;
+  captchaReady: boolean;
+  /** my_items could not be read */
+  itemsError: boolean;
 }
 export const session = createStore<Session>({
   hasAccount: false,
@@ -17,4 +22,7 @@ export const session = createStore<Session>({
   minePlaces: {},
   mineEvents: {},
   framed: false,
+  captchaRequired: false,
+  captchaReady: false,
+  itemsError: false,
 });

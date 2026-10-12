@@ -2,7 +2,11 @@ import type { Occurrence } from './types';
 
 /* RFC 5545: escape text, fold lines at 75 octets, and carry the time zone. */
 export const icsEsc = (s: string) =>
-  s.replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n');
+  s
+    .replace(/\\/g, '\\\\')
+    .replace(/;/g, '\\;')
+    .replace(/,/g, '\\,')
+    .replace(/\r\n|\r|\n/g, '\\n');
 
 export function icsFold(line: string): string {
   const enc = new TextEncoder();

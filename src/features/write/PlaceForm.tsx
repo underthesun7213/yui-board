@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import {
   dropDraft,
   explain,
+  loadOwn,
   openDraft,
   pickHere,
   savePlace,
@@ -11,7 +12,7 @@ import {
 } from '../../actions/write';
 import { back } from '../../app/router';
 import { CAT } from '../../domain/categories';
-import { CATEGORIES, LANGS, type Lang } from '../../domain/types';
+import { CATEGORIES, LANGS, type Lang, type Place } from '../../domain/types';
 import { checkPlace, LIMITS, type PlaceInput } from '../../domain/validation';
 import { LANG_NAME } from '../../i18n';
 import { useT } from '../../i18n/useT';
@@ -23,20 +24,36 @@ import { prefs } from '../../state/prefs';
 import { session } from '../../state/session';
 import { useStore } from '../../state/useStore';
 import { BackBar } from '../../ui/BackBar';
+import { Captcha } from '../../ui/Captcha';
 import { describedBy, Field, WriteBlocked } from '../../ui/Field';
 
 type Fields = Omit<PlaceInput, 'lat' | 'lng'>;
 
+/* Editing: the public copy, or — for one's own item that is hidden — the
+   owner's copy from the server (Y-E1). */
 export function PlaceForm({ id }: { id?: number }) {
   const m = useT();
-  const lang = useStore(prefs, (s) => s.lang);
   const places = useStore(data, (s) => s.places);
   const mine = useStore(session, (s) => (id ? !!s.minePlaces[id] : true));
+  const pub = id ? places.find((p) => p.id === id) : undefined;
+  const [own, setOwn] = useState<Place | null | undefined>(undefined);
+  useEffect(() => {
+    if (id && !pub) void loadOwn<Place>('place', id).then(setOwn);
+  }, [id, pub]);
+  if (id && !pub && own === undefined) return <BackBar title={m.editPlace} />;
+  const editing = pub ?? own ?? undefined;
+  return (
+    <PlaceFormBody key={editing?.id ?? 'new'} id={id} editing={editing} mine={mine || !!own} />
+  );
+}
+
+function PlaceFormBody({ id, editing, mine }: { id?: number; editing?: Place; mine: boolean }) {
+  const m = useT();
+  const lang = useStore(prefs, (s) => s.lang);
   const hasAccount = useStore(session, (s) => s.hasAccount);
   const framed = useStore(session, (s) => s.framed);
   const online = useStore(net, (s) => s.online);
   const pick = useStore(mapUi, (s) => s.pick);
-  const editing = id ? places.find((p) => p.id === id) : undefined;
 
   const [draft] = useState(() =>
     editing
@@ -229,6 +246,7 @@ export function PlaceForm({ id }: { id?: number }) {
 
         {!hasAccount && !id && <p className="note">{m.accountNote}</p>}
         <WriteBlocked online={online} framed={framed} />
+        <Captcha />
         {err && !err.field && (
           <p className="err" role="alert">
             {err.msg}

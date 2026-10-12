@@ -196,6 +196,10 @@ export const en = {
   pastNoEdit: 'This event is over. It can be deleted but not changed.',
   startedLocked: 'The series has started, so its first date stays.',
   mine: 'Posted by you',
+  eCaptcha: 'Please complete the check below, then save again.',
+  eSessionLost:
+    'This browser lost its sign-in, so earlier posts can no longer be edited from here. Save again to continue with a new account.',
+  aCaptcha: 'Check that you are a person',
 };
 
 export type Messages = typeof en;

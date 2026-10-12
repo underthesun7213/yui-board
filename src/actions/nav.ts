@@ -20,11 +20,11 @@ export function tab(i: number) {
 }
 
 export async function setLang(lang: Lang) {
-  store.set('lang', lang);
   try {
     await loadLang(lang);
   } catch {
     return; /* offline and not cached: stay in the current language */
   }
+  store.set('lang', lang);
   prefs.set({ lang });
 }

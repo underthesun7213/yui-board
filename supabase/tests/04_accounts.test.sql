@@ -1,7 +1,7 @@
 -- Accounts: Y-A1 (created on first write), G-11 (suspended), G-14 (edits), G-38 (hourly cap).
 begin;
 \ir _helpers.sql
-select plan(10);
+select plan(12);
 
 create temp table ids (k text primary key, v uuid);
 insert into ids values ('a', tests.user()), ('reader', tests.user()), ('new', tests.user());
@@ -37,6 +37,10 @@ update app.accounts set suspended_at = now() where user_id = tests.id('a');
 select tests.as_user(tests.id('a'));
 select is((public.create_event(gen_random_uuid(), 'x', tests.today(), '10:00', '11:00', null, '', '', 'en'))->>'status',
   'suspended', 'suspended cannot create');
+select is((public.update_place((select place_id from pid), 'x', 'food', '', null, 34.82, 135.65, 'en'))->>'status',
+  'suspended', 'suspended cannot edit');
+select is((public.set_occurrence(1, '2030-01-01', true, null, null, null, null, null))->>'status',
+  'suspended', 'suspended cannot change a week');
 select is((public.delete_place((select place_id from pid)))->>'status', 'ok', 'suspended can delete their own');
 
 -- G-38: when the hourly cap on new accounts is reached, a new person's first write is refused

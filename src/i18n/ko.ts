@@ -196,4 +196,8 @@ export const ko = {
   pastNoEdit: '끝난 일정입니다. 삭제는 되지만 수정은 할 수 없어요.',
   startedLocked: '반복이 이미 시작되어 첫 날짜는 바꿀 수 없어요.',
   mine: '내가 올림',
+  eCaptcha: '아래 확인을 마친 뒤 다시 저장해 주세요.',
+  eSessionLost:
+    '이 브라우저의 로그인 정보가 사라져 이전에 올린 것은 여기서 수정할 수 없습니다. 다시 저장하면 새 계정으로 계속합니다.',
+  aCaptcha: '사람인지 확인',
 } satisfies Messages;

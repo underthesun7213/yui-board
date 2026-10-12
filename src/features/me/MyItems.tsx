@@ -14,6 +14,7 @@ export function MyItems() {
   const m = useT();
   const lang = useStore(prefs, (s) => s.lang);
   const items = useStore(session, (s) => s.items);
+  const failed = useStore(session, (s) => s.itemsError);
   useEffect(() => {
     void refreshMine();
   }, []);
@@ -22,6 +23,11 @@ export function MyItems() {
   return (
     <>
       <BackBar title={m.myT} />
+      {failed && (
+        <p className="dstatus warn" role="alert">
+          {m.dataError} <button onClick={() => void refreshMine()}>{m.locRetry}</button>
+        </p>
+      )}
       {items == null ? (
         <p className="empty">{m.loading}</p>
       ) : !items.length ? (
@@ -39,18 +45,16 @@ export function MyItems() {
               <span className={'state ' + i.state}>{m.st[i.state]}</span>
               {i.state !== 'deleted' && (
                 <div className="btns">
-                  {i.state === 'visible' && (
-                    <button
-                      className="secondary"
-                      onClick={() =>
-                        i.kind === 'place'
-                          ? go({ name: 'placeEdit', id: i.id })
-                          : go({ name: 'eventEdit', id: i.id })
-                      }
-                    >
-                      {m.edit}
-                    </button>
-                  )}
+                  <button
+                    className="secondary"
+                    onClick={() =>
+                      i.kind === 'place'
+                        ? go({ name: 'placeEdit', id: i.id })
+                        : go({ name: 'eventEdit', id: i.id })
+                    }
+                  >
+                    {m.edit}
+                  </button>
                   <button
                     className="secondary"
                     onClick={() =>

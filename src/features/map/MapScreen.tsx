@@ -2,7 +2,6 @@ import 'leaflet/dist/leaflet.css';
 import 'leaflet.markercluster/dist/MarkerCluster.css';
 import { reload } from '../../actions/app';
 import { go } from '../../actions/nav';
-import { deletePlace } from '../../actions/write';
 import { formatDay } from '../../domain/calendar/dates';
 import { session } from '../../state/session';
 import {
@@ -220,7 +219,10 @@ function PlaceCard() {
           <button className="secondary" onClick={() => go({ name: 'placeEdit', id: p.id })}>
             {m.edit}
           </button>
-          <button className="secondary" onClick={() => void deletePlace(p.id)}>
+          <button
+            className="secondary"
+            onClick={() => void import('../../actions/write').then((w) => w.deletePlace(p.id))}
+          >
             {m.del}
           </button>
         </div>
@@ -237,8 +239,10 @@ function PlaceList() {
   const pl = useStore(mapUi, (s) => s.pl);
   const places = useStore(data, (s) => s.places);
   const { list, near, from } = useShown();
+  const loaded = useStore(data, (s) => !!s.fetchedAt);
+  if (!loaded && !places.length) return null;
   if (mode === 'japan' && !pref) {
-    const none = !places.length;
+    const none = !places.length && loaded;
     const groups = new Map<Region, (typeof PREFS)[number][]>();
     for (const p of PREFS) {
       const r = regionOf(p[0]);
@@ -281,7 +285,7 @@ function PlaceList() {
   if (!list.length)
     return (
       <div className="empty">
-        <p>{!places.length ? m.emptyPlaces : near ? m.nearEmpty : m.prefEmpty}</p>
+        <p>{!places.length && loaded ? m.emptyPlaces : near ? m.nearEmpty : m.prefEmpty}</p>
         <button className="primary" onClick={() => go({ name: 'placeNew' })}>
           ＋ {m.addPlace}
         </button>

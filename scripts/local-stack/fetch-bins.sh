@@ -16,4 +16,7 @@ if [ ! -x auth/auth ]; then
   curl -sSLf -o auth.tgz "https://github.com/supabase/auth/releases/download/$AUTH_VERSION/auth-$AUTH_VERSION-x86.tar.gz"
   tar xzf auth.tgz -C auth && rm auth.tgz
 fi
+# the binaries this stack was tested with; a different file is refused
+echo "43762bcbf9cc4ffa6cc803a54b425c10d48324ea1163544456112e11bc3e0b97  $BIN/postgrest
+8f9ed6eb2404a422e19c57b7d3de42191b3ce997792cb354c5052201635758fe  $BIN/auth/auth" | sha256sum -c --quiet
 echo "binaries in $BIN"

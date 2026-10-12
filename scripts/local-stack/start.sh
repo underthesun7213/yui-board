@@ -31,8 +31,9 @@ as_pg "$PGBIN/pg_ctl" -D "$STATE/pg" -l "$STATE/log/postgres.log" -w start >/dev
 PSQL=(psql -X -q -v ON_ERROR_STOP=1 -h 127.0.0.1 -p $PGPORT -U postgres -d postgres)
 "${PSQL[@]}" -f "$HERE/bootstrap.sql"
 
+# `exec`, so the pid recorded below is Auth itself and stop.sh really stops it
 auth_env() {
-  env GOTRUE_DB_DRIVER=postgres \
+  exec env GOTRUE_DB_DRIVER=postgres \
     DATABASE_URL="postgres://supabase_auth_admin:local-auth-admin@127.0.0.1:$PGPORT/postgres?sslmode=disable" \
     GOTRUE_DB_MIGRATIONS_PATH="$BIN/auth/migrations" \
     GOTRUE_API_HOST=127.0.0.1 PORT=$AUTH_PORT \
@@ -78,7 +79,7 @@ cat >"$STATE/postgrest.conf" <<CONF
 db-uri = "postgres://authenticator:local-authenticator@127.0.0.1:$PGPORT/postgres"
 db-schemas = "public"
 db-anon-role = "anon"
-db-pre-request = "app.db_pre_request"
+db-max-rows = 1000
 jwt-secret = "$JWT_SECRET"
 server-host = "127.0.0.1"
 server-port = $REST_PORT
@@ -91,4 +92,9 @@ wait_http "http://127.0.0.1:$REST_PORT/"
 GATEWAY_PORT=$GATEWAY_PORT AUTH_PORT=$AUTH_PORT REST_PORT=$REST_PORT node "$HERE/gateway.mjs" >"$STATE/log/gateway.log" 2>&1 &
 echo $! >"$STATE/gateway.pid"
 wait_http "http://127.0.0.1:$GATEWAY_PORT/auth/v1/health"
+# the signup hook is live: an uninvited email signup is refused
+code=$(curl -s -o /dev/null -w '%{http_code}' -X POST "http://127.0.0.1:$GATEWAY_PORT/auth/v1/signup" \
+  -H 'content-type: application/json' -d '{"email":"not-invited@example.com","password":"local-check-123"}')
+if [ -n "${HOOK[*]}" ] && [ "$code" != 403 ]; then echo "signup hook not active (got $code)" >&2; exit 1; fi
+
 echo "local stack up: API http://127.0.0.1:$GATEWAY_PORT  DB postgres://postgres@127.0.0.1:$PGPORT/postgres"

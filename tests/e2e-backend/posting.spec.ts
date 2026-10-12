@@ -212,3 +212,28 @@ test('Y-S4 a stored script stays text', async ({ page, errors }) => {
     await page.evaluate(() => (window as unknown as { __xss?: number }).__xss),
   ).toBeUndefined();
 });
+
+test('Y-E1 a hidden place can still be edited from My posts, and stays hidden', async ({
+  page,
+  errors,
+}) => {
+  void errors;
+  await fillPlace(page, 'Hidden later');
+  await page.click('.form button[type=submit]');
+  await expect(page.locator('.pcard h3')).toHaveText('Hidden later');
+  const { execSync } = await import('node:child_process');
+  execSync(
+    `psql -X -q -h 127.0.0.1 -p 54322 -U postgres -c "update app.places set auto_hidden_at = now() where name = 'Hidden later'"`,
+  );
+  await page.goto('./#/me');
+  const row = page.locator('.my', { hasText: 'Hidden later' });
+  await expect(row.locator('.state')).toHaveClass(/hidden_review/);
+  await row.getByRole('button', { name: 'Edit' }).click();
+  await expect(page.locator('#pf-name')).toHaveValue('Hidden later');
+  await page.fill('#pf-name', 'Hidden later, fixed');
+  await page.click('.form button[type=submit]');
+  await page.goto('./#/me');
+  await expect(
+    page.locator('.my', { hasText: 'Hidden later, fixed' }).locator('.state'),
+  ).toHaveClass(/hidden_review/);
+});
