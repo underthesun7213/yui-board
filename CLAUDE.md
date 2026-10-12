@@ -43,7 +43,8 @@ listeners to elements inside `#main` — `render()` replaces them.
   is the JIS prefecture code (`"27"` = Osaka), `by` is a key of `T.*.by`. Walking
   time is computed, not stored.
 - **Events** are a static schedule. A weekly event is written once with
-  `weekly.until`; `over[date]` replaces one week's title and body.
+  `weekly.until`; `over[date]` replaces one week's title and body, and
+  `over[date]={cancel:true}` drops that week.
 
 ## Rules that are easy to break by accident
 
