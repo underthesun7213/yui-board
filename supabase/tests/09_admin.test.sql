@@ -2,7 +2,7 @@
 -- (restore protection until the owner edits), Y-R4~R7, Y-S3.
 begin;
 \ir _helpers.sql
-select plan(50);
+select plan(62);
 
 create temp table ids (k text primary key, v uuid);
 insert into ids values ('o', tests.user()), ('r1', tests.user()), ('r2', tests.user()), ('r3', tests.user()),
@@ -24,7 +24,10 @@ insert into app.admins (user_id, email, active) values (tests.id('old'), 'former
 create temp table sess (k text primary key, v uuid);
 grant select on sess to public;
 insert into sess values ('adm', gen_random_uuid()), ('adm_aal1', gen_random_uuid()), ('adm_old', gen_random_uuid()),
+  ('adm_ended', gen_random_uuid()),
   ('stranger', gen_random_uuid()), ('old', gen_random_uuid());
+insert into auth.sessions (id, user_id, created_at, aal, not_after) values
+  ((select v from sess where k = 'adm_ended'), tests.id('adm'), now() - interval '1 hour', 'aal2', now() - interval '1 minute');
 insert into auth.sessions (id, user_id, created_at, aal) values
   ((select v from sess where k = 'adm'), tests.id('adm'), now() - interval '1 hour', 'aal2'),
   ((select v from sess where k = 'adm_aal1'), tests.id('adm'), now(), 'aal1'),
@@ -86,7 +89,12 @@ select is(tests.whoami('adm', 'nosuch'), 'forbidden', 'a session that no longer 
 select is(tests.whoami('adm', 'adm_old'), 'forbidden', 'session older than admin_session_hours');
 select is(tests.whoami('stranger', 'stranger'), 'forbidden', 'not on the allowlist');
 select is(tests.whoami('old', 'old'), 'forbidden', 'inactive admin');
-select is((select count(*)::int from app.security_events where kind = 'admin_denied'), 10, 'every refusal recorded');
+select is(tests.whoami('adm', 'adm_ended'), 'forbidden', 'session past its not_after');
+-- a missing session limit refuses instead of lifting the limit
+delete from app.settings where key = 'admin_session_hours';
+select is(tests.whoami('adm', 'adm'), 'forbidden', 'no admin_session_hours setting: refused');
+insert into app.settings (key, int_value) values ('admin_session_hours', 12);
+select is((select count(*)::int from app.security_events where kind = 'admin_denied'), 12, 'every refusal recorded');
 select ok(tests.queue_refused('adm', 'adm', '{"aal":"aal1"}'), 'admin_queue raises for aal1');
 select ok(tests.queue_refused('stranger', 'stranger'), 'admin_queue raises for a non-admin');
 select ok(tests.queue_refused('adm', 'adm_old'), 'admin_queue raises on an old session');
@@ -142,8 +150,33 @@ select tests.as_admin('adm', 'adm');
 select is((public.admin_restore_bulk(now() - interval '1 hour', now() + interval '1 hour'))->>'count', '1', 'dry run counts');
 select is((select count(*)::int from public.admin_queue('hidden') where id = tests.it('p') and kind = 'place'), 1, 'dry run changed nothing');
 select is((public.admin_restore_bulk(now() + interval '1 hour', now()))->>'field', 'period', 'bad period');
-select is((public.admin_restore_bulk(now() - interval '1 hour', now() + interval '1 hour', 'wave', false))->>'count', '1', 'bulk restore');
+select is((public.admin_restore_bulk(now() - interval '1 hour', now() + interval '1 hour', 'wave', false, 2))->>'status',
+  'changed', 'bulk restore stops when the list is not what was previewed');
+select is((public.admin_restore_bulk(now() - interval '1 hour', now() + interval '1 hour', 'wave', false))->>'status',
+  'changed', '… or when no count was given');
+select is((public.admin_restore_bulk(now() - interval '1 hour', now() + interval '1 hour', 'wave', false, 1))->>'count', '1', 'bulk restore');
 select is((select state from public.admin_queue() where id = tests.it('p') and kind = 'place'), 'visible', 'restored');
+
+select is((public.admin_restore('event', tests.it('e')))->>'status', 'not_found', 'a shown item is not "restored"');
+select tests.as_owner();
+
+-- Y-R6 for weekly events: changing one week ends the protection too
+select tests.as_user(tests.id('o'));
+insert into it select 'w', (public.create_event(gen_random_uuid(), 'Weekly chat', tests.today() + 1, '17:00', '19:00',
+  tests.today() + 8, 'Lounge', '', 'en')->>'id')::bigint;
+select tests.as_owner();
+select tests.report('r1', 'event', 'w') is not null; select tests.report('r2', 'event', 'w') is not null; select tests.report('r3', 'event', 'w') is not null;
+select tests.as_admin('adm', 'adm');
+select is((public.admin_restore('event', tests.it('w')))->>'status', 'ok', 'weekly event restored');
+select tests.as_owner();
+select tests.report('r4', 'event', 'w') is not null; select tests.report('r5', 'event', 'w') is not null; select tests.report('r6', 'event', 'w') is not null;
+select ok((select auto_hidden_at is null from app.events where id = tests.it('w')), 'protected: still shown');
+select tests.as_user(tests.id('o'));
+select is((public.set_occurrence(tests.it('w'), tests.today() + 8, false, 'Buy pills', null, null, null, null))->>'status', 'ok', 'owner changes one week');
+select tests.as_owner();
+select ok((select auto_hidden_at is not null and restored_at is null from app.events where id = tests.it('w')),
+  'one week changed: protection ends and the open reports hide it');
+select tests.as_admin('adm', 'adm');
 
 -- dismiss and delete
 select is((public.admin_dismiss('event', tests.it('e')))->>'count', '1', 'dismiss the event''s report');
@@ -156,6 +189,11 @@ select is((public.admin_restore('place', tests.it('p2')))->>'status', 'not_found
 select is((public.admin_suspend((select ref from refs where k = 'o'), 'spam wave'))->>'places_hidden',
   '1', 'suspend hides the shown place');
 select is((public.admin_suspend('a-nosuch'))->>'status', 'not_found', 'unknown account');
+-- nothing of a suspended account comes back, one by one or in bulk
+select is((public.admin_restore('place', tests.it('p')))->>'status', 'account_suspended', 'restore waits for unsuspend');
+select is((public.admin_restore_bulk(now() - interval '1 hour', now() + interval '1 hour'))->>'skipped_suspended', '1',
+  'bulk restore leaves the suspended account''s hidden week out');
+select is((public.admin_restore_bulk(now() - interval '1 hour', now() + interval '1 hour'))->>'count', '0', '… and lists nothing');
 select tests.as_owner();
 select is((select count(*)::int from public.events_public where id = tests.it('e')), 0, 'the event is hidden too');
 select is(tests.report('o', 'place', 'p'), 'suspended', 'the suspended owner cannot report');

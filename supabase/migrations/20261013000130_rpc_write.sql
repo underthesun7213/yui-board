@@ -339,6 +339,11 @@ begin
   on conflict (event_id, occurs_on) do update
   set cancelled = excluded.cancelled, title = excluded.title, start_time = excluded.start_time,
       end_time = excluded.end_time, place_text = excluded.place_text, body = excluded.body, edited_at = now();
+  -- a week's text is public too: changing it ends an admin's restore
+  -- protection like any edit, and open reports count again (Y-R6). Going
+  -- back to the usual (clear_occurrence) only shows reviewed text again.
+  update app.events set restored_at = null where id = p_event_id and restored_at is not null;
+  perform app.evaluate_item('event', p_event_id);
   return jsonb_build_object('status', 'ok');
 end $$;
 

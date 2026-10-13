@@ -75,7 +75,13 @@ export function ItemDetail({ at }: { at: ItemRef }) {
     setMsg(null);
     const r = await guarded(() => rpc<{ status: string }>(fn, { ...args, p_note: note || null }));
     if (!r) return setMsg(m.netError);
-    setMsg(r.status === 'ok' ? m.done : m.notFound);
+    setMsg(
+      r.status === 'ok'
+        ? m.done
+        : r.status === 'account_suspended'
+          ? m.restoreSuspended
+          : m.notFound,
+    );
     if (r.status === 'ok') setNote('');
     await load();
   };

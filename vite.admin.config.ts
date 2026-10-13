@@ -31,6 +31,9 @@ const HEADERS = `/*
   Referrer-Policy: no-referrer
   Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
   Cross-Origin-Opener-Policy: same-origin
+/
+  Cache-Control: no-store
+/index.html
   Cache-Control: no-store
 /assets/*
   Cache-Control: public, max-age=31536000, immutable

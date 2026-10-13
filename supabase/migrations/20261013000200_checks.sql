@@ -94,7 +94,9 @@ begin
   select string_agg(p.proname, ', ') into bad
   from pg_proc p
   where p.pronamespace = 'public'::regnamespace and p.proname like 'admin\_%' and p.proname <> 'admin_whoami'
-    and substring(p.prosrc from '\mbegin\M\s+([^;]*;)') is distinct from 'perform app.require_admin();';
+    and (substring(p.prosrc from '\mbegin\M\s+([^;]*;)') is distinct from 'perform app.require_admin();'
+         -- nothing runs before it: no call in a declare initializer
+         or split_part(p.prosrc, 'begin', 1) ~ ':=[^;]*\(');
   if bad is not null then raise exception 'check 11 (admin functions check the caller first) failed: %', bad; end if;
   if (select count(*) from pg_proc p where p.pronamespace = 'public'::regnamespace and p.proname like 'admin\_%') <> 11 then
     raise exception 'check 11b (the admin functions are the eleven in the design) failed'; end if;

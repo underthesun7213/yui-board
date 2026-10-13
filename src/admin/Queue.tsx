@@ -128,16 +128,24 @@ function BulkRestore({ onDone }: { onDone(): void }) {
   const [preview, setPreview] = useState<{ kind: string; id: number; title: string }[] | null>(
     null,
   );
+  const [skipped, setSkipped] = useState(0);
   const [msg, setMsg] = useState<string | null>(null);
   /* the inputs are Japan time, like everything the console shows */
   const iso = (local: string) => (local ? `${local}:00+09:00` : null);
   const call = (dry: boolean) =>
     guarded(() =>
-      rpc<{ status: string; count?: number; items?: typeof preview }>('admin_restore_bulk', {
+      rpc<{
+        status: string;
+        count?: number;
+        skipped_suspended?: number;
+        items?: typeof preview;
+      }>('admin_restore_bulk', {
         p_since: iso(since),
         p_until: iso(until),
         p_note: 'bulk restore',
         p_dry_run: dry,
+        /* the server restores only if the list is still the one shown here */
+        p_expected: dry ? null : (preview?.length ?? 0),
       }),
     );
   const look = async (e: FormEvent) => {
@@ -147,9 +155,15 @@ function BulkRestore({ onDone }: { onDone(): void }) {
     if (!r) return setMsg(m.netError);
     if (r.status !== 'ok') return setMsg(m.invalidPeriod);
     setPreview(r.items ?? []);
+    setSkipped(r.skipped_suspended ?? 0);
   };
   const run = async () => {
     const r = await call(false);
+    if (r?.status === 'changed') {
+      setPreview(r.items ?? []);
+      setSkipped(r.skipped_suspended ?? 0);
+      return setMsg(m.bulkChanged);
+    }
     if (!r || r.status !== 'ok') return setMsg(m.netError);
     setPreview(null);
     setMsg(fill(m.bulkDone, { n: r.count ?? 0 }));
@@ -187,6 +201,7 @@ function BulkRestore({ onDone }: { onDone(): void }) {
       {preview && (
         <>
           <p data-bulk-count={preview.length}>{fill(m.bulkCount, { n: preview.length })}</p>
+          {skipped > 0 && <p className="muted">{fill(m.bulkSkipped, { n: skipped })}</p>}
           <ul className="plain">
             {preview.map((p) => (
               <li key={`${p.kind}:${p.id}`}>

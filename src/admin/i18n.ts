@@ -103,6 +103,9 @@ const en = {
   bulkCount: '{n} items would be restored',
   bulkDo: 'Restore these {n}',
   bulkDone: '{n} restored',
+  bulkChanged: 'The list changed since the preview. Check it again, then restore.',
+  bulkSkipped: '{n} hidden items of suspended accounts are left out.',
+  restoreSuspended: 'Its account is suspended. Unsuspend it first, then restore.',
   ref: 'Account ID (a-…)',
   accountsB:
     'Suspended accounts cannot post, edit or report, and their items are hidden. Unsuspending does not bring items back: restore them one by one.',
@@ -242,6 +245,9 @@ const ja: AdminMessages = {
   bulkCount: '{n} 件が復元されます',
   bulkDo: 'この {n} 件を復元',
   bulkDone: '{n} 件を復元しました',
+  bulkChanged: 'プレビューのあとで一覧が変わりました。もう一度確かめてから復元してください。',
+  bulkSkipped: '停止中のアカウントの非表示項目 {n} 件は対象外です。',
+  restoreSuspended: 'アカウントが停止中です。停止を解除してから復元してください。',
   ref: 'アカウントID（a-…）',
   accountsB:
     '停止したアカウントは投稿・編集・報告ができず、その投稿は非表示になります。停止を解除しても投稿は戻りません。1件ずつ復元してください。',
@@ -379,6 +385,9 @@ const ko: AdminMessages = {
   bulkCount: '{n}건이 복원됩니다',
   bulkDo: '이 {n}건 복원',
   bulkDone: '{n}건 복원했습니다',
+  bulkChanged: '미리 보기 뒤에 목록이 바뀌었습니다. 다시 확인한 뒤 복원해 주세요.',
+  bulkSkipped: '정지된 계정의 숨김 항목 {n}건은 빠졌습니다.',
+  restoreSuspended: '계정이 정지된 상태입니다. 정지를 먼저 해제한 뒤 복원해 주세요.',
   ref: '계정 ID (a-…)',
   accountsB:
     '정지된 계정은 등록·수정·신고를 할 수 없고, 그 글은 숨겨집니다. 정지를 풀어도 글은 돌아오지 않으니 하나씩 복원해 주세요.',

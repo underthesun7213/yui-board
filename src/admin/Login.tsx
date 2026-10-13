@@ -47,6 +47,9 @@ export function Login() {
       return setError(r === 'bad' ? m.badLogin : r === 'captcha' ? m.captchaFirst : m.netError);
     }
     admin.set({ forbidden: false });
+    /* the CAPTCHA script shares this page with the new session: reload so it
+       is gone before anything else happens (the session is in sessionStorage) */
+    if (SITE_KEY) return location.reload();
     await resume();
   };
   return (

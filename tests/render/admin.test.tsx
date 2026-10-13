@@ -48,3 +48,20 @@ describe.each(['en', 'ja', 'ko'] as const)('%s', (lang) => {
     expect(bad?.[0] ?? '').toBe('');
   });
 });
+
+/* User text in the console is text, never markup. */
+describe('admin console escapes user text', () => {
+  it('a title made of markup renders as text', async () => {
+    const { Rows } = await import('../../src/admin/Queue');
+    const evil = '<img src=x onerror=alert(1)><script>alert(2)</script>';
+    const { prelude } = await prerender(
+      <Rows
+        rows={[{ kind: 'place', id: 1, title: evil, state: 'auto_hidden', account_ref: evil }]}
+      />,
+    );
+    const out = await new Response(prelude).text();
+    expect(out).not.toContain('<img');
+    expect(out).not.toContain('<script');
+    expect(out).toContain('&lt;img src=x onerror=alert(1)&gt;');
+  });
+});

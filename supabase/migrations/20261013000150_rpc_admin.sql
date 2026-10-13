@@ -16,6 +16,7 @@ declare
   created timestamptz;
   s_aal text;
   s_until timestamptz;
+  hours integer := app.setting('admin_session_hours');
 begin
   if uid is null then return 'no user'; end if;
   if coalesce((claims ->> 'is_anonymous')::boolean, true) then return 'anonymous'; end if;
@@ -32,7 +33,9 @@ begin
   if not found or created is null then return 'no session'; end if;
   if s_aal is distinct from 'aal2' then return 'session not aal2'; end if;
   if s_until is not null and s_until <= now() then return 'session expired'; end if;
-  if created < now() - make_interval(hours => app.setting('admin_session_hours')) then return 'session expired'; end if;
+  -- a missing or broken limit refuses rather than lifting it
+  if hours is null or hours <= 0 then return 'no session limit'; end if;
+  if created < now() - make_interval(hours => hours) then return 'session expired'; end if;
   if not exists (select 1 from app.admins a where a.user_id = uid and a.active) then return 'not an admin'; end if;
   return null;
 end $$;
@@ -177,29 +180,37 @@ begin
 end $$;
 
 -- Restore a hidden item: shown again and protected from auto-hide until its
--- owner edits it (Y-R4, Y-R6); its open reports are closed as restored.
-create function app.restore_one(a app.admins, p_kind app.item_kind, p_id bigint, p_note text) returns boolean
+-- owner edits it (Y-R4, Y-R6); its open reports are closed as restored. Only
+-- hidden items, and never while the owner is suspended (Y-R7): unsuspend
+-- first, then restore one by one.
+create function app.restore_one(a app.admins, p_kind app.item_kind, p_id bigint, p_note text) returns text
 language plpgsql security definer set search_path = '' as $$
 declare
   ref text;
+  susp boolean;
   n integer;
 begin
   if p_kind = 'place' then
+    select ac.ref, ac.suspended_at is not null into ref, susp
+    from app.place_owners o join app.accounts ac on ac.user_id = o.owner_id where o.place_id = p_id;
+  else
+    select ac.ref, ac.suspended_at is not null into ref, susp
+    from app.event_owners o join app.accounts ac on ac.user_id = o.owner_id where o.event_id = p_id;
+  end if;
+  if coalesce(susp, false) then return 'account_suspended'; end if;
+  if p_kind = 'place' then
     update app.places set auto_hidden_at = null, suspension_hidden_at = null, restored_at = now()
-    where id = p_id and deleted_at is null;
-    get diagnostics n = row_count;
-    select ac.ref into ref from app.place_owners o join app.accounts ac on ac.user_id = o.owner_id where o.place_id = p_id;
+    where id = p_id and deleted_at is null and (auto_hidden_at is not null or suspension_hidden_at is not null);
   else
     update app.events set auto_hidden_at = null, suspension_hidden_at = null, restored_at = now()
-    where id = p_id and deleted_at is null;
-    get diagnostics n = row_count;
-    select ac.ref into ref from app.event_owners o join app.accounts ac on ac.user_id = o.owner_id where o.event_id = p_id;
+    where id = p_id and deleted_at is null and (auto_hidden_at is not null or suspension_hidden_at is not null);
   end if;
-  if n = 0 then return false; end if;
+  get diagnostics n = row_count;
+  if n = 0 then return 'not_found'; end if;
   update app.reports set resolution = 'restored', resolved_at = now()
   where resolution = 'open' and (case when p_kind = 'place' then place_id else event_id end) = p_id;
   perform app.log_admin(a, 'restore', p_kind::text, p_id, ref, null, p_note);
-  return true;
+  return 'ok';
 end $$;
 
 create function public.admin_restore(p_kind app.item_kind, p_id bigint, p_note text default null) returns jsonb
@@ -209,35 +220,52 @@ declare
 begin
   perform app.require_admin();
   a := app.require_admin();
-  if not app.restore_one(a, p_kind, p_id, p_note) then return jsonb_build_object('status', 'not_found'); end if;
-  return jsonb_build_object('status', 'ok');
+  return jsonb_build_object('status', app.restore_one(a, p_kind, p_id, p_note));
 end $$;
 
 -- After a mass-report attack: restore everything auto-hidden in a period.
--- A dry run (the default) only lists what would change ([검토 #10]).
+-- A dry run (the default) only lists what would change ([검토 #10]); the run
+-- itself says how many it expects and stops if the list changed meanwhile.
+-- The period ends now at the latest, and suspended accounts' items stay out.
 create function public.admin_restore_bulk(p_since timestamptz, p_until timestamptz, p_note text default null,
-                                          p_dry_run boolean default true) returns jsonb
+                                          p_dry_run boolean default true, p_expected integer default null)
+returns jsonb
 language plpgsql security definer set search_path = '' as $$
 declare
   a app.admins;
   targets jsonb;
+  skipped integer;
   t record;
   n integer := 0;
+  upto timestamptz;
 begin
   perform app.require_admin();
   a := app.require_admin();
-  if p_since is null or p_until is null or p_until <= p_since then return app.invalid('period'); end if;
-  select coalesce(jsonb_agg(jsonb_build_object('kind', k, 'id', i, 'title', ti) order by k, i), '[]'::jsonb) into targets
-  from (select 'place' as k, id as i, name as ti from app.places
-        where auto_hidden_at between p_since and p_until and deleted_at is null
+  upto := least(p_until, now());
+  if p_since is null or p_until is null or upto <= p_since then return app.invalid('period'); end if;
+  select coalesce(jsonb_agg(jsonb_build_object('kind', k, 'id', i, 'title', ti) order by k, i)
+                    filter (where not susp), '[]'::jsonb),
+         count(*) filter (where susp)
+    into targets, skipped
+  from (select 'place' as k, p.id as i, p.name as ti, ac.suspended_at is not null as susp
+        from app.places p left join app.place_owners o on o.place_id = p.id
+        left join app.accounts ac on ac.user_id = o.owner_id
+        where p.auto_hidden_at between p_since and upto and p.deleted_at is null
         union all
-        select 'event', id, title from app.events
-        where auto_hidden_at between p_since and p_until and deleted_at is null) x;
+        select 'event', e.id, e.title, ac.suspended_at is not null
+        from app.events e left join app.event_owners o on o.event_id = e.id
+        left join app.accounts ac on ac.user_id = o.owner_id
+        where e.auto_hidden_at between p_since and upto and e.deleted_at is null) x;
   if coalesce(p_dry_run, true) then
-    return jsonb_build_object('status', 'ok', 'dry_run', true, 'count', jsonb_array_length(targets), 'items', targets);
+    return jsonb_build_object('status', 'ok', 'dry_run', true, 'count', jsonb_array_length(targets),
+                              'skipped_suspended', skipped, 'items', targets);
+  end if;
+  if p_expected is null or p_expected <> jsonb_array_length(targets) then
+    return jsonb_build_object('status', 'changed', 'count', jsonb_array_length(targets),
+                              'skipped_suspended', skipped, 'items', targets);
   end if;
   for t in select (x ->> 'kind')::app.item_kind as k, (x ->> 'id')::bigint as i from jsonb_array_elements(targets) x loop
-    if app.restore_one(a, t.k, t.i, coalesce(p_note, 'bulk restore')) then n := n + 1; end if;
+    if app.restore_one(a, t.k, t.i, coalesce(p_note, 'bulk restore')) = 'ok' then n := n + 1; end if;
   end loop;
   return jsonb_build_object('status', 'ok', 'dry_run', false, 'count', n);
 end $$;
@@ -286,7 +314,10 @@ begin
 end $$;
 
 -- Suspend an account (Y-R7): no more writing or reporting, and everything it
--- shows is hidden. Unsuspending leaves the items hidden; restore them one by one.
+-- shows or that reports hid is marked hidden for the suspension, so no restore
+-- brings it back while suspended. Takes the account's write lock first, so a
+-- write already past its suspension check finishes before the items are hidden.
+-- Unsuspending leaves the items hidden; restore them one by one.
 create function public.admin_suspend(p_account_ref text, p_note text default null) returns jsonb
 language plpgsql security definer set search_path = '' as $$
 declare
@@ -297,19 +328,20 @@ declare
 begin
   perform app.require_admin();
   a := app.require_admin();
-  update app.accounts set suspended_at = now(), suspended_note = left(p_note, 200)
-  where ref = p_account_ref and suspended_at is null
-  returning user_id into uid;
+  select user_id into uid from app.accounts where ref = p_account_ref and suspended_at is null;
   if uid is null then return jsonb_build_object('status', 'not_found'); end if;
+  perform pg_advisory_xact_lock(hashtextextended(uid::text, 0));
+  update app.accounts set suspended_at = now(), suspended_note = left(p_note, 200)
+  where user_id = uid and suspended_at is null;
+  get diagnostics n = row_count;
+  if n = 0 then return jsonb_build_object('status', 'not_found'); end if;
   update app.places p set suspension_hidden_at = now()
   from app.place_owners o
-  where o.place_id = p.id and o.owner_id = uid
-    and p.deleted_at is null and p.auto_hidden_at is null and p.suspension_hidden_at is null;
+  where o.place_id = p.id and o.owner_id = uid and p.deleted_at is null and p.suspension_hidden_at is null;
   get diagnostics n = row_count;
   update app.events e set suspension_hidden_at = now()
   from app.event_owners o
-  where o.event_id = e.id and o.owner_id = uid
-    and e.deleted_at is null and e.auto_hidden_at is null and e.suspension_hidden_at is null;
+  where o.event_id = e.id and o.owner_id = uid and e.deleted_at is null and e.suspension_hidden_at is null;
   get diagnostics m = row_count;
   perform app.log_admin(a, 'suspend', 'account', null, p_account_ref,
                         jsonb_build_object('places_hidden', n, 'events_hidden', m), p_note);
@@ -324,7 +356,8 @@ declare
 begin
   perform app.require_admin();
   a := app.require_admin();
-  update app.accounts set suspended_at = null where ref = p_account_ref and suspended_at is not null
+  update app.accounts set suspended_at = null, suspended_note = null
+  where ref = p_account_ref and suspended_at is not null
   returning user_id into uid;
   if uid is null then return jsonb_build_object('status', 'not_found'); end if;
   perform app.log_admin(a, 'unsuspend', 'account', null, p_account_ref, null, p_note);
