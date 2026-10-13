@@ -38,7 +38,10 @@ select set_eq(
   array['public.data_version', 'public.my_items', 'public.create_place', 'public.update_place',
         'public.delete_place', 'public.create_event', 'public.update_event', 'public.delete_event',
         'public.set_occurrence', 'public.clear_occurrence', 'public.my_place', 'public.my_event',
-        'app.db_pre_request'],
+        'app.db_pre_request', 'public.submit_report', 'public.admin_whoami', 'public.admin_queue',
+        'public.admin_item', 'public.admin_restore', 'public.admin_restore_bulk', 'public.admin_delete',
+        'public.admin_dismiss', 'public.admin_suspend', 'public.admin_unsuspend', 'public.admin_search',
+        'public.admin_audit_log'],
   'authenticated may execute exactly these');
 select is_empty(
   $$select p.proname from pg_proc p where p.pronamespace in ('public'::regnamespace, 'app'::regnamespace)

@@ -43,7 +43,24 @@ grant execute on function
   public.clear_occurrence(bigint, date),
   public.my_items(),
   public.my_place(bigint),
-  public.my_event(bigint)
+  public.my_event(bigint),
+  public.submit_report(app.item_kind, bigint, app.report_reason)
+to authenticated;
+
+-- the admin console; each function decides for itself whether the caller is
+-- an admin (app.require_admin), so `authenticated` is only the door
+grant execute on function
+  public.admin_whoami(),
+  public.admin_queue(text, integer, integer),
+  public.admin_item(app.item_kind, bigint),
+  public.admin_restore(app.item_kind, bigint, text),
+  public.admin_restore_bulk(timestamptz, timestamptz, text, boolean),
+  public.admin_delete(app.item_kind, bigint, text),
+  public.admin_dismiss(app.item_kind, bigint, text),
+  public.admin_suspend(text, text),
+  public.admin_unsuspend(text, text),
+  public.admin_search(text, char),
+  public.admin_audit_log(integer, bigint)
 to authenticated;
 -- the enum types in those signatures
 grant usage on schema app to anon, authenticated;

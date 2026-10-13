@@ -6,7 +6,10 @@ declare
   want_auth text[] := array[
     'public.data_version', 'public.my_items', 'public.create_place', 'public.update_place', 'public.delete_place',
     'public.create_event', 'public.update_event', 'public.delete_event', 'public.set_occurrence',
-    'public.clear_occurrence', 'public.my_place', 'public.my_event', 'app.db_pre_request'];
+    'public.clear_occurrence', 'public.my_place', 'public.my_event', 'app.db_pre_request',
+    'public.submit_report', 'public.admin_whoami', 'public.admin_queue', 'public.admin_item',
+    'public.admin_restore', 'public.admin_restore_bulk', 'public.admin_delete', 'public.admin_dismiss',
+    'public.admin_suspend', 'public.admin_unsuspend', 'public.admin_search', 'public.admin_audit_log'];
   want_anon text[] := array['public.data_version', 'app.db_pre_request'];
   want_service text[] := array['public.ops_health'];
   got text[];
@@ -85,6 +88,16 @@ begin
     where d.defaclrole = 'postgres'::regrole and d.defaclnamespace = 0 and d.defaclobjtype = 'f'
       and not exists (select 1 from aclexplode(d.defaclacl) a where a.grantee = 0 and a.privilege_type = 'EXECUTE')
   ) then raise exception 'check 9b (global default: no PUBLIC EXECUTE) failed'; end if;
+
+  -- ⑪ every admin function a client can call starts by checking the caller
+  -- (admin_whoami answers instead, and checks the same way)
+  select string_agg(p.proname, ', ') into bad
+  from pg_proc p
+  where p.pronamespace = 'public'::regnamespace and p.proname like 'admin\_%' and p.proname <> 'admin_whoami'
+    and substring(p.prosrc from '\mbegin\M\s+([^;]*;)') is distinct from 'perform app.require_admin();';
+  if bad is not null then raise exception 'check 11 (admin functions check the caller first) failed: %', bad; end if;
+  if (select count(*) from pg_proc p where p.pronamespace = 'public'::regnamespace and p.proname like 'admin\_%') <> 11 then
+    raise exception 'check 11b (the admin functions are the eleven in the design) failed'; end if;
 
   -- ⑫ no extension in public
   select string_agg(extname, ', ') into bad from pg_extension where extnamespace = 'public'::regnamespace;
