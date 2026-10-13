@@ -54,7 +54,7 @@ grant execute on function
   public.admin_queue(text, integer, integer),
   public.admin_item(app.item_kind, bigint),
   public.admin_restore(app.item_kind, bigint, text),
-  public.admin_restore_bulk(timestamptz, timestamptz, text, boolean, integer),
+  public.admin_restore_bulk(timestamptz, timestamptz, text, boolean, text),
   public.admin_delete(app.item_kind, bigint, text),
   public.admin_dismiss(app.item_kind, bigint, text),
   public.admin_suspend(text, text),

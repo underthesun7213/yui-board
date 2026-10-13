@@ -129,6 +129,7 @@ function BulkRestore({ onDone }: { onDone(): void }) {
     null,
   );
   const [skipped, setSkipped] = useState(0);
+  const [token, setToken] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
   /* the inputs are Japan time, like everything the console shows */
   const iso = (local: string) => (local ? `${local}:00+09:00` : null);
@@ -138,6 +139,7 @@ function BulkRestore({ onDone }: { onDone(): void }) {
         status: string;
         count?: number;
         skipped_suspended?: number;
+        token?: string;
         items?: typeof preview;
       }>('admin_restore_bulk', {
         p_since: iso(since),
@@ -145,7 +147,7 @@ function BulkRestore({ onDone }: { onDone(): void }) {
         p_note: 'bulk restore',
         p_dry_run: dry,
         /* the server restores only if the list is still the one shown here */
-        p_expected: dry ? null : (preview?.length ?? 0),
+        p_expected: dry ? null : token,
       }),
     );
   const look = async (e: FormEvent) => {
@@ -156,12 +158,14 @@ function BulkRestore({ onDone }: { onDone(): void }) {
     if (r.status !== 'ok') return setMsg(m.invalidPeriod);
     setPreview(r.items ?? []);
     setSkipped(r.skipped_suspended ?? 0);
+    setToken(r.token ?? null);
   };
   const run = async () => {
     const r = await call(false);
     if (r?.status === 'changed') {
       setPreview(r.items ?? []);
       setSkipped(r.skipped_suspended ?? 0);
+      setToken(r.token ?? null);
       return setMsg(m.bulkChanged);
     }
     if (!r || r.status !== 'ok') return setMsg(m.netError);

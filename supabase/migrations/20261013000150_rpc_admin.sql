@@ -188,8 +188,16 @@ language plpgsql security definer set search_path = '' as $$
 declare
   ref text;
   susp boolean;
+  owner uuid;
   n integer;
 begin
+  -- the owner's lock first, so a suspension committing meanwhile is seen
+  if p_kind = 'place' then
+    select o.owner_id into owner from app.place_owners o where o.place_id = p_id;
+  else
+    select o.owner_id into owner from app.event_owners o where o.event_id = p_id;
+  end if;
+  if owner is not null then perform pg_advisory_xact_lock(hashtextextended(owner::text, 0)); end if;
   if p_kind = 'place' then
     select ac.ref, ac.suspended_at is not null into ref, susp
     from app.place_owners o join app.accounts ac on ac.user_id = o.owner_id where o.place_id = p_id;
@@ -224,11 +232,12 @@ begin
 end $$;
 
 -- After a mass-report attack: restore everything auto-hidden in a period.
--- A dry run (the default) only lists what would change ([검토 #10]); the run
--- itself says how many it expects and stops if the list changed meanwhile.
--- The period ends now at the latest, and suspended accounts' items stay out.
+-- A dry run (the default) only lists what would change ([검토 #10]) with a
+-- token for that exact list; the run passes the token back and stops if the
+-- list changed meanwhile. The period ends now at the latest. Anything hidden
+-- for a suspension — current or lifted — stays out: those come back one by one.
 create function public.admin_restore_bulk(p_since timestamptz, p_until timestamptz, p_note text default null,
-                                          p_dry_run boolean default true, p_expected integer default null)
+                                          p_dry_run boolean default true, p_expected text default null)
 returns jsonb
 language plpgsql security definer set search_path = '' as $$
 declare
@@ -247,22 +256,23 @@ begin
                     filter (where not susp), '[]'::jsonb),
          count(*) filter (where susp)
     into targets, skipped
-  from (select 'place' as k, p.id as i, p.name as ti, ac.suspended_at is not null as susp
+  from (select 'place' as k, p.id as i, p.name as ti,
+               ac.suspended_at is not null or p.suspension_hidden_at is not null as susp
         from app.places p left join app.place_owners o on o.place_id = p.id
         left join app.accounts ac on ac.user_id = o.owner_id
         where p.auto_hidden_at between p_since and upto and p.deleted_at is null
         union all
-        select 'event', e.id, e.title, ac.suspended_at is not null
+        select 'event', e.id, e.title, ac.suspended_at is not null or e.suspension_hidden_at is not null
         from app.events e left join app.event_owners o on o.event_id = e.id
         left join app.accounts ac on ac.user_id = o.owner_id
         where e.auto_hidden_at between p_since and upto and e.deleted_at is null) x;
   if coalesce(p_dry_run, true) then
     return jsonb_build_object('status', 'ok', 'dry_run', true, 'count', jsonb_array_length(targets),
-                              'skipped_suspended', skipped, 'items', targets);
+                              'skipped_suspended', skipped, 'items', targets, 'token', md5(targets::text));
   end if;
-  if p_expected is null or p_expected <> jsonb_array_length(targets) then
+  if p_expected is distinct from md5(targets::text) then
     return jsonb_build_object('status', 'changed', 'count', jsonb_array_length(targets),
-                              'skipped_suspended', skipped, 'items', targets);
+                              'skipped_suspended', skipped, 'items', targets, 'token', md5(targets::text));
   end if;
   for t in select (x ->> 'kind')::app.item_kind as k, (x ->> 'id')::bigint as i from jsonb_array_elements(targets) x loop
     if app.restore_one(a, t.k, t.i, coalesce(p_note, 'bulk restore')) = 'ok' then n := n + 1; end if;

@@ -2,7 +2,7 @@
 -- (restore protection until the owner edits), Y-R4~R7, Y-S3.
 begin;
 \ir _helpers.sql
-select plan(62);
+select plan(63);
 
 create temp table ids (k text primary key, v uuid);
 insert into ids values ('o', tests.user()), ('r1', tests.user()), ('r2', tests.user()), ('r3', tests.user()),
@@ -150,11 +150,12 @@ select tests.as_admin('adm', 'adm');
 select is((public.admin_restore_bulk(now() - interval '1 hour', now() + interval '1 hour'))->>'count', '1', 'dry run counts');
 select is((select count(*)::int from public.admin_queue('hidden') where id = tests.it('p') and kind = 'place'), 1, 'dry run changed nothing');
 select is((public.admin_restore_bulk(now() + interval '1 hour', now()))->>'field', 'period', 'bad period');
-select is((public.admin_restore_bulk(now() - interval '1 hour', now() + interval '1 hour', 'wave', false, 2))->>'status',
+select is((public.admin_restore_bulk(now() - interval '1 hour', now() + interval '1 hour', 'wave', false, 'stale'))->>'status',
   'changed', 'bulk restore stops when the list is not what was previewed');
 select is((public.admin_restore_bulk(now() - interval '1 hour', now() + interval '1 hour', 'wave', false))->>'status',
   'changed', '… or when no count was given');
-select is((public.admin_restore_bulk(now() - interval '1 hour', now() + interval '1 hour', 'wave', false, 1))->>'count', '1', 'bulk restore');
+select is((public.admin_restore_bulk(now() - interval '1 hour', now() + interval '1 hour', 'wave', false,
+  public.admin_restore_bulk(now() - interval '1 hour', now() + interval '1 hour')->>'token'))->>'count', '1', 'bulk restore with the preview''s token');
 select is((select state from public.admin_queue() where id = tests.it('p') and kind = 'place'), 'visible', 'restored');
 
 select is((public.admin_restore('event', tests.it('e')))->>'status', 'not_found', 'a shown item is not "restored"');
@@ -201,6 +202,10 @@ select tests.as_admin('adm', 'adm');
 select is((public.admin_unsuspend((select ref from refs where k = 'o')))->>'status', 'ok', 'unsuspend');
 select tests.as_owner();
 select ok((select suspension_hidden_at is not null from app.events where id = tests.it('e')), 'items stay hidden after unsuspend');
+select tests.as_admin('adm', 'adm');
+select is((public.admin_restore_bulk(now() - interval '1 hour', now() + interval '1 hour'))->>'skipped_suspended', '1',
+  'after unsuspend, bulk restore still leaves the suspension-hidden week to one-by-one restore');
+select tests.as_owner();
 
 -- search matches % and _ literally; the log is newest first
 select tests.as_admin('adm', 'adm');
