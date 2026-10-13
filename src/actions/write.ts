@@ -87,6 +87,8 @@ export function explain(r: WriteResult): string | null {
       return msg.eNotFound;
     case 'past_event':
       return msg.ePast;
+    case 'already_reported':
+      return msg.eAlready;
     case 'forbidden':
       return msg.eForbidden;
     case 'captcha':
@@ -222,6 +224,26 @@ export async function resetWeek(id: number, date: string): Promise<WriteResult> 
   const r = await write('clear_occurrence', { p_event_id: id, p_occurs_on: date });
   await after(r, m().saved);
   if (r.status === 'ok') navigate({ name: 'event', id, date }, { replace: true });
+  return r;
+}
+
+/* ---------- reports (Y-R1~R3) ---------- */
+
+export type ReportReason = 'wrong' | 'spam' | 'inappropriate' | 'privacy' | 'other';
+
+/** Sends a report. On success the data is fetched again, so an item the
+    report hid leaves the map and calendar here at once. */
+export async function report(
+  kind: 'place' | 'event',
+  id: number,
+  reason: ReportReason,
+): Promise<WriteResult> {
+  const r = await write('submit_report', { p_kind: kind, p_id: id, p_reason: reason });
+  if (r.status === 'ok') {
+    toast(m().reported);
+    void loadData({ fresh: true });
+    void refreshMine();
+  }
   return r;
 }
 

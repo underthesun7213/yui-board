@@ -200,6 +200,23 @@ export const en = {
   eSessionLost:
     'This browser lost its sign-in, so earlier posts can no longer be edited from here. Save again to continue with a new account.',
   aCaptcha: 'Check that you are a person',
+  report: 'Report',
+  reportPlaceT: 'Report this place',
+  reportEventT: 'Report this event',
+  reportWhy: "What's wrong with it?",
+  reasons: {
+    wrong: 'Wrong information',
+    spam: 'Advertising or spam',
+    inappropriate: 'Inappropriate content',
+    privacy: 'Shows personal information',
+    other: 'Something else',
+  },
+  reportNote:
+    'No one is told who reported. When several people report it, it is hidden until an admin checks it.',
+  reportSend: 'Send report',
+  reportSending: 'Sending…',
+  reported: 'Reported — thank you',
+  eAlready: "You've already reported this.",
 };
 
 export type Messages = typeof en;

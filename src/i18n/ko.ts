@@ -200,4 +200,21 @@ export const ko = {
   eSessionLost:
     '이 브라우저의 로그인 정보가 사라져 이전에 올린 것은 여기서 수정할 수 없습니다. 다시 저장하면 새 계정으로 계속합니다.',
   aCaptcha: '사람인지 확인',
+  report: '신고',
+  reportPlaceT: '이 장소 신고',
+  reportEventT: '이 일정 신고',
+  reportWhy: '무엇이 문제인가요?',
+  reasons: {
+    wrong: '틀린 정보',
+    spam: '광고·스팸',
+    inappropriate: '부적절한 내용',
+    privacy: '개인정보 노출',
+    other: '기타',
+  },
+  reportNote:
+    '누가 신고했는지는 아무에게도 알려지지 않습니다. 여러 사람이 신고하면 관리자가 확인할 때까지 숨겨집니다.',
+  reportSend: '신고하기',
+  reportSending: '보내는 중…',
+  reported: '신고했습니다. 고맙습니다',
+  eAlready: '이미 신고했습니다.',
 } satisfies Messages;

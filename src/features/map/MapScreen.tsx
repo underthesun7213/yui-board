@@ -2,6 +2,7 @@ import 'leaflet/dist/leaflet.css';
 import 'leaflet.markercluster/dist/MarkerCluster.css';
 import { reload } from '../../actions/app';
 import { go } from '../../actions/nav';
+import { openReport } from '../../actions/report';
 import { formatDay } from '../../domain/calendar/dates';
 import { session } from '../../state/session';
 import {
@@ -226,6 +227,15 @@ function PlaceCard() {
             {m.del}
           </button>
         </div>
+      )}
+      {!mine && (
+        <button
+          className="reportbtn"
+          data-report-open="place"
+          onClick={() => openReport({ kind: 'place', id: p.id })}
+        >
+          {m.report}
+        </button>
       )}
     </div>
   );

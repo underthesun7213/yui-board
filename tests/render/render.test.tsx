@@ -25,6 +25,7 @@ import { route, type Route } from '../../src/state/route';
 import { vn, VN_START } from '../../src/state/vn';
 import { session } from '../../src/state/session';
 import { net } from '../../src/state/net';
+import { ui } from '../../src/state/ui';
 import events from '../fixtures/events.json';
 import occurrences from '../fixtures/occurrences.json';
 import places from '../fixtures/places.json';
@@ -77,6 +78,7 @@ function reset() {
   calendarUi.set({ day: null, month: null });
   collection.set({ cg: {} });
   vn.set(VN_START);
+  ui.set({ report: null });
 }
 
 type Case = [name: string, r: Route, setup?: () => void, mark?: RegExp];
@@ -136,6 +138,28 @@ const cases: Case[] = [
       mapUi.set({ pl: 1 }),
       session.set({ minePlaces: { 1: true } })
     ),
+  ],
+  [
+    'map-report',
+    { name: 'map' },
+    () => (
+      location.set({ state: 'skip' }),
+      mapUi.set({ pl: 1 }),
+      ui.set({ report: { kind: 'place', id: 1 } })
+    ),
+    /class="sheet"[^>]*data-report="place"/,
+  ],
+  [
+    'event-report-offline',
+    { name: 'event', id: GIP, date: '2026-10-13' },
+    () => (net.set({ online: false }), ui.set({ report: { kind: 'event', id: GIP } })),
+    /class="sheet"[^>]*data-report="event"[\s\S]*class="dstatus warn"/,
+  ],
+  [
+    'event-report-framed',
+    { name: 'event', id: GIP, date: '2026-10-13' },
+    () => (session.set({ framed: true }), ui.set({ report: { kind: 'event', id: GIP } })),
+    /class="sheet"[\s\S]*class="dstatus warn"/,
   ],
   ['cal-empty', { name: 'cal' }, () => setData([], [], [], 'x'), /class="empty"/],
   [

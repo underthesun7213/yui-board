@@ -19,8 +19,10 @@ import {
   MapScreen,
   MyItems,
   PlaceForm,
+  ReportSheet,
   WeekForm,
 } from './screens';
+import { ui } from '../state/ui';
 
 function Screen({ r }: { r: Route }) {
   switch (r.name) {
@@ -57,6 +59,7 @@ export function App() {
   const m = useT();
   const nav = useStore(route, (s) => s);
   const current = nav.route.name;
+  const reporting = useStore(ui, (s) => !!s.report);
   /* While a new screen's chunk loads, the old screen stays up instead of
      flashing "Loading" (store updates cannot be transitions themselves). */
   const deferred = useDeferredValue(nav);
@@ -94,6 +97,13 @@ export function App() {
         </main>
       </div>
       <TabBar />
+      {reporting && (
+        <ScreenBoundary fallback={null}>
+          <Suspense fallback={null}>
+            <ReportSheet />
+          </Suspense>
+        </ScreenBoundary>
+      )}
       <Toast />
     </>
   );

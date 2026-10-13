@@ -1,5 +1,6 @@
 import { downloadIcs } from '../../actions/calendar';
 import { go } from '../../actions/nav';
+import { openReport } from '../../actions/report';
 import { session } from '../../state/session';
 import { formatDay, tokyoToday, weekday } from '../../domain/calendar/dates';
 import { findOcc } from '../../domain/calendar/occurrences';
@@ -84,6 +85,15 @@ export function EventDetail({ id, date }: { id: number; date: string }) {
               {m.del}
             </button>
           </div>
+        )}
+        {!mine && (
+          <button
+            className="reportbtn"
+            data-report-open="event"
+            onClick={() => openReport({ kind: 'event', id: e.id })}
+          >
+            {m.report}
+          </button>
         )}
       </div>
     </>

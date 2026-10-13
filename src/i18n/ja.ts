@@ -200,4 +200,21 @@ export const ja = {
   eSessionLost:
     'このブラウザーのログイン情報が失われたため、これまでの投稿はここから編集できません。もう一度保存すると新しいアカウントで続けます。',
   aCaptcha: '人であることの確認',
+  report: '報告',
+  reportPlaceT: 'この場所を報告',
+  reportEventT: 'このイベントを報告',
+  reportWhy: 'どこが問題ですか？',
+  reasons: {
+    wrong: '情報がまちがっている',
+    spam: '広告・スパム',
+    inappropriate: '不適切な内容',
+    privacy: '個人情報が出ている',
+    other: 'その他',
+  },
+  reportNote:
+    '報告した人はだれにも知らされません。何人かが報告すると、管理者が確認するまで表示されなくなります。',
+  reportSend: '報告する',
+  reportSending: '送信中…',
+  reported: '報告しました。ありがとうございます',
+  eAlready: 'すでに報告しています。',
 } satisfies Messages;

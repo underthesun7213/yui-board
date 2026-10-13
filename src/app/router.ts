@@ -1,4 +1,5 @@
 import { mapUi } from '../state/mapUi';
+import { ui } from '../state/ui';
 import { route, type Route, type RouteName } from '../state/route';
 import { formatRoute, legacyRoute, PARENT, parseRoute } from './routes';
 
@@ -69,8 +70,31 @@ export function isPrefEntry(pref: string): boolean {
   }
 }
 
+/* The report sheet is a history step on the same URL, so system back closes
+   it (RFC-0003 §338). */
+export function pushSheetState() {
+  try {
+    history.pushState({ ...(history.state as HistState | null), sheet: true }, '');
+  } catch {
+    /* refused in a sandboxed frame: the sheet closes with its own button */
+  }
+}
+export function isSheetEntry(): boolean {
+  try {
+    return !!(history.state as { sheet?: boolean } | null)?.sheet;
+  } catch {
+    return false;
+  }
+}
+
 function onPop(e: PopStateEvent) {
   const to = parseRoute(location.hash) ?? { name: 'home' };
+  /* back from the sheet's step: only the sheet closes; the screen (and the
+     map's open card) stays as it is */
+  if (ui.get().report) {
+    ui.set({ report: null });
+    if (formatRoute(to) === formatRoute(route.get().route)) return;
+  }
   const st = (e.state ?? { prev: null }) as HistState;
   const mp = st.map;
   const from = route.get().route;

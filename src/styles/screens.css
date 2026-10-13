@@ -1461,3 +1461,80 @@ main {
   margin-top: 16px;
   min-height: 65px;
 }
+
+/* ---------- the report sheet (SYS-03) ---------- */
+.reportbtn {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  margin-top: 4px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font-size: 13px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.sheetbg {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgba(21, 32, 43, 0.45);
+}
+.sheet {
+  width: 100%;
+  max-width: var(--col);
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 20px var(--gutter) calc(16px + env(safe-area-inset-bottom));
+  border-radius: var(--r-l) var(--r-l) 0 0;
+  background: var(--canvas);
+  outline: none;
+}
+.sheet h2 {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.reasons {
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+.reasons legend {
+  font-size: 14px;
+  color: var(--body);
+  margin-bottom: 8px;
+}
+.reason {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 0 12px;
+  margin-bottom: 6px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+  font-size: 15px;
+  cursor: pointer;
+}
+.reason.on {
+  border-color: var(--primary);
+  background: var(--primary-tint);
+  color: var(--on-tint);
+}
+.reason input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--primary);
+}
+.sheet .err {
+  color: var(--danger);
+  font-size: 14px;
+  margin-top: 8px;
+}

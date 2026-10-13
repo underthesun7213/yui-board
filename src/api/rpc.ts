@@ -10,6 +10,7 @@ export type WriteStatus =
   | 'invalid'
   | 'not_found'
   | 'past_event'
+  | 'already_reported'
   | 'rate_limited'
   | 'suspended'
   | 'forbidden'
