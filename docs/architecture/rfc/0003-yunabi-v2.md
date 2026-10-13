@@ -555,6 +555,15 @@ sequenceDiagram
 | 출처 분리 | 관리자 콘솔은 사용자 앱과 다른 출처(Cloudflare) — 사용자 앱이나 같은 `github.io` 의 다른 페이지에 XSS 가 있어도 관리자 토큰에 닿지 않는다(ADR-0020) |
 | 기록 | 모든 관리 조치를 `app.mod_actions` 에 추가 전용으로(누가: 관리자 이메일·id, 언제, 무엇을, 대상, 메모) — Y-R5. 관리 거절은 `admin_whoami()` 가 `security_events` 에 기록한다. 콘솔을 거치지 않은 직접 호출의 거절은 예외 롤백 때문에 DB 에 남지 않고 Supabase API 로그에만 남는다(ERD v2 OQ-E7) — 실패 안전을 기록보다 우선한 결과 |
 
+**`[Y-3 구현]`** 
+- 콘솔: `admin/index.html` + `vite.admin.config.ts` → `dist-admin/`(배포 출처 Cloudflare). CSP 는 meta 태그와 `_headers`(여기에만 `frame-ancestors 'none'`, `X-Frame-Options: DENY`, `Cache-Control: no-store`)에 같이 둔다. `img-src data:` 는 TOTP QR(Supabase Auth 가 주는 data: SVG) 때문. 문구는 앱 번들에 섞이지 않게 `src/admin/i18n.ts`(3개 언어).
+- 로그인: 비밀번호 → 검증된 TOTP 요소가 없으면 `MfaEnroll` 이 요소 2개(기본 이름 "Main phone"/"Backup", 바꿀 수 있음)를 받은 뒤에야 콘솔을 연다. 있으면 이름으로 고르게 한다(R-7 ①). 그다음 `admin_whoami` — `forbidden` 이면 로그아웃하고 이유를 보여 준다. 어느 `admin_*` 호출이든 401/403 이면 같은 처리. 요소가 1개뿐이면 콘솔 위에 경고. 세션은 `sessionStorage`(`yui.admin.auth`).
+- `admin_refusal()` 은 토큰 클레임 외에 **세션 행 자체**의 `aal = aal2` 와 `not_after` 도 확인한다(토큰은 aal2 인데 세션 행이 aal1 인 경우 거절 — pgTAP).
+- 콘솔이 POST 로 부르는 읽기 함수(`admin_queue`·`admin_item`·`admin_search`·`admin_audit_log`)는 `stable` 이 아니다: PostgREST 는 `stable` 함수를 읽기 전용 트랜잭션에서 돌려, `db_pre_request` 의 IP 카운트 insert 가 실패(405)했다. 관리 호출도 IP 한도에 세진다.
+- `admin_queue` 는 ERD 의 `p_before` 대신 `p_offset` 으로 넘긴다(정렬 키가 여러 열이라). 
+- 신고 시트(SYS-03): 장소 카드·일정 상세에서 **내 것이 아닐 때만** [신고]. 성공하면 데이터를 바로 다시 읽어 숨겨진 항목이 그 기기에서 즉시 사라진다. 첫 쓰기라 계정이 생길 수 있으므로 CAPTCHA 위젯도 시트 안에 있다.
+- 검증: pgTAP 08(신고) 26개·09(관리) 50개, 백엔드 브라우저 시험 `reports.spec.ts`(동시 신고 3건 → 숨김 1회, G-60)·`admin.spec.ts`(실제 TOTP 로 등록·로그인, 복원·정지·일괄 복원, 예비 요소 로그인, 13시간 세션 거절, 허용 목록 밖 계정 거절).
+
 ---
 
 ## 13. 쓰기 경로와 서버 검증 (제안 — ADR-0021)

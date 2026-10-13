@@ -28,3 +28,5 @@ playwright-report/
 .vite/
 .local-stack/
 dist-e2e-backend/
+dist-admin/
+dist-admin-e2e/

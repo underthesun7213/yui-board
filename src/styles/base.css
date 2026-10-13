@@ -7,6 +7,10 @@
 }
 html {
   -webkit-text-size-adjust: 100%;
+  /* whatever is scrolled to or focused stays clear of the sticky header and
+     the fixed tab bar */
+  scroll-padding-top: 72px;
+  scroll-padding-bottom: calc(84px + env(safe-area-inset-bottom));
 }
 body {
   background: var(--surface);

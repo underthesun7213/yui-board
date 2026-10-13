@@ -27,6 +27,9 @@ jobs:
       - run: npm run build # includes the bundle size budgets
         env:
           YUNABI_ORIGIN: https://underthesun7213.github.io/yui-board/
+      - run: npm run build:admin # the admin console, with its secret check
+        env:
+          VITE_SUPABASE_URL: https://example.supabase.co
       - run: npm audit --audit-level=high --omit=dev
       - name: No pull_request_target workflows
         run: '! grep -rnE "^\s+pull_request_target:" .github/workflows/'

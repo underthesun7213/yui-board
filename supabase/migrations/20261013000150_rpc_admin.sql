@@ -1,4 +1,6 @@
--- The admin console's functions (Y-R4~R7, Y-S3, ERD v2 §7.3). Every admin_*
+-- The admin console's functions (Y-R4~R7, Y-S3, ERD v2 §7.3). The console
+-- calls them with POST, so even the reading ones are volatile: PostgREST runs
+-- stable functions read-only, where db_pre_request cannot count the request. Every admin_*
 -- function begins with `perform app.require_admin();`, which raises unless
 -- the caller is an active allowlisted admin, not anonymous, at aal2, on a
 -- session row younger than admin_session_hours ([검토 #3] fail-closed). The
@@ -89,7 +91,7 @@ create function public.admin_queue(p_filter text default 'all', p_limit integer 
 returns table (kind text, id bigint, title text, state text, protected boolean, reports_open integer,
                reasons jsonb, first_report_at timestamptz, last_report_at timestamptz, account_ref text,
                created_on date, deleted_on date)
-language plpgsql stable security definer set search_path = '' as $$
+language plpgsql security definer set search_path = '' as $$
 #variable_conflict use_column
 begin
   perform app.require_admin();
@@ -134,7 +136,7 @@ end $$;
 -- One item in full: content, week changes, reports by reason (open and
 -- handled), and its moderation history.
 create function public.admin_item(p_kind app.item_kind, p_id bigint) returns jsonb
-language plpgsql stable security definer set search_path = '' as $$
+language plpgsql security definer set search_path = '' as $$
 declare
   item jsonb;
 begin
@@ -333,7 +335,7 @@ end $$;
 -- app, Y-P6/P7). The pattern's own % and _ are matched literally.
 create function public.admin_search(p_q text, p_pref char(2) default null)
 returns table (kind text, id bigint, title text, state text, pref char(2), created_on date, account_ref text)
-language plpgsql stable security definer set search_path = '' as $$
+language plpgsql security definer set search_path = '' as $$
 #variable_conflict use_column
 declare
   pat text;
@@ -359,7 +361,7 @@ end $$;
 create function public.admin_audit_log(p_limit integer default 100, p_before bigint default null)
 returns table (id bigint, created_at timestamptz, actor_kind text, actor_email text, action text,
                target_kind text, target_id bigint, account_ref text, detail jsonb, note text)
-language plpgsql stable security definer set search_path = '' as $$
+language plpgsql security definer set search_path = '' as $$
 #variable_conflict use_column
 begin
   perform app.require_admin();

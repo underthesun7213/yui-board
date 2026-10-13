@@ -35,6 +35,8 @@ test.describe('home, tabs, language, back', () => {
     await page.goto('./');
     await tap(page, '.globe');
     await tap(page, '[data-l="ko"]');
+    /* the Korean strings load first; the choice is saved once they are in */
+    await page.waitForFunction(() => document.documentElement.lang === 'ko');
     await page.reload();
     expect(await y(page, (a) => a.prefs.get().lang)).toBe('ko');
     expect(await page.evaluate(() => document.documentElement.lang)).toBe('ko');

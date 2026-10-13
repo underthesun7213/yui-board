@@ -27,6 +27,8 @@ src/content/        lessons, game, endings, art lookup
 src/features/       screens;  src/ui/  shared components
 src/styles/         tokens.css (design direction A), base.css, screens.css
 src/sw.ts           service worker (Workbox), published as ./sw.js
+src/admin/          admin console: its own build (admin/index.html, vite.admin.config.ts →
+                    dist-admin/, CSP in _headers), its own strings (src/admin/i18n.ts)
 supabase/migrations database, in order; the last one fails unless grants match the design
 supabase/tests      pgTAP;  supabase/seed  fixtures for local and CI only
 scripts/local-stack a local Supabase: Postgres 16 + Supabase Auth + PostgREST + gateway
@@ -63,7 +65,10 @@ To add a screen: a component in `features/`, a route in `state/route.ts` and
   table rights at all. A new function needs `set search_path = ''`,
   schema-qualified names, malformed input returned as `{status:'invalid',
   field}` (not raised), and an entry in the grants migration and in the
-  allowlist of `…_checks.sql` — which fails the migration otherwise.
+  allowlist of `…_checks.sql` — which fails the migration otherwise. A
+  function called with POST must not be `stable`: PostgREST runs those
+  read-only and the IP limiter's insert then fails (405). Every `admin_*`
+  starts with `perform app.require_admin();` (checked by the migration).
 - **Strings the server checks are checked twice.** `src/domain/validation.ts`
   mirrors the database rules for instant feedback; change both together.
 
@@ -75,7 +80,8 @@ Before saying a change works:
 npm run lint && npm run typecheck && npm test && npm run build:local
 CHROMIUM_PATH=/opt/pw-browsers/chromium npm run test:e2e   # cloud session
 npm run test:db                                            # database (pgTAP)
-CHROMIUM_PATH=/opt/pw-browsers/chromium npm run test:backend   # app + local backend
+CHROMIUM_PATH=/opt/pw-browsers/chromium npm run test:backend   # app + admin console + local backend
+VITE_SUPABASE_URL=https://example.supabase.co npm run build:admin
 ```
 
 The local backend needs Postgres 16 with pgTAP and PostGIS (apt) and two

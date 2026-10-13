@@ -87,6 +87,8 @@ export default tseslint.config(
       'dist',
       'dist-e2e',
       'dist-e2e-backend',
+      'dist-admin',
+      'dist-admin-e2e',
       'node_modules',
       'docs',
       'coverage',
