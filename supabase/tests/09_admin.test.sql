@@ -110,7 +110,7 @@ select tests.as_owner();
 select tests.as_user(tests.id('o'));
 insert into it select 'p', (public.create_place(gen_random_uuid(), 'Corner 100%_shop', 'daily', '', null, 34.8244, 135.6525, 'en')->>'id')::bigint;
 insert into it select 'p2', (public.create_place(gen_random_uuid(), 'Bakery', 'food', '', null, 34.8244, 135.6525, 'en')->>'id')::bigint;
-insert into it select 'e', (public.create_event(gen_random_uuid(), 'Tea night', tests.today(), '17:00', '19:00', null, 'Lounge', '', 'en')->>'id')::bigint;
+insert into it select 'e', (public.create_event(gen_random_uuid(), 'Tea night', tests.today() + 1, '17:00', '19:00', null, 'Lounge', '', 'en')->>'id')::bigint;
 select tests.as_owner();
 select tests.report('r1', 'place', 'p') is not null; select tests.report('r2', 'place', 'p') is not null; select tests.report('r3', 'place', 'p') is not null;
 select tests.report('r1', 'event', 'e') is not null;

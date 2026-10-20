@@ -29,7 +29,7 @@ grant execute on function tests.report to public;
 -- the owner posts a place and an event
 select tests.as_user(tests.id('o'));
 insert into it select 'p', (public.create_place(gen_random_uuid(), 'Corner shop', 'daily', '', null, 34.8244, 135.6525, 'en')->>'id')::bigint;
-insert into it select 'e', (public.create_event(gen_random_uuid(), 'Tea night', tests.today(), '17:00', '19:00', null, 'Lounge', '', 'en')->>'id')::bigint;
+insert into it select 'e', (public.create_event(gen_random_uuid(), 'Tea night', tests.today() + 1, '17:00', '19:00', null, 'Lounge', '', 'en')->>'id')::bigint;
 select tests.as_owner();
 
 -- malformed and missing targets
