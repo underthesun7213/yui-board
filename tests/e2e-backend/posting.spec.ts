@@ -163,7 +163,9 @@ test('Y-K4~K7 a weekly event, one week cancelled', async ({ page, errors }) => {
   void errors;
   await page.goto('./#/cal/new');
   await page.fill('#ef-title', 'Study group');
-  const start = await page.inputValue('#ef-date');
+  /* tomorrow in Japan: the default slot today (18:00–19:00) has ended by evening */
+  const start = new Date(Date.now() + (9 + 24) * 3600_000).toISOString().slice(0, 10);
+  await page.fill('#ef-date', start);
   await page.check('.form .check input');
   await page.click('.form button[type=submit]');
   await expect(page.locator('.evwrap h1')).toHaveText('Study group');
