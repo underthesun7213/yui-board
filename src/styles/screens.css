@@ -724,11 +724,13 @@ main {
   font-size: 18px;
   font-weight: 700;
   line-height: 1.45;
+  overflow-wrap: anywhere;
 }
 .pcard p {
   font-size: 15px;
   color: var(--body);
   margin-top: 6px;
+  overflow-wrap: anywhere;
 }
 .glink {
   display: inline-flex;
@@ -766,9 +768,13 @@ main {
   line-height: 28px;
   text-align: center;
 }
+/* a long name without spaces wraps instead of widening the page (on a phone a
+   wider page zooms out and taps land elsewhere) */
 .plist b {
   flex: 1;
+  min-width: 0;
   font-weight: 500;
+  overflow-wrap: anywhere;
 }
 .pmin {
   font-size: 13px;
