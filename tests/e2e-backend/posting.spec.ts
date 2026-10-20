@@ -203,7 +203,7 @@ test.describe('offline', () => {
   });
 });
 
-test('Y-S4 a stored script stays text', async ({ page, errors }) => {
+test('Y-S4 a stored script stays text', async ({ page, browser, errors }) => {
   void errors;
   const payload = '<img src=x onerror="window.__xss=1">';
   await fillPlace(page, payload);
@@ -213,6 +213,24 @@ test('Y-S4 a stored script stays text', async ({ page, errors }) => {
   expect(
     await page.evaluate(() => (window as unknown as { __xss?: number }).__xss),
   ).toBeUndefined();
+  /* its unbroken run wraps in another device's list, where the walk time sits
+     beside it: a wider page would make the phone zoom out and taps miss */
+  const other = await browser.newContext({
+    ...test.info().project.use,
+    geolocation: DORM,
+    permissions: ['geolocation'],
+  });
+  const p2 = await other.newPage();
+  await p2.goto('./#/map');
+  await p2.waitForFunction(
+    (n) => window.__yunabi?.data.get().places.some((p) => p.name === n),
+    payload,
+  );
+  await mapReady(p2);
+  await tap(p2, '[data-loc="skip"]');
+  await expect(p2.locator('.plist button', { hasText: payload }).locator('.pmin')).toBeVisible();
+  expect(await p2.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(375);
+  await other.close();
 });
 
 test('Y-E1 a hidden place can still be edited from My posts, and stays hidden', async ({
