@@ -18,7 +18,9 @@ grant execute on all functions in schema tests to public;
 
 select tests.as_user(tests.id('a'));
 -- Y-K4: today or later; end after start
-select is((tests.ev(tests.today()))->>'status', 'ok', 'an event today');
+-- the latest slot of the day, so the test does not depend on the hour it runs
+select is((public.create_event(gen_random_uuid(), 'Board games', tests.today(), '23:00', '23:59', null, 'Lounge', 'Come by', 'en'))->>'status',
+  'ok', 'an event today');
 select is((tests.ev(tests.today() - 1))->>'field', 'start_date', 'not in the past');
 select is((public.create_event(gen_random_uuid(), 'x', tests.today(), '19:00', '19:00', null, '', '', 'en'))->>'field',
   'time', 'end must be after start');
