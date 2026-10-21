@@ -1,7 +1,7 @@
 -- The per-IP write limit run by PostgREST before each request: G-52~G-56.
 begin;
 \ir _helpers.sql
-select plan(17);
+select plan(19);
 
 -- one request as PostgREST would set it up
 create function tests.req(p_method text, p_path text, p_xff text) returns void
@@ -22,6 +22,13 @@ begin
     perform tests.req('POST', '/rpc/create_place', p_xff);
   end loop;
   return p_n;
+end $$;
+-- one malformed write: PostgREST's pre-request, then the function's own status
+create function tests.write_invalid(p_xff text) returns jsonb
+language plpgsql as $$
+begin
+  perform tests.req('POST', '/rpc/create_place', p_xff);
+  return public.create_place(gen_random_uuid(), '', 'food', '', null, 34.82, 135.65, 'en');
 end $$;
 grant execute on all functions in schema tests to public;
 create temp table before as select tests.hits() as n;
@@ -49,6 +56,13 @@ select lives_ok($$select tests.req('POST', '/rpc/create_place', '203.0.113.9, 19
 -- the dorm range gets its own, higher limit
 select is(tests.req_n(5, '198.51.100.7'), 5, 'dorm address: five writes');
 select throws_ok($$select tests.req('POST', '/rpc/create_place', '198.51.100.7')$$, 'PT429', 'rate_limited', 'dorm address: sixth refused');
+
+-- G-55: a malformed write answers with a status, so its request stays counted
+select tests.as_owner();
+select tests.as_user(tests.user());
+select tests.hits() as g55_before \gset
+select is(tests.write_invalid('203.0.113.55') ->> 'field', 'name', 'G-55 a malformed write is a status, not an exception');
+select is(tests.hits() - :g55_before, 1, 'G-55 and the request is counted');
 
 -- G-53: an IPv6 /64 is one key
 select tests.as_owner();

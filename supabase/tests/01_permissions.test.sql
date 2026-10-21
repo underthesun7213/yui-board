@@ -1,7 +1,7 @@
 -- G-01, G-02, G-03, G-12, G-20: who can reach what.
 begin;
 \ir _helpers.sql
-select plan(17);
+select plan(19);
 
 -- G-01: no client role reads or writes any app table
 select tests.as_anon();
@@ -53,6 +53,12 @@ select is_empty(
 select columns_are('public', 'places_public',
   array['id', 'name', 'category', 'description', 'gmaps_url', 'lat', 'lng', 'pref', 'lang', 'created_on', 'edited_on'],
   'places_public columns');
+
+-- T-19a / PL-6 ③: no GraphQL door next to the RPCs
+select ok(not exists (select 1 from pg_extension where extname = 'pg_graphql'), 'T-19a pg_graphql is not installed');
+-- (pg_proc, not to_regproc: that one is null for an overloaded name too)
+select ok(not exists (select 1 from pg_proc where pronamespace = 'public'::regnamespace and proname = 'graphql'),
+  'T-19a no public.graphql for /rpc/graphql');
 
 -- M1: a function created later is not executable by PUBLIC (global default)
 create function public.later_added() returns integer language sql as $$ select 1 $$;
