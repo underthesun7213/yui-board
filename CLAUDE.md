@@ -71,6 +71,8 @@ To add a screen: a component in `features/`, a route in `state/route.ts` and
   starts with `perform app.require_admin();` (checked by the migration).
 - **Strings the server checks are checked twice.** `src/domain/validation.ts`
   mirrors the database rules for instant feedback; change both together.
+  The map's link rule lives apart in `src/domain/links.ts` (map bundle
+  budget) — change it with them; a unit test checks the two agree.
 
 ## Testing
 

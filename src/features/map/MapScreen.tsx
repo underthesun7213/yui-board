@@ -4,6 +4,7 @@ import { reload } from '../../actions/app';
 import { go } from '../../actions/nav';
 import { openReport } from '../../actions/report';
 import { formatDay } from '../../domain/calendar/dates';
+import { safeMapsUrl } from '../../domain/links';
 import { session } from '../../state/session';
 import {
   selectPref,
@@ -177,12 +178,6 @@ function useShown(): { list: Place[]; near: boolean; from: { lat: number; lng: n
   const from = st === 'ok' && loc ? loc : HOME;
   return { list: shownPlaces(places, { mode, pref, cat }, from), near: mode === 'near', from };
 }
-
-/** Only https links to Google Maps are opened (Y-S4); the server checks the same. */
-const safeMapsUrl = (u: string | null) =>
-  u && /^https:\/\/(www\.)?google\.(com|co\.jp)\/maps|^https:\/\/maps\.app\.goo\.gl\//.test(u)
-    ? u
-    : null;
 
 function PlaceCard() {
   const m = useT();

@@ -9,6 +9,7 @@ import { makeSchedule, occOn, upcoming } from '../../src/domain/calendar/occurre
 import { HOME, mainBounds, regionOf, shownPlaces, walkMin } from '../../src/domain/geo/geo';
 import { PREFS } from '../../src/domain/geo/prefs';
 import { buildIcs, icsEsc, icsFold } from '../../src/domain/ics';
+import { safeMapsUrl } from '../../src/domain/links';
 import { checkEvent, checkPlace } from '../../src/domain/validation';
 import type { EventSeries, OccurrenceOverride, Place } from '../../src/domain/types';
 import { en } from '../../src/i18n/en';
@@ -230,5 +231,63 @@ describe('validation mirrors the server', () => {
     };
     expect(checkEvent(e, '2026-10-12')).toBe('start_date');
     expect(checkEvent({ ...e, start_date: '2026-10-20' }, '2026-10-12')).toBe(null);
+  });
+});
+
+/* The link rule the map uses (src/domain/links.ts) is defined apart from the
+   form's (validation.ts) for the bundle budget; they must agree with each
+   other and with the server's G-15 set (y3s-automated-checks §4.2). */
+describe('links', () => {
+  const OK = [
+    'https://www.google.com/maps/place/x',
+    'https://google.co.jp/maps?q=1',
+    'https://www.google.com/maps',
+    'https://maps.app.goo.gl/abc',
+  ];
+  const BAD = [
+    'javascript:alert(1)',
+    'JAVASCRIPT:alert(1)',
+    'data:text/html,<script>alert(1)</script>',
+    'http://www.google.com/maps',
+    'https://evil.com/maps',
+    'https://google.com.evil.com/maps',
+    'https://user@google.com/maps',
+    'https://goo.gl/maps/x',
+    'https://www.google.com/mapsx',
+    'https://www.google.com/maps/../url?q=https://evil.example',
+    'https://www.google.com/maps/%2e%2e/url',
+    'https://www.google.com/maps/%2E%2e/url',
+    'https://www.google.com/maps' + String.fromCharCode(92) + 'x',
+    'https://www.google.com/maps x',
+    'https://www.google.com/maps/' + 'x'.repeat(480),
+  ];
+  it('keeps Google Maps links and drops everything else', () => {
+    for (const u of OK) expect(safeMapsUrl(u), u).toBe(u);
+    for (const u of BAD) expect(safeMapsUrl(u), u).toBeNull();
+    for (const u of [
+      null,
+      undefined,
+      '',
+      ' https://www.google.com/maps',
+      'https://www.google.com/maps ',
+    ])
+      expect(safeMapsUrl(u), String(u)).toBeNull();
+  });
+  it('says the same as the form check', () => {
+    /* '', null and untrimmed values are left out: checkPlace trims, and an
+       empty link there means "no link"; links.ts gets only stored (trimmed) values */
+    const place = {
+      name: 'x',
+      category: 'food',
+      description: '',
+      gmaps_url: '',
+      lat: 34.82,
+      lng: 135.65,
+      lang: 'en',
+    };
+    for (const u of [...OK, ...BAD])
+      expect(safeMapsUrl(u) === null, u).toBe(
+        checkPlace({ ...place, gmaps_url: u }) === 'gmaps_url',
+      );
   });
 });
