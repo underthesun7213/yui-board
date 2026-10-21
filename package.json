@@ -17,7 +17,7 @@
     "test": "vitest run",
     "test:e2e": "playwright test",
     "build:local": "YUNABI_ALLOW_SELF=1 npm run build",
-    "build:admin": "tsc -b && vite build -c vite.admin.config.ts && node scripts/check-dist-secrets.mjs dist-admin",
+    "build:admin": "tsc -b && vite build -c vite.admin.config.ts && node scripts/check-dist-secrets.mjs dist-admin && node scripts/check-admin-headers.mjs dist-admin",
     "db:start": "scripts/local-stack/start.sh",
     "db:start:seed": "scripts/local-stack/start.sh --seed",
     "db:stop": "scripts/local-stack/stop.sh",

@@ -24,10 +24,16 @@ const rules = [
   "manifest-src 'none'",
   "worker-src 'none'",
 ];
+/* HSTS without preload (hard to undo). includeSubDomains reaches only the
+   subdomains of today's Cloudflare origin; look again before putting the
+   console on a custom domain's apex, where it would force HTTPS on every
+   subdomain of that domain (y3s-automated-checks §2.1). Checked in the build
+   output by scripts/check-admin-headers.mjs. */
 const HEADERS = `/*
   Content-Security-Policy: ${[...rules, "frame-ancestors 'none'"].join('; ')}
   X-Frame-Options: DENY
   X-Content-Type-Options: nosniff
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
   Referrer-Policy: no-referrer
   Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
   Cross-Origin-Opener-Policy: same-origin
