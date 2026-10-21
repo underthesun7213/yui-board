@@ -1,0 +1,28 @@
+# Weekly version updates (ADR-0022 S6). Security alerts and security updates
+# are repository settings, not this file. The ZAP image digest in zap.yml is not
+# covered: refresh it by hand each quarter (y3s-automated-checks §6.5).
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '06:00'
+      timezone: Asia/Tokyo
+    open-pull-requests-limit: 5
+    groups:
+      runtime:
+        dependency-type: production
+      dev:
+        dependency-type: development
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '06:00'
+      timezone: Asia/Tokyo
+    groups:
+      actions:
+        patterns: ['*']
