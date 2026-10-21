@@ -10,7 +10,7 @@
 | Y-1 React 재작성 | 완료, 검토 통과 | — |
 | Y-2 백엔드(Supabase)·등록 | 완료, 재검토 통과 | `6ea14ca` |
 | Y-3 신고·자동 숨김·관리자 콘솔·계정 정지 | 완료, 재검토 "pass with fixes" → 남은 지적까지 반영 | `a9742c0` |
-| `.mcp.json` (Supabase MCP, 프로젝트 `lpgfovocymnlcqmpwjih`) | 커밋됨 — 모든 기능 그룹, 읽기 전용 아님 | `4dbd6a4` |
+| `.mcp.json` (Supabase MCP, 프로젝트 `tsbipaffirkswsgkydav` "yunabi", 도쿄 `ap-northeast-1`) | 커밋됨 — 모든 기능 그룹, 읽기 전용 아님. 2026-10-18 설계(infra.md §3 1번)대로 도쿄에 새로 만들어 ref 를 바꿈. 이전 프로젝트 `lpgfovocymnlcqmpwjih`(us-east-1, 비어 있음)는 책임자가 정지·삭제를 정할 때까지 그대로 둠 | `4dbd6a4` |
 | **Y-3S 보안 점검** | **다음 할 일** | |
 | Y-4 약관·방침·연락 창구, 배포, 실기기 확인 | 그 다음 | |
 
@@ -31,6 +31,7 @@ Y-3 에서 만든 것 (자세한 건 RFC-0003 §12.2 끝의 `[Y-3 구현]` 메�
    - 가입 훅이 익명 가입에도 불리는지, `supabase_admin` default privileges notice
    - 정의자 함수 소유자가 `auth.sessions` 를 읽을 수 있는지 — **`require_admin` 이 이것에 의존**
    - 마이그레이션 전체(checks 포함)가 클라우드의 `postgres` 로 통과하는지
+     — **2026-10-22 진행:** 책임자가 `supabase db push --db-url`(Session pooler)로 적용. `010`~`190` 은 적용·기록됨, `200_checks` 는 ⑨ 에서 실패(`supabase_admin` 기본 권한, OQ-E10). ⑨ 를 고쳤고 나머지 검사 항목은 읽기 조회로 모두 통과 확인. 남은 일: CI 통과 뒤 `db push` 로 `200` 만 다시 적용.
    - **마이그레이션 적용·설정 변경 등 프로젝트를 바꾸는 일은 반드시 책임자에게 먼저 묻는다.** 읽기만 하는 확인은 바로 해도 된다.
 2. **Y-3S 보안 점검** (PRD Y-S1~S12). 외부 공격 방어가 책임자의 최우선(D20).
 3. Y-4.

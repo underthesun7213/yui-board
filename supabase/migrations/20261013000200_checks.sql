@@ -13,6 +13,7 @@ declare
   want_anon text[] := array['public.data_version', 'app.db_pre_request'];
   want_service text[] := array['public.ops_health'];
   got text[];
+  got_unchangeable text;
 begin
   -- ① every app table has RLS on and no policy
   select string_agg(c.relname, ', ') into bad from pg_class c
@@ -73,8 +74,17 @@ begin
   ) x;
   if bad is not null then raise exception 'check 8 (view columns) failed: %', bad; end if;
 
-  -- ⑨ no default EXECUTE for the client roles or PUBLIC in our schemas
-  select string_agg(d.defaclrole::regrole::text, ', ') into bad
+  -- ⑨ no default EXECUTE for the client roles or PUBLIC in our schemas, for
+  -- every role whose defaults the migration role can change. On hosted
+  -- Supabase postgres is not a member of supabase_admin, whose public defaults
+  -- grant EXECUTE to anon and authenticated; those cover only functions
+  -- supabase_admin creates later and are an accepted risk (ERD v2 OQ-E10), so
+  -- they are named in a notice instead. ③④⑩ still check every function there is.
+  select string_agg(d.defaclrole::regrole::text || '→' || case when a.grantee = 0 then 'PUBLIC' else a.grantee::regrole::text end, ', ')
+           filter (where pg_has_role(current_user, d.defaclrole, 'MEMBER')),
+         string_agg(d.defaclrole::regrole::text || '→' || case when a.grantee = 0 then 'PUBLIC' else a.grantee::regrole::text end, ', ')
+           filter (where not pg_has_role(current_user, d.defaclrole, 'MEMBER'))
+    into bad, got_unchangeable
   from pg_default_acl d, aclexplode(d.defaclacl) a
   where d.defaclobjtype = 'f'
     and (d.defaclnamespace = 0 or d.defaclnamespace in ('public'::regnamespace, 'app'::regnamespace))
@@ -82,6 +92,9 @@ begin
     and (a.grantee = 0 or a.grantee in ('anon'::regrole, 'authenticated'::regrole))
     and (d.defaclnamespace <> 0 or d.defaclrole = 'postgres'::regrole);
   if bad is not null then raise exception 'check 9 (default EXECUTE) failed: %', bad; end if;
+  if got_unchangeable is not null then
+    raise notice 'check 9: default EXECUTE this role cannot change, accepted (OQ-E10): %', got_unchangeable;
+  end if;
   -- … and the global default for postgres exists and leaves PUBLIC out
   if not exists (
     select 1 from pg_default_acl d
