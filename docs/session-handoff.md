@@ -10,7 +10,7 @@
 | Y-1 React 재작성 | 완료, 검토 통과 | — |
 | Y-2 백엔드(Supabase)·등록 | 완료, 재검토 통과 | `6ea14ca` |
 | Y-3 신고·자동 숨김·관리자 콘솔·계정 정지 | 완료, 재검토 "pass with fixes" → 남은 지적까지 반영 | `a9742c0` |
-| `.mcp.json` (Supabase MCP, 프로젝트 `tsbipaffirkswsgkydav` "yunabi", 도쿄 `ap-northeast-1`) | 커밋됨 — 모든 기능 그룹, 읽기 전용 아님. 2026-10-18 설계(infra.md §3 1번)대로 도쿄에 새로 만들어 ref 를 바꿈. 이전 프로젝트 `lpgfovocymnlcqmpwjih`(us-east-1, 비어 있음)는 책임자가 정지·삭제를 정할 때까지 그대로 둠 | `4dbd6a4` |
+| `.mcp.json` (Supabase MCP, 프로젝트 `tsbipaffirkswsgkydav` "yunabi", 도쿄 `ap-northeast-1`) | 커밋됨 — 모든 기능 그룹, 읽기 전용 아님. 2026-10-18 설계(infra.md §3 1번)대로 도쿄에 새로 만들어 ref 를 바꿈. 이전 프로젝트 `lpgfovocymnlcqmpwjih`(us-east-1, 비어 있었음)는 2026-10-22 책임자가 삭제 | `4dbd6a4` |
 | **Y-3S 보안 점검** | **다음 할 일** | |
 | Y-4 약관·방침·연락 창구, 배포, 실기기 확인 | 그 다음 | |
 
