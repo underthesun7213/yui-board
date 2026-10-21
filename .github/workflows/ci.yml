@@ -15,10 +15,27 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0 # gitleaks reads every commit, not just the last one
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 22
           cache: npm
+      # gitleaks as a pinned release binary, its sha256 from the release's
+      # checksums file (y3s-automated-checks §1.1). Always --redact: the logs of
+      # this public repository are public.
+      - name: gitleaks (pinned binary, checksum checked)
+        env:
+          GITLEAKS_VERSION: 8.30.1
+          GITLEAKS_SHA256: 551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb
+        run: |
+          mkdir -p "$RUNNER_TEMP/gitleaks" && cd "$RUNNER_TEMP/gitleaks"
+          curl -sSLf -o gl.tgz "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          echo "${GITLEAKS_SHA256}  gl.tgz" | sha256sum -c --quiet
+          tar xzf gl.tgz gitleaks && rm gl.tgz
+          echo "$RUNNER_TEMP/gitleaks" >> "$GITHUB_PATH"
+      - name: No secrets in the history
+        run: gitleaks git . --no-banner --redact --verbose
       - run: npm ci
       - run: npm run lint
       - run: npm run format:check
@@ -27,10 +44,14 @@ jobs:
       - run: npm run build # includes the bundle size budgets
         env:
           YUNABI_ORIGIN: https://underthesun7213.github.io/yui-board/
-      - run: npm run build:admin # the admin console, with its secret check
+      - run: npm run build:admin # the admin console, with its secret and header checks
         env:
           VITE_SUPABASE_URL: https://example.supabase.co
-      - run: npm audit --audit-level=high --omit=dev
+      - name: No secrets in the builds
+        run: |
+          gitleaks dir dist --no-banner --redact --verbose
+          gitleaks dir dist-admin --no-banner --redact --verbose
+      - run: npm audit --audit-level=high # dev dependencies too (ADR-0022 S6)
       - name: No pull_request_target workflows
         run: '! grep -rnE "^\s+pull_request_target:" .github/workflows/'
   e2e:
