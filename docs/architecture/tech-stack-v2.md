@@ -273,7 +273,7 @@ Supabase 공식 가이드는 GitHub Actions 에서 `supabase/setup-cli` → 로�
 
 | 영역 | 선정 | 이유 / 대안 | 관련 |
 |---|---|---|---|
-| 비밀 검사 | GitHub 비밀 검사 + push protection(저장소 설정) + CI 의 **gitleaks**(저장소·`dist/` 모두) + 빌드 산출물 패턴 검사(`sb_secret_`, `eyJ` 로 시작하는 JWT, `service_role`) | GitHub 기능은 무료지만 저장소 설정이라 꺼질 수 있다 → CI 에도 둔다. gitleaks 액션의 현재 버전·라이선스 조건은 **확인 못 함**(SB-Q3) — 안 되면 CLI 를 직접 실행 | Y-S2 |
+| 비밀 검사 | GitHub 비밀 검사 + push protection(저장소 설정) + CI 의 **gitleaks**(저장소·`dist/` 모두) + 빌드 산출물 패턴 검사(`sb_secret_`, `eyJ` 로 시작하는 JWT, `service_role`) | GitHub 기능은 무료지만 저장소 설정이라 꺼질 수 있다 → CI 에도 둔다. gitleaks 는 액션 대신 **CLI 바이너리 v8.30.1**(릴리스 체크섬으로 확인, 항상 `--redact`)을 `quality` 잡에서 실행한다 — SB-Q3 해결(y3s-automated-checks §1.1, 2026-10-22) | Y-S2 |
 | 의존성 | `package-lock.json` 커밋, `npm ci`, CI 의 `npm audit --audit-level=high`(높음 이상이면 실패), Dependabot 보안·버전 업데이트 PR | `npm audit` 동작은 일반 지식(이번 검색으로 확인 못 함). Dependabot 설정도 Y-1 에서 확인 | Y-S6 |
 | DB 권한 테스트 | pgTAP — 역할(`anon`, 익명 `authenticated`, 다른 사용자, 관리자 aal1/aal2)마다 직접 요청 거절 확인 | §4 | Y-S1, Y-S5 |
 | HTTP 권한 테스트 | Playwright `request` 컨텍스트로 로컬 Supabase REST 를 직접 호출(화면 거치지 않음) | §4 | Y-S1 |
@@ -361,7 +361,7 @@ Supabase 공식 가이드는 GitHub Actions 에서 `supabase/setup-cli` → 로�
 | TS-Q6 | CAPTCHA 스위치를 켤 때 방침에 "Cloudflare(Turnstile)로 기기 신호가 전송됨" 을 미리 적어 둘지 — 켜는 순간 문구가 필요하므로 출시 방침에 조건부로 넣는 것을 제안 | ADR-0022, Y-P1, Y-P4, Y-S7 |
 | ~~SB-Q1~~ | ~~관리자 콘솔을 Cloudflare 에 두는 것~~ — **해결: 둔다 (D21, ADR-0020 승인)** | ADR-0020 |
 | SB-Q2 | 백업 덤프 보관 장소: 비공개 운영 저장소의 Actions 아티팩트(암호화, 보관 90일 이하)만으로 충분한지, 책임자 개인 저장소로 월 1회 옮길지 | Y-S9 |
-| SB-Q3 | gitleaks 액션의 현재 버전·라이선스 조건 확인 | Y-S2 |
+| ~~SB-Q3~~ | ~~gitleaks 액션의 현재 버전·라이선스 조건 확인~~ — **해결: CLI 바이너리 v8.30.1** (액션은 쓰지 않음, y3s-automated-checks §1.1, 2026-10-22) | Y-S2 |
 | SB-Q4 | `github.io` 가 HSTS preload 목록에 있는지 확인 | Y-S8 |
 | TS-Q7 | 무료 플랜 1주 비활동 일시정지를 방학에 받아들일지, Pro($25/월)로 갈지 (tech-stack.md T-5 와 같음) | 가용성, pg_cron 정리 작업 |
 | TS-Q8 | 도쿄 리전이 무료 프로젝트에서 선택 가능한지 (tech-stack.md T-1, 아직 미확인) | 지연 |

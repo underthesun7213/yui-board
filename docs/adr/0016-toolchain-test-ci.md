@@ -7,6 +7,7 @@
 | 근거 | PRD-YUNABI v2.3 D19, §7 "품질"·"테스트 데이터", 마일스톤 Y-1 완료 기준(옮긴 브라우저 검사 통과), Y-C2, Y-S2, Y-S4~S6, Y-S11 |
 | 관련 | [tech-stack-v2 §3·§4·§5.6](../architecture/tech-stack-v2.md), [RFC-0003 §19](../architecture/rfc/0003-yunabi-v2.md#19-테스트-전략과-ci-제안--adr-0016), ADR-0013(빌드 없음 — 대체), [ADR-0023](0023-frontend-framework-react.md)(React), [conventions.md](../architecture/conventions.md) |
 | 개정 | 2026-10-12 — 책임자 결정 D24(React, ADR-0023)에 맞춰 결정 1~3 의 Svelte 도구를 React 도구로 바꿨다(이 ADR 은 아직 "제안됨" 이라 본문을 고쳤다). 첫 판의 Svelte 도구는 각 항목에 "(이전 안: …)" 으로 남겼다 |
+| 메모 | 2026-10-22 — 결정 5·6 의 `npm run test:security`, 별도 `security` 잡, `supabase start`(Docker)는 [ADR-0022](0022-security-baseline.md) 와 [y3s-automated-checks](../architecture/y3s-automated-checks.md) 가 대체한다: gitleaks(이력·`dist`·`dist-admin`)와 `npm audit` 는 `quality` 잡, HTTP 직접 요청 스위트는 `test:backend` 의 `tests/e2e-backend/security.spec.ts`, 로컬 스택은 Docker 없이 `scripts/local-stack`, ZAP 은 `zap.yml`. 본문은 고치지 않았다 |
 | 개정 2 | 2026-10-12 — React 전환 문서 검토("보완 필요") 반영. 설치 버전 고정, ESLint 선택자 전문, `prerender` 렌더 검사. 고친 곳에 `[검토 R-n]`(검토 지적 번호). 근거·결정은 [ADR-0024](0024-react-switch-review-fixes.md) |
 
 ## 배경

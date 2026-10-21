@@ -601,7 +601,38 @@ end $$;
 | G-56 | 정리 후 48시간 지난 `security_events.ip_key` 가 null | 통과 `[검토 #8]` |
 | G-60 | (통합, 병렬 연결 3개) B·C·D 가 동시에 신고 | 숨김 1회, `auto_hide` 기록 1행 `[검토 #14]` |
 
-HTTP 층 같은 케이스(PostgREST 경유)는 `tests/security/` 의 Playwright `request` 로 대표 항목(G-01, G-03, G-10, G-15, G-30)을 다시 확인한다 — DB 권한과 Data API 노출 설정을 함께 검증하기 위해. 특히 G-03 은 HTTP 로 `anon` 이 `POST /rpc/ops_health`·`/rpc/create_place` 를 불러 401/403 인지 본다.
+HTTP 층 같은 케이스(PostgREST 경유)는 `tests/e2e-backend/security.spec.ts` 의 Playwright `request` 로 G-01, G-02, G-03, G-10, G-12, G-15, G-21, G-23, G-30 ①~③, G-31, G-52, G-55 를 다시 확인한다 — DB 권한과 Data API 노출 설정을 함께 검증하기 위해. 특히 G-03 은 허용 목록의 모든 함수를 타입이 맞는 인자로 불러 `anon` 은 `data_version` 외 모두 401, 비관리자 계정의 `admin_*` 는 403 인지 본다(`stable` 함수는 GET — POST 는 권한 검사 전에 405). 이 스위트는 로컬 스택 전용이다(로컬 게이트웨이는 `Authorization` 을 만들지 않아 계정 없는 거절이 401). 대응표는 §9.1. `[Y-3S 구현, 2026-10-22]`
+
+### 9.1 G-ID ↔ 시험 대응표
+
+코드와 설계 사이의 추적. 숫자는 `supabase/tests/NN_*.test.sql`, "checks" 는 `20261013000200_checks.sql`, 시험 이름은 접두어만 적는다(y3s-automated-checks §7.3).
+
+| ID | pgTAP | HTTP (`security.spec.ts`) | 브라우저·단위 |
+|---|---|---|---|
+| G-01 | 01 | `G-01 …` | — |
+| G-02 | 01 | `G-02 …` | — |
+| G-03 | checks ③④⑩, 01 | `G-03 the test covers …`(목록 동기화), `G-03 / G-12 / G-30 ① …` | — |
+| G-10 | 02 | `G-10 / G-15 …` | — |
+| G-12 | 01 | `G-03 / G-12 / G-30 ① …` | — |
+| G-15 | 02, 03 | `G-10 / G-15 …` | posting `Y-A5 …`, unit `links` |
+| G-20 | 01 | (`G-21 …` 의 키 검사) | — |
+| G-21 | 02 | `G-21 …` | — |
+| G-22 | 09 (Y-R9 줄) | — | — |
+| G-23 | 02, 03 | `G-23 …` | reports `Y-R2/R3 …` |
+| G-30 | 09 (①~⑦ × 모든 `admin_%`) | ① `G-03 / G-12 / G-30 ① …`, ②③ `G-30 ②③ / G-31 …` | admin `G-30 ⑤ …`, `G-30 ⑥ / G-31 …` |
+| G-31 | 09 | `G-30 ②③ / G-31 …` | admin `G-30 ⑥ / G-31 …` |
+| G-34 | 09 | — | admin `Y-R4 / G-34 …` |
+| G-35 | checks ⑪ | — | — |
+| G-36 | 09 | — | admin `M-6a / G-36 …` |
+| G-37 | 06 | `G-37 the signup hook …` | — |
+| G-52 | 05 | `Y-S7 / G-52 …` | — |
+| G-53, G-54 | 05 | — (클라우드 확인 PL-6 ②) | — |
+| G-55 | 05 | `G-55 …` | — |
+| G-60 | — | — | reports `G-60 …` |
+| T-19a | 01 | `T-19a …` | — |
+| Y-S4 | — | — | v2 장소·일정 `Y-S4 …`, posting `Y-S4 …`, admin `Y-S4 …`, render `admin.test.tsx` |
+| Y-S8 HSTS | — | — | `scripts/check-admin-headers.mjs` (`build:admin`) |
+| 그 밖의 G (11, 13, 14, 16, 24~29, 32, 33, 38, 40~42, 50, 51, 56) | 각 파일 머리말 | — | — |
 
 ---
 

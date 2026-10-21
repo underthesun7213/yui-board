@@ -262,12 +262,12 @@ React 판. 첫 판(Svelte)과의 차이: `*.svelte` → `*.tsx`, `state/*.svelte
 │  ├─ fixtures/               places.json, events.json (PRD §7 테스트 데이터)
 │  ├─ render/                 모든 라우트 × 언어 렌더 검사 (v1.3 헤드리스 검사)
 │  ├─ e2e/                    Playwright (fixture 모드)
-│  ├─ e2e-backend/            Playwright (로컬 Supabase)
-│  └─ security/               권한 직접 요청, XSS 페이로드, CSP 위반 수집
+│  └─ e2e-backend/            Playwright (로컬 Supabase)
+│     └─ security.spec.ts     권한 HTTP 직접 요청 (y3s-automated-checks §3; XSS 는 e2e·e2e-backend, CSP 위반은 공통 픽스처)
 ├─ eslint.config.js           flat config: typescript-eslint, react, react-hooks, 보안 규칙(§5.1)
 ├─ tsconfig.json              strict, noUncheckedIndexedAccess, jsx: react-jsx
 ├─ scripts/                   gen-prefectures-sql.ts, check-dist-secrets.ts, check-bundle-size.ts
-└─ .github/workflows/         ci.yml, deploy.yml, db.yml, backup.yml, monitor.yml, security-scan.yml
+└─ .github/workflows/         ci.yml (gitleaks·npm audit 포함), zap.yml, deploy.yml, db.yml, backup.yml, monitor.yml
 ```
 
 `index.html`(루트)은 **v1.3 단일 파일에서 Vite 엔트리로 바뀐다.** v1.3 파일은 git 기록에 남는다.
@@ -840,7 +840,7 @@ D25(관리자 = 책임자 1명)로 아래 모든 절차의 실행자는 책임�
 ### 17.6 출시 전 보안 점검 (Y-S11, 마일스톤 Y-3S)
 
 1. pgTAP 권한 스위트 전부 통과(역할 × 객체 × 동작 매트릭스, ERD v2 §9 — `PUBLIC` EXECUTE 카탈로그 전수 G-03, `admin_%` × 실패 경우 G-30, `db_pre_request` G-52~55, 공개 뷰 4개 누출 G-23 포함).
-2. HTTP 직접 요청 스위트(`tests/security/`) 통과 — Y-S1 수락 기준(`anon` 이 `ops_health`·쓰기 RPC 를 부르면 401/403).
+2. HTTP 직접 요청 스위트(`tests/e2e-backend/security.spec.ts`) 통과 — Y-S1 수락 기준(`anon` 은 401, 비관리자 계정의 관리 함수는 403; 대응표 ERD v2 §9.1).
 3. XSS 페이로드·비정상 입력 세트 통과 — Y-S4, Y-S5. **Leaflet 경로(핀 툴팁·클러스터) 포함** `[검토 #12]`.
 3a. 동시 신고 통합 시험(G-60), 기숙사 범위 부하 시험(공인 IP 하나에서 지도 열린 클라이언트 50개 + 첫 쓰기 몰림 → 정상 쓰기가 429 받지 않음) `[검토 #1·#6]`.
 4. OWASP ZAP baseline: 스테이징(로컬 스택 + `vite preview`)과 운영 URL(수동 스캔만) — 높음 0.
@@ -932,16 +932,15 @@ D25(관리자 = 책임자 1명)로 아래 모든 절차의 실행자는 책임�
 
 ```mermaid
 flowchart LR
-  PR[PR / push] --> Q[quality: npm ci → lint → tsc -b → unit+render → bundle size]
-  PR --> SEC[security: npm audit high → gitleaks repo]
+  PR[PR / push] --> Q[quality: gitleaks 이력 → npm ci → lint → tsc -b → unit+render → bundle size → build:admin 헤더 검사 → gitleaks dist·dist-admin → npm audit high]
   Q --> E2E[e2e: playwright fixture 모드]
   PR -->|supabase/ 변경 또는 main| DB[db: Postgres 16 + Auth + PostgREST 바이너리 로컬 스택 §19.1a → test db → backend e2e·security 직접 요청]
-  E2E & DB & SEC --> M{main 병합}
+  E2E & DB --> M{main 병합}
   M --> BUILD[build: dist, dist-admin → 산출물 비밀 검사 → gitleaks dist]
   BUILD --> PAGES[deploy-pages: 사용자 앱]
   BUILD --> CF[wrangler: 관리자 콘솔]
   M --> MIG[migrate: supabase db push --db-url — main 전용 Environment, 필수 검토자]
-  CRON3[예약: 주간 + 출시 전] --> ZAP[security-scan.yml: ZAP baseline]
+  CRON3[수동 · 주간 · .zap 변경 push] --> ZAP[zap.yml: ZAP baseline, 로컬 대상]
   subgraph OPS["비공개 저장소 yunabi-ops"]
     CRON1[예약: 주간] --> BK[backup.yml]
     CRON2[예약: 30분] --> MON[monitor.yml → 비공개 이슈]

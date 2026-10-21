@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| 상태 | 제안됨 (설계) — 구현 전 검사 대상 |
+| 상태 | 구현됨 (2026-10-22, 같은 브랜치) — 구현에서 달라진 점은 §11 |
 | 날짜 | 2026-10-22 |
 | 브랜치 | `claude/sharp-einstein-3m78cy` (기준 `4e108b5`) |
 | 근거 | PRD Y-S1·S2·S4·S5·S6·S8·S11 · [ADR-0022](../adr/0022-security-baseline.md) S1·S2·S4·S6·S8·S11 · [RFC-0003 §17.6](rfc/0003-yunabi-v2.md) 1~5 · [ERD v2 §5·§9](erd-v2.md) · 계획 2판(독립 검사 반영) |
@@ -218,7 +218,7 @@ export function psql(sql: string, vars: Record<string, string> = {}): string {
 기대:
 
 - **자동 갱신 가능한 두 뷰** × 3 메서드: `anon`(헤더 `H`) → **401** + `code 42501`, 익명 계정(`account()`) → **403** + `code 42501`. pgTAP G-02 가 이미 `insert into places_public` → 42501 로 같은 순서(권한 검사)를 보였다.
-- **자동 갱신 불가한 두 뷰**: PG 는 권한을 보기 **전에** 재작성 단계에서 "갱신할 수 없는 뷰" 로 실패한다(*추정*). 이 상태 코드는 권한이 아니라 뷰 모양을 보여 준다. `[설계 결정 — 검토 반영]` 첫 CI 실행에서 관찰한 **정확한 값**(상태와 `code`, 예상 500 + `55000`)으로 단언을 고정한다. `42501` 도 받아 주는 느슨한 단언은 두지 않는다: 값이 바뀌면(PG·PostgREST 판 변경) 시험이 알려 주고, 그때 이 절을 고친다. 권한 자체는 psql 로 직접 확인한다.
+- **자동 갱신 불가한 두 뷰**: PG 는 권한을 보기 **전에** 재작성 단계에서 "갱신할 수 없는 뷰" 로 실패한다(*추정*). 이 상태 코드는 권한이 아니라 뷰 모양을 보여 준다. `[설계 결정 — 검토 반영]` 첫 CI 실행에서 관찰한 **정확한 값**으로 단언을 고정한다 — **관찰값 500 + `55000`**(CI run 39661765852, anon·계정 모두, 세 메서드 모두). `42501` 도 받아 주는 느슨한 단언은 두지 않는다: 값이 바뀌면(PG·PostgREST 판 변경) 시험이 알려 주고, 그때 이 절을 고친다. 권한 자체는 psql 로 직접 확인한다.
   ```sql
   select count(*) from unnest(array['anon','authenticated']) r,
     unnest(array['public.places_public','public.events_public',
@@ -797,3 +797,18 @@ security.spec 의 기존 두 시험도 이름을 바꾼다: `Y-S7 / G-52 writes 
 1. **ZAP 실행 주기**: 주 1회 예약 + 수동(이 설계), 아니면 수동만(이 경우 `schedule` 줄을 뺀다). `.zap` 변경 push 트리거는 어느 쪽이든 둔다.
 2. **저장소 설정 켜기**(코드로 못 함, 13번 점검표): secret scanning, push protection, Dependabot alerts·security updates, `main` 보호 규칙(PR + quality·e2e·db 필수). 켤 시점을 정해 주세요.
 3. (조건부) B2 뒤 지도 묶음이 60.0 KB 를 넘으면: 예산을 조금 올릴지, 다른 곳을 줄일지.
+
+---
+
+## 11. 구현 기록 (2026-10-22)
+
+- **gitleaks 첫 실행**: §1.4 끝 — 이력·`dist`·`dist-admin` 모두 0건, 허용 파일 없음.
+- **지도 묶음**: B2 전 61,262 B → 뒤 61,328 B gzip(59.8 → 59.9 KB / 60 KB, +66 B). 새 청크 없음.
+- **§3.3 갱신 불가 뷰**: 500 + `55000` 으로 고정(첫 CI 실행에서 관찰).
+- **달라진 점**
+  - T-19a pgTAP 둘째 줄은 `to_regproc('public.graphql') is null` 대신 `pg_proc` 에 `public.graphql` 이 없는지 본다. `to_regproc` 는 이름이 오버로드되어 있어도 null 이라 그 경우를 놓친다.
+  - B1 의 TOTP: `freshCode(i)` 를 B1 만이 아니라 admin.spec 의 모든 코드 입력에 썼다(§4.1).
+  - B1 의 상세 단언은 `.detail dd` 의 텍스트 목록에서 `NAME`·`BODY` 와 **정확히 같은** 것이 각각 1개인지 본다(`hasText` 는 부분 일치라 쓰지 않음).
+  - 시험 페이로드의 따옴표는 역슬래시 대신 템플릿 문자열로 썼다(도구가 역슬래시를 바꾸는 문제, CLAUDE.md).
+  - ADR-0016 은 본문을 고치지 않고 머리 표에 날짜 붙은 메모 한 줄만 더했다.
+  - RFC-0003 §2 디렉터리 그림의 `tests/security/` 줄도 함께 고쳤다(§7.1 G1 과 같은 이유).
