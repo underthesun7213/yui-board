@@ -88,7 +88,7 @@ test.describe('user text stays text', () => {
       void d.dismiss();
     });
     await page.goto('./#/cal');
-    await page.waitForFunction(() => window.__yunabi.data.get().status === 'ok');
+    await page.waitForFunction(() => window.__yunabi?.data.get().status === 'ok');
     /* tomorrow in Tokyo, and the only event, so it is the home card's "next" */
     const day = new Date(Date.now() + 9 * 3600e3 + 86400e3).toISOString().slice(0, 10);
     const ev = {
