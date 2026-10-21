@@ -7,6 +7,7 @@ import { execSync } from 'node:child_process';
 import { createHmac } from 'node:crypto';
 import { expect, test } from '../e2e/fixtures';
 import { ADMIN_BASE } from '../../playwright.backend.config';
+import { psql } from './db';
 
 test.describe.configure({ mode: 'serial' });
 test.use({ baseURL: ADMIN_BASE, viewport: { width: 1000, height: 900 } });
@@ -59,6 +60,16 @@ function seedHidden(name: string, at = 'now()'): { id: number; ref: string } {
 const ADMIN = { email: 'owner@yunabi.test', password: 'local-only-Passw0rd!' };
 const STRANGER = { email: 'stranger@yunabi.test', password: 'local-only-Passw0rd!' };
 const secrets: string[] = [];
+/* the 30-second window each authenticator last gave a code in */
+const usedWindow: number[] = [];
+/** A code for secrets[i] from a window that authenticator has not used yet:
+    the tests alternate authenticators on purpose, and a code is never sent twice. */
+async function freshCode(i: number): Promise<string> {
+  const now = () => Math.floor(Date.now() / 30_000);
+  while (usedWindow[i] === now()) await new Promise((r) => setTimeout(r, 500));
+  usedWindow[i] = now();
+  return totp(secrets[i]!);
+}
 let target: { id: number; ref: string };
 
 test.beforeAll(async () => {
@@ -109,7 +120,7 @@ test('first sign-in sets up two authenticators, then the console opens', async (
   expect(await page.evaluate(() => localStorage.length)).toBe(0);
 });
 
-test('Y-R4 restore a hidden item; Y-R7 suspend its account; the log says who', async ({
+test('Y-R4 / G-34 restore a hidden item; Y-R7 suspend its account; the log says who', async ({
   page,
   errors,
 }) => {
@@ -117,7 +128,7 @@ test('Y-R4 restore a hidden item; Y-R7 suspend its account; the log says who', a
   page.on('dialog', (d) => void d.accept());
   await signIn(page, ADMIN);
   await page.locator('.choices label', { hasText: 'Main phone' }).click();
-  await page.fill('input[name=code]', totp(secrets[0]!));
+  await page.fill('input[name=code]', await freshCode(0));
   await page.getByRole('button', { name: 'Verify' }).click();
   await expect(page.locator('[data-email]')).toHaveText(ADMIN.email);
 
@@ -147,7 +158,7 @@ test('Y-R4 restore a hidden item; Y-R7 suspend its account; the log says who', a
   await expect(page.locator('[data-log] li').first()).toContainText('Account suspended');
 });
 
-test('M-6a bulk restore lists first and changes nothing until confirmed', async ({
+test('M-6a / G-36 bulk restore lists first and changes nothing until confirmed', async ({
   page,
   errors,
 }) => {
@@ -156,7 +167,7 @@ test('M-6a bulk restore lists first and changes nothing until confirmed', async 
   const b = seedHidden('Wave two');
   await signIn(page, ADMIN);
   await page.locator('.choices label', { hasText: 'Backup' }).click(); // R-7 ①: the backup works
-  await page.fill('input[name=code]', totp(secrets[1]!));
+  await page.fill('input[name=code]', await freshCode(1));
   await page.getByRole('button', { name: 'Verify' }).click();
   await expect(page.locator('[data-email]')).toHaveText(ADMIN.email);
 
@@ -179,13 +190,65 @@ test('M-6a bulk restore lists first and changes nothing until confirmed', async 
   ).toBe('2');
 });
 
-test('G-34 a session older than 12 hours is refused and sent back to sign-in', async ({
+/* Y-S4 in the console: markup in a place's name and description is shown as
+   text in the queue and in the detail. The console's CSP would block inline
+   handlers anyway, so the main checks are the text and that no img exists. */
+const NAME = `<img src=x onerror="window.__xss=1">"'&`;
+const BODY = `<script>window.__xss=2</script><img src=x onerror="window.__xss=3">"'&`;
+
+test('Y-S4 user text in the console stays text: queue and item detail', async ({
+  page,
+  errors,
+}) => {
+  void errors;
+  let dialogs = 0;
+  page.on('dialog', (d) => {
+    dialogs++;
+    void d.dismiss();
+  });
+  const id = psql(
+    `with u as (insert into auth.users (id, aud, role, is_anonymous, created_at, updated_at)
+           values (gen_random_uuid(), 'authenticated', 'authenticated', true, now(), now()) returning id),
+a as (insert into app.accounts (user_id) select id from u returning user_id),
+p as (insert into app.places (name, category, description, lat, lng, pref, lang, auto_hidden_at)
+      values (:'name', 'food', :'body', 34.8250, 135.6528, '27', 'en', now()) returning id),
+o as (insert into app.place_owners (place_id, owner_id, client_token)
+      select p.id, a.user_id, gen_random_uuid() from p, a)
+select id from p;`,
+    { name: NAME, body: BODY },
+  );
+  try {
+    await signIn(page, ADMIN);
+    /* the backup: M-6a just used it, so this waits for the next window */
+    await page.locator('.choices label', { hasText: 'Backup' }).click();
+    await page.fill('input[name=code]', await freshCode(1));
+    await page.getByRole('button', { name: 'Verify' }).click();
+    await expect(page.locator('[data-email]')).toHaveText(ADMIN.email);
+
+    await expect(page.locator(`[data-item="place:${id}"] b`)).toHaveText(NAME);
+    await page.click(`[data-item="place:${id}"]`);
+    const dd = page.locator('.detail dd');
+    await expect(page.locator(`[data-detail="place:${id}"]`)).toBeVisible();
+    const texts = await dd.allTextContents();
+    expect(texts.filter((t) => t === NAME)).toHaveLength(1);
+    expect(texts.filter((t) => t === BODY)).toHaveLength(1);
+    expect(await page.evaluate(() => (window as unknown as { __xss?: number }).__xss)).toBe(
+      undefined,
+    );
+    expect(await page.locator('img[src="x"]').count()).toBe(0);
+    expect(dialogs).toBe(0);
+  } finally {
+    psql("delete from app.places where id = :'id'", { id });
+  }
+});
+
+test('G-30 ⑤ a session older than 12 hours is refused and sent back to sign-in', async ({
   page,
   errors,
 }) => {
   await signIn(page, ADMIN);
   await page.locator('.choices label', { hasText: 'Main phone' }).click();
-  await page.fill('input[name=code]', totp(secrets[0]!));
+  await page.fill('input[name=code]', await freshCode(0));
   await page.getByRole('button', { name: 'Verify' }).click();
   await expect(page.locator('[data-email]')).toHaveText(ADMIN.email);
   sql(
@@ -202,7 +265,10 @@ test('G-34 a session older than 12 hours is refused and sent back to sign-in', a
   errors.splice(errors.indexOf(refused[0]!), 1);
 });
 
-test('G-31 a signed-in account that is not an admin gets nothing', async ({ page, errors }) => {
+test('G-30 ⑥ / G-31 a signed-in account that is not an admin gets nothing', async ({
+  page,
+  errors,
+}) => {
   void errors;
   const before = Number(
     sql(`select count(*) from app.security_events where kind = 'admin_denied'`),
