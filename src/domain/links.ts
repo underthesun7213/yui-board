@@ -2,7 +2,9 @@
    kept apart from validation.ts so the map chunk does not pull in the forms'
    code (bundle budget); tests/unit/domain.test.ts checks the two agree. */
 
-/** A Google Maps link the server would also accept (app.check_maps_url, Y-S4, T-08), or null. */
+/** A Google Maps link the server would also accept (app.check_maps_url, Y-S4, T-08), or null.
+    JS `\s` also matches spaces Postgres [:space:] does not (U+00A0, U+3000, U+FEFF):
+    the client is the stricter of the two, never the looser. */
 export const safeMapsUrl = (u: string | null | undefined): string | null =>
   u &&
   [...u].length <= 500 &&

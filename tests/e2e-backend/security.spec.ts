@@ -338,7 +338,8 @@ const ADMIN_FNS = Object.keys(CALLS).filter((f) => f.startsWith('admin_') && f !
 test('G-03 the test covers every function clients may execute', () => {
   const granted = psql(`select string_agg(p.proname, ',' order by p.proname) from pg_proc p
 where p.pronamespace = 'public'::regnamespace
-  and (has_function_privilege('authenticated', p.oid, 'execute')
+  and (has_function_privilege('anon', p.oid, 'execute')
+       or has_function_privilege('authenticated', p.oid, 'execute')
        or has_function_privilege('service_role', p.oid, 'execute'))`);
   expect(granted.split(',')).toEqual(Object.keys(CALLS).sort());
 });

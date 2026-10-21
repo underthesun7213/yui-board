@@ -65,10 +65,13 @@ const usedWindow: number[] = [];
 /** A code for secrets[i] from a window that authenticator has not used yet:
     the tests alternate authenticators on purpose, and a code is never sent twice. */
 async function freshCode(i: number): Promise<string> {
-  const now = () => Math.floor(Date.now() / 30_000);
-  while (usedWindow[i] === now()) await new Promise((r) => setTimeout(r, 500));
-  usedWindow[i] = now();
-  return totp(secrets[i]!);
+  let t = Date.now();
+  while (usedWindow[i] === Math.floor(t / 30_000)) {
+    await new Promise((r) => setTimeout(r, 500));
+    t = Date.now();
+  }
+  usedWindow[i] = Math.floor(t / 30_000);
+  return totp(secrets[i]!, t);
 }
 let target: { id: number; ref: string };
 
@@ -91,12 +94,15 @@ async function signIn(p: Page, who: { email: string; password: string }) {
   await p.fill('input[name=password]', who.password);
   await p.click('button[type=submit]');
 }
-/** Registers one authenticator and returns its secret. */
-async function enrollOne(p: Page): Promise<string> {
+/** Registers one authenticator and returns its secret. With `slot`, the window
+    its code came from is recorded, so freshCode(slot) never sends it again. */
+async function enrollOne(p: Page, slot?: number): Promise<string> {
   await p.getByRole('button', { name: 'Show the QR code' }).click();
   await expect(p.locator('img.qr')).toBeVisible();
   const secret = (await p.locator('[data-secret]').textContent())!.trim();
-  await p.fill('input[name=code]', totp(secret));
+  const t = Date.now();
+  if (slot !== undefined) usedWindow[slot] = Math.floor(t / 30_000);
+  await p.fill('input[name=code]', totp(secret, t));
   await p.getByRole('button', { name: 'Verify' }).click();
   return secret;
 }
@@ -109,10 +115,10 @@ test('first sign-in sets up two authenticators, then the console opens', async (
   await signIn(page, ADMIN);
   await expect(page.getByRole('heading', { name: 'Set up two authenticators' })).toBeVisible();
   await expect(page.locator('.step')).toHaveText('Authenticator 1 of 2');
-  secrets.push(await enrollOne(page));
+  secrets.push(await enrollOne(page, 0));
   await expect(page.locator('.step')).toHaveText('Authenticator 2 of 2');
   await expect(page.locator('input[name=factor-name]')).toHaveValue('Backup');
-  secrets.push(await enrollOne(page));
+  secrets.push(await enrollOne(page, 1));
   await expect(page.locator('[data-email]')).toHaveText(ADMIN.email);
   await expect(page.locator('.warn')).toHaveCount(0); // two authenticators: no warning
   /* the session lives in this tab only */

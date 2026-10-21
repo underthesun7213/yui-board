@@ -10,6 +10,7 @@ on:
   # workflow_dispatch and schedule run only from the default branch; this lets
   # a change to the scan itself run before it is merged
   push:
+    branches: ['**']
     paths: ['.zap/**', '.github/workflows/zap.yml']
 permissions:
   contents: read

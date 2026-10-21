@@ -273,6 +273,12 @@ describe('links', () => {
     ])
       expect(safeMapsUrl(u), String(u)).toBeNull();
   });
+  it('allows 500 characters and refuses 501, as the server does', () => {
+    const base = 'https://www.google.com/maps/';
+    const at = (n: number) => base + 'x'.repeat(n - base.length);
+    expect(safeMapsUrl(at(500))).toBe(at(500));
+    expect(safeMapsUrl(at(501))).toBeNull();
+  });
   it('says the same as the form check', () => {
     /* '', null and untrimmed values are left out: checkPlace trims, and an
        empty link there means "no link"; links.ts gets only stored (trimmed) values */
