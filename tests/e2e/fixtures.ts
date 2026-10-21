@@ -54,6 +54,8 @@ type Handle = {
     };
     set(p: { places: unknown[] }): void;
   };
+  /** state/data.ts setData: replaces the data and rebuilds the schedule */
+  setData(places: unknown[], events: unknown[], overrides: unknown[], fetchedAt: string): void;
   map(): {
     map: L.Map | null;
     container: HTMLElement | null;

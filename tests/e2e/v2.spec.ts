@@ -74,4 +74,50 @@ test.describe('user text stays text', () => {
     );
     expect(titles).toContain(payload);
   });
+
+  test('Y-S4 an event with markup renders as text on home and in its detail', async ({
+    page,
+    errors,
+  }) => {
+    void errors;
+    const NAME = `<img src=x onerror="window.__xss=1">"'&`;
+    const BODY = `<script>window.__xss=2</script><img src=x onerror="window.__xss=3">"'&`;
+    let dialogs = 0;
+    page.on('dialog', (d) => {
+      dialogs++;
+      void d.dismiss();
+    });
+    await page.goto('./#/cal');
+    await page.waitForFunction(() => window.__yunabi.data.get().status === 'ok');
+    /* tomorrow in Tokyo, and the only event, so it is the home card's "next" */
+    const day = new Date(Date.now() + 9 * 3600e3 + 86400e3).toISOString().slice(0, 10);
+    const ev = {
+      id: 99,
+      title: NAME,
+      start_date: day,
+      start_time: '09:00',
+      end_time: '10:00',
+      weekly_until: null,
+      place_text: NAME,
+      body: BODY,
+      lang: 'en',
+      created_on: day,
+      edited_on: null,
+    };
+    await page.evaluate((e) => {
+      const y = window.__yunabi;
+      y.setData(y.data.get().places, [e], [], new Date().toISOString());
+    }, ev);
+    await page.goto('./#/');
+    await expect(page.locator('.hcard.cal small span[lang]')).toHaveText(NAME);
+    await page.goto(`./#/cal/event/99/${day}`);
+    await expect(page.locator('.evwrap h1[lang]')).toHaveText(NAME);
+    await expect(page.locator('.evwrap .facts dd[lang]')).toHaveText(NAME);
+    await expect(page.locator('.evwrap .body[lang]')).toHaveText(BODY);
+    expect(
+      await page.evaluate(() => (window as unknown as { __xss?: number }).__xss),
+    ).toBeUndefined();
+    expect(await page.locator('#main img[src="x"]').count()).toBe(0);
+    expect(dialogs).toBe(0);
+  });
 });
