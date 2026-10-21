@@ -106,7 +106,9 @@ test.describe('user text stays text', () => {
     };
     await page.evaluate((e) => {
       const y = window.__yunabi;
-      y.setData(y.data.get().places, [e], [], new Date().toISOString());
+      const d = y.data.get();
+      /* the same version, so opening the detail does not read the fixtures again */
+      y.setData(d.places, [e], [], new Date().toISOString(), d.version);
     }, ev);
     await page.goto('./#/');
     await expect(page.locator('.hcard.cal small span[lang]')).toHaveText(NAME);
