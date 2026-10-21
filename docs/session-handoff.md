@@ -25,14 +25,13 @@ Y-3 에서 만든 것 (자세한 건 RFC-0003 §12.2 끝의 `[Y-3 구현]` 메�
 
 ## 2. 다음 할 일
 
-1. **실제 Supabase 프로젝트 확인 (RFC-0003 §17.6a PL-6).** 로컬 스택에서는 `postgres` 가 superuser 라 가려졌을 수 있는 것들:
-   - `pgrst.db_pre_request` 가 켜졌는지 — 같은 IP 에서 61번째 쓰기가 429
-   - `xff_trusted_hops` 실측(앞단 프록시 수), `/graphql/v1` 이 꺼졌는지
-   - 가입 훅이 익명 가입에도 불리는지, `supabase_admin` default privileges notice
-   - 정의자 함수 소유자가 `auth.sessions` 를 읽을 수 있는지 — **`require_admin` 이 이것에 의존**
-   - 마이그레이션 전체(checks 포함)가 클라우드의 `postgres` 로 통과하는지
-     — **2026-10-22 진행:** 책임자가 `supabase db push --db-url`(Session pooler)로 적용. `010`~`190` 은 적용·기록됨, `200_checks` 는 ⑨ 에서 실패(`supabase_admin` 기본 권한, OQ-E10). ⑨ 를 고쳤고 나머지 검사 항목은 읽기 조회로 모두 통과 확인. 남은 일: CI 통과 뒤 `db push` 로 `200` 만 다시 적용.
-   - **마이그레이션 적용·설정 변경 등 프로젝트를 바꾸는 일은 반드시 책임자에게 먼저 묻는다.** 읽기만 하는 확인은 바로 해도 된다.
+1. ~~실제 Supabase 프로젝트 확인 (RFC-0003 §17.6a PL-6)~~ — **2026-10-22 끝남** (도쿄 프로젝트 `tsbipaffirkswsgkydav`).
+   - 마이그레이션 20개 적용(책임자가 `supabase db push --db-url`, Session pooler). `200_checks` 가 처음에 ⑨ 에서 실패 → ⑨ 수정(`2ff2ed3`, OQ-E10 수용 위험).
+   - 대시보드 Auth: 익명 로그인 ON, 익명 로그인 한도 150, 가입 훅 `app.hook_before_user_created`, TOTP, Data API 노출 = `public` 만.
+   - ① 61번째 쓰기 429 ② 가짜 XFF 무시(`xff_trusted_hops = 1`) ③ GraphQL 꺼짐 ④ 익명 가입에도 훅 호출, 초대 없는 이메일 403 ⑤ `supabase_admin` 기본 권한은 바꿀 수 없음 ⑥ 쓰기 60~720ms ⑦ `auth.sessions` 읽기 가능 — 자세한 건 ERD v2 OQ-E1·E5·E8·E10.
+   - 알게 된 것: 429 는 `security_events` 에 남지 않음(감시는 `ip_hits`), Auth 로그에 IP 원문이 남음(방침), advisor 지적(RLS 정책 없음 18, security definer 뷰 4, definer 함수 실행 25)은 설계대로 — 점검 기록에 "의도된 예외".
+   - 쓰기 시험 데이터는 지웠다(사용자·데이터 0, 솔트 1행만).
+   - **프로젝트를 바꾸는 일은 반드시 책임자에게 먼저 묻는다.** 읽기만 하는 확인은 바로 해도 된다.
 2. **Y-3S 보안 점검** (PRD Y-S1~S12). 외부 공격 방어가 책임자의 최우선(D20).
 3. Y-4.
 
