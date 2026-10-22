@@ -33,8 +33,9 @@ Y-3 에서 만든 것 (자세한 건 RFC-0003 §12.2 끝의 `[Y-3 구현]` 메�
    - 쓰기 시험 데이터는 지웠다(사용자·데이터 0, 솔트 1행만).
    - **프로젝트를 바꾸는 일은 반드시 책임자에게 먼저 묻는다.** 읽기만 하는 확인은 바로 해도 된다.
 2. **관리자 계정(R-5, PL-3) — 2026-10-22 끝남.** 초대 → 대시보드 "Add user"(Auto Confirm) → `bind_admin`(UID 로) → 관리자 콘솔(운영 빌드, 도쿄 프로젝트)에서 TOTP 2개(주 = 휴대폰 앱, 예비 = 종이에 적은 비밀 키 + 같은 앱의 두 번째 항목) 등록 → **R-7 ① 모의 실행: 예비 요소로 로그인 성공**(`auth.mfa_challenges` 로 확인). 대시보드 생성 때 Auth 로그에 가입 훅 실행 기록이 없었다 — Admin API 경로에서는 훅이 불리지 않는 것으로 보임(OQ-E5, 훅은 보조 장치라 영향 없음). R-7 ②(break-glass)는 로컬 스택 모의 실행으로 남김.
-3. **Y-3S 보안 점검** (PRD Y-S1~S12). 외부 공격 방어가 책임자의 최우선(D20).
-4. Y-4.
+3. **관리자 콘솔 첫 배포 — 2026-10-22.** `https://yunabi-admin.juha.dev` (Cloudflare Workers 정적 자산, `wrangler.jsonc`, workers.dev·미리보기 주소 끔). 책임자 PC 에서 `npm run build:admin`(도쿄 프로젝트) → `npx wrangler@4.86.0 deploy` 로 **수동** 배포했다(로컬 Node 20 이라 4.86.0 고정) — ADR-0022 T-10 의 "배포는 CI 에서만" 에서 한 번 벗어남, 이후는 Y-4 의 `deploy.yml` 이 맡는다. 실측 헤더: CSP(`frame-ancestors 'none'`, connect-src = 도쿄 프로젝트·Turnstile), HSTS, XFO DENY, nosniff, no-referrer, Permissions-Policy, COOP, 페이지 no-store. 실제 주소에서 관리자 로그인(aal2) 확인. **남은 것:** `juha.dev` 의 "Always Use HTTPS" 가 꺼져 있어 `http://` 가 리디렉션 없이 응답(.dev 는 HSTS preload 라 브라우저는 영향 없음) — 켜기 권장. 배포 전 `wrangler deploy` 를 설정 파일 없이 실행하면 자동 설정 마법사가 package.json·vite.config 를 바꾸니 주의.
+4. **Y-3S 보안 점검** (PRD Y-S1~S12). 외부 공격 방어가 책임자의 최우선(D20).
+5. Y-4.
 
 ## 3. 책임자에게서 아직 답을 못 받은 것
 
