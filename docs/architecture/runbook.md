@@ -290,7 +290,7 @@ Remove-Item Env:SB_SECRET, Env:NEW_PW, Env:ADMIN_UID; Remove-Variable s, p
 
 ### 6.1 경보 → 절차 대응표
 
-**현행: 경보는 없다.** 설계(RFC §17.4)의 비공개 운영 저장소 `yunabi-ops` 의 `monitor.yml`(30분마다 `public.ops_health()` → 기준 초과 시 그 저장소에 이슈 → 메일)이 아직 없다 `[운영 저장소 이후]`. 그때까지는 §6.3 주기로 손으로 본다. 기준값은 RFC §17.4 의 **제안값**이고, 실제 설정은 운영 저장소에 둔다.
+**현행: 경보는 없다.** 설계(RFC §17.4)의 비공개 운영 저장소 `yunabi-ops` 의 `monitor.yml`(30분마다 `public.ops_health()` → 기준 초과 시 그 저장소에 이슈 → 메일)이 아직 없다 `[운영 저장소 이후]`. 그때까지는 §6.3 주기로 손으로 본다. 기준값은 RFC §17.4 의 **제안값**이고, 실제 설정은 운영 저장소에 둔다. 감시가 읽는 것은 `ops_health()` 2판의 숫자다(§6.2 표).
 
 | RFC §17.4 신호 | 제안 기준 (RFC §17.4) | 점검 SQL (§6.2) | 넘으면 |
 |---|---|---|---|
@@ -305,16 +305,28 @@ Remove-Item Env:SB_SECRET, Env:NEW_PW, Env:ADMIN_UID; Remove-Variable s, p
 
 ### 6.2 신호별 SQL (모두 읽기만)
 
-`ops_health()`(`supabase/migrations/20261013000160_ops.sql`)는 기준과 정확히 맞지 않는다 — **`auto_hides_24h` 는 24시간 창뿐**(기준은 1시간), **`accounts_1h` 는 `app.accounts`(쓰기한 계정)를 세며 익명 `auth.users` 가 아니다**, **IP 429 는 기록되지 않아** `ip_windows_at_limit_1h` 로만 보인다(그것도 기숙사 범위를 기본 한도로 센다). 그래서 신호마다 직접 본다. `ops_health` 는 `stable` 이라 감시 작업은 **GET** 으로 불러야 한다(POST 면 PostgREST 가 읽기 전용으로 돌려 `db_pre_request` 의 기록이 실패).
+**`ops_health()` 2판** (`supabase/migrations/20261013000210_ops_health_signals.sql`, 결과에 `"version": 2`)이 §6.1 의 신호를 숫자로 한 번에 준다. 1판(`20261013000160_ops.sql`)의 불일치 — 자동 숨김이 24시간 창뿐, `accounts_1h` 가 익명 `auth.users` 가 아님, `ip_windows_at_limit_1h` 에 시간 조건이 없고 기숙사 창도 기본 한도로 셈, 0 인 종류는 키가 빠짐 — 는 2판에서 고쳤다. **운영 DB 에 210 이 적용되기 전에는 1판이므로** `select public.ops_health() -> 'version';` 이 `2` 가 아니면 아래 SQL 로 본다. 2판에서도 아래 SQL 은 원인 조사용으로 그대로 쓴다(어느 키·계정인지는 `ops_health` 가 주지 않는다).
+
+| 신호 | `ops_health` 2판의 키 | SQL |
+|---|---|---|
+| 권한 거절·형식 오류·가입 제한 | `security_1h.<종류>`, `security_24h.<종류>` (8종, 0 채움) | S-1 S-2 |
+| 빈도 초과 | `security_1h.rate_limited_account`, `ip_1h.default_windows_at_limit`·`dorm_windows_at_limit`, `ip_1h.default_keys_3_windows`·`dorm_keys_3_windows` (지난 1시간, 등급별 한도) | S-3 |
+| 익명 계정 생성 | `anon_users_1h` / `limits.anon_signups_per_hour`, `accounts_1h` / `limits.accounts_per_hour` | S-4 |
+| 자동 숨김 | `auto_hides_1h`, `auto_hides_24h` | S-5 |
+| DB 크기 | `db_bytes` | S-6 |
+| 관리자 조치 | `admin_actions_by_kind_24h.<종류>`, `reports_open_over_24h` | S-7 |
+| 정리 작업 | `cron.jobs`·`succeeded_24h`·`failed_24h`; `cron.unreadable = 1` 이면 권한 때문에 못 읽은 것 → S-9 를 SQL Editor 에서 | S-9 |
+
+`ip_1h.dorm_ranges_not_rebuilt` 가 0 이 아니면 `ip_tiers` 에 너무 넓은 기숙사 범위(IPv4 `/22`·IPv6 `/64` 보다 넓음)가 있어 그 창이 기본 한도로 판정되고 있다 — 범위를 좁힌다. `ops_health` 는 `stable` 이라 감시 작업은 **GET** 으로 불러야 한다(POST 면 PostgREST 가 읽기 전용으로 돌려 `db_pre_request` 의 기록이 실패).
 
 ```sql
 -- S-1 S-2  보안 이벤트 종류별, 1시간 / 24시간
 select kind, count(*) filter (where at > now() - interval '1 hour') as h1, count(*) as h24
 from app.security_events where at > now() - interval '24 hours' group by kind order by h1 desc;
 
--- S-3  IP 창: 기본 한도에 닿은 창, 같은 키가 3개 창 이상
+-- S-3  IP 창: 지난 1시간 기본 한도에 닿은 창, 같은 키가 3개 창 이상 (기숙사 키도 기본 한도로 센다 — 등급별은 ops_health 의 ip_1h)
 select encode(ip_key, 'hex') as key, count(*) as windows, max(n) as max_n
-from app.ip_hits where n >= app.setting('ip_writes_per_5min') group by ip_key
+from app.ip_hits where n >= app.setting('ip_writes_per_5min') and window_start > now() - interval '1 hour' group by ip_key
 having count(*) >= 3 order by windows desc;   -- having 을 빼면 한 번이라도 닿은 키 전부
 
 -- S-4  익명 Auth 사용자 생성 (훅 한도와 같은 기준) vs 앱 계정 생성
@@ -370,7 +382,7 @@ where j.jobname like 'yunabi-%' group by 1, 2 order by 1, 2;
    supabase db push --db-url $env:DB_URL --dry-run   # 적용될 파일 목록만
    supabase db push --db-url $env:DB_URL
    ```
-3. 출력 확인: 마지막 `20261013000200_checks.sql` 에서 `check 9: default EXECUTE this role cannot change, accepted (OQ-E10)` **notice 는 정상**이다. `check N … failed` 예외가 나면 그 마이그레이션은 실패한 것이다 — 고쳐서 다시 push 하고, 운영에서 SQL 로 우회하지 않는다.
+3. 출력 확인: `20261013000200_checks.sql` 에서 `check 9: default EXECUTE this role cannot change, accepted (OQ-E10)` **notice 는 정상**이다(이미 적용된 DB 에서는 200 이 다시 돌지 않는다). `20261013000210_ops_health_signals.sql` 은 끝에서 자기 효과를 검사해 어긋나면 `ops_health v2: …` 예외로 실패한다. `check N … failed` 예외가 나면 그 마이그레이션은 실패한 것이다 — 고쳐서 다시 push 하고, 운영에서 SQL 로 우회하지 않는다.
 4. 적용 확인:
    ```sql
    select version, name from supabase_migrations.schema_migrations order by version desc limit 5;
