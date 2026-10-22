@@ -43,6 +43,7 @@ export function MyItems() {
                 {i.edited_on && ' · ' + fill(m.editedOn, { d: day(i.edited_on) })}
               </span>
               <span className={'state ' + i.state}>{m.st[i.state]}</span>
+              {i.state === 'hidden_review' && <p className="hint">{m.myHiddenHelp}</p>}
               {i.state !== 'deleted' && (
                 <div className="btns">
                   <button

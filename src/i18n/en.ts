@@ -191,6 +191,8 @@ export const en = {
     hidden_review: 'Hidden after reports — under review',
     deleted: 'Deleted — gone for good after 30 days',
   },
+  myHiddenHelp:
+    "This isn't visible to others right now. It may reappear after the admin checks it. Checking can take a few days.",
   kindPlace: 'Place',
   kindEvent: 'Event',
   pastNoEdit: 'This event is over. It can be deleted but not changed.',

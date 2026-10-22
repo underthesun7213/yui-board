@@ -191,6 +191,8 @@ export const ko = {
     hidden_review: '신고로 숨겨짐 — 검토 중',
     deleted: '삭제됨 — 30일 뒤 완전히 지워짐',
   },
+  myHiddenHelp:
+    '지금은 다른 사람에게 보이지 않아요. 관리자가 확인한 뒤 다시 보일 수 있어요. 확인까지 며칠 걸릴 수 있어요.',
   kindPlace: '장소',
   kindEvent: '일정',
   pastNoEdit: '끝난 일정입니다. 삭제는 되지만 수정은 할 수 없어요.',
