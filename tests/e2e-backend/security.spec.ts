@@ -354,6 +354,16 @@ test('G-03 / G-12 / G-30 ① anon: every function in the allowlist but data_vers
   }
 });
 
+test('Y-S10 the monitor key reads ops_health over REST (the pre-request hook runs as service_role)', async ({
+  request,
+}) => {
+  const r = await request.get(`${API}/rest/v1/rpc/ops_health`, {
+    headers: { apikey: SERVICE, authorization: `Bearer ${SERVICE}` },
+  });
+  expect(r.status()).toBe(200);
+  expect(((await r.json()) as { version: number }).version).toBe(2);
+});
+
 test('G-30 ②③ / G-31 a non-admin account: admin functions are 403, admin_whoami answers forbidden', async ({
   request,
 }) => {
