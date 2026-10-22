@@ -794,7 +794,7 @@ security.spec 의 기존 두 시험도 이름을 바꾼다: `Y-S7 / G-52 writes 
 
 ## 10. 열린 질문 (책임자)
 
-1. **ZAP 실행 주기**: 주 1회 예약 + 수동(이 설계), 아니면 수동만(이 경우 `schedule` 줄을 뺀다). `.zap` 변경 push 트리거는 어느 쪽이든 둔다.
+1. ~~**ZAP 실행 주기**~~ — **2026-10-22 책임자 결정: 주 1회 예약 + 수동**(이 설계 그대로). `.zap` 변경 push 트리거도 둔다.
 2. **저장소 설정 켜기**(코드로 못 함, 13번 점검표): secret scanning, push protection, Dependabot alerts·security updates, `main` 보호 규칙(PR + quality·e2e·db 필수). 켤 시점을 정해 주세요.
 3. (조건부) B2 뒤 지도 묶음이 60.0 KB 를 넘으면: 예산을 조금 올릴지, 다른 곳을 줄일지.
 

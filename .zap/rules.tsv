@@ -13,6 +13,16 @@
 # Forms never submit to a server (form-action 'none'); requests carry a bearer
 # token in a header, not a cookie, so there is nothing for CSRF to ride on.
 10202	IGNORE	(Absence of Anti-CSRF Tokens)
+# Decided 2026-10-22 (design §10): warnings with nothing to fix, kept quiet so a
+# new warning stands out.
+# Cache policy is set in production, not by vite preview: the console sends
+# no-store through _headers, the app caches through its service worker.
+10049	IGNORE	(Storable and Cacheable Content)
+# The missing directive is frame-ancestors, which a meta CSP cannot carry. The
+# console sends it in _headers (C1 checks); GitHub Pages cannot (accepted, ADR-0022).
+10055	IGNORE	(CSP: Failure to Define Directive with No Fallback)
+# Advice to use the Ajax spider, which zap.yml already does (-j).
+10109	IGNORE	(Modern Web Application)
 # Scripts come only from the app itself (Turnstile loads only when the switch is on).
 10017	FAIL	(Cross-Domain JavaScript Source File Inclusion)
 # The local gateway stands in for Supabase's; map tiles are OpenStreetMap's.
