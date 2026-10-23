@@ -67,7 +67,7 @@
 | 6 | 저장소 — 비밀값은 `main` 전용 Environment + 필수 검토자 | 미완 | 기대 증거: `production` Environment(필수 검토자, `main` 만) 생성 날짜 + `deploy.yml`(Y-4) 의 사용 — §5 1번(운영 저장소는 Environment 불가) | Y-4 |
 | 6 | 저장소 — `pull_request_target` 없음 | 통과 | `ci.yml` 단계 "No pull_request_target workflows"(`grep` 이 찾으면 실패); `zap.yml` 도 없음. CI run 39894308046 | — |
 | 6 | 비공개 운영 저장소 접근자 = 책임자 | 책임자 확인(2026-10-23) | `yunabi-ops` 비공개, 협업자 없음 | — |
-| 6 | Pages "Enforce HTTPS" | 통과 | 기대 증거: Pages 설정 확인 날짜(런북 §7.3) | Y-4 |
+| 6 | Pages "Enforce HTTPS" | 통과 | 켜짐 — API 확인 2026-10-23(`https_enforced: true`) | — |
 | 6 | 백업 리허설 기록 (제외 표가 덤프에 없음 확인) | 책임자 확인(2026-10-23) | §1 Y-S9. 제외 표 검사는 `backup.yml` 이 `pg_restore -l` 로 하고 실패시킴; 리허설에서 제외 표 문제 없음(런북 열린 질문 4) | — |
 | 6 | 알림 시험 (기준을 넘는 가짜 이벤트 → 비공개 이슈 → 메일) | 책임자 확인(2026-10-23) | §1 Y-S10. 운영 DB 에 가짜 기록을 넣지 않고 기준값을 0 으로 낮추는 `test_kind` 방식 | — |
 | 6 | 런북 R-1·R-2 모의 실행 | 미완 | 기대 증거: 로컬 스택(또는 리허설 프로젝트)에서 R-1 2~5, R-2 2~3 을 돌린 날짜·결과, 런북에 `[해 봄]` | Y-3S |
