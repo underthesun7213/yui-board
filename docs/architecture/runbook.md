@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| 상태 | 1판 (2026-10-22) — 절차 중 실제로 해 본 것은 `[해 봄]`, 아직 없는 장치에 기대는 것은 `[Y-4 이후]`·`[운영 저장소 이후]`, 확인 못 한 것은 `[미확인]` |
+| 상태 | 1판 (2026-10-22), 2026-10-23 복구 리허설 반영 — 절차 중 실제로 해 본 것은 `[해 봄]`, 아직 없는 장치에 기대는 것은 `[Y-4 이후]`·`[운영 저장소 이후]`, 확인 못 한 것은 `[미확인]` |
 | 근거 | [RFC-0003](rfc/0003-yunabi-v2.md) §14·§15·§17.4~§17.7·§20 · [ADR-0022](../adr/0022-security-baseline.md) S3·S7·S9·S10·"결과" · [ADR-0020](../adr/0020-hosting-github-pages-actions.md) · [ERD v2](erd-v2.md) OQ-E1·E5·E6·E7·E8·E10 · [y3s-automated-checks](y3s-automated-checks.md) · `docs/session-handoff.md` (2026-10-22 실제 작업) |
 | 형식 | 운영 런북 하나. 새 설계 결정 없음 — RFC-0003 §17.7 R-1~R-8 의 전문과 ADR-0022 "결과" 의 런북 범위(배포·롤백·복구·키 교체·CAPTCHA 켜기·관리자 추가·대량 숨김 복원)를 실행 절차로 옮긴다 |
 | 실행자 | 책임자 1명(D25). 대리인 없음 |
@@ -210,22 +210,28 @@ D25 로 두 번째 관리자는 없다. 이 절차는 계정을 다시 만들 �
 
 **어디서:** 책임자가 신뢰하는 PC 의 터미널 **한 곳**, 저장소 밖의 빈 임시 폴더. secret 키를 브라우저·파일·셸 기록에 남기지 않는다. 가능하면 이 작업용 secret 키를 대시보드(API Keys)에서 새로 만들고 끝나면 지운다.
 
+**도우미는 의존성이 없다** (Node 18+ 내장 `fetch` 만, `npm install` 없음) `[해 봄 2026-10-23 — 리허설 프로젝트에서]`. 이유:
+
+- `@supabase/supabase-js@2.117.3` 은 **Node 20 에서 요청을 보내기도 전에 실패**한다 — realtime 모듈이 네이티브 `WebSocket`(Node 22)을 요구한다. 2026-10-23 리허설에서 이 때문에 막혔다.
+- 새 형식 secret 키(`sb_secret_…`)는 **`apikey` 헤더에만** 넣는다. `Authorization: Bearer` 에도 넣으면 Auth 가 `401 Invalid API key` 를 돌려준다. Bearer 는 JWT 형식 레거시 키(`eyJ…`)일 때만.
+- `EXPECT_REF` 에 **어느 프로젝트인지** 직접 적게 하고, `SB_URL` 에 그 ref 가 없으면 멈춘다 — 다른 프로젝트(리허설·옛 프로젝트)에 잘못 쏘지 않게.
+
 ```powershell
 mkdir $env:TEMP\yunabi-break-glass; cd $env:TEMP\yunabi-break-glass
-npm init -y; npm i --save-exact @supabase/supabase-js@2.117.3
 # Windows PowerShell 5.1 (이 PC): -AsSecureString 으로 받아 평문으로 바꾼다 (-MaskInput 은 PowerShell 7 전용)
+$env:EXPECT_REF = 'tsbipaffirkswsgkydav'   # 복구 뒤라면 새 프로젝트의 ref
 $env:SB_URL = 'https://tsbipaffirkswsgkydav.supabase.co'
 $s = Read-Host 'secret key' -AsSecureString
 $env:SB_SECRET = [Net.NetworkCredential]::new('', $s).Password
 $env:ADMIN_UID = Read-Host 'admin UID'
+node admin.mjs key   # 길이와 앞 10자만 — 붙여 넣기가 잘렸는지 확인
 ```
-
-버전: 저장소의 `@supabase/auth-js` 2.117.3 과 같은 모노레포 버전으로 고정한다(supabase-js 의 하위 패키지는 같은 번호로 나온다 — *일반 지식*). 그 번호가 없으면 설치한 2.x 버전을 비공개 이슈에 적는다.
 
 `admin.mjs` (같은 폴더):
 
 ```js
-import { createClient } from '@supabase/supabase-js';
+// Dependency-free (Node 18+ fetch). supabase-js 2.117 fails on Node 20 before
+// sending anything (realtime needs a native WebSocket).
 const need = (k) => {
   if (!process.env[k]) {
     console.error(`${k} is empty — stopping`);
@@ -233,28 +239,62 @@ const need = (k) => {
   }
   return process.env[k];
 };
-const [step, arg] = process.argv.slice(2);
-const sb = createClient(need('SB_URL'), need('SB_SECRET'), {
-  auth: { persistSession: false, autoRefreshToken: false },
-});
+const url = need('SB_URL').replace(/\/$/, '');
+const ref = need('EXPECT_REF');
+if (!url.includes(ref)) {
+  console.error(`SB_URL does not contain ${ref} — stopping`);
+  process.exit(2);
+}
+const secret = need('SB_SECRET');
 const uid = need('ADMIN_UID');
-if (step === 'password') {
-  const { data, error } = await sb.auth.admin.updateUserById(uid, { password: need('NEW_PW') });
-  if (error || !data?.user) {
-    console.error('NOT changed:', error ?? 'no user returned');
+// sb_secret_… keys go only in apikey; Bearer only for legacy JWT keys (eyJ…).
+const headers = {
+  apikey: secret,
+  ...(secret.startsWith('eyJ') ? { Authorization: `Bearer ${secret}` } : {}),
+  'Content-Type': 'application/json',
+};
+const call = async (method, path, body) => {
+  const r = await fetch(`${url}/auth/v1${path}`, {
+    method,
+    headers,
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+  const text = await r.text();
+  let json = null;
+  try {
+    json = text ? JSON.parse(text) : null;
+  } catch {
+    json = null;
+  }
+  return { status: r.status, json };
+};
+const why = (r) => `HTTP ${r.status} ${r.json?.msg ?? r.json?.message ?? ''}`;
+const [step, arg] = process.argv.slice(2);
+if (step === 'key') {
+  console.log('key length', secret.length, 'starts with', secret.slice(0, 10));
+} else if (step === 'password') {
+  const r = await call('PUT', `/admin/users/${uid}`, { password: need('NEW_PW') });
+  if (r.status !== 200 || r.json?.id !== uid) {
+    console.error('NOT changed:', why(r));
     process.exit(1);
   }
-  console.log('password changed for', data.user.id);
+  console.log('password changed for', r.json.id);
 } else if (step === 'factors') {
-  const { data, error } = await sb.auth.admin.mfa.listFactors({ userId: uid });
-  if (error) { console.error(error); process.exit(1); }
-  console.log(data.factors.map((f) => [f.id, f.friendly_name, f.status, f.created_at]));
+  const r = await call('GET', `/admin/users/${uid}/factors`);
+  if (r.status !== 200) {
+    console.error(why(r));
+    process.exit(1);
+  }
+  console.log((r.json ?? []).map((f) => [f.id, f.friendly_name, f.status, f.created_at]));
 } else if (step === 'delete' && arg) {
-  const { error } = await sb.auth.admin.mfa.deleteFactor({ id: arg, userId: uid });
-  if (error) { console.error(error); process.exit(1); }
+  const r = await call('DELETE', `/admin/users/${uid}/factors/${arg}`);
+  if (r.status !== 200) {
+    console.error(why(r));
+    process.exit(1);
+  }
   console.log('factor deleted — all sessions signed out');
 } else {
-  console.error('usage: node admin.mjs password | factors | delete <factor id>');
+  console.error('usage: node admin.mjs key | password | factors | delete <factor id>');
   process.exit(1);
 }
 ```
@@ -263,7 +303,7 @@ if (step === 'password') {
 $p = Read-Host 'new password' -AsSecureString
 $env:NEW_PW = [Net.NetworkCredential]::new('', $p).Password
 node admin.mjs password
-Remove-Item Env:SB_SECRET, Env:NEW_PW, Env:ADMIN_UID; Remove-Variable s, p
+Remove-Item Env:SB_SECRET, Env:NEW_PW, Env:ADMIN_UID, Env:EXPECT_REF; Remove-Variable s, p
 ```
 
 확인: 콘솔에 새 비밀번호 + TOTP 로 로그인. 끝나면 임시 폴더를 지우고, 임시 secret 키를 만들었다면 대시보드에서 지운다.
@@ -271,7 +311,7 @@ Remove-Item Env:SB_SECRET, Env:NEW_PW, Env:ADMIN_UID; Remove-Variable s, p
 ### 5.3 R-7 TOTP 기기 분실
 
 - **① 예비가 있다** `[해 봄 2026-10-22 — 모의 실행 성공]`: 콘솔 로그인 → "Which authenticator will you use?" 에서 예비 선택 → **Security** 탭 → 새 기기에 "Add an authenticator" → 잃은 요소 "Remove". 다시 2개.
-- **② 예비도 없다 (break-glass)** — **아직 모의 실행하지 않았다**(PL-3 의 로컬 스택 모의 실행이 남은 일). §5.2 와 같은 터미널에서(변수 설정까지 하고, `Remove-Item` 정리는 맨 끝에) 이 순서로, 몇 분 안에 끝낸다(요소가 0개인 동안은 비밀번호를 아는 사람이 먼저 등록할 수 있다 — T-03a):
+- **② 예비도 없다 (break-glass)** `[해 봄 2026-10-23 — 리허설 프로젝트에서: 비밀번호 먼저 교체 → 요소 0개 확인 → 콘솔에서 TOTP 2개 재등록 → aal2]` — 복원된 사용자는 요소가 0개였으므로 3번(요소 삭제)은 **실행해 보지 않았다**. §5.2 와 같은 터미널에서(변수 설정까지 하고, `Remove-Item` 정리는 맨 끝에) 이 순서로, 몇 분 안에 끝낸다(요소가 0개인 동안은 비밀번호를 아는 사람이 먼저 등록할 수 있다 — T-03a):
   1. `node admin.mjs password` — **비밀번호부터** 바꾼다.
   2. `node admin.mjs factors` — 요소 id 확인.
   3. `node admin.mjs delete <factor id>` — 요소마다. **되돌릴 수 없음**(지운 요소는 살릴 수 없다). 모든 세션이 로그아웃된다.
@@ -431,40 +471,75 @@ v2 앱은 아직 운영 배포 전이다(D23). Y-4 의 `deploy.yml` 이 `YUNABI_
 
 ## 9. 백업·복구 (RFC §17.5, ADR-0022 S9)
 
-**현행:** 무료 플랜이라 플랫폼 백업이 없고, 설계의 `yunabi-ops` `backup.yml`(주 1회 덤프 → `age` 암호화 → 그 저장소의 아티팩트 90일)도 아직 없다 `[운영 저장소 이후]`. **그때까지 백업은 없다** — 위험한 마이그레이션 전에는 아래 수동 덤프를 한다. 복구는 리허설 전이라 순서는 **제안**이다(RFC §17.6 6번 "백업 리허설 기록").
+**현행:** 무료 플랜이라 플랫폼 백업은 없다. 대신 비공개 저장소 `yunabi-ops` 의 `backup.yml` 이 **주 1회** 자동으로 덤프한다(2026-10-23 가동): §9.1 과 같은 범위의 데이터 전용 덤프 두 개(`app.dump`·`auth.dump`, Postgres **custom 형식** `-Fc`)를 tar 하나로 묶어 `age` 로 암호화하고, 그 저장소의 아티팩트로 **90일** 보관한다. 제외해야 할 표가 들어 있으면 작업이 실패한다. 일정·키·실행 기록은 그 저장소에만 있다. 위험한 마이그레이션 전에는 그 작업을 수동으로 한 번 돌리거나 §9.1 을 한다. 복구 순서(§9.2)는 **2026-10-23 임시 무료 프로젝트에 리허설했다** — 백업 아티팩트에서 관리자 aal2 로그인까지 **약 49분**(목표 RTO 4시간). 기록은 비공개 저장소에.
 
-### 9.1 덤프 (수동, 같은 범위)
+### 9.1 덤프 (수동, 자동 백업과 같은 범위·형식)
 
 ```bash
-# DB_URL: Session pooler URI. pg_dump 버전은 서버 이상이어야 한다.
-pg_dump "$DB_URL" --data-only --schema=app \
+# DB_URL: Session pooler URI. pg_dump 버전은 서버 이상이어야 한다(서버 17 → pg_dump 17).
+# -n 과 -t 는 함께 쓰면 -n 이 무시되므로 덤프 두 개.
+pg_dump "$DB_URL" -Fc --data-only --schema=app \
   --exclude-table-data=app.salts --exclude-table-data=app.ip_hits --exclude-table-data=app.write_log \
-  --exclude-table-data=app.prefectures --exclude-table-data=app.data_version -f app.sql
-pg_dump "$DB_URL" --data-only -t auth.users -t auth.identities -f auth.sql
-# 확인: 제외한 표가 덤프에 없어야 한다 (둘 다 0)
-grep -c "COPY auth.sessions\|COPY app.salts" app.sql auth.sql
-tar cf - app.sql auth.sql | age -r <AGE_PUBLIC_KEY> -o yunabi-<YYYYMMDD>.tar.age
-rm app.sql auth.sql
+  --exclude-table-data=app.prefectures --exclude-table-data=app.data_version -f app.dump
+pg_dump "$DB_URL" -Fc --data-only -t auth.users -t auth.identities -f auth.dump
+# 확인: 제외한 표의 데이터가 목록에 없어야 한다 (둘 다 0)
+{ pg_restore -l app.dump; pg_restore -l auth.dump; } | grep -c "TABLE DATA auth sessions\|TABLE DATA app salts"
+tar cf - app.dump auth.dump | age -r <AGE_PUBLIC_KEY> -o yunabi-<YYYYMMDD>.tar.age
+rm app.dump auth.dump
 ```
 
-제외: `app.salts`·`app.ip_hits`·`app.write_log`(가명 처리·최소화 — 솔트가 없으면 남은 해시를 못 되돌린다), `app.prefectures`·`app.data_version`(마이그레이션이 채움 — *제안*), `auth` 의 세션·토큰·`mfa_factors`·`mfa_challenges`·`one_time_tokens`·`flow_state`·`audit_log_entries`(덤프하지 않는다). 확인 `grep` 이 0 이 아니면 암호화하지 말고 덤프 명령을 고친다.
+제외: `app.salts`·`app.ip_hits`·`app.write_log`(가명 처리·최소화 — 솔트가 없으면 남은 해시를 못 되돌린다), `app.prefectures`·`app.data_version`(마이그레이션이 채움 — 리허설에서 확인), `auth` 의 세션·토큰·`mfa_factors`·`mfa_challenges`·`one_time_tokens`·`flow_state`·`audit_log_entries`(덤프하지 않는다). 확인 `grep` 이 0 이 아니면 암호화하지 말고 덤프 명령을 고친다.
 
-### 9.2 복구 순서
+### 9.2 복구 순서 `[해 봄 2026-10-23 — 리허설 프로젝트에서, 약 49분]`
 
-1. **새 프로젝트**를 같은 조직에 도쿄 리전으로 만든다. 옛 프로젝트는 확인이 끝날 때까지 지우지 않는다(지우면 **되돌릴 수 없음**, 그리고 Vercel 연동 리소스도 같이 지워진다 — 부록 A).
-2. **마이그레이션 적용** — §7.1 을 새 프로젝트의 Session pooler 로. check ⑨ notice 는 정상.
-3. **pg_cron 작업 확인** — `select jobname, schedule, active from cron.job where jobname like 'yunabi-%';` 4개. 없으면 `pg_cron` 이 없던 것이다(`20261013000180_jobs.sql` 은 있을 때만 예약) → 확장을 켜고 그 파일 끝의 `do $$ … end $$;` 블록을 **통째로** 실행(네 `cron.schedule` 이 그 안에 있다 — `perform` 줄만 떼어 내면 실행되지 않는다).
-4. **복원** — 복호화 뒤 트리거를 끈 채 한 트랜잭션으로(Supabase 의 복원 안내와 같은 방식):
-   ```bash
-   age -d -i <AGE_PRIVATE_KEY_FILE> yunabi-<YYYYMMDD>.tar.age | tar xf -
-   psql "$NEW_DB_URL" --single-transaction --variable ON_ERROR_STOP=1 \
-     --command 'delete from app.settings' \
-     --command 'SET session_replication_role = replica' \
-     --file auth.sql --file app.sql
+1. **새 프로젝트**를 같은 조직에 도쿄 리전으로 만든다 `[해 봄 2026-10-23]`. 옛 프로젝트는 확인이 끝날 때까지 지우지 않는다(지우면 **되돌릴 수 없음**, 그리고 Vercel 연동 리소스도 같이 지워진다 — 부록 A). API·MCP 로 만들면 DB 비밀번호를 아무도 모른다 → 대시보드에서 **영문·숫자만**으로 재설정하고 1~3분 기다린다(§12).
+2. **마이그레이션 적용** `[해 봄 2026-10-23 — 22개 한 번에 통과]` — §7.1 을 새 프로젝트의 Session pooler 로, **저장소 폴더에서**. check ⑨ notice 는 정상.
+3. **pg_cron 작업 확인** `[해 봄 2026-10-23 — 4개]` — `select jobname, schedule, active from cron.job where jobname like 'yunabi-%';` 4개. 없으면 `pg_cron` 이 없던 것이다(`20261013000180_jobs.sql` 은 있을 때만 예약) → 확장을 켜고 그 파일 끝의 `do $$ … end $$;` 블록을 **통째로** 실행(네 `cron.schedule` 이 그 안에 있다 — `perform` 줄만 떼어 내면 실행되지 않는다).
+4. **복원** `[해 봄 2026-10-23 — restore: committed]` — `yunabi-ops` 의 아티팩트(암호화 파일)를 내려받아 빈 폴더에 둔다. 복호화부터 복원까지 **Docker 컨테이너 안에서** 한다: 평문은 컨테이너의 `tmpfs`(메모리)에만 생기고 호스트 디스크에는 남지 않는다. Windows PowerShell 5.1 의 파이프는 바이너리를 깨뜨리므로(`age | tar` 를 호스트에서 하지 않는다) 이 방식이 필요하다. 트리거를 끈 채 한 트랜잭션으로 넣는다(Supabase 의 복원 안내와 같은 방식) — 오류가 나면 아무것도 남지 않는다.
+
+   `restore.sh` (같은 폴더, 컨테이너 안에서 실행):
+
+   ```sh
+   #!/bin/sh
+   # Runs INSIDE postgres:17.11. Mounted read-only: /in/backup.tar.age, /in/key.
+   # Decrypted bytes go only to /w (tmpfs). ONE transaction: on error nothing stays.
+   set -eu
+   : "${EXPECT_REF:?EXPECT_REF is empty}"
+   case "${NEW_DB_URL:-}" in
+     *"$EXPECT_REF"*) ;;
+     *) echo "NEW_DB_URL does not contain $EXPECT_REF; stopping." >&2; exit 2 ;;
+   esac
+   apt-get -qq update >/dev/null && apt-get -qq install -y age >/dev/null
+   age --version
+   age -d -i /in/key /in/backup.tar.age | tar -x -C /w
+   ls -l /w
+   { pg_restore -f - /w/auth.dump; pg_restore -f - /w/app.dump; } |
+     psql "$NEW_DB_URL" --single-transaction -v ON_ERROR_STOP=1 \
+       -c 'delete from app.settings' \
+       -c 'set session_replication_role = replica' \
+       -f -
+   echo "restore: committed"
    ```
-   `app.settings` 는 마이그레이션의 기본값을 지우고 덤프의 값(조정한 한도 포함)으로 채운다.
-5. **checks 다시 실행** — `20261013000200_checks.sql` 내용을 SQL Editor 에서 실행, 통과.
-6. **대시보드 Auth 설정을 다시 한다**(프로젝트 설정은 덤프에 없다):
+
+   ```powershell
+   # PowerShell 에서 (Git Bash 는 볼륨 경로를 바꾼다 — 쓰려면 MSYS_NO_PATHCONV=1)
+   $env:EXPECT_REF = '<새 프로젝트 ref>'
+   $u = Read-Host 'NEW_DB_URL (Session pooler)' -AsSecureString
+   $env:NEW_DB_URL = [Net.NetworkCredential]::new('', $u).Password
+   docker run --rm --tmpfs /w -e NEW_DB_URL -e EXPECT_REF `
+     -v "$PWD\yunabi-<YYYYMMDD-HHMM>.tar.age:/in/backup.tar.age:ro" `
+     -v "<AGE_PRIVATE_KEY_FILE>:/in/key:ro" `
+     -v "$PWD\restore.sh:/in/restore.sh:ro" `
+     postgres:17.11@sha256:b8faeff7712663c2773a190181e1246e37e364b887611c04658c28b44e2408fe `
+     sh /in/restore.sh
+   Remove-Item Env:NEW_DB_URL; Remove-Variable u
+   ```
+
+   `-e NEW_DB_URL` 처럼 **이름만** 넘긴다(값이 명령줄·셸 기록에 남지 않는다). 이미지는 다이제스트로 고정한다. `app.settings` 는 마이그레이션의 기본값을 지우고 덤프의 값(조정한 한도 포함)으로 채운다.
+
+   리허설에서 확인한 것: 호스팅 Supabase 의 `postgres` 에게 `set session_replication_role = replica` 와 `auth.users`·`auth.identities` 쓰기가 **허용된다**. 열 불일치 없음, 행 수가 운영과 같고 고아 행 0, **시퀀스도 운영 값으로 복원**된다(새 행이 다음 id 를 받는다).
+5. **checks 다시 실행** `[해 봄 2026-10-23 — 통과]` — `20261013000200_checks.sql` 내용을 SQL Editor 에서 실행, 통과.
+6. **대시보드 Auth 설정을 다시 한다**(프로젝트 설정은 덤프에 없다) `[해 봄 2026-10-23]`. 바꾼 뒤 **저장**을 눌렀는지 다시 연다 — 리허설에서 익명 로그인 토글을 저장하지 않아 한 번 더 켰다:
    - 익명 로그인 ON
    - 이메일 공개 가입 OFF (RFC §17.6 6번 — 익명 로그인이 계속 되는지 함께 확인)
    - 가입 훅 Before User Created = Postgres 함수 `app.hook_before_user_created`
@@ -475,8 +550,8 @@ rm app.sql auth.sql
    - 레거시 키 비활성, 프로젝트 멤버 = 책임자 1명
 7. **`ip_tiers`** — 덤프에 들어 있으면 `select count(*) from app.ip_tiers;` 로 확인만. 없으면 비공개 기록의 값으로: `insert into app.ip_tiers (range, tier, note) values ('<DORM_CIDR>', 'dorm', '<메모>');`
 8. **`xff_trusted_hops` 다시 재기** — 2026-10-22 과 같은 방법(요청마다 다른 가짜 `X-Forwarded-For` 를 붙인 쓰기 61번 → 61번째 429 면 1 유지, ERD v2 OQ-E8). 시험으로 만든 사용자·데이터는 지운다.
-9. **주소·키 교체** — 새 URL·publishable 키로 사용자 앱과 **콘솔을 다시 빌드·배포**(콘솔 CSP `connect-src` 에 프로젝트 URL 이 빌드 때 박힌다 — §7.2). `yunabi-ops` 의 secret 키·DB 주소 비밀값도 새 프로젝트 것으로.
-10. **관리자 TOTP 재등록** — `mfa_factors` 는 덤프에 없어 요소가 0개다. 비밀번호를 아는 사람이 먼저 등록할 수 있으므로 §5.2 로 **비밀번호를 먼저 바꾸고** 곧바로 콘솔에서 2개 등록. `app.admins` 는 같은 UID 로 복원되어 `bind_admin` 은 다시 할 필요가 없다.
+9. **주소·키 교체** `[해 봄 2026-10-23 — 리허설에서는 배포하지 않고 로컬 미리보기(별도 출력 폴더)로 스모크: 공개 뷰 4개 200, 초대 없는 이메일 403, 익명 가입 → 장소 등록 → my_items]` — 새 URL·publishable 키로 사용자 앱과 **콘솔을 다시 빌드·배포**(콘솔 CSP `connect-src` 에 프로젝트 URL 이 빌드 때 박힌다 — §7.2). `yunabi-ops` 의 secret 키·DB 주소 비밀값도 새 프로젝트 것으로.
+10. **관리자 TOTP 재등록** `[해 봄 2026-10-23 — 요소 0개 → 비밀번호 먼저 → TOTP 2개 → aal2]` — `mfa_factors` 는 덤프에 없어 요소가 0개다. 비밀번호를 아는 사람이 먼저 등록할 수 있으므로 §5.2 로 **비밀번호를 먼저 바꾸고** 곧바로 콘솔에서 2개 등록. `app.admins` 는 같은 UID 로 복원되어 `bind_admin` 은 다시 할 필요가 없다.
 11. **사용자 영향:** 세션이 모두 끊겨 익명 사용자는 새 계정을 받고 **옛 항목을 고칠 수 없게 된다**(OQ-E6, RFC OQ-18). 손실은 마지막 덤프 이후(최대 7일 — OQ-13). 공지가 필요하면 문의 페이지·앱 공지로.
 12. 비공개 이슈에 시각·덤프 날짜·확인 결과를 남긴다. 옛 프로젝트 삭제는 1주 뒤 따로 정한다(**되돌릴 수 없음**).
 
@@ -494,7 +569,7 @@ rm app.sql auth.sql
 | **DB 비밀번호** | 대시보드 Database 설정 → 비밀번호 재설정 | GitHub `production` Environment 의 DB 주소 `[Y-4 이후]`, `yunabi-ops` 백업 비밀값 | 바꾸는 동안 진행 중인 `db push`·덤프는 실패 |
 | **Turnstile 비밀 키** | Cloudflare → Turnstile → 위젯 → 비밀 키 교체 | Supabase Bot and Abuse Protection 의 비밀 키 | 스위치가 켜져 있으면 갱신 전까지 로그인·첫 쓰기가 실패 — 끈 상태에서 |
 | **Turnstile 사이트 키** | 새 위젯(허용 호스트 §3.1 C-3) | `VITE_TURNSTILE_SITE_KEY` 로 앱·콘솔 다시 빌드·배포, Supabase 비밀 키도 새 위젯 것으로 | 공개값이라 유출 대응은 필요 없다. 위젯을 바꿀 때만 |
-| **관리자 비밀번호** | §5.2 (`updateUserById`) | 비밀번호 금고 | — |
+| **관리자 비밀번호** | §5.2 (`node admin.mjs password`) | 비밀번호 금고 | — |
 | **관리자 TOTP** | 콘솔 Security (추가 → 제거) | 예비 비밀의 보관 장소 | 늘 2개 유지 |
 | **Cloudflare API 토큰** (Workers 배포 권한만) | Cloudflare → My Profile → API Tokens → 교체 | GitHub `production` Environment 의 `CLOUDFLARE_API_TOKEN` `[Y-4 이후]`. 로컬은 `npx wrangler@4.86.0 logout` → `login` | — |
 | **GitHub Environment 비밀값** | 저장소 Settings → Environments → `production` | — | 필수 검토자 설정이 그대로인지 함께 본다 |
@@ -535,6 +610,12 @@ rm app.sql auth.sql
 | `juha.dev` 의 HTTP 응답 | 점검 항목: Cloudflare 의 "Always Use HTTPS" 가 켜져 있는가(`http://yunabi-admin.juha.dev` 가 HTTPS 로 리디렉션되는가). `.dev` 는 HSTS preload 라 브라우저는 영향이 작다 |
 | `npm audit` 가 dev 의존성 때문에 실패 | 의도된 것(`--omit=dev` 없음, ADR-0022 S6). 업데이트로 해결 |
 | 옛 Supabase 프로젝트를 지움 | Vercel 리소스도 함께 지워진다. 되돌릴 수 없음 |
+| DB 비밀번호에 특수문자 → `db push`·`psql` 인증 실패 | 연결 URI 가 깨진다. **영문·숫자만**(길게)으로 재설정 (2026-10-23) |
+| 비밀번호 재설정 직후에도 옛 비밀번호처럼 실패 | pooler 반영에 **1~3분** 걸린다. 기다렸다가 다시 |
+| `supabase db push` 가 마이그레이션을 못 찾음 | **저장소 폴더에서** 실행한다(`supabase/migrations` 기준) |
+| API·MCP 로 새로 만든 프로젝트의 DB 비밀번호 | 아무도 모른다. 대시보드에서 **먼저 재설정** |
+| Auth 설정을 바꿨는데 그대로임 (예: 익명 로그인) | 토글 뒤 **저장**을 누르지 않은 것. 다시 열어 확인 |
+| break-glass 도우미가 Node 20 에서 요청 전에 멈춤 / `401 Invalid API key` | supabase-js 대신 §5.2 의 fetch 도우미. `sb_secret_…` 키는 `apikey` 헤더에만 |
 
 ---
 
@@ -580,8 +661,8 @@ rm app.sql auth.sql
 | 1 | 출시 후 새 마이그레이션의 checks 재실행 방식 — 지금은 "200 파일을 고치고 운영에서 수동 재실행"(§7.1). 새 마이그레이션 끝에 checks 블록을 복사해 두는 규칙으로 바꿀지 | CLAUDE.md, ERD v2 §8 |
 | 2 | 대시보드에서 한 사용자의 세션을 끊는 경로(무료 플랜) — R-4 는 SQL(ⓑ, 권한 확인됨 2026-10-22)과 요소 삭제(ⓐ)로 충분하므로 낮은 우선순위 | R-4 |
 | 3 | `wrangler rollback` 을 이 프로젝트에서 한 번 시험할지 | §8 |
-| 4 | 복구 순서(§9.2) 리허설 — 특히 `auth.users` 복원 권한, `session_replication_role`, `app.prefectures`·`app.data_version` 제외가 맞는지 | RFC §17.6 6번, OQ-E6 |
-| 5 | R-7 ② break-glass 모의 실행(로컬 스택) | PL-3 |
+| 4 | ~~복구 순서(§9.2) 리허설~~ — 2026-10-23 끝남: `auth.users` 복원 권한·`session_replication_role` 허용, 제외 표 문제 없음(§9.2 4번) | RFC §17.6 6번, OQ-E6 |
+| 5 | R-7 ② break-glass — 2026-10-23 리허설 프로젝트에서 비밀번호 교체·재등록은 해 봄. 요소 삭제(3번)만 아직 | PL-3 |
 | 6 | 경보가 생기기 전까지의 수동 주기(§6.3)를 받아들일지, 출시를 `monitor.yml` 뒤로 둘지 | RFC §17.4, PL-5 |
 | 7 | 메모만 남기는 관리 기록 수단이 필요한지(R-7 ② 의 "MFA 재설정" 기록) — 지금은 비공개 이슈로 대신 | RFC §17.7 R-7 |
 | 8 | 책임자 PC 를 Node 22 로 올리고 wrangler 고정을 풀지 | §7.2 |
