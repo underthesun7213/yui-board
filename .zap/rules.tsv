@@ -1,9 +1,9 @@
 # ZAP baseline rules (zap.yml): rule id, action, name. Tab separated; lines
 # starting with # are ignored. Raise a rule to FAIL one at a time, with a reason.
 #
-# vite preview cannot send the production headers. The user app is on GitHub Pages
-# (no headers: meta CSP + FrameGuard, checked by e2e); the console's headers come
-# from Cloudflare _headers, checked by scripts/check-admin-headers.mjs (C1).
+# vite preview cannot send the production headers. Both the user app and the
+# console get theirs from Cloudflare _headers (ADR-0025), checked in the build
+# output by scripts/check-app-headers.mjs and scripts/check-admin-headers.mjs (C1).
 10020	IGNORE	(Missing Anti-clickjacking Header)
 10021	IGNORE	(X-Content-Type-Options Header Missing)
 10038	IGNORE	(Content Security Policy (CSP) Header Not Set)

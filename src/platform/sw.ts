@@ -1,6 +1,6 @@
 import { Workbox } from 'workbox-window';
 
-/* Same URL as v1.3 (./sw.js), so an installed v1.3 worker updates in place.
+/* ./sw.js, scope ./ (ADR-0020 4; the address itself moved in ADR-0025).
    A new worker waits until the person taps "Reload" on the toast. */
 export function registerSW(onWaiting: (activate: () => void) => void) {
   if (!('serviceWorker' in navigator) || !import.meta.env.PROD) return;

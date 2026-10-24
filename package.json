@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build && node scripts/check-bundle-size.mjs && node scripts/check-dist-secrets.mjs",
+    "build": "tsc -b && vite build && node scripts/check-bundle-size.mjs && node scripts/check-dist-secrets.mjs && node scripts/check-app-headers.mjs",
     "preview": "vite preview",
     "lint": "eslint .",
     "format": "prettier --write .",
@@ -17,6 +17,7 @@
     "test": "vitest run",
     "test:e2e": "playwright test",
     "build:local": "YUNABI_ALLOW_SELF=1 npm run build",
+    "build:deploy": "npm run build && node scripts/check-app-headers.mjs dist --deploy",
     "build:admin": "tsc -b && vite build -c vite.admin.config.ts && node scripts/check-dist-secrets.mjs dist-admin && node scripts/check-admin-headers.mjs dist-admin",
     "db:start": "scripts/local-stack/start.sh",
     "db:start:seed": "scripts/local-stack/start.sh --seed",

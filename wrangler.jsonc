@@ -1,6 +1,6 @@
 // The admin console on Cloudflare Workers static assets (ADR-0020 3, RFC-0003
 // §19.3): its own origin, so an XSS in the user app can never reach an admin
-// token. Only the console is deployed here; the user app stays on GitHub Pages.
+// token. Only the console is deployed here; the user app is wrangler.app.jsonc.
 // No secrets in this file: wrangler signs in with `wrangler login` or, in CI,
 // CLOUDFLARE_API_TOKEN from the main-only `production` environment.
 //

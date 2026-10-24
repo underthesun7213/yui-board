@@ -41,9 +41,10 @@ jobs:
       - run: npm run format:check
       - run: npm run typecheck
       - run: npm test
-      - run: npm run build # includes the bundle size budgets
+      - run: npm run build # includes the bundle size budgets and the header checks
         env:
-          YUNABI_ORIGIN: https://underthesun7213.github.io/yui-board/
+          YUNABI_ORIGIN: https://yunabi.juha.dev/
+          VITE_SUPABASE_URL: https://example.supabase.co # the shape of a deploy build
       - run: npm run build:admin # the admin console, with its secret and header checks
         env:
           VITE_SUPABASE_URL: https://example.supabase.co

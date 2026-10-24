@@ -31,7 +31,9 @@ registerRoute(
 );
 
 /* Upgrading from v1.3 (its caches are named yui-*): take over at once rather
-   than asking to reload into the version already on screen. */
+   than asking to reload into the version already on screen. v1.3 was never
+   deployed and the app now has its own origin (ADR-0025), so this is a
+   harmless no-op kept for the code-level compatibility rule (Y-B3). */
 self.addEventListener('install', (e) => {
   e.waitUntil(
     caches.keys().then((ks) => {
