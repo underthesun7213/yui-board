@@ -126,7 +126,7 @@
 
 | 항목 | 규칙 |
 |---|---|
-| 브랜치 | `main` = 배포(GitHub Pages). 작업은 `feat/…`, `fix/…`, `docs/…` 짧은 브랜치 → PR |
+| 브랜치 | `main` = 배포 대상(사용자 앱은 main 의 커밋에서 `npm run build:deploy` → Cloudflare Workers, ADR-0025). 작업은 `feat/…`, `fix/…`, `docs/…` 짧은 브랜치 → PR |
 | 커밋 메시지 | 명령형 한 줄 요약(영어 또는 한국어), 본문에 이유. 관련 ID 를 적는다: `fix: escape room and insta in profiles() (S-9, BUG-13)` |
 | PR 체크 | 하네스 `clean`, `CACHE` 올림(클라이언트 변경 시), 마이그레이션이면 익명성 케이스 통과, 문자열 3개 언어 |
 | 디렉터리 | 루트: `index.html`, `sw.js`, `manifest.webmanifest`, 아이콘, `schema.sql`(설계 기록). `art/`(그림, 핸드오프 §7.2), `supabase/`(제안), `docs/` |

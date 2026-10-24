@@ -1,12 +1,12 @@
 # 출시 전 보안 점검 기록 (Y-3S, PRD Y-S1~S12)
 
-**판정: 출시 불가 — 블로커 5개 (Y-3S 1 / Y-4 4).** 자동 검사(권한·XSS·입력·의존성·비밀·ZAP 로컬)는 모두 초록이고, 지금 할 시험·모의 실행(B-2·B-7·B-10·B-11)과 `main` 보호 규칙(B-4)은 2026-10-24 까지 모두 끝났다. 남은 Y-3S 는 출시 직전 권한 재확인(B-9), 나머지는 Y-4(배포·방침) 뒤에만 할 수 있는 것(B-13·B-14·B-16·B-17).
+**판정: 출시 불가 — 블로커 6개 (Y-3S 1 / Y-4 5).** 자동 검사(권한·XSS·입력·의존성·비밀·ZAP 로컬)는 모두 초록이고, 지금 할 시험·모의 실행(B-2·B-7·B-10·B-11)과 `main` 보호 규칙(B-4)은 2026-10-24 까지 모두 끝났다. 남은 Y-3S 는 출시 직전 권한 재확인(B-9), 나머지는 Y-4(배포·방침) 뒤에만 할 수 있는 것(B-13·B-14·B-15·B-16·B-17). 2026-10-24 사용자 앱 주소를 `https://yunabi.juha.dev/`(Cloudflare Workers)로 옮기기로 해(D29, ADR-0025) 옛 Pages 설정으로 닫았던 B-15 를 새 호스트의 실측 항목으로 다시 열었다.
 
 | | |
 |---|---|
 | 점검 기간 | 2026-10-21 ~ 2026-10-23 |
 | 대상 커밋 | `d1f0d38` (브랜치 `claude/sharp-einstein-3m78cy`, CI run 39894308046 — quality·e2e·db 모두 success) |
-| 대상 프로젝트 | Supabase `tsbipaffirkswsgkydav` (도쿄), 관리자 콘솔 `https://yunabi-admin.juha.dev`, 사용자 앱(설계) `https://underthesun7213.github.io/yui-board/` — v2 앱은 아직 배포 전(D23) |
+| 대상 프로젝트 | Supabase `tsbipaffirkswsgkydav` (도쿄), 관리자 콘솔 `https://yunabi-admin.juha.dev`, 사용자 앱 `https://yunabi.juha.dev/`(Cloudflare Workers, ADR-0025 — 2026-10-24 결정, **아직 배포 전**, D23). 옛 설계 주소 `underthesun7213.github.io/yui-board/` 는 2026-10-24 Pages 를 내려 404 |
 | 근거 | PRD §6.1 Y-S1~S12 · ADR-0022 S1~S12 · RFC-0003 §17.6(1~6)·§17.6a(PL-1~PL-6) · ERD v2 §9·§9.1·§10 · `docs/architecture/y3s-automated-checks.md` · `docs/architecture/runbook.md` · `docs/session-handoff.md` · `.github/workflows/ci.yml`·`zap.yml` · `.zap/rules.tsv` |
 | 형식 | ADR-0022 SE-Q6 의 제안대로 `docs/08-qa/security-check.md`. 열린 항목의 세부(무엇이 빠졌는지, 어느 계정인지)는 **공개하지 않는다** — `yunabi-ops` 의 `records/security-check-open.md` 에 있다 |
 
@@ -28,7 +28,7 @@
 | Y-S5 입력 검증·주입 방지 | 비정상 입력 세트 전부 거절 | 통과 | pgTAP `02_places` G-15(길이·제어 문자·서식 문자·좌표·링크·날짜 세트 → `{status:'invalid', field}` + `invalid_input`), G-16(SQL 메타문자는 그대로 문자열), `03_events`(일정 규칙 Y-K4~K9); HTTP `G-10 / G-15 …`; 백엔드 `posting.spec.ts` `Y-A5 the server refuses what the form would refuse`; `checks` ⑤(search_path)·⑥(동적 SQL 없음); `src/domain/validation.ts`·`links.ts` 의 단위 시험(`tests/unit/domain.test.ts`). CI run 39894308046 | — |
 | Y-S6 의존성 보안 | 높음 이상 취약점이면 CI 실패 | 통과 | `package-lock.json` + `npm ci`, `npm audit --audit-level=high`(dev 포함, `5deb3da`) → CI run 39894308046 quality success(높음 0). `.github/dependabot.yml`(npm·actions 주간, `33dc63d`) — 기본 브랜치 병합 뒤에만 동작. 액션 SHA 고정(`ci.yml`·`zap.yml`). 저장소의 Dependabot alerts·security updates 켜짐(2026-10-23, API 확인) | — |
 | Y-S7 자동화 공격 대비 | 빈도 초과 요청 거절, 스위치 동작 확인 | 조건부 | 한도: pgTAP `02` G-14, `04_accounts` G-14·G-38, `05_ip_limit` G-52~55(IP 쓰기 한도, /64, XFF 오른쪽 값), `06_hook_admin` G-51; HTTP `Y-S7 / G-52 writes are limited per IP, whatever the function name looks like`, `G-55 …`. 클라우드 2026-10-22(handoff §2 1, ERD OQ-E1·E5·E8): 61번째 쓰기 429 `PT429`, 가짜 XFF 무시(`xff_trusted_hops = 1`), 익명 가입에도 훅 호출·초대 없는 이메일 403, 익명 로그인 한도 150(책임자 확인). **스위치:** 런북 §3.1 C-1~C-5 와 ON 시험 ①② 는 미완 — "Y-S7 CAPTCHA 준비"(§2 6번, §6) | Y-3S·Y-4 |
-| Y-S8 전송 보안 | 점검표 | 조건부 | 콘솔 헤더: `scripts/check-admin-headers.mjs` 가 `build:admin` 에서 CSP(`frame-ancestors 'none'`)·XFO·nosniff·HSTS(1년·includeSubDomains)·Referrer-Policy 를 검사(`beb23e9`, 돌연변이 C1 실패 확인); 실제 주소 실측 2026-10-22(handoff §2 3) + 2026-10-23 `curl -I`(HSTS·CSP·XFO DENY). 앱 CSP: `vite.config.ts` 가 https 출처면 `upgrade-insecure-requests`, 외부 요청은 `https:` 만. ZAP 로컬 baseline 높음 0(§2 4번). **남은 것:** "Y-S8 콘솔 전송 설정 확인"(B-6), Pages "Enforce HTTPS"(B-15) — 세부: yunabi-ops records/security-check-open.md | Y-3S·Y-4 |
+| Y-S8 전송 보안 | 점검표 | 조건부 | 콘솔 헤더: `scripts/check-admin-headers.mjs` 가 `build:admin` 에서 CSP(`frame-ancestors 'none'`)·XFO·nosniff·HSTS(1년·includeSubDomains)·Referrer-Policy 를 검사(`beb23e9`, 돌연변이 C1 실패 확인); 실제 주소 실측 2026-10-22(handoff §2 3) + 2026-10-23 `curl -I`(HSTS·CSP·XFO DENY). 앱 CSP: `vite.config.ts` 가 https 출처면 `upgrade-insecure-requests`, 외부 요청은 `https:` 만. ZAP 로컬 baseline 높음 0(§2 4번). 앱 헤더(ADR-0025): `scripts/check-app-headers.mjs` 가 `npm run build` 마다 `dist/_headers` 의 CSP(`frame-ancestors 'none'`)·XFO·nosniff·HSTS 를 검사 — 실제 주소 실측은 배포 뒤. **남은 것:** "Y-S8 콘솔 전송 설정 확인"(B-6), `yunabi.juha.dev` 의 Always Use HTTPS + HSTS 실측(B-15) — 세부: yunabi-ops records/security-check-open.md | Y-3S·Y-4 |
 | Y-S9 백업과 복구 | 복구 리허설 기록 | 책임자 확인(2026-10-23) | `yunabi-ops` `backup.yml` 주 1회(데이터만, `age` 암호화, 아티팩트 90일, 제외 표가 있으면 실패); 첫 백업 성공·복호화 확인(handoff §2 4). 복구 리허설 2026-10-23: 임시 무료 프로젝트에 마이그레이션 22개 → 복원(`restore: committed`) → `checks` ①~⑬ 통과 → Auth 설정 → 스모크 → 관리자 aal2, 약 49분(목표 RTO 4시간) — 런북 §9.2 `[해 봄]`(`d1f0d38`), 기록은 `yunabi-ops records/rehearsals/2026-10-23.md`. 설계와 다른 점(로컬 스택이 아님)은 §5 | — |
 | Y-S10 감시 | 알림 시험 | 조건부 | `ops_health` 2판(`930b633`, pgTAP `10_ops_health`), service_role 의 pre-request 실행(마이그레이션 22 `4381fe9`), 백엔드 `security.spec.ts` `Y-S10 the monitor key reads ops_health over REST …`(`c49907c`). `yunabi-ops` `monitor.yml` 매시 실행(2026-10-23 가동), 알림 시험 2026-10-23: 경보 이슈 생성 → 두 번째 실행에서 중복 없음 → 메일 도착(기록 `records/alert-tests/2026-10-23.md`). 첫 감시가 실제 결함(service_role 403)을 찾아 마이그레이션 22 로 고침. **남은 것:** "OQ-E7 확인"(B-8) — 세부: yunabi-ops records/security-check-open.md | Y-3S |
 | Y-S11 출시 전 보안 점검 | 점검 기록 | 조건부 | 이 문서. 자동 항목(§2 1·2·3·3a G-60·4 로컬·5)은 통과, 점검표(§2 6번)·PL(§3)의 미완이 §6 의 블로커 | Y-3S·Y-4 |
@@ -67,7 +67,7 @@
 | 6 | 저장소 — 비밀값은 `main` 전용 Environment + 필수 검토자 | 미완 | 기대 증거: `production` Environment(필수 검토자, `main` 만) 생성 날짜 + `deploy.yml`(Y-4) 의 사용 — §5 1번(운영 저장소는 Environment 불가) | Y-4 |
 | 6 | 저장소 — `pull_request_target` 없음 | 통과 | `ci.yml` 단계 "No pull_request_target workflows"(`grep` 이 찾으면 실패); `zap.yml` 도 없음. CI run 39894308046 | — |
 | 6 | 비공개 운영 저장소 접근자 = 책임자 | 책임자 확인(2026-10-23) | `yunabi-ops` 비공개, 협업자 없음 | — |
-| 6 | Pages "Enforce HTTPS" | 통과 | 켜짐 — API 확인 2026-10-23(`https_enforced: true`) | — |
+| 6 | ~~Pages "Enforce HTTPS"~~ → 사용자 앱 HTTPS 강제: Cloudflare "Always Use HTTPS" + HSTS (`yunabi.juha.dev`) | 미완 | 옛 항목은 통과였다(API 확인 2026-10-23 `https_enforced: true`) — 그 Pages 사이트는 2026-10-24 내렸다(ADR-0025). 새 호스트는 배포 뒤 `http://yunabi.juha.dev/` 리디렉션·HSTS 헤더 실측(런북 §7.3 확인 1·3) | Y-4 (B-15) |
 | 6 | 백업 리허설 기록 (제외 표가 덤프에 없음 확인) | 책임자 확인(2026-10-23) | §1 Y-S9. 제외 표 검사는 `backup.yml` 이 `pg_restore -l` 로 하고 실패시킴; 리허설에서 제외 표 문제 없음(런북 열린 질문 4) | — |
 | 6 | 알림 시험 (기준을 넘는 가짜 이벤트 → 비공개 이슈 → 메일) | 책임자 확인(2026-10-23) | §1 Y-S10. 운영 DB 에 가짜 기록을 넣지 않고 기준값을 0 으로 낮추는 `test_kind` 방식 | — |
 | 6 | 런북 R-1·R-2 모의 실행 | 책임자 확인(2026-10-24) | 임시 프로젝트(마이그레이션 22개, 운영 데이터 없음)에서 R-1 "CAPTCHA 없이" 2~5(정지 3·복원 3·정지 계정 항목 제외·M-2a·기각), R-2 한도 초과 429·`signup_throttled` 기록·③ 정리(SQL Editor `rollback` 미리 보기 → `commit`)·원복. 런북 §4.1·§4.2 `[해 봄]`, §12 두 행. 기록은 비공개 | — |
@@ -95,10 +95,10 @@
 | Supabase advisor | security definer 뷰 4개 | 공개 뷰(`places_public`·`events_public`·`event_occurrences_public`·`prefecture_counts`)는 클라이언트 표 권한 0 아래서 유일한 읽기 경로(ERD §5). **Resolve 를 누르지 않는다**(런북 §11) |
 | Supabase advisor | RLS 켜졌으나 정책 없음 18개 | `app.*` 전부 — 설계상 클라이언트 역할은 표에 권한이 없다(`checks` ①②) |
 | Supabase advisor | definer 함수 실행 가능 25개(`authenticated`) + 1개(`anon`, `data_version`) | 허용 목록 그대로(`checks` ③④⑩, pgTAP G-03) — 쓰기·관리는 모두 이 함수뿐 |
-| ZAP `rules.tsv` IGNORE | 10020 클릭재킹 헤더, 10021 nosniff, 10038 CSP 헤더, 10063 Permissions-Policy, 90004 Spectre 격리, 10015 Cache-control | `vite preview` 는 운영 헤더를 못 보낸다. 콘솔 헤더는 `check-admin-headers.mjs`(C1), 앱은 meta CSP + FrameGuard 를 E2E 가 본다 |
+| ZAP `rules.tsv` IGNORE | 10020 클릭재킹 헤더, 10021 nosniff, 10038 CSP 헤더, 10063 Permissions-Policy, 90004 Spectre 격리, 10015 Cache-control | `vite preview` 는 운영 헤더를 못 보낸다. 앱·콘솔의 `_headers` 는 빌드 출력에서 `check-app-headers.mjs`·`check-admin-headers.mjs`(C1)가, 실제 주소의 헤더는 런북 §7.3(앱)·§7.2(콘솔)가 본다 |
 | ZAP IGNORE | 10202 CSRF 토큰 없음 | 폼은 서버로 제출하지 않고(`form-action 'none'`), 토큰은 헤더의 bearer — 쿠키가 없어 CSRF 가 탈 것이 없다 |
 | ZAP IGNORE | 10049 캐시 가능 콘텐츠 | 운영에서 콘솔은 `no-store`, 앱은 서비스워커가 캐시 정책을 가진다 |
-| ZAP IGNORE | 10055 대체 없는 CSP 지시어 | 빠진 것은 `frame-ancestors` — meta CSP 가 가질 수 없고 콘솔은 헤더로 보낸다(Pages 는 불가, 수용) |
+| ZAP IGNORE | 10055 대체 없는 CSP 지시어 | 빠진 것은 `frame-ancestors` — meta CSP 가 가질 수 없고 콘솔과 사용자 앱(ADR-0025)은 `_headers` 로 보낸다 — `vite preview` 대상이라 ZAP 에는 안 보인다(수용, 실제 주소 확인은 런북 §7.3) |
 | ZAP IGNORE | 10109 현대 웹앱 | Ajax 스파이더를 쓰라는 안내 — 이미 `-j` 로 쓴다 |
 | ZAP OUTOFSCOPE | `http://127.0.0.1:54321/`, `https://tile.openstreetmap.org/` | 로컬 게이트웨이(Supabase 대역)와 타일 서버 |
 | ZAP FAIL | 10017 교차 도메인 스크립트 | 스크립트는 앱 자신에서만(Turnstile 은 스위치 ON 때만 로드) — 올린 규칙은 이것 하나 |
@@ -112,7 +112,7 @@
 | R-c | 실패한 `admin_*` 직접 호출은 롤백되어 IP 한도에도 `security_events` 에도 남지 않는다(42501 은 Supabase API 로그에만) | handoff §5, ERD OQ-E7 (1). 무차별 대입은 Auth 로그인 한도·TOTP 가 막는다는 전제. **수용(책임자 결정 2026-10-23, B-8) — 직접 호출은 비밀번호·TOTP 2개·허용 목록이 막고, 의심 때 대시보드 로그를 본다(런북 R-4)** |
 | R-d | PostgREST 가 인자를 변환하지 못하는 요청(잘못된 enum·uuid)은 함수 전에 실패해 IP 창에 세지지 않는다 | ERD G-55 메모, HTTP `G-55 …` 둘째 단언 |
 | R-e | 읽기 요청은 IP 한도 대상이 아니다 | ADR-0022 "결과". 공개 뷰는 읽기 전용·`stable` |
-| R-f | 사용자 앱의 meta CSP 한계: `frame-ancestors`·위반 보고 없음, `github.io` 출처 공유(리디렉션 뒤 경로 한정 무력) | ADR-0022 S4, RFC §17.3·R-3·R-4. FrameGuard + E2E 위반 수집, 관리자는 별도 출처 |
+| R-f | 사용자 앱의 meta CSP 한계: `frame-ancestors`·위반 보고 없음, `github.io` 출처 공유(리디렉션 뒤 경로 한정 무력) | ADR-0022 S4, RFC §17.3·R-3·R-4. FrameGuard + E2E 위반 수집, 관리자는 별도 출처. **2026-10-24 재평가:** ADR-0025 로 사용자 앱이 자기 출처 `yunabi.juha.dev` 에서 헤더 CSP(`frame-ancestors 'none'`)·XFO·HSTS·nosniff 를 받으므로 **설계로는 해소** — 단 앱이 아직 배포 전이라 **실제로는 배포 뒤 확인까지 열림**(런북 §7.3 확인 1·2, §7 "실제 주소 CSP 위반 0"). 위반 보고(`report-to`)가 없는 것은 남는다(수용) |
 | R-g | 백업 RPO 7일, 복구 뒤 익명 사용자의 옛 항목 수정 권한 상실 | RFC OQ-13·OQ-18(받아들임), ERD OQ-E6 |
 | R-h | 백업·복구 전용 DB 역할 없이 `postgres` 접속 문자열 사용(역할은 보류) | 비공개 기록의 결정. 비밀값 교체는 런북 §10 |
 | R-i | 운영 저장소의 비밀값은 그 저장소의 모든 워크플로가 읽는다(Environment 없음) | §5 1번. 워크플로는 두 개(`monitor`·`backup`), 최상위 `permissions: {}`, PR 트리거 없음 |
@@ -160,9 +160,9 @@
 | B-12 | 대시보드 점검 3건 — 이메일 공개 가입 토글 OFF, 레거시 키 비활성, 프로젝트 멤버 1명 | Y-3S | 책임자 | 확인 날짜(이 표 §2 6번 갱신) | 닫힘 2026-10-23 — 레거시 키 비활성(실측), 멤버 1명(책임자 확인), 이메일 가입은 훅으로 대체(결정 기록) |
 | B-13 | `production` Environment(`main` 전용, 필수 검토자) + `deploy.yml` 자동 배포(T-10) | Y-4 | 책임자 | Environment 설정, `deploy.yml` 첫 성공 실행 번호 | |
 | B-14 | C-4 비밀 키 등록 + CAPTCHA 스위치 ON 시험 ① 사용자 첫 쓰기 ② 관리자 로그인 (C-1·C-2 사이트 키 배포 뒤) | Y-4 | 책임자 | 런북 §3.3 실행 기록(날짜·결과), §3.4 로 끈 뒤 재확인 | |
-| B-15 | Pages "Enforce HTTPS" | Y-4 | 책임자 | 설정 확인 날짜 | 닫힘 2026-10-23 — API 확인 `https_enforced: true` |
+| B-15 | 사용자 앱 HTTPS 강제 — Cloudflare "Always Use HTTPS" + HSTS (`yunabi.juha.dev`). 옛 항목 Pages "Enforce HTTPS" 를 대체(ADR-0025) | Y-4 | 책임자 | 배포 뒤 실측 날짜: `curl -sI http://yunabi.juha.dev/` 가 https 로 리디렉션, `https://yunabi.juha.dev/` 에 `Strict-Transport-Security: max-age=31536000; includeSubDomains`(런북 §7.3 확인 1·3) | 다시 열림 2026-10-24 — 옛 Pages 항목은 2026-10-23 닫혔으나(`https_enforced: true`) 그 사이트를 내리고 호스트가 바뀜 |
 | B-16 | 방침·약관 게시 — IP 가명 처리, 접속 로그 IP 원문(Y-P1), Turnstile 문구(C-5) | Y-4 | 책임자·기획 | 페이지 주소, 첫 등록 화면 링크(Y-P4) | |
-| B-17 | ZAP 운영 URL 수동 스캔 — 사용자 앱 | Y-4 | 책임자 | 날짜·버전·높음 0 | |
+| B-17 | ZAP 운영 URL 수동 스캔 — 사용자 앱 `https://yunabi.juha.dev/` | Y-4 | 책임자 | 날짜·버전·높음 0 | |
 
 ## 7. 다시 점검할 때
 
@@ -174,7 +174,8 @@
 | 학기 시작 전 | `ip_tiers`·기숙사 주소 확인(PL-1), CAPTCHA 사전 확인 §3.1 | 런북 §11 |
 | 출시 직전 | §6 전부 닫힘, 이 문서의 §1~§3 상태 갱신, 운영 URL ZAP(콘솔·앱) | 이 문서 |
 | 출시 첫 주 | Y-S3 12시간 만료를 클라우드에서 한 번 관찰(§3 메모), 경보 메일이 휴대폰에서 울리는지 | §3 |
-| Y-4 배포 뒤 | B-13~B-17, 앱의 CSP 위반 0(실제 주소), `dist-e2e*` 가 배포되지 않았는지 | RFC §20 |
+| Y-4 배포 뒤 | B-13~B-17, `dist-e2e*` 가 배포되지 않았는지(`build:deploy` 가 막지만 한 번 확인) | RFC §20 |
+| 사용자 앱 배포마다 | **실제 주소 CSP 위반 0** — `https://yunabi.juha.dev/` 를 일반 브라우저로 열어 콘솔 오류·CSP 위반 0, `curl -sI` 헤더, 오프라인 새로 고침. e2e·ZAP 는 `_headers` 를 보지 못해 헤더 CSP 위반은 여기서만 드러난다. 첫 배포에서 R-f 를 닫는다 | 런북 §7.3, ADR-0025 |
 
 ## 8. 서명
 

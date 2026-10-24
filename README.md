@@ -38,9 +38,17 @@ npm run build:local  # typecheck, build to dist/ with a 'self' CSP, check bundle
 npm run preview      # serve dist/
 ```
 
-A real deploy builds with the published address, which the CSP trusts instead
-of the whole `github.io` origin: `YUNABI_ORIGIN=https://<user>.github.io/yui-board/ npm run build`.
-`npm run build` refuses to run without one.
+The app lives at `https://yunabi.juha.dev/` on Cloudflare Workers static assets
+(ADR-0025; not deployed yet). A real build needs the published address, which
+the CSP trusts: `YUNABI_ORIGIN=https://yunabi.juha.dev/ npm run build`.
+`npm run build` refuses to run without one, and also writes `dist/_headers`
+(the response headers, CSP included) and checks it.
+
+A deploy uses `npm run build:deploy` with the production Supabase URL,
+publishable key and Turnstile site key in the environment — it refuses a
+fixture, local or e2e build — then `npx wrangler@4.86.0 deploy -c wrangler.app.jsonc`.
+Always pass `-c`: `wrangler.jsonc` is the admin console. The full procedure,
+checks and rollback are in `docs/architecture/runbook.md` §7.3 and §8.
 
 ## Local backend
 

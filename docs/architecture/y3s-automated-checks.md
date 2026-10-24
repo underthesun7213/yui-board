@@ -74,9 +74,10 @@ flowchart LR
        - run: npm run format:check
        - run: npm run typecheck
        - run: npm test
-       - run: npm run build # includes the bundle size budgets
+       - run: npm run build # includes the bundle size budgets and the header checks
          env:
-           YUNABI_ORIGIN: https://underthesun7213.github.io/yui-board/
+           YUNABI_ORIGIN: https://yunabi.juha.dev/
+           VITE_SUPABASE_URL: https://example.supabase.co # the shape of a deploy build
 -      - run: npm run build:admin # the admin console, with its secret check
 +      - run: npm run build:admin # the admin console, with its secret and header checks
          env:
@@ -547,7 +548,7 @@ updates:
 | 앱을 띄우면 요청되는 화면 청크(유휴 미리 받기·서비스워커 사전 캐시 — 아약스 스파이더의 브라우저가 ZAP 프록시를 거쳐 받음) | **해시 라우트**: `#/…` 는 서버로 가지 않으므로 화면마다 다른 HTTP 응답이 없다. 해시 URL 을 시작점으로 주어도 일반 스파이더에는 의미가 없다 |
 | | **DOM·저장형 XSS**: baseline 은 공격 요청을 보내지 않는다 → B1·B3·v2·posting |
 | | **로그인 뒤 콘솔 화면**: TOTP 가 필요하다 → admin.spec |
-| | **실제 배포 헤더**(GitHub Pages, Cloudflare `_headers`), **HSTS**(http 대상) → C1, 운영 URL 수동 스캔(F3) |
+| | **실제 배포 헤더**(사용자 앱·콘솔 모두 Cloudflare `_headers` — ADR-0025), **HSTS**(http 대상) → C1(산출물의 `_headers` 검사: `check-app-headers.mjs`·`check-admin-headers.mjs`), 실제 주소 `curl -sI`(런북 §7.3), 운영 URL 수동 스캔(F3) |
 
 `[설계 결정]` 계획 F1 의 "해시 라우트 URL 목록을 시작점으로" 대신 **대상은 루트 하나 + `-j`(아약스 스파이더)** 로 한다. 이유는 위 표와 같다. 조각(fragment)은 HTTP 로 가지 않고, 화면 청크는 루트를 열면 미리 받아진다(v2.spec 오프라인 시험의 "every screen chunk is cached" 가 기대는 동작). 첫 실행에서 HTML 보고서의 사이트 트리에 `assets/` 의 지도·학습·쓰기 청크가 있는지 눈으로 확인한다.
 
@@ -653,9 +654,9 @@ jobs:
 탭 구분. `#` 줄은 ZAP 이 무시한다(설정 파일 머리말 형식). 규칙 ID·이름은 구현 때 `-g gen.conf` 로 만든 목록과 대조한다.
 
 ```
-# vite preview cannot send the production headers. The user app is on GitHub Pages
-# (no headers: meta CSP + FrameGuard, checked by e2e); the console's headers come
-# from Cloudflare _headers, checked by scripts/check-admin-headers.mjs (C1).
+# vite preview cannot send the production headers. Both the user app and the
+# console get theirs from Cloudflare _headers (ADR-0025), checked in the build
+# output by scripts/check-app-headers.mjs and scripts/check-admin-headers.mjs (C1).
 10020	IGNORE	(Missing Anti-clickjacking Header)
 10021	IGNORE	(X-Content-Type-Options Header Missing)
 10038	IGNORE	(Content Security Policy (CSP) Header Not Set)

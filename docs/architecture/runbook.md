@@ -3,11 +3,11 @@
 | | |
 |---|---|
 | 상태 | 1판 (2026-10-22), 2026-10-23 복구 리허설·2026-10-24 모의 실행(R-1·R-2·R-7 ②, 임시 프로젝트) 반영 — 절차 중 실제로 해 본 것은 `[해 봄]`, 아직 없는 장치에 기대는 것은 `[Y-4 이후]`·`[운영 저장소 이후]`, 확인 못 한 것은 `[미확인]` |
-| 근거 | [RFC-0003](rfc/0003-yunabi-v2.md) §14·§15·§17.4~§17.7·§20 · [ADR-0022](../adr/0022-security-baseline.md) S3·S7·S9·S10·"결과" · [ADR-0020](../adr/0020-hosting-github-pages-actions.md) · [ERD v2](erd-v2.md) OQ-E1·E5·E6·E7·E8·E10 · [y3s-automated-checks](y3s-automated-checks.md) · `docs/session-handoff.md` (2026-10-22 실제 작업) |
+| 근거 | [RFC-0003](rfc/0003-yunabi-v2.md) §14·§15·§17.4~§17.7·§20 · [ADR-0022](../adr/0022-security-baseline.md) S3·S7·S9·S10·"결과" · [ADR-0020](../adr/0020-hosting-github-pages-actions.md) · [ADR-0025](../adr/0025-user-app-on-cloudflare-custom-domain.md) · [ERD v2](erd-v2.md) OQ-E1·E5·E6·E7·E8·E10 · [y3s-automated-checks](y3s-automated-checks.md) · `docs/session-handoff.md` (2026-10-22 실제 작업) |
 | 형식 | 운영 런북 하나. 새 설계 결정 없음 — RFC-0003 §17.7 R-1~R-8 의 전문과 ADR-0022 "결과" 의 런북 범위(배포·롤백·복구·키 교체·CAPTCHA 켜기·관리자 추가·대량 숨김 복원)를 실행 절차로 옮긴다 |
 | 실행자 | 책임자 1명(D25). 대리인 없음 |
 
-**공개 저장소다.** 이 문서에는 관리자 이메일·UID, 예비 TOTP 비밀의 보관 장소, Cloudflare 계정·영역 ID, 기숙사 IP, 원 IP, 비밀값, 감시 기준의 실제 설정을 쓰지 않는다. 그런 값은 `<ADMIN_UID>` 같은 자리표시자(부록 B)로만 두고, 실제 값은 **비공개 운영 기록**(비공개 저장소 `yunabi-ops` 의 문서·이슈)에 둔다. 공개된 값은 프로젝트 ref `tsbipaffirkswsgkydav`, 콘솔 주소 `yunabi-admin.juha.dev`, 앱 주소(설계) `underthesun7213.github.io/yui-board/` 뿐이다.
+**공개 저장소다.** 이 문서에는 관리자 이메일·UID, 예비 TOTP 비밀의 보관 장소, Cloudflare 계정·영역 ID, 기숙사 IP, 원 IP, 비밀값, 감시 기준의 실제 설정을 쓰지 않는다. 그런 값은 `<ADMIN_UID>` 같은 자리표시자(부록 B)로만 두고, 실제 값은 **비공개 운영 기록**(비공개 저장소 `yunabi-ops` 의 문서·이슈)에 둔다. 공개된 값은 프로젝트 ref `tsbipaffirkswsgkydav`, 콘솔 주소 `yunabi-admin.juha.dev`, 앱 주소 `yunabi.juha.dev`(ADR-0025, 아직 배포 전) 뿐이다.
 
 `되돌릴 수 없음` 이 붙은 줄은 실행 전에 한 번 더 읽는다.
 
@@ -51,8 +51,8 @@
 | # | 확인 | 방법 | 2026-10-22 상태 |
 |---|---|---|---|
 | C-1 | **배포된 콘솔에 사이트 키가 들어 있다** | 콘솔 로그인 화면에 Turnstile 확인 상자가 보인다. `src/admin/Login.tsx` 는 `VITE_TURNSTILE_SITE_KEY` 가 빌드에 있을 때만 위젯을 그린다. `npm run build:admin` 은 이 값을 요구하지 않으므로(`vite.admin.config.ts` 는 `VITE_SUPABASE_URL` 만 검사) **빠진 채로도 빌드·배포가 성공한다** | **없음.** 이 상태에서 켜면 관리자 로그인이 토큰 없이 거절되어 **관리자가 잠긴다**. Y-4 에서 키를 넣어 재배포할 때까지 켜지 않는다 |
-| C-2 | 배포된 사용자 앱에 사이트 키가 들어 있다 | 앱은 서버가 CAPTCHA 를 요구할 때만 위젯을 띄운다(`src/actions/captcha.ts`, `src/ui/Captcha.tsx`). 배포 전 `dist/assets/*.js` 에서 사이트 키 문자열을 검색해 확인 | v2 앱은 아직 배포 전(D23) |
-| C-3 | Turnstile 위젯의 허용 호스트 = 앱 호스트(`underthesun7213.github.io`)와 `yunabi-admin.juha.dev` | Cloudflare 대시보드 → Turnstile → 위젯 → Hostname Management | **2026-10-24 위젯 생성** — 허용 호스트 3개(앱 옛 주소·`yunabi.juha.dev`·콘솔). 사이트 키는 비공개 기록 |
+| C-2 | 배포된 사용자 앱에 사이트 키가 들어 있다 | 앱은 서버가 CAPTCHA 를 요구할 때만 위젯을 띄운다(`src/actions/captcha.ts`, `src/ui/Captcha.tsx`). 사이트 키는 §7.3 에서 `VITE_TURNSTILE_SITE_KEY` 로 넣고, **`npm run build:deploy` 가 그 값이 `dist/assets/*.js` 에 있는지 확인해 없으면 실패한다**(`scripts/check-app-headers.mjs --deploy`) — 콘솔(C-1)과 달리 빠진 채로 배포되지 않는다 | v2 앱은 아직 배포 전(D23). 첫 배포(§7.3)부터 키가 들어간다 |
+| C-3 | Turnstile 위젯의 허용 호스트 = 앱 호스트 `yunabi.juha.dev` 와 콘솔 `yunabi-admin.juha.dev` | Cloudflare 대시보드 → Turnstile → 위젯 → Hostname Management | **2026-10-24 위젯 생성** — 허용 호스트 3개(앱 옛 주소 `underthesun7213.github.io`·`yunabi.juha.dev`·콘솔). 앱이 `yunabi.juha.dev` 로 옮겨(ADR-0025) 옛 주소는 Pages 를 내려 404 다 — **책임자가 Turnstile 에서 `underthesun7213.github.io` 를 지워도 된다**(쓰는 페이지가 없다 — 허용 호스트는 필요한 것만 두는 편이 낫다). 사이트 키는 비공개 기록 |
 | C-4 | Turnstile **비밀 키**가 Supabase 에 등록되어 있다(스위치는 끈 채로) | Supabase 대시보드 → Authentication 설정 → Attack Protection → 제공자 Turnstile, 비밀 키 입력 | 미등록 — Supabase 화면은 토글을 켜야 공급자·비밀 키 칸이 나타난다(2026-10-24 확인). 사이트 키 배포(C-1·C-2)와 함께 Y-4 에서 등록 |
 | C-5 | 방침에 Turnstile 문구가 있다(TS-Q6 — 켜는 순간 Cloudflare 로 기기 신호가 간다) | 게시된 방침 확인 | Y-4 |
 
@@ -408,7 +408,7 @@ where j.jobname like 'yunabi-%' group by 1, 2 order by 1, 2;
 
 ## 7. 배포
 
-순서는 **DB 마이그레이션 → 사용자 앱·관리자 콘솔**(ADR-0020 결정 5). 배포할 커밋은 `main` 에서 CI(`ci.yml`)가 초록인 것만. 배포 산출물은 `dist/`·`dist-admin/` 뿐이다 — `dist-e2e*` 에는 테스트 핸들이 있어 절대 올리지 않는다.
+순서는 **DB 마이그레이션 → 사용자 앱·관리자 콘솔**(ADR-0020 결정 5). 배포할 커밋은 `main` 에서 CI(`ci.yml`)가 초록인 것만. 배포 산출물은 `dist/`(`npm run build:deploy` 로 만든 것)·`dist-admin/` 뿐이다 — `dist-e2e*` 에는 테스트 핸들이 있어 절대 올리지 않는다. wrangler 설정이 둘이다: 콘솔 `wrangler.jsonc`(`dist-admin/`), 사용자 앱 `wrangler.app.jsonc`(`dist/`) — 앱은 **항상 `-c wrangler.app.jsonc`**(§12).
 
 ### 7.1 DB 마이그레이션 `[해 봄 2026-10-22 — 수동]`
 
@@ -453,9 +453,44 @@ Remove-Item Env:VITE_SUPABASE_URL, Env:VITE_SUPABASE_PUBLISHABLE_KEY, Env:VITE_T
 - **함정:** `wrangler.jsonc` 가 없는 폴더에서 `wrangler deploy` 를 돌리면 자동 설정 마법사가 `package.json`·`vite.config` 를 고친다. 그랬다면 배포하지 말고 `git status` → `git checkout -- package.json vite.config.ts` 로 되돌린다.
 - **확인:** `curl -sI https://yunabi-admin.juha.dev/` 에 `Content-Security-Policy`(`frame-ancestors 'none'`, `connect-src` = 이 프로젝트 + `https://challenges.cloudflare.com`), `Strict-Transport-Security`, `X-Frame-Options: DENY`, `Cache-Control: no-store` → 실제 로그인(aal2) → Queue 가 열린다.
 
-### 7.3 사용자 앱 `[Y-4 이후]`
+### 7.3 사용자 앱 `[Y-4 — 아직 안 해 봄]`
 
-v2 앱은 아직 운영 배포 전이다(D23). Y-4 의 `deploy.yml` 이 `YUNABI_ORIGIN=https://underthesun7213.github.io/yui-board/ npm run build` 의 `dist/` 를 `actions/deploy-pages` 로 올린다(Pages 소스 = GitHub Actions, RFC §20). 빌드 변수는 `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, `VITE_TURNSTILE_SITE_KEY` 셋뿐(ADR-0022 S2). 확인: 앱 첫 화면, 지도·달력 데이터, 시크릿 창 첫 쓰기 → 지우기, Pages "Enforce HTTPS" 켜짐.
+주소 `https://yunabi.juha.dev/`, Cloudflare Workers 정적 자산 `yunabi`(ADR-0025, 설정 `wrangler.app.jsonc`). v2 앱은 아직 운영 배포 전이다(D23). 첫 배포는 콘솔(§7.2)처럼 **책임자 PC 에서 수동**, 단 **main 에 병합된 커밋에서**. `[Y-4 이후]` 의 `deploy.yml`(B-13)은 같은 명령을 `production` Environment 에서 돌린다. 빌드 변수는 `YUNABI_ORIGIN` 과 `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, `VITE_TURNSTILE_SITE_KEY` 뿐(ADR-0022 S2) — 셋 다 공개값이지만 화면·기록에 남기지 않고 받는다.
+
+**배포 전 (처음 한 번, 그 뒤로는 영역 설정을 바꿨을 때):**
+
+- **0a. `juha.dev` 영역에서 HTML 에 스크립트를 끼워 넣는 기능이 꺼져 있다.** Cloudflare 대시보드에서 Bot Fight Mode / JavaScript detections(`/cdn-cgi/challenge-platform/…`), Rocket Loader, Web Analytics 자동 삽입, Email Obfuscation 을 본다. 콘솔은 `script-src 'self'` 라 이런 스크립트가 통과했지만, 앱은 `https://yunabi.juha.dev/assets/` 로 한정해 **CSP 위반**이 된다(§12). 켜져 있으면 `yunabi.juha.dev` 만 제외하는 Configuration Rule 을 만든다.
+- **0b. `yunabi.juha.dev` 에 DNS 레코드가 없다.** 있으면 custom domain 생성이 실패한다. 첫 배포 때 Cloudflare 가 레코드와 인증서를 만든다(발급까지 몇 분). 2026-10-24 NXDOMAIN.
+
+**배포:**
+
+```powershell
+# 저장소 폴더
+git switch main; git pull --ff-only
+git status --short          # 비어 있어야 한다 (배포물 = 커밋)
+npm ci
+$env:YUNABI_ORIGIN = 'https://yunabi.juha.dev/'
+$env:VITE_SUPABASE_URL = 'https://tsbipaffirkswsgkydav.supabase.co'
+$env:VITE_SUPABASE_PUBLISHABLE_KEY = Read-Host 'publishable key'
+$env:VITE_TURNSTILE_SITE_KEY = Read-Host 'Turnstile site key'
+npm run build:deploy        # 빌드 + 헤더 검사 + 배포 판 검사 — 실패하면 배포하지 않는다
+npx wrangler@4.86.0 deploy -c wrangler.app.jsonc
+Remove-Item Env:YUNABI_ORIGIN, Env:VITE_SUPABASE_URL, Env:VITE_SUPABASE_PUBLISHABLE_KEY, Env:VITE_TURNSTILE_SITE_KEY
+```
+
+- `build:deploy` = `npm run build`(번들 예산·비밀값·헤더 검사) + `node scripts/check-app-headers.mjs dist --deploy`. 배포 판 검사는 CSP 출처가 `https://yunabi.juha.dev/`, `connect-src` 에 진짜 `https://<ref>.supabase.co`(`example` 아님 — fixture 판·`build:local` 판 차단), publishable 키(`sb_publishable_`)와 Turnstile 사이트 키가 `dist/assets/*.js` 에 있음, e2e 청크·손잡이 `__yunabi` 없음을 확인한다(`.assetsignore` 의 `.vite` 는 항상 판 검사). 키가 빠지면 앱은 빌드되지만 읽기가 전부 401 이므로 이 검사가 막는다.
+- PowerShell 의 `$env:` 는 `build:deploy` 안의 `npm run build` 에 이어진다(`build:local` 의 `VAR=1 cmd` 형식이 아니라 Windows 에서도 동작).
+- **`-c wrangler.app.jsonc` 를 빼지 않는다** — 빼면 `wrangler.jsonc`(콘솔)가 쓰인다(§12).
+- 사이트 키를 넣어도 Turnstile 위젯은 서버가 요구할 때만 뜬다(스위치 OFF 동안 영향 없음, §3.1 C-2).
+
+**배포 뒤 확인** (e2e·ZAP 는 `vite preview` 위라 `_headers` 를 보지 못한다 — 아래가 유일한 확인이다):
+
+1. `curl -sI https://yunabi.juha.dev/` 에 `Content-Security-Policy`(`frame-ancestors 'none'`, `script-src https://yunabi.juha.dev/assets/ …`, `connect-src` = `https://yunabi.juha.dev/` + 이 프로젝트 + `https://challenges.cloudflare.com`), `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Strict-Transport-Security: max-age=31536000; includeSubDomains`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy`(`geolocation=(self)`), `Cross-Origin-Opener-Policy: same-origin`, `Cache-Control: no-cache`. `curl -sI https://yunabi.juha.dev/sw.js` 도 `no-cache`. `curl -sI https://yunabi.juha.dev/.vite/manifest.json` 은 **404**.
+2. 일반 브라우저 창에서 열고: 콘솔 오류·CSP 위반 **0**(개발자 도구 콘솔), 지도 타일이 보임, "내 주위"(위치 허용), 지도·달력 데이터(읽기), **오프라인 새로 고침**(개발자 도구 Network → Offline → 새로 고침 — Workers 의 `/index.html` → `/` 리디렉션과 Workbox 사전 캐시가 맞물리는지는 이것으로만 확인된다). 쓰기 스모크를 하면(시크릿 창 첫 쓰기) 바로 지운다.
+3. `curl -sI http://yunabi.juha.dev/` 가 https 로 리디렉션된다(Cloudflare "Always Use HTTPS" — 영역 전체 설정).
+4. 결과를 점검 기록에 남긴다: §7 "실제 주소 CSP 위반 0", B-15(Always Use HTTPS + HSTS 실측), R-f. 기록은 **새 브랜치 + PR** 로(main 은 PR 필수).
+
+하나라도 어긋나면 §8 롤백.
 
 ---
 
@@ -464,7 +499,7 @@ v2 앱은 아직 운영 배포 전이다(D23). Y-4 의 `deploy.yml` 이 `YUNABI_
 | 대상 | 방법 | 주의 |
 |---|---|---|
 | 관리자 콘솔 | `npx wrangler@4.86.0 deployments list` → `npx wrangler@4.86.0 rollback`(직전 버전) — 이 프로젝트에서 실행해 본 적 없음 `[미확인]`. 대안: 이전 커밋을 체크아웃해 §7.2 를 다시 | 콘솔 세션은 `sessionStorage` 라 다시 로그인 |
-| 사용자 앱 `[Y-4 이후]` | Actions 에서 이전 성공 배포 실행을 다시 실행(RFC §20) | 새 서비스워커가 다시 설치된다. 사용자는 "업데이트" 를 눌러야 적용 |
+| 사용자 앱 `[Y-4 — 아직 안 해 봄]` | `npx wrangler@4.86.0 deployments list -c wrangler.app.jsonc` → `npx wrangler@4.86.0 rollback -c wrangler.app.jsonc`(직전 버전) `[미확인]`. 대안: 이전 main 커밋을 체크아웃해 §7.3 을 다시. **`-c` 를 빼면 콘솔을 되돌린다** | 새 서비스워커가 다시 설치된다. 사용자는 "업데이트" 를 눌러야 적용. 되돌린 뒤 §7.3 확인 1~3 |
 | DB | **앞으로만.** 되돌리는 **새 마이그레이션**을 쓴다(§7.1 규칙 그대로 — 권한 부여·checks 허용 목록 포함). 되돌리는 스크립트("teardown")는 없다 | 열·표를 지우는 SQL 은 마이그레이션 안에 그대로 쓰고 그 줄에 `-- 되돌릴 수 없음` 을 단다. 데이터가 망가졌으면 §9 |
 
 ---
@@ -603,11 +638,13 @@ rm app.dump auth.dump
 |---|---|
 | CAPTCHA 를 켰더니 관리자가 잠김 | 콘솔 빌드에 사이트 키가 없으면 그렇게 된다. §3.1 C-1 |
 | `wrangler deploy` 가 `package.json`·`vite.config` 를 고침 | 설정 파일 없는 곳에서 돌린 것. 저장소 루트에서만, §7.2 |
+| **wrangler 설정이 둘** — `wrangler.jsonc`(콘솔 `yunabi-admin`, `dist-admin/`)와 `wrangler.app.jsonc`(사용자 앱 `yunabi`, `dist/`) | `-c` 없는 `wrangler deploy`·`rollback`·`deployments list` 는 **콘솔**에 걸린다. 사용자 앱은 **항상 `-c wrangler.app.jsonc`**, 산출물은 `npm run build:deploy` 의 것만(§7.3) |
+| Cloudflare 영역 기능이 앱 HTML 에 스크립트를 끼워 넣어 CSP 위반 (앱이 안 뜨거나 콘솔 오류) | Bot Fight Mode / JavaScript detections, Rocket Loader, Web Analytics 자동 삽입, Email Obfuscation. 앱 CSP 는 `script-src` 를 `https://yunabi.juha.dev/assets/` 로 한정해 콘솔(`'self'`)보다 엄격하다 — 콘솔에서 문제없던 설정도 앱을 깬다. `yunabi.juha.dev` 만 제외하는 Configuration Rule(§7.3 0a) |
 | 최신 wrangler 가 Node 20 에서 안 돎 | `wrangler@4.86.0` 고정. Node 22 권장 |
 | `db push` 의 check ⑨ notice | 정상(OQ-E10 수용 위험). 예외만 실패 |
 | 감시 작업이 `ops_health` 를 POST 로 부름 | `stable` 함수라 실패. GET 으로 |
 | 콘솔 시각과 SQL 시각이 다름 | 콘솔은 JST. SQL 리터럴에 `+09` |
-| `juha.dev` 의 HTTP 응답 | 점검 항목: Cloudflare 의 "Always Use HTTPS" 가 켜져 있는가(`http://yunabi-admin.juha.dev` 가 HTTPS 로 리디렉션되는가). `.dev` 는 HSTS preload 라 브라우저는 영향이 작다 |
+| `juha.dev` 의 HTTP 응답 | 점검 항목: Cloudflare 의 "Always Use HTTPS" 가 켜져 있는가(`http://yunabi-admin.juha.dev`·`http://yunabi.juha.dev` 가 HTTPS 로 리디렉션되는가). `.dev` 는 HSTS preload 라 브라우저는 영향이 작다 |
 | `npm audit` 가 dev 의존성 때문에 실패 | 의도된 것(`--omit=dev` 없음, ADR-0022 S6). 업데이트로 해결 |
 | 옛 Supabase 프로젝트를 지움 | Vercel 리소스도 함께 지워진다. 되돌릴 수 없음 |
 | DB 비밀번호에 특수문자 → `db push`·`psql` 인증 실패 | 연결 URI 가 깨진다. **영문·숫자만**(길게)으로 재설정 (2026-10-23) |
@@ -637,8 +674,8 @@ rm app.dump auth.dump
 |---|---|---|
 | **Supabase** (조직 → 프로젝트 `tsbipaffirkswsgkydav` "yunabi", 도쿄) | DB·Auth·API 키·대시보드 설정·로그. R-6·R-7 ② 의 secret 키를 꺼내는 곳 | 관리 기능 복구 수단 전부. R-7 ③ |
 | **Vercel** | Supabase 조직이 Vercel 과 연동되어 있다 — 프로젝트를 지우면 Vercel 쪽 리소스도 지워진다. **Vercel 계정도 Supabase 로 가는 열쇠 중 하나**다 | Supabase 접근이 흔들릴 수 있다. 2단계 인증 필수 |
-| **GitHub** (`underthesun7213`) | 공개 저장소·CI·Pages(앱)·`production` Environment 비밀값, 비공개 `yunabi-ops`(감시·백업·운영 기록) `[운영 저장소 이후]` | 배포·감시·백업 |
-| **Cloudflare** | 도메인 `juha.dev`(등록 + DNS), Workers `yunabi-admin`(콘솔), Turnstile 위젯, API 토큰 | 콘솔 주소와 CAPTCHA |
+| **GitHub** (`underthesun7213`) | 공개 저장소·CI·`production` Environment 비밀값, 비공개 `yunabi-ops`(감시·백업·운영 기록) `[운영 저장소 이후]`. 앱은 더 이상 GitHub Pages 에 두지 않는다(ADR-0025 — 옛 Pages 2곳은 2026-10-24 내림) | 코드·CI·감시·백업 |
+| **Cloudflare** | 도메인 `juha.dev`(등록 + DNS), Workers `yunabi`(사용자 앱 `yunabi.juha.dev`)·`yunabi-admin`(콘솔), Turnstile 위젯, API 토큰 | **사용자 앱**·콘솔 주소와 CAPTCHA — 잃으면 앱과 콘솔이 함께 멈춘다 |
 | 관리자 Auth 사용자 (Supabase 프로젝트 안) | 콘솔 권한(`app.admins`) — 비밀번호 + TOTP 2개 | R-6·R-7 |
 | 메일함 | 경보 이슈 알림 `[운영 저장소 이후]`, 각 계정 복구 | 경보를 못 받는다 |
 

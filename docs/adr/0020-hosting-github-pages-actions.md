@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| 상태 | 승인됨 (2026-10-12, 책임자 — PRD D21) |
+| 상태 | 승인됨 (2026-10-12, 책임자 — PRD D21) — **결정 1·2·4 는 [ADR-0025](0025-user-app-on-cloudflare-custom-domain.md)로 대체됨, 결정 6 은 ADR-0025 가 실행**(2026-10-24, D29 — 사용자 앱은 `https://yunabi.juha.dev/` 의 Cloudflare Workers). 결정 3·3a·5 는 유지 |
 | 날짜 | 2026-10-12 |
 | 근거 | PRD-YUNABI v2.3 §7 "호스팅"(같은 주소 유지)·"호환"(`yui-v*` 캐시 정리), Y-B3, Y-S3, Y-S4, Y-S8, D19 |
 | 관련 | [tech-stack-v2 §6](../architecture/tech-stack-v2.md#6-호스팅), [RFC-0003 §18.2·§20](../architecture/rfc/0003-yunabi-v2.md), [ADR-0008](0008-hosting.md)(부분 재사용), ADR-0022 |
@@ -42,5 +42,5 @@ v1.3 은 GitHub Pages 가 저장소 루트를 그대로 서빙한다. v2 는 빌
 | # | 질문 |
 |---|---|
 | HO-Q1 | Cloudflare 계정 추가를 받아들일지 (tech-stack-v2 SB-Q1) |
-| HO-Q2 | 사용자 도메인을 둘 계획이 있는지 — 있으면 지금 두는 편이 나중보다 이전 비용이 작다 |
-| HO-Q3 | `github.io` HSTS preload 여부 확인 (SB-Q4) |
+| HO-Q2 | ~~사용자 도메인을 둘 계획이 있는지~~ — **답함(2026-10-24, D29): `yunabi.juha.dev` 로 옮긴다 → [ADR-0025](0025-user-app-on-cloudflare-custom-domain.md)** |
+| HO-Q3 | ~~`github.io` HSTS preload 여부 확인 (SB-Q4)~~ — 해당 없음(ADR-0025: 사용자 앱이 `github.io` 를 떠남, HSTS 는 우리 헤더로) |

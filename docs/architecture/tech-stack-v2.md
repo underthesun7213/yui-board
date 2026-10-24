@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| 상태 | 제안 (v2.0-draft) — 프레임워크는 **D24 로 React 확정**(ADR-0023 승인), 호스팅은 D21(ADR-0020 승인) |
+| 상태 | 제안 (v2.0-draft) — 프레임워크는 **D24 로 React 확정**(ADR-0023 승인), 호스팅은 D21(ADR-0020 승인)·**사용자 앱은 D29(ADR-0025 승인 — `yunabi.juha.dev`, Cloudflare Workers)** |
 | 작성일 | 2026-10-12 |
 | 대상 | [PRD-YUNABI v2.5](../02-requirements/PRD-YUNABI.md) (D12~D26, Y-\*, §6.1 Y-S1~S12) — 마일스톤 Y-0 |
 | 현행 코드 | `index.html` @`8ce701a` (v1.3 MLP + 브랜드 + D14 + D15, 백엔드 없음), `sw.js` (`CACHE = "yui-v6"`), `manifest.webmanifest`, `vendor/` (Leaflet 1.9.4, markercluster 1.5.3), `data/japan-prefectures.geojson`, `assets/brand/yunabi-mark.svg` |
@@ -33,12 +33,12 @@
 | 빌드·언어 | **Vite 8 + `@vitejs/plugin-react` + TypeScript (strict)** | PRD §7 이 Vite·TS 를 지정. Vite 8 은 2026-03-12 안정판 | D19, D24 | [0016](../adr/0016-toolchain-test-ci.md) |
 | 테스트 | **Vitest 5.0.3** `[검토 R-8]` (단위 + `react-dom/static` `prerender` 렌더 검사) + **React Testing Library** (컴포넌트) + **Playwright 1.64.0** (E2E) + **pgTAP** (`supabase test db`) | v1.3 헤드리스 검사를 렌더 검사로 옮긴다(§4). 지연 라우트까지 그리려고 `renderToString` 대신 `prerender` 를 쓴다 `[검토 R-3]` | §7 품질 | 0016, 0023, 0024 |
 | 린트·포맷 | **ESLint 9.39.5 (flat, 고정) + typescript-eslint 8.71.1 + eslint-plugin-react 7.37.5(`react/no-danger`) + eslint-plugin-react-hooks 7.1.1 + Prettier 3.9.10**, 타입 검사 `tsc -b`(**TypeScript 6.0.3**) `[검토 R-8]` | `eslint-plugin-react` 7.37.5 는 ESLint 10 과 호환되지 않는다는 자료 → 9 에 고정(ADR-0023 RE-Q4). typescript-eslint 8.71.1 의 peer 가 `typescript <6.1.0` → TS 7 을 쓰지 않는다 | §7 품질, Y-S4 | 0016, 0023, 0024 |
-| CI | **GitHub Actions** | 저장소가 GitHub 에 있고, Pages 배포도 같은 경로 | §7 품질 | 0016 |
+| CI | **GitHub Actions** | 저장소가 GitHub 에 있다(배포는 Cloudflare Workers — ADR-0025) | §7 품질 | 0016 |
 | 백엔드 | **Supabase** (Postgres + Auth 익명 로그인 + PostgREST, 도쿄 리전) | 익명 로그인 기본 제공, RLS·정의자 함수로 서버 검증·빈도 제한·자동 숨김을 DB 안에서 강제, 이전 조사·설계 재사용 | D16~D18, Y-A\*, Y-R\* | [0018](../adr/0018-backend-supabase-anonymous.md) |
 | 공유 데이터 | 장소·일정은 서버에서 읽고 쓴다 (ADR-0009 일부 대체) | D16 | Y-M4, Y-K2 | [0017](../adr/0017-shared-data-server.md) |
 | 데이터 접근 | 기본 테이블은 노출 안 하는 스키마에, 읽기는 공개 뷰, 쓰기는 RPC 만 | 등록자 비공개(Y-M9)와 서버 검증(Y-A5)을 한 곳에서 | Y-A5, Y-P2 | [0021](../adr/0021-data-access-views-rpc.md) |
 | 신고·자동 숨김 | **서로 다른 계정 3개** → 자동 숨김. 자격 조건·CAPTCHA 기본 사용 없음(D20). 관리자 복원 항목은 등록자가 수정할 때까지 자동 숨김 제외 | D18, D20 | Y-R3, Y-R6, Y-A4 | [0019](../adr/0019-moderation-autohide.md) |
-| 호스팅 | **사용자 앱: GitHub Pages 유지**(Actions 산출물 배포, meta CSP). **관리자 콘솔: 헤더를 설정할 수 있는 별도 출처**(Cloudflare Workers 정적 자산) | 같은 주소를 유지해야 설치·`yui.v1.*` 저장이 이어진다(PRD §7). 관리자 세션은 `github.io` 공유 출처·meta CSP 한계 밖에 둔다(Y-S3, Y-S4) | §7 호스팅, Y-S3, Y-S4, Y-S8 | [0020](../adr/0020-hosting-github-pages-actions.md) |
+| 호스팅 | **사용자 앱: `https://yunabi.juha.dev/`, Cloudflare Workers 정적 자산**(헤더 CSP·HSTS, `wrangler.app.jsonc`). **관리자 콘솔: 별도 출처 `yunabi-admin.juha.dev`**(Cloudflare Workers 정적 자산) | 첫 판은 설치·`yui.v1.*` 저장을 잇기 위해 GitHub Pages 를 유지했으나, v1.3 이 배포된 적이 없어 이을 것이 없다(D29, 2026-10-24) → 헤더를 쓸 수 있는 호스트로. 관리자 세션은 사용자 앱과 다른 출처(Y-S3, Y-S4) | §7 호스팅, Y-S3, Y-S4, Y-S8 | [0020](../adr/0020-hosting-github-pages-actions.md), [0025](../adr/0025-user-app-on-cloudflare-custom-domain.md) |
 | 보안 기준선 | 권한은 DB 에서만, 비밀 검사·의존성 검사 CI, 관리자 2단계 인증, CSP, IP·계정 빈도 제한 + CAPTCHA 스위치, 백업·복구 리허설, 감시·알림, 출시 전 점검(pgTAP 권한 테스트 + ZAP baseline) | D20 | Y-S1~S12 | [0022](../adr/0022-security-baseline.md) |
 | 지도 | Leaflet **1.9.4** 유지(npm 패키지로), markercluster 1.5.3. React 밖 모듈 싱글턴 런타임 + `MapSlot` 컴포넌트(react-leaflet 없음) | Leaflet 2.0 은 아직 알파만 확인됨. 컴포넌트 수명과 지도 수명을 분리(ADR-0014) | Y-M2 | 0023 (Leaflet npm 부분은 0015 결정 5 를 이어받음) |
 
@@ -309,7 +309,11 @@ Supabase 공식 가이드는 GitHub Actions 에서 `supabase/setup-cli` → 로�
 
 **선정 (사용자 앱): GitHub Pages 유지, 배포 방식만 "브랜치 루트" → "Actions 가 빌드 산출물(`dist/`) 배포" 로.** 주소·`manifest.id`(`./`)·SW 경로(`./sw.js`)가 그대로라 기존 설치가 새 빌드로 갱신된다(RFC-0003 §15). 이전 조건: 사용자 도메인을 두게 될 때 Cloudflare 로 옮긴다 — 그때는 출처가 바뀌므로 컬렉션 내보내기·가져오기 같은 이전 수단이 먼저 있어야 한다(ADR-0020).
 
+> **2026-10-24 개정 (D29, [ADR-0025](../adr/0025-user-app-on-cloudflare-custom-domain.md)):** 위 비교의 가장 큰 가중치("같은 주소 유지", 35)는 v1.3 이 배포된 적이 없어 지킬 설치·저장이 없다는 사실이 확인되면서 의미를 잃었다. 그 기준을 빼면 Cloudflare 가 앞선다(보안 헤더 5 대 2). 사용자 앱은 **`https://yunabi.juha.dev/` 의 Cloudflare Workers 정적 자산**(Worker `yunabi`, `wrangler.app.jsonc`)으로 옮기고, 내보내기·가져오기 수단은 이을 데이터가 없어 만들지 않는다. 옛 Pages 주소는 2026-10-24 내렸다. 아래 §6.3 의 Pages 한계는 기록으로 남긴다.
+
 ### 6.3 GitHub Pages 의 보안 한계와 대응 (Y-S3, Y-S4, Y-S8)
+
+> **2026-10-24 — 사용자 앱에는 더 해당하지 않는다(ADR-0025).** 사용자 앱이 `yunabi.juha.dev` 의 Workers 로 옮겨 아래 세 한계는 응답 헤더로 풀린다: CSP 헤더 + `frame-ancestors 'none'`·`X-Frame-Options: DENY`(첫 행), 자기 출처(둘째 행), HSTS 1년 `includeSubDomains` + Cloudflare "Always Use HTTPS"(셋째 행). meta CSP·`FrameGuard`·E2E 위반 수집은 이중 장치로 남는다. 실제 주소에서의 확인은 첫 배포 뒤(런북 §7.3). 표는 당시 판단의 기록이다.
 
 | 한계 | 영향 | 대응 |
 |---|---|---|
@@ -339,7 +343,7 @@ Supabase 공식 가이드는 GitHub Actions 에서 `supabase/setup-cli` → 로�
 | Supabase DB | 500 MB | 장소·일정 수천 건 + 신고·기록 + 경계 폴리곤(약 0.1 MB) → 수십 MB 이하 | 0 |
 | Supabase MAU | 50,000 | 쓰기를 한 사람만 계정이 생김(Y-A1). 수백~수천 | 0 |
 | Supabase egress | 5 GB (상충) | 장소 1,000건 목록 gzip 약 80 KB × 주간 활성 300명 × 주 10회 ≈ 월 1 GB + 갱신 확인 폴링(작은 응답) | 0 |
-| GitHub Pages | 100 GB | 빌드 산출물 + 그림(최대 수 MB) < 10 GB | 0 |
+| Cloudflare Workers 정적 자산 (사용자 앱·콘솔, ADR-0025) | 정적 자산 요청 무제한 (3자, §6.1) | 빌드 산출물 + 그림(최대 수 MB) < 10 GB | 0 |
 | Turnstile | (출시 때 사용 안 함) | — | 0 |
 | **합계** | | | **0엔** |
 
@@ -362,7 +366,7 @@ Supabase 공식 가이드는 GitHub Actions 에서 `supabase/setup-cli` → 로�
 | ~~SB-Q1~~ | ~~관리자 콘솔을 Cloudflare 에 두는 것~~ — **해결: 둔다 (D21, ADR-0020 승인)** | ADR-0020 |
 | SB-Q2 | 백업 덤프 보관 장소: 비공개 운영 저장소의 Actions 아티팩트(암호화, 보관 90일 이하)만으로 충분한지, 책임자 개인 저장소로 월 1회 옮길지 | Y-S9 |
 | ~~SB-Q3~~ | ~~gitleaks 액션의 현재 버전·라이선스 조건 확인~~ — **해결: CLI 바이너리 v8.30.1** (액션은 쓰지 않음, y3s-automated-checks §1.1, 2026-10-22) | Y-S2 |
-| SB-Q4 | `github.io` 가 HSTS preload 목록에 있는지 확인 | Y-S8 |
+| ~~SB-Q4~~ | ~~`github.io` 가 HSTS preload 목록에 있는지 확인~~ — **해당 없음: 사용자 앱이 `yunabi.juha.dev` 로 옮겨 HSTS 를 우리 헤더로 보낸다** (ADR-0025, 2026-10-24) | Y-S8 |
 | TS-Q7 | 무료 플랜 1주 비활동 일시정지를 방학에 받아들일지, Pro($25/월)로 갈지 (tech-stack.md T-5 와 같음) | 가용성, pg_cron 정리 작업 |
 | TS-Q8 | 도쿄 리전이 무료 프로젝트에서 선택 가능한지 (tech-stack.md T-1, 아직 미확인) | 지연 |
 | TS-Q9 | 익명 사용자가 MAU 에 들어가는지 대시보드로 확인 | 비용(한도 안이라 영향 작음) |

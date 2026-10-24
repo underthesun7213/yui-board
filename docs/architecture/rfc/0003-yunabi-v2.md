@@ -90,13 +90,13 @@ C4Context
   Person(admin, "관리자", "책임자 본인 1명(D25). 이메일+비밀번호+TOTP 2개")
   Person_Ext(outsider, "앱 밖의 사람", "가게 주인, 집이 등록된 사람 (Y-P6)")
   Person_Ext(attacker, "외부 공격자", "자동화 요청, XSS, 권한 우회 (D20)")
-  System(pwa, "YUNABI PWA", "사용자 앱. GitHub Pages")
+  System(pwa, "YUNABI PWA", "사용자 앱. yunabi.juha.dev, Cloudflare Workers 정적 자산 (ADR-0025)")
   System(console, "YUNABI 관리자 콘솔", "별도 출처. Cloudflare Workers 정적 자산")
   System_Ext(sb, "Supabase (도쿄)", "Postgres, Auth, PostgREST, Cron")
   System_Ext(osm, "OSM 타일 서버", "지도 그림")
   System_Ext(gmaps, "Google 지도", "사용자가 링크를 누를 때만")
   System_Ext(geo, "기기 위치 서비스", "브라우저 Geolocation")
-  System_Ext(gh, "GitHub", "저장소, Actions(CI·배포·백업·감시), Pages")
+  System_Ext(gh, "GitHub", "저장소, Actions(CI·배포·백업·감시)")
   System_Ext(ts, "Cloudflare Turnstile", "CAPTCHA 스위치를 켤 때만")
   Rel(user, pwa, "사용")
   Rel(admin, console, "로그인·조치")
@@ -119,7 +119,7 @@ C4Container
   title YUNABI v2 — 컨테이너 (제안)
   Person(user, "사용자")
   Person(admin, "관리자")
-  System_Boundary(dev, "사용자 기기 (브라우저, 출처 <user>.github.io/<repo>/)") {
+  System_Boundary(dev, "사용자 기기 (브라우저, 출처 https://yunabi.juha.dev)") {
     Container(app, "PWA 앱", "React 19 + TS (Vite 빌드)", "라우터, 화면, i18n, 도메인 로직. 지도·폼은 지연 청크")
     Container(map, "지도 런타임", "Leaflet 1.9.4 + markercluster (지연 청크)", "인스턴스 1개, React 밖 모듈 싱글턴")
     Container(sw, "sw.js", "Service Worker (Workbox injectManifest)", "앱 셸 사전 캐시, yui-v* 정리")
@@ -136,8 +136,7 @@ C4Container
     Container(cron, "Supabase Cron", "pg_cron", "보관 기간 정리, 비활동 계정 삭제")
   }
   System_Ext(gh, "GitHub Actions")
-  System_Ext(pages, "GitHub Pages")
-  System_Ext(cf, "Cloudflare Workers 정적 자산")
+  System_Ext(cf, "Cloudflare Workers 정적 자산", "사용자 앱 yunabi + 관리자 콘솔, 각자 _headers")
   Rel(user, app, "터치")
   Rel(admin, console, "로그인")
   Rel(app, rest, "GET 공개 뷰 (publishable 키) / POST rpc (사용자 JWT)")
@@ -150,8 +149,7 @@ C4Container
   Rel(app, map, "import() 지연")
   Rel(app, ls, "store")
   Rel(app, idb, "snapshot")
-  Rel(gh, pages, "deploy-pages (dist/)")
-  Rel(gh, cf, "wrangler deploy (dist-admin/)")
+  Rel(gh, cf, "wrangler deploy -c wrangler.app.jsonc (dist/), wrangler deploy (dist-admin/) — 지금은 책임자 PC 에서 수동")
   Rel(gh, pg, "migrate(--db-url, main 전용 Environment), 비공개 운영 저장소에서 pg_dump·ops_health")
 ```
 
@@ -552,7 +550,7 @@ sequenceDiagram
 | 세션 만료 | 대시보드의 비활동·최대 수명(timebox)은 **Pro 기능으로 보인다**(검토의 확인). 그래서 무료 플랜에서는 (1) `require_admin()` 의 서버 검사 — `auth.sessions` 의 현재 세션 행이 **있고** 생성 12시간 이내가 아니면 예외(행 없음·클레임 없음도 거절, ERD v2 §7.3) — 가 **유일한 서버 측 만료**이고, (2) 콘솔은 세션을 `sessionStorage` 에 둔다(창을 닫으면 끝) |
 | 실패 안전 `[검토 #3]` | 모든 `admin_*` 의 첫 문장이 `perform app.require_admin()` 이고 실패는 예외다. 반환값을 확인할 필요가 없으니 확인을 잊을 수 없다. 카탈로그 검사·pgTAP 가 모든 `admin_%` 를 실패 경우 7가지와 교차 검증(G-30) |
 | CAPTCHA 와의 관계 `[검토 #5]` | Supabase CAPTCHA 는 **비밀번호 로그인에도 적용**된다. 스위치를 켜는 순간 관리자가 잠기지 않게, 콘솔 로그인 화면에도 Turnstile 위젯을 두고(사이트 키는 빌드에 포함) 콘솔 CSP 가 Turnstile 을 허용한다. 출시 전 점검표에 "스위치 ON 상태에서 관리자 로그인" 시험 |
-| 출처 분리 | 관리자 콘솔은 사용자 앱과 다른 출처(Cloudflare) — 사용자 앱이나 같은 `github.io` 의 다른 페이지에 XSS 가 있어도 관리자 토큰에 닿지 않는다(ADR-0020) |
+| 출처 분리 | 관리자 콘솔(`yunabi-admin.juha.dev`)은 사용자 앱(`yunabi.juha.dev`)과 다른 출처 — 사용자 앱에 XSS 가 있어도 관리자 토큰에 닿지 않는다(ADR-0020, ADR-0025). 사용자 앱도 자기 출처라 `github.io` 다른 페이지와의 공유는 없어졌다 |
 | 기록 | 모든 관리 조치를 `app.mod_actions` 에 추가 전용으로(누가: 관리자 이메일·id, 언제, 무엇을, 대상, 메모) — Y-R5. 관리 거절은 `admin_whoami()` 가 `security_events` 에 기록한다. 콘솔을 거치지 않은 직접 호출의 거절은 예외 롤백 때문에 DB 에 남지 않고 Supabase API 로그에만 남는다(ERD v2 OQ-E7) — 실패 안전을 기록보다 우선한 결과 |
 
 **`[Y-3 구현]`** 
@@ -724,7 +722,7 @@ DB 에서는 열 조합이다(ERD v2 §4.2): `deleted_at`, `auto_hidden_at`, `su
 | A3 관리자 권한 | 전체 데이터 조작 | 관리자 세션, `admins` |
 | A4 서버 비밀 (`sb_secret`, DB 비밀번호, Cloudflare 토큰) | 모든 권한 | GitHub Actions 비밀값, Supabase |
 | A5 사용자 기기의 세션·저장 | 개인 항목 수정 권한, 컬렉션 | 브라우저 |
-| A6 가용성 | 서비스 | Supabase 무료 한도, Pages |
+| A6 가용성 | 서비스 | Supabase 무료 한도, Cloudflare(앱·콘솔) |
 | A7 백업 | 복구 | 암호화 덤프 |
 
 ### 17.2 STRIDE
@@ -750,9 +748,9 @@ DB 에서는 열 조합이다(ERD v2 §4.2): `deleted_at`, `auto_hidden_at`, `su
 | T-12 | I 정보 노출 | 등록자 uuid·신고자 노출 (공개 뷰, 오류 메시지, 시각 대조) | A2 | 뷰 열 제한(소유·토큰 없음), 신고자는 어떤 뷰·RPC 반환에도 없음, 관리자도 가명 ref 만, `not_found` 균일화, 공개 날짜는 일 단위 | S1, S12 | pgTAP: 모든 뷰의 열 목록 고정 검사, `reports` 직접 접근 불가 |
 | T-13 | I | 숨김·삭제 항목 읽기 | A1 | 공개 뷰 조건 + 테이블 비노출. `my_items` 는 본인 것만 | S1 | pgTAP |
 | T-14 | I | 비밀 키 유출 (저장소·번들·로그) | A4 | 클라이언트는 publishable 키만(`VITE_` 접두어 변수 2개만 허용), gitleaks(저장소·`dist`), 산출물 패턴 검사, GitHub push protection, `.env*` 무시(현행 `.gitignore`) | S2 | CI |
-| T-15 | I | 관리자 토큰 탈취 (같은 `github.io` 출처의 다른 페이지, 사용자 앱 XSS) | A3 | 관리자 콘솔은 별도 출처 + 헤더 CSP·`frame-ancestors 'none'`, 세션은 `sessionStorage`, 12시간 서버 만료 | S3, S4 | ZAP baseline(헤더), 점검표 |
+| T-15 | I | 관리자 토큰 탈취 (사용자 앱 XSS; 옛 설계의 같은 `github.io` 출처 다른 페이지는 ADR-0025 로 해당 없음) | A3 | 관리자 콘솔은 별도 출처 + 헤더 CSP·`frame-ancestors 'none'`, 세션은 `sessionStorage`, 12시간 서버 만료. 사용자 앱도 자기 출처 `yunabi.juha.dev` + 헤더 CSP(ADR-0025) | S3, S4 | ZAP baseline(헤더), 점검표, 실제 주소 `curl -sI`(런북 §7.3) |
 | T-16 | I | 백업 덤프 유출 — 공개 저장소의 Actions 아티팩트는 **GitHub 계정이 있는 누구나 받을 수 있다**, 전체 `auth` 덤프에는 갱신 토큰·세션·**TOTP 비밀**이 있다 `[검토 #9]` | A7, A2, A3 | 백업은 **비공개 운영 저장소**에서 돌리고 거기 보관, `age` 암호화, 개인 키는 책임자만. 덤프 범위: `auth.refresh_tokens`, `auth.sessions`, `auth.mfa_challenges`, `auth.mfa_factors`, `auth.one_time_tokens`, `auth.flow_state`, `auth.audit_log_entries`, `app.salts`, `app.ip_hits`, `app.write_log` **제외** | S9, S12 | 리허설 기록, 덤프 목록 검사 |
-| T-17 | I | 전송 구간 도청·혼합 콘텐츠 | A5 | HTTPS 만(Pages "Enforce HTTPS", Supabase·Cloudflare 기본 HTTPS), CSP `upgrade-insecure-requests`, 외부 요청은 모두 `https:` | S8 | ZAP, 점검표 |
+| T-17 | I | 전송 구간 도청·혼합 콘텐츠 | A5 | HTTPS 만(Cloudflare "Always Use HTTPS" + 앱·콘솔 HSTS 헤더 — ADR-0025, Supabase 기본 HTTPS), CSP `upgrade-insecure-requests`, 외부 요청은 모두 `https:` | S8 | ZAP, 점검표 |
 | T-18 | D 서비스 거부 | 자동화된 익명 계정 대량 생성 → DB 비대·MAU | A6 | Auth IP 한도, 훅의 전역 시간당 한도, CAPTCHA 스위치, 1년 정리 | S7 | 통합 테스트(한도+1 거절), 스위치 시험 |
 | T-18a | D | **전역 가입 한도(시간당 200) 자체를 소진**해 정상 사용자의 첫 쓰기를 막음 `[검토 #11]` — 훅 한도와 `require_writer` 의 계정 생성 상한 둘 다 해당 | A6 | 감시 경보(생성이 한도의 50%) → 런북 R-2: CAPTCHA ON(자동화는 통과 못 하고 사람은 통과). 단 **이미 찬 상한은 CAPTCHA 를 켜도 1시간 창이 지나야 풀린다** — 급하면 관리자가 `accounts_per_hour` 를 일시적으로 올린다 (최종 재검토 nit) | S7, S10 | 런북 시험 |
 | T-18c | D/T | 훅이 익명 가입에 **돌지 않으면** 대량 생성 계정이 쓰기·신고를 제한 없이 함 (OQ-E5 미확인) `[재검토 #1]` | A1, A6 | `require_writer` 의 계정 생성 전역 상한(시간당 200) — Auth 와 무관하게 성립 | S7 | G-38 |
@@ -764,30 +762,31 @@ DB 에서는 열 조합이다(ERD v2 §4.2): `deleted_at`, `auto_hidden_at`, `su
 | T-21 | D | 무료 프로젝트 일시정지·장애 | A6 | 오프라인 스냅샷 읽기, 런북 재개 절차, 감시 워크플로가 정지 탐지 | S9, S10 | 런북 |
 | T-22 | E 권한 상승 | 정지된 계정이 계속 쓰기 | A1 | 모든 쓰기 RPC 첫 단계 `require_writer()` 가 정지 확인 | S1 | pgTAP |
 | T-23 | E | 정의자 함수의 `search_path` 탈취, 헬퍼 남용, **`public` 에 깔린 확장 함수(PostGIS `ST_*` 수백 개)가 RPC 로 노출** `[재검토 #3]` | A1, A2, A6 | 모든 정의자 함수 `set search_path = ''` 와 스키마 한정 이름, `public` 에 CREATE 권한 회수, 헬퍼(`require_admin` 등)는 EXECUTE 부여 안 함, **확장은 `extensions` 스키마에**(`create extension postgis with schema extensions`) | S1 | 마이그레이션 `checks` ④⑫ |
-| T-24 | E | 클릭재킹으로 사용자 앱에서 삭제·신고 유도 | A1 | 사용자 앱은 meta CSP 로 `frame-ancestors` 불가 → `FrameGuard`: 최상위 창이 아니면 쓰기 버튼 비활성 + "새 창에서 열기" | S4 | E2E(iframe 안에서 버튼 비활성) |
-| T-25 | E | 서비스워커 하이재킹(같은 출처 다른 페이지가 범위 안 SW 등록) | A5 | SW 범위는 앱 하위 경로. 같은 `github.io` 사용자 페이지의 위험은 출처 공유 한계로 수용(R-3) | — | — |
+| T-24 | E | 클릭재킹으로 사용자 앱에서 삭제·신고 유도 | A1 | 사용자 앱 헤더 CSP `frame-ancestors 'none'` + `X-Frame-Options: DENY`(ADR-0025). 이중 장치로 `FrameGuard`: 최상위 창이 아니면 쓰기 버튼 비활성 + "새 창에서 열기" | S4 | E2E(iframe 안에서 버튼 비활성 — e2e 는 헤더를 보지 못함), 실제 주소 헤더 확인(런북 §7.3) |
+| T-25 | E | 서비스워커 하이재킹(같은 출처 다른 페이지가 범위 안 SW 등록) | A5 | 사용자 앱이 자기 출처 `yunabi.juha.dev` 를 쓰므로(ADR-0025) 같은 출처의 다른 페이지가 없다 — 옛 `github.io` 출처 공유 위험(R-3)은 설계상 해소. SW 범위 `./` | — | 첫 배포 뒤 실제 주소 확인 |
 | T-26 | I | 감시 경보를 **공개 저장소 이슈**로 열면 방어 상태(어느 한도가 언제 찼는지)가 공격자에게 보인다. 공개 저장소의 Actions 로그도 공개 `[검토 낮음]` | A6 | 감시·백업 워크플로는 **비공개 운영 저장소**(`yunabi-ops`)에서 돌리고 경보는 그 저장소의 이슈(메일 알림)로. 공개 저장소에는 비밀값이 필요한 예약 작업을 두지 않는다 | S10 | 점검표 |
 | T-27 | E | CAPTCHA 를 켜자 **관리자도 로그인 못 함**(비밀번호 로그인에도 적용) → 공격 중 대응 불가 `[검토 #5]` | A3 | 콘솔에 Turnstile 위젯 + 콘솔 CSP 허용, 사이트 키 빌드 포함 | S3, S7 | 점검표 "스위치 ON 에서 관리자 로그인" |
 
-### 17.3 사용자 앱 meta CSP (초안)
+### 17.3 사용자 앱 CSP — meta 와 헤더 (ADR-0025)
 
 ```
 default-src 'none';
-script-src https://<user>.github.io/yui-board/assets/ https://challenges.cloudflare.com;
-style-src https://<user>.github.io/yui-board/assets/ 'unsafe-inline';
-img-src https://<user>.github.io/yui-board/ data: https://tile.openstreetmap.org;
-connect-src https://<user>.github.io/yui-board/ https://<ref>.supabase.co https://challenges.cloudflare.com;
+script-src https://yunabi.juha.dev/assets/ https://challenges.cloudflare.com;
+style-src https://yunabi.juha.dev/assets/ 'unsafe-inline';
+img-src https://yunabi.juha.dev/ data: https://tile.openstreetmap.org;
+connect-src https://yunabi.juha.dev/ https://<ref>.supabase.co https://challenges.cloudflare.com;
 frame-src https://challenges.cloudflare.com;
-worker-src https://<user>.github.io/yui-board/sw.js;
-manifest-src https://<user>.github.io/yui-board/;
+worker-src https://yunabi.juha.dev/sw.js;
+manifest-src https://yunabi.juha.dev/;
 object-src 'none';
 base-uri 'none';
 form-action 'none';
 upgrade-insecure-requests
 ```
 
-- **`'self'` 대신 경로를 한정한다** `[검토 #13]`. GitHub Pages 프로젝트 사이트의 출처 `https://<user>.github.io` 는 같은 사용자의 **다른 Pages 프로젝트 전부**를 포함하므로 `script-src 'self'` 는 그 프로젝트들의 스크립트도 믿는다. 경로가 붙은 출처 표현식은 그 경로 아래만 허용한다(경로가 `/` 로 끝나면 접두어 일치). 단 CSP 는 **리디렉션 뒤에는 경로를 무시**한다(사양) — 같은 출처 안 리디렉션을 만들 수 있는 다른 프로젝트가 있다면 완전한 격리는 아니다. 완전한 해결은 사용자 도메인(ADR-0020 결정 6). Vite 산출물은 모두 `assets/` 아래로 나오게(`build.assetsDir`) 한다. `<user>`·`yui-board` 는 빌드 시 설정에서 채운다.
-- **빌드 환경 변수** `[Y-1 구현]`: 운영 빌드는 경로 한정 CSP 를 만들려고 **`YUNABI_ORIGIN`**(전체 URL, `/` 로 끝남 — 예 `https://<user>.github.io/yui-board/`)을 요구하고, 없으면 빌드가 실패한다. 로컬 빌드만 **`YUNABI_ALLOW_SELF=1`** 로 `'self'` 를 허용한다. E2E 빌드는 테스트 핸들을 노출하므로 **`dist-e2e/`** 에 따로 내보내고 **절대 배포하지 않는다**(§20).
+- **헤더 CSP** (2026-10-24, ADR-0025): 사용자 앱은 `https://yunabi.juha.dev/` 의 Cloudflare Workers 정적 자산에 있고, 빌드가 `dist/_headers` 를 만든다. 헤더 CSP = 위 meta CSP 와 **같은 함수**(`vite.config.ts` `cspRules()`) + **`frame-ancestors 'none'`** — 두 CSP 가 어긋날 수 없고 `scripts/check-app-headers.mjs` 가 산출물에서 일치를 확인한다. 같은 `_headers` 에 `X-Frame-Options: DENY`, `nosniff`, HSTS(1년, `includeSubDomains`), `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy: geolocation=(self), …`, COOP `same-origin`. meta CSP 는 이중 장치로 남긴다. e2e·ZAP 는 `vite preview` 위라 헤더를 보지 못하므로 헤더 CSP 위반은 **실제 주소에서만** 확인된다(런북 §7.3).
+- **`'self'` 대신 경로를 한정한다** `[검토 #13]`. 옛 설계(GitHub Pages 프로젝트 사이트)에서는 출처 `https://<user>.github.io` 가 같은 사용자의 **다른 Pages 프로젝트 전부**를 포함해 `script-src 'self'` 가 그 프로젝트들의 스크립트도 믿었고, 경로 한정도 리디렉션 뒤에는 무시된다(사양). 이제 출처가 우리 것(`yunabi.juha.dev`)이라 그 문제는 없다 — 경로 한정은 해가 없어 그대로 둔다. 단 앱 `script-src` 는 `/assets/` 로 한정되어 콘솔(`'self'`)보다 엄격하므로, **Cloudflare 영역 기능이 HTML 에 끼워 넣는 스크립트**(Bot Fight Mode·JavaScript detections, Rocket Loader, Web Analytics 자동 삽입, Email Obfuscation)는 위반이 된다 — 배포 전에 꺼 둔다(런북 §7.3, §12). Vite 산출물은 모두 `assets/` 아래로 나오게(`build.assetsDir`) 한다.
+- **빌드 환경 변수** `[Y-1 구현]`: 운영 빌드는 경로 한정 CSP 를 만들려고 **`YUNABI_ORIGIN`**(전체 URL, `/` 로 끝남 — 운영 값 `https://yunabi.juha.dev/`)을 요구하고, 없으면 빌드가 실패한다. 운영 배포는 `npm run build:deploy`(출처·Supabase ref·키·e2e 손잡이 부재까지 확인)의 산출물만 올린다. 로컬 빌드만 **`YUNABI_ALLOW_SELF=1`** 로 `'self'` 를 허용한다. E2E 빌드는 테스트 핸들을 노출하므로 **`dist-e2e/`** 에 따로 내보내고 **절대 배포하지 않는다**(§20).
 - `default-src 'none'` 로 바꾸고 필요한 것만 연다.
 
 - `style-src 'unsafe-inline'`: Leaflet 이 인라인 스타일을 쓴다. 스크립트 실행 경로가 아니라 수용(Y-1 에서 제거 가능 여부 확인). React 의 `style={…}` 는 CSSOM 으로 설정되어 이 제한과 무관하다(*일반 지식*) `[D24]`. (이전 안의 이유였던 Svelte 전환 효과는 없어짐.)
@@ -806,7 +805,7 @@ upgrade-insecure-requests
 | 익명 계정 생성 | `auth.users` 최근 1시간 | 전역 한도의 50% |
 | 자동 숨김 | `mod_actions` `auto_hide` | 1시간 5건 초과 (대량 신고 공격 징후) |
 | 사용량 | Supabase 대시보드(DB 크기·egress) | 무료 한도 70% — 수동 주간 확인 |
-| 사이트 가동 | Pages·콘솔·Supabase 상태 | 실패 시 |
+| 사이트 가동 | 앱(`yunabi.juha.dev`)·콘솔·Supabase 상태 | 실패 시 |
 
 구현: **비공개 운영 저장소(`yunabi-ops`)의 GitHub Actions `monitor.yml`**(30분마다 예약 실행)이 `sb_secret` 으로 `public.ops_health()`(`service_role` 전용, 숫자만 반환)를 부르고, 기준을 넘으면 **그 비공개 저장소에 이슈**를 열어 관리자에게 메일 알림이 가게 한다(추가 서비스 없음). `[검토 낮음]` 첫 판은 공개 저장소에 이슈를 열려 했는데, 그러면 경보 내용(어느 한도가 언제 찼는지)과 Actions 로그가 공격자에게 보인다. 대안: 메일 발송 서비스로 직접 — 계정이 하나 늘어 비공개 저장소를 택했다. 이 예약 실행은 무료 프로젝트 비활동 일시정지를 막는 부수 효과도 있다 — 일시정지 조건 자체가 **미확인**(검토)이며 의도적으로 쓰는지는 OQ-12. 대안(Supabase 로그 드레인·외부 모니터링)은 비용 때문에 기각.
 
@@ -883,9 +882,10 @@ D25(관리자 = 책임자 1명)로 아래 모든 절차의 실행자는 책임�
 
 | 항목 | 설계 |
 |---|---|
-| 파일 경로 | **`./sw.js` 유지**, 범위 `./` — 이미 설치된 v1.3 등록이 같은 URL 의 새 스크립트로 갱신된다 |
+| 파일 경로 | `./sw.js`, 범위 `./`. 옛 설계는 이미 설치된 v1.3 등록이 같은 URL 의 새 스크립트로 갱신되게 하려 했으나, ADR-0025(2026-10-24)로 새 출처 `yunabi.juha.dev` 에 처음 배포하므로 **이어받을 등록이 없다**(v1.3 은 배포된 적 없음) |
 | 갱신 경로 | v1.3 SW 는 탐색 요청을 network-first 로 처리하므로 새 `index.html` 을 받는다 → 새 번들이 `sw.js` 를 다시 등록 → 바이트가 달라 새 SW 설치 |
-| 정리 | 새 SW `activate` 에서 `yui-` 로 시작하는 옛 캐시(`yui-v1`~`yui-v6`) 삭제 + Workbox 오래된 사전 캐시 정리. 캐시 이름은 `cacheId: 'yunabi'` 로 구분 |
+| 정리 | 새 SW `activate` 에서 `yui-` 로 시작하는 옛 캐시(`yui-v1`~`yui-v6`) 삭제 + Workbox 오래된 사전 캐시 정리. 캐시 이름은 `cacheId: 'yunabi'` 로 구분. 새 출처에는 옛 캐시가 없어 `yui-` 정리는 할 일이 없지만 무해해 그대로 둔다(ADR-0025 결정 7) |
+| 응답 헤더 | `/sw.js`·`/`·`/index.html`·`/manifest.webmanifest` 는 `Cache-Control: no-cache`(새 배포는 재검증으로), `/assets/*` 는 immutable(`dist/_headers`). Workers 는 `/index.html` 을 `/` 로 리디렉션한다 — Workbox 사전 캐시와 맞물리는지는 실제 주소의 오프라인 새로 고침으로만 확인된다(런북 §7.3) |
 | 사전 캐시 | Vite 산출물(해시 파일), `public/data/japan-prefectures.geojson`, 아이콘, `src/art/**`(OQ-10) |
 | 런타임 | 같은 출처 탐색: network-first + **3초 시간 제한** 후 캐시(RFC-0002 OQ-17 해결). 교차 출처(타일, Supabase)는 처리하지 않음 |
 | 갱신 알림 | 새 SW 가 대기하면 "새 버전 — 다시 열기" 토스트(3개 언어), `skipWaiting` 은 사용자가 누를 때 |
@@ -939,7 +939,7 @@ flowchart LR
   PR -->|supabase/ 변경 또는 main| DB[db: Postgres 16 + Auth + PostgREST 바이너리 로컬 스택 §19.1a → test db → backend e2e·security 직접 요청]
   E2E & DB --> M{main 병합}
   M --> BUILD[build: dist, dist-admin → 산출물 비밀 검사 → gitleaks dist]
-  BUILD --> PAGES[deploy-pages: 사용자 앱]
+  BUILD --> APP[wrangler -c wrangler.app.jsonc: 사용자 앱]
   BUILD --> CF[wrangler: 관리자 콘솔]
   M --> MIG[migrate: supabase db push --db-url — main 전용 Environment, 필수 검토자]
   CRON3[수동 · 주간 · .zap 변경 push] --> ZAP[zap.yml: ZAP baseline, 로컬 대상]
@@ -951,24 +951,24 @@ flowchart LR
 
 - 액션은 커밋 SHA 로 고정, 워크플로마다 `permissions:` 최소. **`pull_request_target` 금지**(포크 PR 이 비밀값에 닿는 경로) — CI 가 워크플로 파일을 검색해 실패 `[검토 #9]`.
 - **비밀값은 `main` 브랜치 전용 Environment(필수 검토자 = 책임자)에만** 둔다. PR 워크플로(quality·e2e·security·db)는 비밀값 없이 돈다(db 는 로컬 스택) `[검토 #9]`.
-  - 공개 저장소 `production` Environment: `SUPABASE_DB_URL`(마이그레이션 — 계정 전체 권한 PAT `SUPABASE_ACCESS_TOKEN` 대신), `CLOUDFLARE_API_TOKEN`(콘솔 배포, Workers 배포 권한만).
+  - 공개 저장소 `production` Environment: `SUPABASE_DB_URL`(마이그레이션 — 계정 전체 권한 PAT `SUPABASE_ACCESS_TOKEN` 대신), `CLOUDFLARE_API_TOKEN`(사용자 앱·콘솔 배포 — ADR-0025 로 앱도 Workers, Workers 배포 권한만).
   - 비공개 운영 저장소: `SUPABASE_SECRET_KEY`(감시), `SUPABASE_DB_URL_READONLY` 또는 덤프용 연결 문자열(백업), `BACKUP_AGE_RECIPIENT`(공개 키).
   - 공개값 `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, `VITE_TURNSTILE_SITE_KEY`(스위치용, 미리 포함 `[검토 #5]`)는 저장소 변수.
 - 순서 규칙(infra.md §4.2 유지): DB 마이그레이션 먼저, 클라이언트 나중. 클라이언트를 깨는 변경은 두 단계.
 
-## 20. 배포 (제안 — ADR-0020)
+## 20. 배포 (제안 — ADR-0020, 사용자 앱은 ADR-0025)
 
 | 대상 | 방법 | 환경 |
 |---|---|---|
-| 사용자 앱 | `actions/deploy-pages` 로 `dist/` (Pages 소스를 "GitHub Actions" 로 전환, 주소 그대로) | prod |
-| 관리자 콘솔 | `wrangler deploy` (Workers 정적 자산, `_headers`) | prod |
+| 사용자 앱 | `https://yunabi.juha.dev/` — `npm run build:deploy` 의 `dist/` 를 `npx wrangler@4.86.0 deploy -c wrangler.app.jsonc`(Workers 정적 자산 `yunabi`, `_headers`). 첫 배포는 책임자 PC 에서 수동, main 의 커밋에서(런북 §7.3). **아직 배포 전** | prod |
+| 관리자 콘솔 | `wrangler deploy` (Workers 정적 자산, `_headers`, 설정 `wrangler.jsonc`) | prod |
 | DB | `supabase db push` (수동 승인), Cron 작업은 마이그레이션에 포함 | prod |
 | 로컬 | `npm run dev`(fixture 모드: `VITE_SUPABASE_URL` 없음 → `tests/fixtures`), `npm run dev:backend`(로컬 Supabase) | local |
 | 스테이징 | 따로 두지 않는다(무료 프로젝트 2개 한도·일시정지, infra.md §2 판단 유지). CI 의 로컬 스택이 스테이징 역할 | — |
 
-빌드 `[Y-1 구현]`: 배포용 `dist/` 는 `YUNABI_ORIGIN`(전체 URL, `/` 로 끝남)을 준 운영 빌드로만 만든다(§17.3). `YUNABI_ALLOW_SELF=1` 빌드는 로컬 확인용이다. E2E 빌드는 테스트 핸들이 들어 있어 `dist-e2e/` 로 나가며, 배포 작업은 `dist/` 만 올린다.
+빌드 `[Y-1 구현]`: 배포용 `dist/` 는 `YUNABI_ORIGIN`(전체 URL, `/` 로 끝남)을 준 운영 빌드로만 만든다(§17.3). `YUNABI_ALLOW_SELF=1` 빌드는 로컬 확인용이다. E2E 빌드는 테스트 핸들이 들어 있어 `dist-e2e/` 로 나가며, 배포 작업은 `dist/` 만 올린다. 운영 배포는 `npm run build:deploy` — `scripts/check-app-headers.mjs --deploy` 가 출처 `https://yunabi.juha.dev/`, 진짜 Supabase ref, 번들 안 publishable·Turnstile 키, e2e 손잡이(`__yunabi`) 부재를 확인하고(`.assetsignore` 의 `.vite` 는 모든 빌드에서) 하나라도 어긋나면 실패한다(ADR-0025 결정 3).
 
-롤백: 사용자 앱은 이전 성공 실행의 산출물 재배포(새 SW 가 다시 설치됨). DB 는 앞으로만(되돌리는 마이그레이션을 짝으로) — 데이터 손상은 백업 복구.
+롤백: 사용자 앱은 `npx wrangler@4.86.0 rollback -c wrangler.app.jsonc` 로 이전 배포로(새 SW 가 다시 설치됨, 런북 §8). DB 는 앞으로만(되돌리는 마이그레이션을 짝으로) — 데이터 손상은 백업 복구.
 
 전환 순서(Y-1 → Y-2): ① Y-1 새 구조를 fixture 모드로 배포해도 되는가? — **아니다**: 운영 데이터 0 + 백엔드 없는 v2 는 v1.3 보다 못하다(샘플 데이터도 사라짐). Y-1 은 CI·미리보기에서만 검증하고, **운영 첫 배포는 Y-2(백엔드) 이후**를 제안한다(OQ-D) — **D23 으로 확정**.
 
@@ -998,8 +998,8 @@ flowchart LR
 | R-1b | 배포 직후 옛 탭이 사라진 청크를 불러 빈 화면 `[검토 R-7]` | 중/낮음 | `RouteErrorBoundary` + `vite:preloadError` → 다시 불러오기 안내(§5.3) |
 | R-13 | **관리자 1명(D25) — 대리 없음, 단일 장애점** | 중/중 | 시스템은 사람 없이 숨김 쪽으로 기울어 안전(R-8), TOTP 예비 요소(R-7), 계정 2단계 인증(§17.6a PL-4). 장기 부재 승계는 OQ-20 |
 | R-2 | 기숙사 NAT 로 익명 로그인 IP 한도에 걸림 | 중/중 (학기 초) | OQ-5, 한도 조정, 오류 시 입력 유지 |
-| R-3 | `github.io` 출처 공유 (다른 프로젝트 페이지) | 낮음/중 | 관리자 분리, 사용자 토큰 피해 작음. 사용자 도메인 도입 시 해소(출처 변경 비용 있음) |
-| R-4 | meta CSP 한계(클릭재킹, 위반 보고 없음) | 낮음/중 | FrameGuard, E2E 위반 수집 |
+| R-3 | `github.io` 출처 공유 (다른 프로젝트 페이지) | 낮음/중 | **설계상 해소(2026-10-24, ADR-0025)** — 사용자 앱은 자기 출처 `yunabi.juha.dev`. 이을 저장이 없어 출처 변경 비용도 없었다. 첫 배포 뒤 실제 주소 확인으로 닫는다 |
+| R-4 | meta CSP 한계(클릭재킹, 위반 보고 없음) | 낮음/중 | 헤더 CSP `frame-ancestors 'none'`·`X-Frame-Options`(ADR-0025)로 클릭재킹은 해소 예정(첫 배포 뒤 확인). 위반 보고(`report-to`)는 여전히 없음 — FrameGuard, E2E 위반 수집 유지 |
 | R-5 | 무료 플랜: 백업 없음, 일시정지, SLA 없음 | 중/높음 | 주간 덤프·리허설, 감시, Pro 전환 조건(TS-Q7) |
 | R-6 | 50개 v1.3 검사 원본 없음 → 이전이 불완전 | 중/중 | 범주표에서 재작성, TS-Q4 |
 | R-7 | iOS 저장소 7일 삭제(ADR-0010) → 익명 계정 상실 | 중/낮음 | Y-A2 안내, 홈 화면 설치 권장 |

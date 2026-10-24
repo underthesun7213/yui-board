@@ -45,7 +45,7 @@
 - 나쁜 점:
   - 저장소는 사용자·브라우저가 지울 수 있다. 내보내기는 범위 밖(PRD §12). 기기를 바꾸면 컬렉션이 없다.
   - Safari 는 스크립트가 쓴 저장소(localStorage 포함)를 **Safari 를 7일 쓰는 동안 그 사이트와 상호작용이 없으면** 지운다. 홈 화면 웹앱은 Safari 와 별도로 자기 사용 일수를 센다고 WebKit 이 설명했으나, 홈 화면 앱에서도 7일 뒤 지워졌다는 보고가 있다([WebKit 발표 요약 — Search Engine Land](https://searchengineland.com/what-safaris-7-day-cap-on-script-writeable-storage-means-for-pwa-developers-332519), [WebKit Bug 237350](https://bugs.webkit.org/show_bug.cgi?id=237350), 2026-10-12 검색 확인. WebKit 원문은 이번 검색에서 직접 확인하지 못함). → 실기기 확인, 홈 화면 설치 안내.
-  - `localStorage` 는 출처 단위다. `<user>.github.io/<repo>/` 로 배포하면 같은 사용자의 다른 프로젝트 페이지가 같은 저장소를 읽고 쓸 수 있다. 접두어는 충돌만 막는다(민감한 데이터가 없어 영향은 작다).
+  - `localStorage` 는 출처 단위다. `<user>.github.io/<repo>/` 로 배포하면 같은 사용자의 다른 프로젝트 페이지가 같은 저장소를 읽고 쓸 수 있다. 접두어는 충돌만 막는다(민감한 데이터가 없어 영향은 작다). → v2 는 자기 출처 `https://yunabi.juha.dev/` 에 배포해 출처 공유가 없어진다(ADR-0025, 2026-10-24).
   - **해결:** 이 ADR 첫 판의 "저장된 값의 모양을 검사하지 않는다(`cg` 가 객체가 아니면 이후 저장이 조용히 실패)" 는 시작 코드가 일반 객체(배열 아님)일 때만 `cg` 를 쓰도록 바뀌어 해결됐다(`index.html:1796`) — RFC-0002 R-9.
 
 ## 열린 질문

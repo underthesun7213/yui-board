@@ -59,7 +59,9 @@ To add a screen: a component in `features/`, a route in `state/route.ts` and
 - **Ask before using location.** Locating runs only after the notice was accepted.
 - **Device storage keys stay `yui.v1.*`** — installed copies read them.
 - **The e2e builds (`dist-e2e*/`) carry a test handle on `window`.** Never
-  deploy them; deploys come from `npm run build` into `dist/`.
+  deploy them; deploys come from `npm run build:deploy` into `dist/`
+  (it refuses a fixture, local or e2e build), uploaded with
+  `wrangler deploy -c wrangler.app.jsonc` (runbook §7.3).
 - **The database is the only place rules hold.** Every write goes through a
   `public` definer function that checks everything itself; clients have no
   table rights at all. A new function needs `set search_path = ''`,

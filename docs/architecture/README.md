@@ -28,11 +28,12 @@
 | [0017](../adr/0017-shared-data-server.md) | 장소·일정을 서버에 공유 — ADR-0009 일부 대체 | 제안됨 |
 | [0018](../adr/0018-backend-supabase-anonymous.md) | Supabase, 첫 쓰기 때 익명 계정, 관리자 = 허용 목록 + 비밀번호 + TOTP. **ADR-0001~0008 재사용 판정표** | 제안됨 |
 | [0019](../adr/0019-moderation-autohide.md) | 서로 다른 계정 3개 → 자동 숨김, 복원 보호(수정 시 해제), 정지, 감사 기록 (D20 으로 단순화) | 제안됨 |
-| [0020](../adr/0020-hosting-github-pages-actions.md) | 사용자 앱은 같은 GitHub Pages 주소(Actions 배포), 관리자 콘솔은 헤더 가능한 별도 출처(Cloudflare) | **승인됨** (D21) |
+| [0020](../adr/0020-hosting-github-pages-actions.md) | 사용자 앱은 같은 GitHub Pages 주소(Actions 배포), 관리자 콘솔은 헤더 가능한 별도 출처(Cloudflare) | **승인됨** (D21) — 사용자 앱 부분(결정 1·2·4)은 ADR-0025 로 대체, 콘솔 부분(결정 3·3a·5)은 유지 |
 | [0021](../adr/0021-data-access-views-rpc.md) | 테이블 비노출 스키마, 읽기는 공개 뷰, 쓰기는 정의자 RPC | 제안됨 |
 | [0022](../adr/0022-security-baseline.md) | 보안 기준선 Y-S1~S12 (D24·D25·D26 메모 추가) | 제안됨 |
 | [0023](../adr/0023-frontend-framework-react.md) | React 19 + Vite 8 + TS 정적 SPA. 지도 런타임·라우터·상태·i18n 은 React 밖(react-leaflet·React Router·Zustand·i18next 없음), `react/no-danger`, 홈 예산 75 KB(→ ADR-0024 로 100 KB 대체) | **승인됨** (D24) — 본문은 그대로, 보완은 ADR-0024 |
 | [0024](../adr/0024-react-switch-review-fixes.md) | React 전환 검토 보완: 홈 예산 **100 KB**(react-dom 19.3.0 실측 67.2 KB), `useStore` 의 `getServerSnapshot`, `prerender` 렌더 검사, Leaflet 인자 허용 목록 린트, `detach` 세대, 지연 라우트 오류 경계·전환, history state, 버전 고정(TS 6.0.3) | **승인됨** (D27) |
+| [0025](../adr/0025-user-app-on-cloudflare-custom-domain.md) | 사용자 앱을 `https://yunabi.juha.dev/` 의 Cloudflare Workers 정적 자산으로(`wrangler.app.jsonc`), `dist/_headers` 로 헤더 CSP(`frame-ancestors 'none'`)·HSTS·`nosniff`, 배포는 `npm run build:deploy` 산출물만. ADR-0020 결정 1·2·4 대체, 결정 6 실행 | **승인됨** (2026-10-24, HO-Q2 → D29) — 아직 배포 전 |
 
 ADR-0009 의 상태 줄을 "ADR-0017으로 일부 대체됨" 으로 바꿨다(본문 그대로). ADR-0011(정적 데이터)·ADR-0013(빌드 없음)도 v2 에서 사실상 대체되지만 상태 줄은 책임자 확인 후 바꾼다(RFC-0003 OQ-15).
 
@@ -121,7 +122,7 @@ M0 → M1(백엔드 기반) 전환 직전인 2026-10-11 에 작성. 게시판(PR
 | 1 | 앱 이름 (Q-M5). 저장 키 `yui.v1.*`·캐시 이름은 이름과 무관하게 유지할 것 | RFC-0002 OQ-1, ADR-0010 S-Q3 |
 | 2 | 영어 장면 메모(`s`)가 모든 언어 사용자에게 보이는 것 — 그림 전까지 숨길지 | RFC-0002 OQ-2, R-1 |
 | 3 | ~~"結 기준으로 보기" 를 고른 사용자가 위치를 다시 켤 길이 없음~~ — **해결** (`skip` 상태줄의 [위치 사용]) | RFC-0002 OQ-3 |
-| 4 | `github.io` 출처 공유 — SW 캐시 삭제는 **해결**(`yui-` 접두어, `sw.js`). `localStorage` 공유는 열림 | RFC-0002 R-6 |
+| 4 | ~~`github.io` 출처 공유~~ — SW 캐시 삭제는 **해결**(`yui-` 접두어, `sw.js`). `localStorage` 공유도 **해결(설계)**: v2 는 자기 출처 `yunabi.juha.dev` 에 배포한다(ADR-0025, 2026-10-24 — 배포 전) | RFC-0002 R-6 |
 | 5 | 2차 데이터 규모, `data/*.json` 분리 여부, 언어 누락 처리, 갱신 담당(Q-M11). 형식 검사는 **해결**(헤드리스 데이터 검사) | ADR-0011 D-Q1~Q5 |
 | 6 | Playwright 검사 50개를 저장소에 둘지 ("테스트 러너 없음" 예외), MLP 기준 QA 테스트 계획 | RFC-0002 OQ-10, OQ-11 |
 | 7 | MLP 용 CSP (ADR-0008 초안 대체) | RFC-0002 OQ-14 |
