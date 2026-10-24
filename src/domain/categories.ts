@@ -10,4 +10,5 @@ export const CAT: Record<Category, { color: string; icon: string }> = {
   study: { color: '#2B7A4B', icon: '📚' },
   admin: { color: '#6A4C9C', icon: '📄' },
   health: { color: '#9A5B00', icon: '➕' },
+  sights: { color: '#A3307A', icon: '⛩️' },
 };

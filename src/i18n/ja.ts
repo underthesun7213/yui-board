@@ -79,6 +79,7 @@ export const ja = {
     study: '勉強',
     admin: '手続き',
     health: '医療',
+    sights: '観光',
   },
   here: '結',
   openMap: 'Googleマップで開く',
