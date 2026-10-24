@@ -11,11 +11,16 @@ updates:
       time: '06:00'
       timezone: Asia/Tokyo
     open-pull-requests-limit: 5
+    # Minor and patch updates come grouped; each major update comes as its own
+    # pull request, so one breaking major (ESLint 10 before eslint-plugin-react
+    # supports it, 2026-10-25) cannot hold back the patches.
     groups:
       runtime:
         dependency-type: production
+        update-types: [minor, patch]
       dev:
         dependency-type: development
+        update-types: [minor, patch]
   - package-ecosystem: github-actions
     directory: /
     schedule:
