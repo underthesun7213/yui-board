@@ -1,0 +1,85 @@
+# OWASP ZAP baseline (passive) against production builds on the local stack,
+# served by vite preview (RFC-0003 §17.6-4, ADR-0022 S8·S11). No secrets, and
+# results of local targets only: production URLs are scanned by hand.
+# Design: docs/architecture/y3s-automated-checks.md §6.
+name: zap
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 18 * * 0' # Monday 03:00 JST
+  # workflow_dispatch and schedule run only from the default branch; this lets
+  # a change to the scan itself run before it is merged
+  push:
+    branches: ['**']
+    paths: ['.zap/**', '.github/workflows/zap.yml']
+permissions:
+  contents: read
+concurrency:
+  group: zap-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  baseline:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      # ghcr.io/zaproxy/zaproxy:stable (multi-arch index; ZAP 2.17.0, image built
+      # 2026-10-16), digest read from the registry on 2026-10-22. Refresh by hand
+      # each quarter: Dependabot does not update it (y3s-automated-checks §6.5).
+      ZAP_IMAGE: ghcr.io/zaproxy/zaproxy@sha256:5ccfff9a411743ab2615136a2edd7416bec9ce41572fa94e935df38c14adb2b6
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+      - name: Postgres 16 with pgTAP and PostGIS
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q postgresql-16 postgresql-16-pgtap postgresql-16-postgis-3
+      - name: Supabase Auth and PostgREST binaries
+        run: sudo mkdir -p /opt/yunabi-local && sudo chown "$USER" /opt/yunabi-local && scripts/local-stack/fetch-bins.sh
+      - run: npm ci
+      - run: scripts/local-stack/start.sh --seed
+      - name: Build the app and the console for the local stack
+        run: |
+          ANON=$(node -e 'import("./scripts/local-stack/keys.mjs").then(k=>console.log(k.ANON_KEY))')
+          export VITE_SUPABASE_URL=http://127.0.0.1:54321 VITE_SUPABASE_PUBLISHABLE_KEY="$ANON"
+          YUNABI_ORIGIN=http://127.0.0.1:4173/ npm run build
+          npm run build:admin
+      - name: Serve both
+        run: |
+          nohup npx vite preview --port 4173 --strictPort --host 127.0.0.1 >preview-app.log 2>&1 &
+          nohup npx vite preview -c vite.admin.config.ts --port 4175 --strictPort --host 127.0.0.1 >preview-admin.log 2>&1 &
+          for u in http://127.0.0.1:4173/ http://127.0.0.1:4175/; do
+            for _ in $(seq 1 60); do curl -sf -o /dev/null "$u" && break; sleep 1; done
+            curl -sf -o /dev/null "$u"
+          done
+      - run: docker pull "$ZAP_IMAGE"
+      - name: Baseline scans (a FAIL rule or an error fails the job)
+        run: |
+          mkdir -p zap-out && cp .zap/rules.tsv zap-out/ && chmod -R a+rwX zap-out
+          for t in app:4173 admin:4175; do
+            name=${t%%:*}; port=${t##*:}
+            set +e
+            docker run --rm --network host -v "$PWD/zap-out:/zap/wrk/:rw" "$ZAP_IMAGE" zap-baseline.py -t "http://127.0.0.1:$port/" -c rules.tsv -j -I -T 15 -s -r "$name.html" -J "$name.json" -w "$name.md"
+            code=$?
+            set -e
+            [ "$code" = 0 ] || { echo "ZAP $name exited $code (1: a FAIL rule, 3: error)"; exit 1; }
+          done
+      - name: No high-risk alert
+        run: |
+          for n in app admin; do
+            jq -e '[.site[]?.alerts[]? | select(.riskcode == "3")] | length == 0' "zap-out/$n.json"
+          done
+      - name: Summary
+        if: always()
+        run: cat zap-out/*.md >> "$GITHUB_STEP_SUMMARY" 2>/dev/null || true
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: zap-local-targets
+          path: |
+            zap-out/*.html
+            zap-out/*.json
+            zap-out/*.md
+          retention-days: 14

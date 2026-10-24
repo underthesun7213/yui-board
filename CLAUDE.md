@@ -2,96 +2,105 @@
 
 ## What this is
 
-A single-file mobile prototype of a dorm community app, plus the Postgres schema
-it will eventually run on. Read `README.md` first for scope and the decisions
-behind it.
+YUNABI: everyday-Japanese comics and a branching conversation game, a shared
+map of everyday places, and a shared calendar, for the residents of 結 -YUI-.
+Read `README.md`, then `docs/02-requirements/PRD-YUNABI.md` for scope,
+`docs/architecture/rfc/0003-yunabi-v2.md` for the design and
+`docs/architecture/erd-v2.md` for the database. React 19 + Vite + TypeScript
+(ADR-0023, ADR-0024); Supabase (Postgres + Auth + PostgREST), no other server.
+Without `VITE_SUPABASE_URL` the app runs on `tests/fixtures/` (fixture mode).
 
 ## The shape of the code
 
-`index.html` is one file: `<style>`, then markup, then one `<script>`. No build
-step, no framework, no bundler. Keep it that way unless we agree to migrate.
+```
+src/main.tsx        boot: restore device storage, start the router, render <App/>
+src/app/            App.tsx, router.ts (hash routes, history), routes.ts (PARENT, tabs), screens.ts (lazy chunks)
+src/state/          small stores (createStore) read in React with useStore
+src/actions/        the only place side effects start
+src/platform/       storage, geolocation, download, service worker registration
+src/api/            rest.ts (reads: plain fetch to public views), auth.ts (anonymous account,
+                    loaded on first write), rpc.ts (writes through database functions)
+src/map/            the Leaflet runtime (outside React), MapSlot, icons, layers
+src/domain/         pure logic: calendar, ics, geo, types
+src/i18n/           en.ts (source), ja.ts, ko.ts, useT
+src/content/        lessons, game, endings, art lookup
+src/features/       screens;  src/ui/  shared components
+src/styles/         tokens.css (design direction A), base.css, screens.css
+src/sw.ts           service worker (Workbox), published as ./sw.js
+src/admin/          admin console: its own build (admin/index.html, vite.admin.config.ts →
+                    dist-admin/, CSP in _headers), its own strings (src/admin/i18n.ts)
+supabase/migrations database, in order; the last one fails unless grants match the design
+supabase/tests      pgTAP;  supabase/seed  fixtures for local and CI only
+scripts/local-stack a local Supabase: Postgres 16 + Supabase Auth + PostgREST + gateway
+```
 
-Inside the script, in order:
-
-1. `T` — all UI strings, keyed by language (`ja`, `en`, `ko`)
-2. Data — `POSTS`, `EVENTS`, `HOSTS`, `LESSONS`, `VN`, `ENDINGS`, `PLACES`, `REQS`, `EXCH`
-3. `S` — the whole app state in one object
-4. View functions — each returns an HTML string: `feed`, `detail`, `compose`,
-   `reports`, `calendar`, `evDetail`, `mapView`, `profiles`, `learn`, `lesson`,
-   `vnView`, `collection`, `sheet`
-5. `render()` — picks a view by `S.view`, writes it into `#main`
-6. One delegated `click` handler at the bottom, dispatching on `data-*` attributes
-
-To add a screen: write a view function, add it to the map in `render()`, add a
-`data-*` branch to the click handler. To add a control: give it a `data-*`
-attribute and handle it there. Do not attach listeners to individual elements —
-`render()` replaces the DOM and they would be lost.
+To add a screen: a component in `features/`, a route in `state/route.ts` and
+`app/routes.ts` (with its `PARENT`), a lazy loader in `app/screens.ts`, a case in
+`App.tsx`, and a case in `tests/render/render.test.tsx` (the test fails without one).
 
 ## Rules that are easy to break by accident
 
-- **Every user-facing string goes in `T`, in all three languages.** A hardcoded
-  string is a bug even if it reads fine in English.
-- **Escape interpolated content with `esc()`.** Anything from data, always.
-- **`\uXXXX` escapes only work inside the script.** Characters placed directly in
-  the HTML body must be literal — a `⚑` in markup renders as that text.
-- **Japanese is the shortest language, Korean the longest.** Size anything with a
-  fixed width against Korean.
-- **The map is Leaflet, created once.** Filtering or selecting a pin calls
-  `updateMap()`, which patches markers in place. Do not re-render the whole view —
-  it destroys the map and resets the zoom.
-- **Bump `CACHE` in `sw.js` when the deployed output changes.**
+- **Every user-facing string goes in `src/i18n/en.ts`, and ja/ko.** The types
+  make a missing key a compile error. That includes `aria-label`s.
+- **User text reaches the DOM only as text.** JSX interpolation, never
+  `dangerouslySetInnerHTML` or `innerHTML`. Leaflet turns strings into HTML, so
+  anything with text goes through `map/layers.ts` (`textNode` and friends), and
+  every `divIcon` is made in `map/icons.ts`. ESLint enforces this.
+- **Screens and UI components do not touch the outside world.** No
+  `localStorage`, `navigator`, `fetch` or Leaflet in `features/` or `ui/`: read
+  stores, call actions. ESLint enforces this; the render check runs screens in Node.
+- **The map is created once and never removed.** `map/runtime.ts` owns it;
+  `MapSlot` only attaches and detaches the container. The runtime follows the
+  stores itself — never move the map from a React effect. Ask for a fit by
+  bumping `mapUi.fitSeq`.
+- **Store selectors return primitives or objects already in the store.** A new
+  object per call re-renders forever.
+- **Japanese is the shortest language, Korean the longest.** Size against Korean.
+- **Ask before using location.** Locating runs only after the notice was accepted.
+- **Device storage keys stay `yui.v1.*`** — installed copies read them.
+- **The e2e builds (`dist-e2e*/`) carry a test handle on `window`.** Never
+  deploy them; deploys come from `npm run build:deploy` into `dist/`
+  (it refuses a fixture, local or e2e build), uploaded with
+  `wrangler deploy -c wrangler.app.jsonc` (runbook §7.3).
+- **The database is the only place rules hold.** Every write goes through a
+  `public` definer function that checks everything itself; clients have no
+  table rights at all. A new function needs `set search_path = ''`,
+  schema-qualified names, malformed input returned as `{status:'invalid',
+  field}` (not raised), and an entry in the grants migration and in the
+  allowlist of `…_checks.sql` — which fails the migration otherwise. A
+  function called with POST must not be `stable`: PostgREST runs those
+  read-only and the IP limiter's insert then fails (405). Every `admin_*`
+  starts with `perform app.require_admin();` (checked by the migration).
+- **Strings the server checks are checked twice.** `src/domain/validation.ts`
+  mirrors the database rules for instant feedback; change both together.
+  The map's link rule lives apart in `src/domain/links.ts` (map bundle
+  budget) — change it with them; a unit test checks the two agree.
 
 ## Testing
 
-There is no test runner. Before saying a change works, render every view in every
-language headlessly and look for thrown errors and for `undefined` leaking into
-the output:
+Before saying a change works:
 
 ```bash
-node -e '
-const h=require("fs").readFileSync("index.html","utf8");
-const src=h.match(/<script>([\s\S]*)<\/script>/)[1]
-  .replace(/\/\* Manifest shortcuts[\s\S]*$/,"");
-const stub=()=>({innerHTML:"",textContent:"",style:{},classList:{add(){},remove(){}},
-  value:"",selectedIndex:0,dataset:{},setAttribute(){},appendChild(){},className:""});
-const doc={getElementById:stub,querySelector:stub,addEventListener(){},
-  createElement:stub,documentElement:{},body:{dataset:{}}};
-const f=new Function("document","window","console","setTimeout","clearTimeout","URL","Blob","L",src+`
-  const out=[],views={feed,post:detail,compose,reports,cal:calendar,
-    event:evDetail,map:mapView,profiles,learn,lesson,collection};
-  // detail views need their id in S, so give every view a state that makes sense
-  const setup={post:{pid:POSTS[0].id},event:{eid:EVENTS[0].id},
-    lesson:{lid:"l1"},map:{pl:"p13",cat:"daily"},cal:{day:null,month:null}};
-  for(const lang of ["en","ja","ko"]){ S.lang=lang;
-    for(const v in views){ Object.assign(S,{view:v},setup[v]||{});
-      try{ const o=views[v]()+sheet();
-        if(/undefined|\\[object Object\\]/.test(o)) out.push(lang+"/"+v+" suspicious");
-      }catch(e){ out.push(lang+"/"+v+" "+e.message); } } }
-  // the branching episode needs playing, not just rendering
-  for(const route of ["osaka","kyoto"]){
-    S.lid="l8"; S.vn={route,i:0,picked:null,score:0};
-    for(let i=0;i<=VN[route].scenes.length;i++){ S.vn.i=i;
-      try{ if(/undefined/.test(vnView())) out.push(route+" scene "+i+" suspicious"); }
-      catch(e){ out.push(route+" scene "+i+" "+e.message); } } }
-  return out;`);
-const errs=f(doc,{},console,()=>{},()=>{},{createObjectURL:()=>"",revokeObjectURL(){}},class{},undefined);
-console.log(errs.length?errs.join("\n"):"clean");
-'
+npm run lint && npm run typecheck && npm test && npm run build:local
+CHROMIUM_PATH=/opt/pw-browsers/chromium npm run test:e2e   # cloud session
+npm run test:db                                            # database (pgTAP)
+CHROMIUM_PATH=/opt/pw-browsers/chromium npm run test:backend   # app + admin console + local backend
+VITE_SUPABASE_URL=https://example.supabase.co npm run build:admin
 ```
 
-A syntax check alone is not enough. A patch that deletes a function leaves valid
-JavaScript behind; this has already happened once.
+The local backend needs Postgres 16 with pgTAP and PostGIS (apt) and two
+binaries (`scripts/local-stack/fetch-bins.sh`); container images cannot be
+pulled in cloud sessions. In a session where the Docker daemon is not running,
+none of that is needed — the stack runs without Docker.
 
-## When editing by script
+`npm test` includes the render check: every route × en/ja/ko × state, rendered
+with `prerender` in Node, failing on thrown errors, a loading fallback left in
+the output, and `undefined`, `NaN` or `[object Object]`. `npm run build` fails
+over the bundle budgets (home 100 KB, map 60, lessons 30, gzip). The browser
+tests run on a production build with its CSP and fail on any console error or
+CSP violation; `tests/e2e/v13-parity.spec.ts` is the v1.3 parity list.
 
-Prefer targeted edits. If you patch `index.html` with a script that replaces a
-range between two markers, verify afterwards that every view function and data
-constant still exists — not just that the file parses.
+## Backslashes in generated edits
 
-## The schema
-
-`schema.sql` is the design, not yet applied anywhere. Its central invariant:
-a post's text and its author live in different tables, and `post_authors` has RLS
-enabled with no policies, so only a `service_role` connection can read it. Keep
-that property. Inserts of authored content go through the `SECURITY DEFINER`
-functions at the bottom of the file, never direct table inserts from a client.
+Writing files through tools has twice turned `'\;'` into `'\;'`. After an edit
+that contains backslash escapes, read the line back.

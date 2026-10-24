@@ -1,0 +1,861 @@
+openapi: 3.0.3
+info:
+  title: YUNABI v2 client API (proposed)
+  version: 2.0.0-draft
+  description: |
+    설계 수준 명세 (제안). 2026-10-12 작성. 아직 어떤 서버에도 구현되어 있지 않다.
+
+    - 근거: PRD-YUNABI v2.3, docs/architecture/rfc/0003-yunabi-v2.md §11~§15, docs/architecture/erd-v2.md §5·§7,
+      ADR-0018·0019·0021·0022.
+    - 형식: 서버는 Supabase 의 PostgREST(Data API)와 Auth 다. 경로는 Supabase 가 `public` 스키마의 뷰·함수에서
+      자동으로 만든다. 이 문서는 **클라이언트가 쓰기로 한 것만** OpenAPI 로 적는다. PostgREST 의 전체 질의 문법
+      (`select=`, 필터, 정렬)은 PostgREST 문서를 따르고 여기서는 쓰는 매개변수만 적는다.
+    - 기본 테이블(`app` 스키마)은 노출되지 않는다. 읽기는 `*_public` 뷰, 쓰기는 `/rpc/*` 뿐이다 (ADR-0021).
+    - 모든 요청에 `apikey: <publishable key>` (sb_publishable_…). 쓰기·관리 요청은 추가로
+      `Authorization: Bearer <access token>`. secret 키는 클라이언트에 절대 없다 (Y-S2).
+    - 2026-10-12 보안 검토(기준 da55060) 반영 개정 — 바뀐 곳에 [검토 #n]:
+      #1 읽기 전용 RPC(data_version, my_items, admin 조회)는 GET — IP 쓰기 한도에 세지 않는다.
+      #3 관리 RPC 권한 실패는 예외(SQLSTATE 42501 → HTTP 401/403). #7 형식 오류도 200 + status.
+      #10 admin_restore_bulk 추가. nit: goo.gl/maps 제거.
+    - [Y-2 구현] supabase/migrations/ (브랜치 claude/sharp-einstein-3m78cy, e2e1597) 반영:
+      IP 쓰기 한도(HTTP 429)는 경로와 무관하게 GET·HEAD·OPTIONS 가 아닌 **모든** 요청을 센다
+      (퍼센트 인코딩한 함수 이름·/rpc/graphql·뷰 PATCH 우회 때문). 그래서 읽기 RPC 는 반드시 GET.
+      pg_graphql 은 제거. 읽기 RPC my_place·my_event 추가(숨긴 내 항목 수정용, Y-E1).
+      인자를 PostgREST 가 함수 타입으로 바꾸지 못하면(잘못된 enum·uuid) 200 + invalid 가 아니라
+      PostgREST 오류(4xx)로 끝나고 IP 카운트도 남지 않는다.
+      공개 뷰 읽기는 한 요청 최대 1000행 — 클라이언트는 order + limit=1000&offset 으로 끝까지 받는다.
+    - 쓰기·신고 RPC 결과: 거절(권한·빈도·정지·소유 아님)과 **형식 오류**는 모두 HTTP 200 + `{"status": "..."}`
+      (형식 오류는 `{"status":"invalid","field":"name"}`) — 서버가 거절을 기록하고 IP 카운트를 남기기 위해
+      예외를 쓰지 않는다 (RFC-0003 §13.1). HTTP 400 은 예상 밖 서버 오류뿐. IP 빈도 초과는 HTTP 429.
+    - 관리 RPC 는 관리자 콘솔(별도 출처)에서만 부르며, JWT 가 `aal2` 이고 admins 허용 목록·세션 12시간
+      조건을 모두 만족하지 않으면 **예외**(42501 → 401/403)로 실패한다 (Y-S3, 실패 안전).
+      `admin_whoami` 만 예외 대신 status 를 돌려주고 거절을 기록한다.
+servers:
+  - url: https://{project}.supabase.co
+    variables:
+      project:
+        default: your-project-ref
+tags:
+  - name: read
+    description: 공개 뷰 읽기 — 계정 불필요 (anon)
+  - name: auth
+    description: 익명 계정 (첫 쓰기 때)
+  - name: write
+    description: 등록·수정·삭제 RPC (authenticated, 익명 포함)
+  - name: report
+    description: 신고
+  - name: admin
+    description: 관리 RPC (허용 목록 + aal2 + 세션 12시간)
+security:
+  - apikey: []
+paths:
+  /rest/v1/places_public:
+    get:
+      tags: [read]
+      summary: 보이는 장소 전체 (Y-M4, Y-M9)
+      description: 숨김·삭제 항목 없음. 등록자 정보 없음. 날짜는 일 단위.
+      parameters:
+        - in: query
+          name: select
+          required: true
+          schema: { type: string, example: "id,name,category,description,gmaps_url,lat,lng,pref,lang,created_on,edited_on" }
+        - in: query
+          name: pref
+          required: false
+          description: "도도부현 단위 로딩으로 바꿀 때 (RFC-0003 OQ-11) — 예 eq.27"
+          schema: { type: string }
+        - $ref: '#/components/parameters/Order'
+        - $ref: '#/components/parameters/PageLimit'
+        - $ref: '#/components/parameters/PageOffset'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/Place' } }
+  /rest/v1/events_public:
+    get:
+      tags: [read]
+      summary: 보이는 일정 시리즈 (Y-K2) — 끝난 지 1년 이내
+      parameters:
+        - in: query
+          name: select
+          required: true
+          schema: { type: string, example: "id,title,start_date,start_time,end_time,weekly_until,place_text,body,lang,created_on,edited_on" }
+        - $ref: '#/components/parameters/Order'
+        - $ref: '#/components/parameters/PageLimit'
+        - $ref: '#/components/parameters/PageOffset'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/EventSeries' } }
+  /rest/v1/event_occurrences_public:
+    get:
+      tags: [read]
+      summary: 보이는 일정의 회차 취소·수정 (Y-K7)
+      parameters:
+        - in: query
+          name: select
+          required: true
+          schema: { type: string, example: "event_id,occurs_on,cancelled,title,start_time,end_time,place_text,body" }
+        - $ref: '#/components/parameters/Order'
+        - $ref: '#/components/parameters/PageLimit'
+        - $ref: '#/components/parameters/PageOffset'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/Occurrence' } }
+  /rest/v1/prefecture_counts:
+    get:
+      tags: [read]
+      summary: 도도부현별 보이는 장소 수 (일본 전체 목록)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  required: [pref, n]
+                  properties:
+                    pref: { $ref: '#/components/schemas/PrefCode' }
+                    n: { type: integer }
+  /rest/v1/rpc/data_version:
+    get:
+      tags: [read]
+      summary: 데이터 판 번호 — 같으면 다시 받지 않는다 (RFC-0003 §11.3)
+      description: "stable 함수. GET 으로 부른다(supabase-js `rpc('data_version', {}, { get: true })`). 30초 폴링이 db_pre_request 의 IP 쓰기 한도를 소진하지 않게 [검토 #1]"
+      responses:
+        '200':
+          description: bigint
+          content:
+            application/json:
+              schema: { type: integer, format: int64 }
+  /auth/v1/signup:
+    post:
+      tags: [auth]
+      summary: 익명 계정 만들기 — 첫 쓰기 직전에만 (Y-A1)
+      description: |
+        auth-js `signInAnonymously()` 가 보내는 요청. 본문이 비어 있으면 익명 사용자.
+        CAPTCHA 스위치가 켜져 있으면 `gotrue_meta_security.captcha_token` 이 필요하다 (Y-S7).
+        IP 당 시간당 한도(기본 30)와 before-user-created 훅의 전역 한도가 있다.
+        정확한 요청 형식은 auth-js 가 관리하므로 클라이언트 코드는 이 경로를 직접 부르지 않는다.
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                gotrue_meta_security:
+                  type: object
+                  properties:
+                    captcha_token: { type: string }
+      responses:
+        '200':
+          description: 세션 (access_token, refresh_token, user.is_anonymous = true)
+        '400': { description: "CAPTCHA 필요·실패 (오류 코드 captcha_failed) — 클라이언트는 Turnstile 위젯을 띄우고 다음 저장 때 signInAnonymously({ options: { captchaToken } }) 로 다시 보낸다 [Y-2 구현: 사용자 앱 구현됨] (사이트 키는 빌드에 미리 포함)" }
+        '403': { description: "[Y-2 구현] 훅이 거절 — 초대되지 않은 이메일 가입 (훅이 http_code 403 을 돌려줌)" }
+        '422': { description: "훅이 거절 (전역 한도) — 익명 가입에 훅이 호출되는지는 미확인 (ERD v2 OQ-E5). [Y-2 구현] 훅은 http_code 429 를 돌려주도록 구현되어 있어 실제 상태 코드는 429 일 수 있다. 로컬 Auth v2.197.0 에서는 익명 가입에도 훅이 호출됨 — 클라우드는 미확인" }
+        '429': { description: "IP 한도 초과 (프로젝트 전체 값, 설계는 시간당 150 — RFC-0003 §14), 또는 [Y-2 구현] 훅의 전역 익명 생성 한도" }
+  /rest/v1/rpc/create_place:
+    post:
+      tags: [write]
+      summary: 장소 등록 (Y-M6, Y-A3, Y-C4)
+      security: [ { apikey: [], userJwt: [] } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PlaceInput' }
+      responses:
+        '200':
+          description: "status: ok | duplicate | rate_limited | suspended | forbidden"
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WriteResult' }
+        '400': { $ref: '#/components/responses/InvalidInput' }
+        '429': { $ref: '#/components/responses/IpLimited' }
+  /rest/v1/rpc/update_place:
+    post:
+      tags: [write]
+      summary: 내 장소 수정 (Y-M8, Y-E1, Y-R6 — 보호 해제)
+      security: [ { apikey: [], userJwt: [] } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - type: object
+                  required: [p_id]
+                  properties:
+                    p_id: { type: integer, format: int64 }
+                - $ref: '#/components/schemas/PlaceFields'
+      responses:
+        '200':
+          description: "status: ok | not_found | rate_limited | suspended | forbidden"
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WriteResult' }
+        '400': { $ref: '#/components/responses/InvalidInput' }
+        '429': { $ref: '#/components/responses/IpLimited' }
+  /rest/v1/rpc/delete_place:
+    post:
+      tags: [write]
+      summary: 내 장소 삭제 — 숨김 상태여도 가능, 서버 30일 보관 (Y-E2, Y-E3)
+      security: [ { apikey: [], userJwt: [] } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/IdOnly' }
+      responses:
+        '200':
+          description: "status: ok | not_found | forbidden"
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WriteResult' }
+  /rest/v1/rpc/create_event:
+    post:
+      tags: [write]
+      summary: 일정 등록 (Y-K4, Y-K6)
+      security: [ { apikey: [], userJwt: [] } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/EventInput' }
+      responses:
+        '200':
+          description: "status: ok | duplicate | rate_limited | suspended | forbidden"
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WriteResult' }
+        '400': { $ref: '#/components/responses/InvalidInput' }
+        '429': { $ref: '#/components/responses/IpLimited' }
+  /rest/v1/rpc/update_event:
+    post:
+      tags: [write]
+      summary: 내 일정 수정 — 끝난 일정은 past_event (Y-K8, Y-K9)
+      security: [ { apikey: [], userJwt: [] } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - type: object
+                  required: [p_id]
+                  properties:
+                    p_id: { type: integer, format: int64 }
+                - $ref: '#/components/schemas/EventFields'
+      responses:
+        '200':
+          description: "status: ok | not_found | past_event | rate_limited | suspended | forbidden"
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WriteResult' }
+        '400': { $ref: '#/components/responses/InvalidInput' }
+  /rest/v1/rpc/delete_event:
+    post:
+      tags: [write]
+      summary: 내 일정 삭제 — 지난 일정도 가능 (Y-K9)
+      security: [ { apikey: [], userJwt: [] } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/IdOnly' }
+      responses:
+        '200':
+          description: "status: ok | not_found | forbidden"
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WriteResult' }
+  /rest/v1/rpc/set_occurrence:
+    post:
+      tags: [write]
+      summary: 반복 일정의 한 회차 취소·수정 (Y-K7)
+      security: [ { apikey: [], userJwt: [] } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [p_event_id, p_occurs_on, p_cancelled]
+              properties:
+                p_event_id: { type: integer, format: int64 }
+                p_occurs_on: { type: string, format: date }
+                p_cancelled: { type: boolean }
+                p_title: { type: string, nullable: true, maxLength: 60 }
+                p_start_time: { type: string, nullable: true, pattern: '^\d{2}:\d{2}$' }
+                p_end_time: { type: string, nullable: true, pattern: '^\d{2}:\d{2}$' }
+                p_place_text: { type: string, nullable: true, maxLength: 60 }
+                p_body: { type: string, nullable: true, maxLength: 500 }
+      responses:
+        '200':
+          description: "status: ok | not_found | past_event | rate_limited | suspended | forbidden"
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WriteResult' }
+        '400': { $ref: '#/components/responses/InvalidInput' }
+  /rest/v1/rpc/clear_occurrence:
+    post:
+      tags: [write]
+      summary: 회차 덮어쓰기 되돌리기
+      security: [ { apikey: [], userJwt: [] } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [p_event_id, p_occurs_on]
+              properties:
+                p_event_id: { type: integer, format: int64 }
+                p_occurs_on: { type: string, format: date }
+      responses:
+        '200':
+          description: "status: ok | not_found | past_event | forbidden"
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WriteResult' }
+  /rest/v1/rpc/my_items:
+    get:
+      tags: [write]
+      summary: 내가 등록한 것 (ME-02, Y-R8)
+      description: "stable 함수, GET [검토 #1]. 계정 행을 만들지 않는다."
+      security: [ { apikey: [], userJwt: [] } ]
+      responses:
+        '200':
+          description: 내 항목만
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/MyItem' }
+  /rest/v1/rpc/my_place:
+    get:
+      tags: [write]
+      summary: "[Y-2 구현] 수정할 내 장소 하나 — 숨김 상태여도 (Y-E1)"
+      description: "stable 정의자 함수, GET (IP 쓰기 한도에 세지 않게). 소유자이고 삭제되지 않은 장소만. 남의 것·없음·삭제됨은 모두 null (구별 없음). 계정 행을 만들지 않는다. 공개 뷰에 없는 숨김 항목의 수정 폼을 채우는 데 쓴다."
+      security: [ { apikey: [], userJwt: [] } ]
+      parameters:
+        - { in: query, name: p_id, required: true, schema: { type: integer, format: int64 } }
+      responses:
+        '200':
+          description: 내 장소 또는 null
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MyPlace' }
+  /rest/v1/rpc/my_event:
+    get:
+      tags: [write]
+      summary: "[Y-2 구현] 수정할 내 일정 하나 — 숨김 상태여도 (Y-E1)"
+      description: "my_place 와 같은 규칙. 회차 덮어쓰기는 포함하지 않는다 (event_occurrences_public 은 보이는 일정만)."
+      security: [ { apikey: [], userJwt: [] } ]
+      parameters:
+        - { in: query, name: p_id, required: true, schema: { type: integer, format: int64 } }
+      responses:
+        '200':
+          description: 내 일정 또는 null
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MyEvent' }
+  /rest/v1/rpc/submit_report:
+    post:
+      tags: [report]
+      summary: 신고 — 서로 다른 계정 3개면 자동 숨김 (Y-R1~R3)
+      security: [ { apikey: [], userJwt: [] } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [p_kind, p_id, p_reason]
+              properties:
+                p_kind: { $ref: '#/components/schemas/ItemKind' }
+                p_id: { type: integer, format: int64 }
+                p_reason: { $ref: '#/components/schemas/ReportReason' }
+      responses:
+        '200':
+          description: "status: ok | already_reported | not_found | rate_limited | suspended | forbidden. 숨김 여부는 알려 주지 않는다"
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/StatusOnly' }
+        '429': { $ref: '#/components/responses/IpLimited' }
+  /rest/v1/rpc/admin_whoami:
+    post:
+      tags: [admin]
+      summary: 관리자 진입 확인
+      security: [ { apikey: [], adminJwt: [] } ]
+      responses:
+        '200':
+          description: "status: ok | forbidden"
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status]
+                properties:
+                  status: { type: string, enum: [ok, forbidden] }
+                  email: { type: string }
+                  session_expires_at: { type: string, format: date-time }
+  /rest/v1/rpc/admin_queue:
+    post:
+      tags: [admin]
+      summary: 숨김·신고·삭제 항목 목록 (Y-R4, Y-R9 — 신고자 없음)
+      security: [ { apikey: [], adminJwt: [] } ]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                p_filter: { type: string, enum: [all, hidden, reported, deleted], default: all }
+                p_limit: { type: integer, default: 50, maximum: 200 }
+                p_before: { type: integer, format: int64, nullable: true }
+      responses:
+        '200':
+          description: 목록. 권한이 없으면 200 이 아니라 401/403 (require_admin 예외, [검토 #3]). 콘솔은 먼저 admin_whoami 로 진입 가능 여부를 확인한다
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/AdminQueueItem' }
+  /rest/v1/rpc/admin_item:
+    post:
+      tags: [admin]
+      summary: 항목 상세 + 신고 집계 + 관리 기록
+      security: [ { apikey: [], adminJwt: [] } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AdminTarget' }
+      responses:
+        '200':
+          description: jsonb
+          content:
+            application/json:
+              schema: { type: object }
+  /rest/v1/rpc/admin_restore:
+    post:
+      tags: [admin]
+      summary: 복원 — 이후 등록자가 수정할 때까지 자동 숨김 없음 (Y-R4, Y-R6)
+      security: [ { apikey: [], adminJwt: [] } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AdminActionInput' }
+      responses:
+        '200':
+          description: "status: ok | not_found"
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/StatusOnly' }
+        '401': { $ref: '#/components/responses/AdminDenied' }
+        '403': { $ref: '#/components/responses/AdminDenied' }
+  /rest/v1/rpc/admin_restore_bulk:
+    post:
+      tags: [admin]
+      summary: 기간 안 자동 숨김 일괄 복원 — 대량 신고 공격 런북 (RFC-0003 §17.7 R-1) [검토 #10]
+      security: [ { apikey: [], adminJwt: [] } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [p_since, p_until]
+              properties:
+                p_since: { type: string, format: date-time }
+                p_until: { type: string, format: date-time }
+                p_note: { type: string, maxLength: 500 }
+                p_dry_run: { type: boolean, default: true, description: 기본은 미리보기 }
+      responses:
+        '200':
+          description: "{count, items?} — 항목마다 mod_actions 1행"
+          content:
+            application/json:
+              schema: { type: object }
+        '401': { $ref: '#/components/responses/AdminDenied' }
+        '403': { $ref: '#/components/responses/AdminDenied' }
+  /rest/v1/rpc/admin_delete:
+    post:
+      tags: [admin]
+      summary: 관리자 삭제 (30일 보관 후 영구 삭제)
+      security: [ { apikey: [], adminJwt: [] } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AdminActionInput' }
+      responses:
+        '200':
+          description: "status: ok | not_found"
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/StatusOnly' }
+        '401': { $ref: '#/components/responses/AdminDenied' }
+        '403': { $ref: '#/components/responses/AdminDenied' }
+  /rest/v1/rpc/admin_dismiss:
+    post:
+      tags: [admin]
+      summary: 보이는 항목에 쌓인 신고 기각
+      security: [ { apikey: [], adminJwt: [] } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AdminActionInput' }
+      responses:
+        '200':
+          description: "status: ok | not_found"
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/StatusOnly' }
+        '401': { $ref: '#/components/responses/AdminDenied' }
+        '403': { $ref: '#/components/responses/AdminDenied' }
+  /rest/v1/rpc/admin_suspend:
+    post:
+      tags: [admin]
+      summary: 계정 정지 — 쓰기·신고 불가, 항목 숨김 (Y-R7)
+      security: [ { apikey: [], adminJwt: [] } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AccountActionInput' }
+      responses:
+        '200':
+          description: "status: ok | not_found"
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/StatusOnly' }
+        '401': { $ref: '#/components/responses/AdminDenied' }
+        '403': { $ref: '#/components/responses/AdminDenied' }
+  /rest/v1/rpc/admin_unsuspend:
+    post:
+      tags: [admin]
+      summary: 정지 해제 — 항목은 숨김 유지, 항목별 복원 필요 (Y-R7)
+      security: [ { apikey: [], adminJwt: [] } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AccountActionInput' }
+      responses:
+        '200':
+          description: "status: ok | not_found"
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/StatusOnly' }
+        '401': { $ref: '#/components/responses/AdminDenied' }
+        '403': { $ref: '#/components/responses/AdminDenied' }
+  /rest/v1/rpc/admin_search:
+    post:
+      tags: [admin]
+      summary: 이름·제목 검색 — 외부 삭제 요청 처리 (Y-P6, Y-P7)
+      security: [ { apikey: [], adminJwt: [] } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [p_q]
+              properties:
+                p_q: { type: string, minLength: 1, maxLength: 60 }
+                p_pref: { $ref: '#/components/schemas/PrefCode' }
+      responses:
+        '200':
+          description: 목록
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/AdminQueueItem' }
+  /rest/v1/rpc/admin_audit_log:
+    post:
+      tags: [admin]
+      summary: 관리 기록 열람 (Y-R5)
+      security: [ { apikey: [], adminJwt: [] } ]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                p_limit: { type: integer, default: 100, maximum: 500 }
+                p_before: { type: integer, format: int64, nullable: true }
+      responses:
+        '200':
+          description: 최신순
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/ModAction' }
+components:
+  parameters:
+    Order:
+      in: query
+      name: order
+      required: false
+      description: "[Y-2 구현] 페이지가 겹치거나 빠지지 않게 고정 순서 — 장소·일정 id, 회차 event_id,occurs_on"
+      schema: { type: string, example: id }
+    PageLimit:
+      in: query
+      name: limit
+      required: false
+      description: "[Y-2 구현] 클라우드 Data API 는 한 요청 최대 1000행. 클라이언트는 1000 으로 받고, 1000행 미만이 올 때까지 offset 을 늘린다 (RFC-0003 §11.1)"
+      schema: { type: integer, maximum: 1000, example: 1000 }
+    PageOffset:
+      in: query
+      name: offset
+      required: false
+      schema: { type: integer, minimum: 0, example: 0 }
+  securitySchemes:
+    apikey:
+      type: apiKey
+      in: header
+      name: apikey
+      description: publishable 키 (sb_publishable_…). 공개값
+    userJwt:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: 익명 사용자 access token (is_anonymous = true, role authenticated)
+    adminJwt:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: 관리자 access token — is_anonymous = false, aal = aal2, 세션 12시간 이내, admins 허용 목록
+  responses:
+    InvalidInput:
+      description: "예상 밖 서버 오류(DB 제약 위반 등 — 함수 검사의 구멍). 형식 오류는 여기가 아니라 200 + {status:'invalid', field} 로 온다 [검토 #7]. 클라이언트는 일반 오류 문구"
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/PostgrestError' }
+    AdminDenied:
+      description: "관리 권한 실패 — require_admin 예외(SQLSTATE 42501): 허용 목록 밖, 익명, aal1, 세션 행 없음, 세션 12시간 초과 [검토 #3]"
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/PostgrestError' }
+    IpLimited:
+      description: "IP 단위 쓰기 빈도 초과 (5분 창, Y-S7). [Y-2 구현] GET·HEAD·OPTIONS 가 아닌 모든 요청이 같은 창에 세진다 — 관리 RPC(POST), 경로와 무관. db_pre_request 가 SQLSTATE PT429 를 던져 HTTP 429 (로컬 PostgREST 13 확인, 클라우드 미확인 — ERD v2 OQ-E1). 표에 429 가 없는 쓰기 경로도 같은 이유로 429 를 받을 수 있다"
+  schemas:
+    PrefCode: { type: string, pattern: '^(0[1-9]|[1-3][0-9]|4[0-7])$' }
+    Lang: { type: string, enum: [en, ja, ko] }
+    Category: { type: string, enum: [transit, daily, food, study, admin, health] }
+    ItemKind: { type: string, enum: [place, event] }
+    ReportReason: { type: string, enum: [wrong, spam, inappropriate, privacy, other] }
+    Place:
+      type: object
+      required: [id, name, category, description, lat, lng, pref, lang, created_on]
+      properties:
+        id: { type: integer, format: int64 }
+        name: { type: string, maxLength: 60 }
+        category: { $ref: '#/components/schemas/Category' }
+        description: { type: string, maxLength: 500 }
+        gmaps_url: { type: string, nullable: true }
+        lat: { type: number }
+        lng: { type: number }
+        pref: { $ref: '#/components/schemas/PrefCode' }
+        lang: { $ref: '#/components/schemas/Lang' }
+        created_on: { type: string, format: date }
+        edited_on: { type: string, format: date, nullable: true }
+    PlaceFields:
+      type: object
+      required: [p_name, p_category, p_lat, p_lng, p_lang]
+      properties:
+        p_name: { type: string, minLength: 1, maxLength: 60 }
+        p_category: { $ref: '#/components/schemas/Category' }
+        p_description: { type: string, maxLength: 500, default: '' }
+        p_gmaps_url:
+          type: string
+          nullable: true
+          maxLength: 500
+          description: "https 만. google.com/maps, google.co.jp/maps, maps.app.goo.gl (Y-M6). goo.gl/maps 는 지원 종료된 단축 링크라 받지 않는다 [검토 nit] — PRD 확인은 RFC-0003 OQ-16. [Y-2 구현] 앞뒤 공백을 다듬은 뒤 검사. 점 경로 조각(/../, /./, %2e 표기 포함)·역슬래시·공백 문자가 있으면 invalid"
+        p_lat: { type: number }
+        p_lng: { type: number }
+        p_lang: { $ref: '#/components/schemas/Lang' }
+    PlaceInput:
+      allOf:
+        - type: object
+          required: [p_client_token]
+          properties:
+            p_client_token: { type: string, format: uuid, description: 폼을 열 때 만든 멱등 키 (Y-C4) }
+        - $ref: '#/components/schemas/PlaceFields'
+    EventSeries:
+      type: object
+      required: [id, title, start_date, start_time, end_time, lang, created_on]
+      properties:
+        id: { type: integer, format: int64 }
+        title: { type: string }
+        start_date: { type: string, format: date }
+        start_time: { type: string, example: '17:00:00' }
+        end_time: { type: string }
+        weekly_until: { type: string, format: date, nullable: true }
+        place_text: { type: string }
+        body: { type: string }
+        lang: { $ref: '#/components/schemas/Lang' }
+        created_on: { type: string, format: date }
+        edited_on: { type: string, format: date, nullable: true }
+    EventFields:
+      type: object
+      required: [p_title, p_start_date, p_start_time, p_end_time, p_lang]
+      properties:
+        p_title: { type: string, minLength: 1, maxLength: 60 }
+        p_start_date: { type: string, format: date, description: "도쿄 기준 오늘 이후 (생성). [Y-2 구현] 도쿄 오늘 + 365 이하 (생성·수정)" }
+        p_start_time: { type: string, pattern: '^\d{2}:\d{2}$', description: "[Y-2 구현] 분 단위, 24:00 미만" }
+        p_end_time: { type: string, pattern: '^\d{2}:\d{2}$', description: "> 시작. [Y-2 구현] 분 단위, 24:00 미만. 생성 때 오늘 이미 끝난 시각이면 invalid (field: time)" }
+        p_weekly_until: { type: string, format: date, nullable: true, description: "같은 요일, 최대 26회 (start + 175일)" }
+        p_place_text: { type: string, maxLength: 60, default: '' }
+        p_body: { type: string, maxLength: 500, default: '' }
+        p_lang: { $ref: '#/components/schemas/Lang' }
+    EventInput:
+      allOf:
+        - type: object
+          required: [p_client_token]
+          properties:
+            p_client_token: { type: string, format: uuid }
+        - $ref: '#/components/schemas/EventFields'
+    Occurrence:
+      type: object
+      required: [event_id, occurs_on, cancelled]
+      properties:
+        event_id: { type: integer, format: int64 }
+        occurs_on: { type: string, format: date }
+        cancelled: { type: boolean }
+        title: { type: string, nullable: true }
+        start_time: { type: string, nullable: true }
+        end_time: { type: string, nullable: true }
+        place_text: { type: string, nullable: true }
+        body: { type: string, nullable: true }
+    IdOnly:
+      type: object
+      required: [p_id]
+      properties:
+        p_id: { type: integer, format: int64 }
+    StatusOnly:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [ok, duplicate, already_reported, not_found, past_event, rate_limited, suspended, invalid, forbidden]
+        field:
+          type: string
+          description: "status = invalid 일 때 문제 필드 (name, category, description, gmaps_url, location, lang, title, start_date, time, weekly_until, occurs_on, place_text, body, [Y-2 구현] client_token, cancelled) [검토 #7]. [Y-2 구현] 글 필드 공통 규칙: 앞뒤 공백·U+00A0·U+3000 다듬기, C1 제어·방향·폭 0·서식 문자(U+00AD, 061C, 180E, 200B–200F, 2028–202E, 2060–206F, FEFF, FFF9–FFFB) 거절, 한 줄 필드는 제어 문자 전부, 여러 줄 필드(description, body)는 탭·LF 외 제어 문자 거절(CR 단독 포함 — 줄 바꿈은 LF), 필수 필드는 보이는 글자 1개 이상 (ERD v2 §4.1)"
+    WriteResult:
+      allOf:
+        - $ref: '#/components/schemas/StatusOnly'
+        - type: object
+          properties:
+            id: { type: integer, format: int64 }
+            pref: { $ref: '#/components/schemas/PrefCode' }
+    MyItem:
+      type: object
+      required: [kind, id, title, state, created_on]
+      properties:
+        kind: { $ref: '#/components/schemas/ItemKind' }
+        id: { type: integer, format: int64 }
+        title: { type: string }
+        state: { type: string, enum: [visible, hidden_review, deleted] }
+        created_on: { type: string, format: date }
+        edited_on: { type: string, format: date, nullable: true }
+        deleted_on: { type: string, format: date, nullable: true }
+        last_date: { type: string, format: date, nullable: true }
+    MyPlace:
+      type: object
+      nullable: true
+      description: "[Y-2 구현] my_place 의 반환"
+      properties:
+        id: { type: integer, format: int64 }
+        name: { type: string }
+        category: { $ref: '#/components/schemas/Category' }
+        description: { type: string }
+        gmaps_url: { type: string, nullable: true }
+        lat: { type: number }
+        lng: { type: number }
+        pref: { $ref: '#/components/schemas/PrefCode' }
+        lang: { $ref: '#/components/schemas/Lang' }
+    MyEvent:
+      type: object
+      nullable: true
+      description: "[Y-2 구현] my_event 의 반환 (회차 없음)"
+      properties:
+        id: { type: integer, format: int64 }
+        title: { type: string }
+        start_date: { type: string, format: date }
+        start_time: { type: string, example: '17:00:00' }
+        end_time: { type: string }
+        weekly_until: { type: string, format: date, nullable: true }
+        place_text: { type: string }
+        body: { type: string }
+        lang: { $ref: '#/components/schemas/Lang' }
+    AdminTarget:
+      type: object
+      required: [p_kind, p_id]
+      properties:
+        p_kind: { $ref: '#/components/schemas/ItemKind' }
+        p_id: { type: integer, format: int64 }
+    AdminActionInput:
+      allOf:
+        - $ref: '#/components/schemas/AdminTarget'
+        - type: object
+          properties:
+            p_note: { type: string, maxLength: 500 }
+    AccountActionInput:
+      type: object
+      required: [p_account_ref]
+      properties:
+        p_account_ref: { type: string, pattern: '^a-[0-9a-f]{10}$', description: "가명 계정 ID (Y-P2) — uuid 아님" }
+        p_note: { type: string, maxLength: 200 }
+    AdminQueueItem:
+      type: object
+      properties:
+        kind: { $ref: '#/components/schemas/ItemKind' }
+        id: { type: integer, format: int64 }
+        title: { type: string }
+        state: { type: string, enum: [visible, hidden_review, deleted] }
+        protected: { type: boolean, description: 복원 후 수정 전 (Y-R6) }
+        reports_open: { type: integer }
+        reasons: { type: object, additionalProperties: { type: integer }, description: "사유별 건수 — 신고자 없음 (Y-R9)" }
+        first_report_at: { type: string, format: date-time, nullable: true }
+        last_report_at: { type: string, format: date-time, nullable: true }
+        account_ref: { type: string, nullable: true, description: "등록자 가명. 계정 삭제 시 null" }
+        created_on: { type: string, format: date }
+        deleted_on: { type: string, format: date, nullable: true }
+    ModAction:
+      type: object
+      properties:
+        id: { type: integer, format: int64 }
+        created_at: { type: string, format: date-time }
+        actor_kind: { type: string, enum: [admin, system] }
+        actor_email: { type: string, nullable: true }
+        action: { type: string, enum: [auto_hide, restore, delete, dismiss, suspend, unsuspend] }
+        target_kind: { type: string, enum: [place, event, account] }
+        target_id: { type: integer, format: int64, nullable: true }
+        account_ref: { type: string, nullable: true }
+        detail: { type: object }
+        note: { type: string, nullable: true }
+    PostgrestError:
+      type: object
+      properties:
+        code: { type: string, example: P0001 }
+        message: { type: string, example: invalid_gmaps_url }
+        details: { type: string, nullable: true }
+        hint: { type: string, nullable: true }

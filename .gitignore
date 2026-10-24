@@ -11,6 +11,7 @@ desktop.ini
 # node, if a toolchain arrives later
 node_modules/
 dist/
+dist-e2e/
 .next/
 out/
 
@@ -22,3 +23,10 @@ out/
 # supabase local state
 .branches/
 .temp/
+test-results/
+playwright-report/
+.vite/
+.local-stack/
+dist-e2e-backend/
+dist-admin/
+dist-admin-e2e/

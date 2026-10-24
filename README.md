@@ -1,80 +1,107 @@
-# YUI Board
+# YUNABI
 
-A community app for residents of **GLOBAL COMMONS 結 -YUI-**, the international
-residence hall on Kansai Gaidai's Gotenyama campus (about 650 residents, Japanese
-students and exchange students sharing units).
+An app for residents of **GLOBAL COMMONS 結 -YUI-**, the international residence
+hall on Kansai Gaidai's Gotenyama campus: everyday-Japanese comics and a
+branching conversation game, a map of everyday places, and a calendar.
 
-The problem it addresses: what residents need to know is scattered across
-Instagram DMs, noticeboards and word of mouth, and it disappears every time the
-exchange students turn over. This gathers it into four places so that what one
-resident works out stays available to the next.
+Scope: [`docs/02-requirements/PRD-YUNABI.md`](docs/02-requirements/PRD-YUNABI.md).
+Design: [RFC-0003](docs/architecture/rfc/0003-yunabi-v2.md),
+[ADR-0023](docs/adr/0023-frontend-framework-react.md) (React) and
+[ADR-0024](docs/adr/0024-react-switch-review-fixes.md).
 
-## Current state
+## Where it is
 
-`index.html` is a **mobile-first prototype running on mock data** — a single
-static page, no backend. Posting works in the session and is gone on reload.
-That is expected; the backend is not wired up yet.
-
-## Tabs
+**Y-2 (this build): shared data.** Places and events live in Supabase and
+anyone can add them; an anonymous account is made on the first post, with no
+sign-up screen. Reports, auto-hide and the admin console come in Y-3; the
+first production deploy follows the security check (D23). Without
+`VITE_SUPABASE_URL` the app runs on the v1.3 sample data in `tests/fixtures/`.
 
 | Tab | What it holds |
 |---|---|
-| Home | Anonymous board — general, meetups, unit & floor, market, lost & found |
-| Calendar | Month grid; GIP Tuesdays, office events, resident-organised trips. Exports .ics |
-| Japanese | Eight comic episodes of everyday Japanese + a branching Osaka/Kyoto scene with collectible endings |
-| Map | Leaflet + OpenStreetMap, clustered pins, walking times measured from 結 |
+| Home | Shortcuts to the three features, collection progress, next event |
+| Japanese | Seven comic episodes + a branching Osaka/Kyoto game with ending cards |
+| Map | **Near me** (always where the map starts; location only after a notice) or **All of Japan** (prefecture boundary map or list) |
+| Calendar | Month grid, weekly series with one-week changes and cancellations, `.ics` export |
 
-Plus: a report flow with reasons and an operator queue, and profile exchange for
-market handovers (anonymous until both sides accept).
+The device remembers ending cards, language and the location choice under the
+same `yui.v1.*` keys as v1.3, so nothing is lost when the app updates.
 
-## Design decisions worth keeping
+## Running it
 
-- **Trilingual (en / ja / ko), English default.** Each post stores the language it
-  was written in and shows a translate/original toggle. UI strings live in the `T`
-  object; post bodies will be machine-translated on write, not on read.
-- **Anonymity is structural, not cosmetic.** `schema.sql` keeps a post's text and
-  its author in separate tables, and the author table has no RLS policy at all —
-  nothing reachable through PostgREST can read it. Writes go through
-  `SECURITY DEFINER` functions so both rows land in one transaction.
-- **Residents are anonymous; the operator is not.** Every hide is signed in
-  `mod_actions`. Reporters are recorded but invisible, including to the operator.
-- **Room numbers are stored, never exposed.** The UI shows a floor.
-- **No Google Maps API.** Place cards link out to Google Maps by `place_id`, which
-  costs nothing. The map itself is OSM tiles.
+Node 22 or later.
+
+```
+npm install
+npm run dev          # http://localhost:5173
+npm run build:local  # typecheck, build to dist/ with a 'self' CSP, check bundle budgets
+npm run preview      # serve dist/
+```
+
+The app lives at `https://yunabi.juha.dev/` on Cloudflare Workers static assets
+(ADR-0025; not deployed yet). A real build needs the published address, which
+the CSP trusts: `YUNABI_ORIGIN=https://yunabi.juha.dev/ npm run build`.
+`npm run build` refuses to run without one, and also writes `dist/_headers`
+(the response headers, CSP included) and checks it.
+
+A deploy uses `npm run build:deploy` with the production Supabase URL,
+publishable key and Turnstile site key in the environment — it refuses a
+fixture, local or e2e build — then `npx wrangler@4.86.0 deploy -c wrangler.app.jsonc`.
+Always pass `-c`: `wrangler.jsonc` is the admin console. The full procedure,
+checks and rollback are in `docs/architecture/runbook.md` §7.3 and §8.
+
+## Local backend
+
+```
+scripts/local-stack/fetch-bins.sh   # once: Supabase Auth + PostgREST binaries
+npm run db:start:seed               # Postgres 16 + Auth + PostgREST on :54321, sample data
+VITE_SUPABASE_URL=http://127.0.0.1:54321 \
+VITE_SUPABASE_PUBLISHABLE_KEY="$(node -e 'import("./scripts/local-stack/keys.mjs").then(k=>console.log(k.ANON_KEY))')" \
+npm run dev
+```
+
+Needs `postgresql-16`, `postgresql-16-pgtap` and `postgresql-16-postgis-3`.
+
+## Checks
+
+```
+npm run lint         # ESLint, including the security rules (ADR-0016)
+npm run typecheck
+npm test             # unit tests + render check (every screen × language × state)
+npm run test:e2e     # Playwright on a production build, 375px (fixture mode)
+npm run test:db      # database: permissions, rules, limits (pgTAP)
+npm run test:backend # Playwright against the local backend
+```
+
+In a Claude cloud session run browser tests with
+`CHROMIUM_PATH=/opt/pw-browsers/chromium npm run test:e2e`.
+
+## Artwork
+
+Gray boxes stand where pictures go. Drop a file into `src/art/` with the name
+of its slot and rebuild — no code change:
+
+| Slot | File | Ratio |
+|---|---|---|
+| Comic cut | `src/art/lessons/l2/05.webp` = episode 2, cut 5 | 4:3 (1200×900) |
+| Game scene | `src/art/vn/osaka/03.webp` | 4:3 |
+| Ending card | `src/art/endings/e_osaka_best.webp` | 3:2 (1200×800) |
+
+`.png` and `.jpg` work too. A file whose name matches no slot fails the tests.
 
 ## Files
 
 ```
-index.html             the whole prototype
-schema.sql             Postgres / Supabase schema, RLS policies, write functions
-manifest.webmanifest   PWA manifest (relative paths — works under a subpath)
-sw.js                  service worker; bump CACHE on every deploy
-icon-*.png             app icons
+index.html               Vite entry (the meta CSP is added at build time)
+src/                     the app — see CLAUDE.md for the layout
+public/                  manifest, icons, data/japan-prefectures.geojson (Natural Earth, public domain)
+tests/                   fixtures, unit and render tests, Playwright
+scripts/                 bundle size check
+docs/                    planning and design documents
+assets/brand/            logo sources
 ```
 
-## Running it
+## On hold
 
-Open `index.html` in a browser. There is no build step.
-
-For the service worker and install prompt to work the page must be served over
-HTTPS or from `localhost`:
-
-```
-python -m http.server 8000
-```
-
-## Deploying
-
-GitHub Pages serves the repository root. `manifest.webmanifest` and `sw.js` use
-relative paths so a project subpath (`/<repo>/`) works without edits.
-
-**Bump `CACHE` in `sw.js` on every deploy.** Without that, phones that already
-installed the app keep showing the old build.
-
-## Next
-
-- Supabase project in the Tokyo region; apply `schema.sql` as a migration
-- Translation on write (Azure Translator F0 — 2M characters/month, stops rather
-  than bills when the quota runs out)
-- Replace mock data with live queries; keep `service_role` out of the client
-- Artwork for the Japanese episodes (each panel carries a scene note to generate from)
+The anonymous board plan (`schema.sql`, PRD v0.4 and the older backend docs) is
+paused, not deleted.

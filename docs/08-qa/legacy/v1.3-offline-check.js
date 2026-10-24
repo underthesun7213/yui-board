@@ -1,0 +1,18 @@
+const { chromium } = require('/opt/node-tools/node_modules/playwright');
+(async()=>{const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium'});
+const c=await b.newContext({viewport:{width:375,height:812}});
+await c.route('https://tile.openstreetmap.org/**',r=>r.fulfill({status:204,body:''}));
+const p=await c.newPage();const errs=[];p.on('pageerror',e=>errs.push(e.message));
+await p.goto('http://127.0.0.1:8766/');
+await p.evaluate(()=>navigator.serviceWorker.ready);
+await p.reload(); await p.waitForFunction(()=>navigator.serviceWorker.controller);
+await c.setOffline(true);
+await p.goto('http://127.0.0.1:8766/?v=map');
+await p.waitForFunction(()=>typeof LMAP!=="undefined"&&LMAP,null,{timeout:10000}).catch(()=>{});
+const r1=await p.evaluate(()=>({view:S.view,map:!!LMAP,places:document.querySelectorAll('#plist [data-pl]').length}));
+await p.click('[data-loc="skip"]').catch(()=>{});
+await p.click('[data-mode="japan"]');await p.waitForTimeout(800);
+const r2=await p.evaluate(()=>({prefs:!!PREFGEO,fail:S.prefFail}));
+await p.goto('http://127.0.0.1:8766/?v=learn');
+const r3=await p.evaluate(()=>document.querySelectorAll('.lesson').length);
+console.log(JSON.stringify({r1,r2,r3,errs}));await b.close();})();

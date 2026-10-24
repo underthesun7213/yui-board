@@ -1,0 +1,80 @@
+[
+  {
+    "id": 1,
+    "title": "Unit meeting — September",
+    "start_date": "2026-09-10",
+    "start_time": "18:30:00",
+    "end_time": "19:30:00",
+    "weekly_until": null,
+    "place_text": "Unit 12 lounge",
+    "body": "Kitchen duty rota and introductions for the new autumn-semester members. Everyone attends.",
+    "lang": "en",
+    "created_on": "2026-09-01",
+    "edited_on": null
+  },
+  {
+    "id": 2,
+    "title": "消防設備点検",
+    "start_date": "2026-09-11",
+    "start_time": "06:00:00",
+    "end_time": "09:00:00",
+    "weekly_until": null,
+    "place_text": "全室",
+    "body": "業者が各部屋の火災報知器を点検します。不在でもマスターキーで入室します。",
+    "lang": "ja",
+    "created_on": "2026-09-01",
+    "edited_on": null
+  },
+  {
+    "id": 3,
+    "title": "교토 당일치기 (후시미이나리·도후쿠지)",
+    "start_date": "2026-09-12",
+    "start_time": "07:30:00",
+    "end_time": "20:00:00",
+    "weekly_until": null,
+    "place_text": "히라카타시역 집합",
+    "body": "느슨한 일정이라 중간 합류·이탈 자유.",
+    "lang": "ko",
+    "created_on": "2026-09-01",
+    "edited_on": null
+  },
+  {
+    "id": 4,
+    "title": "GIP: Tuesday event",
+    "start_date": "2026-09-15",
+    "start_time": "17:00:00",
+    "end_time": "19:00:00",
+    "weekly_until": "2026-12-22",
+    "place_text": "CAFÉ COMMONS",
+    "body": "The weekly Tuesday GIP event. No sign-up — just show up.",
+    "lang": "en",
+    "created_on": "2026-09-01",
+    "edited_on": null
+  },
+  {
+    "id": 5,
+    "title": "フィールドトリップ：淡路島",
+    "start_date": "2026-09-19",
+    "start_time": "10:00:00",
+    "end_time": "18:00:00",
+    "weekly_until": null,
+    "place_text": "淡路島（バス移動）",
+    "body": "バスの席数の都合で先着40名です。昼食は各自。雨天決行。",
+    "lang": "ja",
+    "created_on": "2026-09-01",
+    "edited_on": null
+  },
+  {
+    "id": 6,
+    "title": "엔니치 (여름 축제)",
+    "start_date": "2026-09-26",
+    "start_time": "18:00:00",
+    "end_time": "21:00:00",
+    "weekly_until": null,
+    "place_text": "글로벌타운 안뜰",
+    "body": "포장마차, 금붕어 뜨기, 유카타 입기 체험. 결 입주자 거의 전원이 참가하는 연 1회 행사입니다.",
+    "lang": "ko",
+    "created_on": "2026-09-01",
+    "edited_on": null
+  }
+]

@@ -1,0 +1,42 @@
+/* Design direction A, "Clear Sky" (docs/06-design/references-yunabi.md §5, D22).
+   Every text pair here passes 4.5:1; see the contrast table in that document. */
+:root {
+  --canvas: #ffffff;
+  --surface: #f4f7fa;
+  --line: #dce3ea;
+  --line-strong: #7d8995;
+  --ink: #15202b;
+  --body: #3b4855;
+  --muted: #5b6875;
+  --navy: #1d3e5c;
+  --on-navy-muted: #b9d9ee;
+  --primary: #1769aa;
+  --primary-pressed: #105688;
+  --primary-tint: #e6f3fc;
+  --on-tint: #0f4c7a;
+  --sky: #8ecdf2;
+  --mist: #c9e9fb;
+  --danger: #c2372f;
+  --success: #1f7a4d;
+  --warning-bg: #fff4d6;
+  --warning-fg: #8a5a00;
+  --placeholder: #e3e8ee;
+  --fb-ok-bg: #e3f4e1;
+  --fb-ok-fg: #1e5b22;
+  --fb-hm-bg: #fde8e6;
+  --fb-hm-fg: #a3241b;
+
+  --r-s: 8px;
+  --r-m: 12px;
+  --r-l: 16px;
+  --gutter: 16px;
+  --col: 430px;
+  --t-fast: 150ms;
+  --t-mid: 250ms;
+
+  --font-en: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-ja:
+    'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic UI', 'Noto Sans JP', system-ui,
+    sans-serif;
+  --font-ko: 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', system-ui, sans-serif;
+}

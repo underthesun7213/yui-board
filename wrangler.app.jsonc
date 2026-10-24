@@ -1,0 +1,23 @@
+// The user app on Cloudflare Workers static assets (ADR-0025): its own
+// origin, with response headers from dist/_headers (CSP with frame-ancestors,
+// HSTS, nosniff; checked by scripts/check-app-headers.mjs). The admin console
+// is wrangler.jsonc; always name this file with `-c wrangler.app.jsonc`.
+// No secrets in this file: wrangler signs in with `wrangler login` or, in CI,
+// CLOUDFLARE_API_TOKEN from the main-only `production` environment.
+//
+// Deploy only `npm run build:deploy` output (runbook §7.3): it refuses a
+// fixture or 'self' build, a missing key, and the e2e test handle.
+{
+  "name": "yunabi",
+  "compatibility_date": "2026-10-24",
+  "assets": {
+    "directory": "./dist",
+  },
+  // Reachable only at its own host: no *.workers.dev address, no preview URLs.
+  "workers_dev": false,
+  "preview_urls": false,
+  "routes": [
+    // Cloudflare creates its DNS record and certificate on deploy.
+    { "pattern": "yunabi.juha.dev", "custom_domain": true },
+  ],
+}
