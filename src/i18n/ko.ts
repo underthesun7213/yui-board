@@ -79,6 +79,7 @@ export const ko = {
     study: '공부',
     admin: '행정',
     health: '의료',
+    sights: '관광',
   },
   here: '결',
   openMap: '구글 지도에서 열기',

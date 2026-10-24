@@ -92,12 +92,9 @@ export function Calendar() {
           </div>
         ))
       ) : !loaded ? null : (
-        <div className="empty">
-          <p>{schedule.events.length ? m.homeNone : m.emptyEvents}</p>
-          <button className="primary" onClick={() => go({ name: 'eventNew' })}>
-            ＋ {m.addEvent}
-          </button>
-        </div>
+        /* adding is only the header button, so the screen does not change
+           when a day is picked (owner, 2026-10-25) */
+        <p className="empty">{schedule.events.length ? m.homeNone : m.emptyEvents}</p>
       )}
     </>
   );

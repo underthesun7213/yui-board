@@ -206,6 +206,7 @@ create schema app;                       -- Data API 노출 목록에 넣지 않
 revoke all on schema app from public, anon, authenticated;
 create type app.ui_lang        as enum ('en','ja','ko');
 create type app.place_category as enum ('transit','daily','food','study','admin','health');
+-- 2026-10-25 마이그레이션 23: alter type app.place_category add value 'sights';
 create type app.report_reason  as enum ('wrong','spam','inappropriate','privacy','other');   -- Y-R1
 create type app.item_kind      as enum ('place','event');
 ```
@@ -548,6 +549,7 @@ end $$;
 | 20 | `checks` | 적용 후 점검, 실패 시 예외로 마이그레이션 실패: ① `app` 테이블 전부 RLS 활성·정책 0 ② `public`·`anon`·`authenticated` 의 `app` 테이블 권한 0 (`has_table_privilege`) ③ `public`·`anon` 이 `has_function_privilege(…,'EXECUTE')` 인 `public`·`app` 함수 = {`data_version`, `app.db_pre_request`} `[Y-2 구현]` ④ `authenticated` 의 같은 검사 = 허용 목록과 정확히 일치(`[Y-2 구현]` V-9 의 목록 — `my_place`·`my_event`·`app.db_pre_request` 포함) ⑤ 모든 정의자 함수의 `proconfig` 에 `search_path=` ⑥ 정의자 함수 본문(`prosrc`)에 `execute` 없음 ⑦ `mod_actions_guard` 의 `prosecdef = false` ⑧ 공개 뷰의 열 목록이 고정 목록과 일치 ⑨ `pg_default_acl` 에 `anon`·`authenticated`·**`PUBLIC`(grantee 0)** 의 EXECUTE 없음(`public`·`app` 스키마 행 + `postgres` 의 전역 행) ⑨b `[Y-2 구현]` `postgres` 의 **전역** 함수 기본 ACL 행이 존재하고 `PUBLIC` EXECUTE 가 없음 — 행이 없으면 내장 기본값(`PUBLIC` EXECUTE)이 살아 있다는 뜻 ⑩ `service_role` EXECUTE 함수 = {`ops_health`} ⑪ 이름이 `admin_%` 인 모든 `public` 함수(`admin_whoami` 제외)의 본문 첫 문장이 `perform app.require_admin()` `[검토 #2·#3]` ⑫ 확장(`pg_extension.extnamespace`)이 `public` 에 없음 — 특히 `postgis` `[재검토 #3]` ⑬ `app.bind_admin` 의 EXECUTE 는 `postgres` 외 없음 `[재검토 #2]` | V-1~V-9 |
 | 21 | `ops_health_signals` | `ops_health()` 2판(§7.4) — 같은 시그니처의 `create or replace` 라 소유자·`service_role` 부여·`checks` 허용 목록은 그대로. 운영에서는 `checks` 가 다시 돌지 않으므로 파일 끝 `do` 블록이 자기 효과(③④⑩ 의 `ops_health` 몫, ⑤, ⑥ 동적 SQL 없음, `stable` 정의자)를 검사해 어긋나면 실패. pgTAP `10_ops_health.test.sql` | Y-S10 |
 | 22 | `service_role_pre_request` | `service_role` 에 `app` 스키마 USAGE 와 `app.db_pre_request()` EXECUTE 만 준다. PostgREST 가 요청마다 이 훅을 요청 역할로 실행하는데, 없으면 감시 키(service_role)의 모든 REST 호출이 `permission denied for schema app`(403)로 실패했다 — 2026-10-23 첫 감시 실행에서 발견. 표 권한은 여전히 0(checks ②), ⑩ 의 service 전용 목록은 `ops_health` 그대로 | Y-S10 |
+| 23 | `place_category_sights` | `app.place_category` 에 `sights`(관광 — 신사·절, 공원, 전망, 박물관) 값을 더한다(책임자, 2026-10-25). 클라이언트는 이미 타입 USAGE 가 있고 `create_place`·`update_place` 가 이 타입을 받으므로 권한·`checks` 는 그대로 | Y-M6 |
 | seed | `supabase/seed/fixtures.sql` | 로컬·CI 전용: 테스트 계정(익명 A·B·C·D, 관리자 1 — TOTP 비밀 고정), `tests/fixtures` 와 같은 장소·일정. **운영에 적용하지 않는다**(초기 데이터 0, Y-M4) | PRD §7 |
 
 **대시보드 설정(마이그레이션 밖, 점검표):** 익명 로그인 ON, **이메일 공개 가입 OFF**(관리자는 대시보드·Admin API 로만 생성 `[검토 #4]`), TOTP ON, 세션 비활동·최대 수명(Pro 기능으로 보임 — 무료면 §7.3 의 DB 검사만), CAPTCHA 스위치(기본 OFF, Turnstile 키 미리 등록 — 사이트 키는 사용자 앱·콘솔 **빌드에 미리 포함**해야 재배포 없이 켤 수 있다, 켜면 **관리자 비밀번호 로그인에도 적용**된다 `[검토 #5]`), 익명 로그인 IP 한도, Data API 노출 스키마 `public` 만, 레거시 키 비활성화, 훅 등록, 프로젝트 멤버.
