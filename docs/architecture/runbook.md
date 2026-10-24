@@ -51,7 +51,7 @@
 | # | 확인 | 방법 | 2026-10-22 상태 |
 |---|---|---|---|
 | C-1 | **배포된 콘솔에 사이트 키가 들어 있다** | 콘솔 로그인 화면에 Turnstile 확인 상자가 보인다. `src/admin/Login.tsx` 는 `VITE_TURNSTILE_SITE_KEY` 가 빌드에 있을 때만 위젯을 그린다. `npm run build:admin` 은 이 값을 요구하지 않으므로(`vite.admin.config.ts` 는 `VITE_SUPABASE_URL` 만 검사) **빠진 채로도 빌드·배포가 성공한다** | **없음.** 이 상태에서 켜면 관리자 로그인이 토큰 없이 거절되어 **관리자가 잠긴다**. Y-4 에서 키를 넣어 재배포할 때까지 켜지 않는다 |
-| C-2 | 배포된 사용자 앱에 사이트 키가 들어 있다 | 앱은 서버가 CAPTCHA 를 요구할 때만 위젯을 띄운다(`src/actions/captcha.ts`, `src/ui/Captcha.tsx`). 사이트 키는 §7.3 에서 `VITE_TURNSTILE_SITE_KEY` 로 넣고, **`npm run build:deploy` 가 그 값이 `dist/assets/*.js` 에 있는지 확인해 없으면 실패한다**(`scripts/check-app-headers.mjs --deploy`) — 콘솔(C-1)과 달리 빠진 채로 배포되지 않는다 | v2 앱은 아직 배포 전(D23). 첫 배포(§7.3)부터 키가 들어간다 |
+| C-2 | 배포된 사용자 앱에 사이트 키가 들어 있다 | 앱은 서버가 CAPTCHA 를 요구할 때만 위젯을 띄운다(`src/actions/captcha.ts`, `src/ui/Captcha.tsx`). 사이트 키는 §7.3 에서 `VITE_TURNSTILE_SITE_KEY` 로 넣고, **`npm run build:deploy` 가 그 값이 `dist/assets/*.js` 에 있는지 확인해 없으면 실패한다**(`scripts/check-app-headers.mjs --deploy`) — 콘솔(C-1)과 달리 빠진 채로 배포되지 않는다 | **들어 있음** — 2026-10-25 첫 배포(§7.3)의 `build:deploy` 통과 |
 | C-3 | Turnstile 위젯의 허용 호스트 = 앱 호스트 `yunabi.juha.dev` 와 콘솔 `yunabi-admin.juha.dev` | Cloudflare 대시보드 → Turnstile → 위젯 → Hostname Management | **2026-10-24 위젯 생성** — 허용 호스트 3개(앱 옛 주소 `underthesun7213.github.io`·`yunabi.juha.dev`·콘솔). 앱이 `yunabi.juha.dev` 로 옮겨(ADR-0025) 옛 주소는 Pages 를 내려 404 다 — **책임자가 Turnstile 에서 `underthesun7213.github.io` 를 지워도 된다**(쓰는 페이지가 없다 — 허용 호스트는 필요한 것만 두는 편이 낫다). 사이트 키는 비공개 기록 |
 | C-4 | Turnstile **비밀 키**가 Supabase 에 등록되어 있다(스위치는 끈 채로) | Supabase 대시보드 → Authentication 설정 → Attack Protection → 제공자 Turnstile, 비밀 키 입력 | 미등록 — Supabase 화면은 토글을 켜야 공급자·비밀 키 칸이 나타난다(2026-10-24 확인). 사이트 키 배포(C-1·C-2)와 함께 Y-4 에서 등록 |
 | C-5 | 방침에 Turnstile 문구가 있다(TS-Q6 — 켜는 순간 Cloudflare 로 기기 신호가 간다) | 게시된 방침 확인 | Y-4 |
@@ -453,9 +453,9 @@ Remove-Item Env:VITE_SUPABASE_URL, Env:VITE_SUPABASE_PUBLISHABLE_KEY, Env:VITE_T
 - **함정:** `wrangler.jsonc` 가 없는 폴더에서 `wrangler deploy` 를 돌리면 자동 설정 마법사가 `package.json`·`vite.config` 를 고친다. 그랬다면 배포하지 말고 `git status` → `git checkout -- package.json vite.config.ts` 로 되돌린다.
 - **확인:** `curl -sI https://yunabi-admin.juha.dev/` 에 `Content-Security-Policy`(`frame-ancestors 'none'`, `connect-src` = 이 프로젝트 + `https://challenges.cloudflare.com`), `Strict-Transport-Security`, `X-Frame-Options: DENY`, `Cache-Control: no-store` → 실제 로그인(aal2) → Queue 가 열린다.
 
-### 7.3 사용자 앱 `[Y-4 — 아직 안 해 봄]`
+### 7.3 사용자 앱 `[해 봄 2026-10-25 — 첫 배포, main abe74a6, 수동]`
 
-주소 `https://yunabi.juha.dev/`, Cloudflare Workers 정적 자산 `yunabi`(ADR-0025, 설정 `wrangler.app.jsonc`). v2 앱은 아직 운영 배포 전이다(D23). 첫 배포는 콘솔(§7.2)처럼 **책임자 PC 에서 수동**, 단 **main 에 병합된 커밋에서**. `[Y-4 이후]` 의 `deploy.yml`(B-13)은 같은 명령을 `production` Environment 에서 돌린다. 빌드 변수는 `YUNABI_ORIGIN` 과 `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, `VITE_TURNSTILE_SITE_KEY` 뿐(ADR-0022 S2) — 셋 다 공개값이지만 화면·기록에 남기지 않고 받는다.
+주소 `https://yunabi.juha.dev/`, Cloudflare Workers 정적 자산 `yunabi`(ADR-0025, 설정 `wrangler.app.jsonc`). 2026-10-25 첫 배포(공지 전 — B-16 게시 전에는 알리지 않는다). 배포는 콘솔(§7.2)처럼 **책임자 PC 에서 수동**, 단 **main 에 병합된 커밋에서**. `[Y-4 이후]` 의 `deploy.yml`(B-13)은 같은 명령을 `production` Environment 에서 돌린다. 빌드 변수는 `YUNABI_ORIGIN` 과 `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, `VITE_TURNSTILE_SITE_KEY` 뿐(ADR-0022 S2) — 셋 다 공개값이지만 화면·기록에 남기지 않고 받는다.
 
 **배포 전 (처음 한 번, 그 뒤로는 영역 설정을 바꿨을 때):**
 
@@ -467,8 +467,10 @@ Remove-Item Env:VITE_SUPABASE_URL, Env:VITE_SUPABASE_PUBLISHABLE_KEY, Env:VITE_T
 ```powershell
 # 저장소 폴더
 git switch main; git pull --ff-only
-git status --short          # 비어 있어야 한다 (배포물 = 커밋)
+git status --short --untracked-files=no   # 비어 있어야 한다 (배포물 = 커밋). 추적 안 하는 파일은 무관
 npm ci
+# Windows: lockfile 에 Windows 용 rolldown 바이너리가 없어 npm ci 가 지운다 — 버전은 node_modules/rolldown/package.json
+npm install --no-save @rolldown/binding-win32-x64-msvc@<rolldown 버전>
 $env:YUNABI_ORIGIN = 'https://yunabi.juha.dev/'
 $env:VITE_SUPABASE_URL = 'https://tsbipaffirkswsgkydav.supabase.co'
 $env:VITE_SUPABASE_PUBLISHABLE_KEY = Read-Host 'publishable key'
@@ -491,6 +493,8 @@ Remove-Item Env:YUNABI_ORIGIN, Env:VITE_SUPABASE_URL, Env:VITE_SUPABASE_PUBLISHA
 4. 결과를 점검 기록에 남긴다: §7 "실제 주소 CSP 위반 0", B-15(Always Use HTTPS + HSTS 실측), R-f. 기록은 **새 브랜치 + PR** 로(main 은 PR 필수).
 
 하나라도 어긋나면 §8 롤백.
+
+**2026-10-25 첫 배포 결과:** Worker 버전 `c8c522de`. 확인 1 — 헤더 전부 기대값, `/sw.js` `no-cache`, `/.vite/manifest.json`·`/_headers`·`/.assetsignore` 404(`/data/README.md` 는 지도 경계 데이터의 출처 메모라 공개해도 됨). 확인 2 — 새 탭에서 콘솔 오류·CSP 위반 0, 지도 타일 표시, 운영 Supabase 읽기 4건 성공, 서비스워커 제어·사전 캐시 61개. **네트워크를 끈 새로 고침과 "내 주위"(위치 허용)는 기기에서 확인할 일로 남음.** 확인 3 — `http://` → 301 https. 배포 판 검사 안 publishable 키 자리에 secret 키가 붙여 넣어진 첫 빌드를 `check-dist-secrets` 가 막았다(§12). 0a 에서 Email Obfuscation·Web Analytics 자동 삽입을 껐는데, 끄기 직전에 받은 첫 응답에는 Web Analytics 비컨이 들어 있어 CSP 위반 2건이 났다(차단됨, 앱 동작 영향 없음) — 새로 받은 응답에는 없다.
 
 ---
 
@@ -653,6 +657,7 @@ rm app.dump auth.dump
 | API·MCP 로 새로 만든 프로젝트의 DB 비밀번호 | 아무도 모른다. 대시보드에서 **먼저 재설정** |
 | Auth 설정을 바꿨는데 그대로임 (예: 익명 로그인) | 토글 뒤 **저장**을 누르지 않은 것. 다시 열어 확인 |
 | break-glass 도우미가 Node 20 에서 요청 전에 멈춤 / `401 Invalid API key` | supabase-js 대신 §5.2 의 fetch 도우미. `sb_secret_…` 키는 `apikey` 헤더에만 |
+| `build:deploy` 가 `secrets in the build: … Supabase secret key` 로 멈춤 | publishable 키 자리에 secret 키(`sb_secret_…`)를 붙여 넣은 것. 배포되지 않았다. `Remove-Item -Recurse -Force dist` 와 변수를 지우고 API Keys 화면 **맨 위 Publishable key** 로 다시 (2026-10-25) |
 | 콘솔의 정지·기각을 눌러도 아무 일이 없음 | 브라우저 확인 상자(`confirm`)가 막힌 창(앱 안 미리보기 등). 일반 브라우저에서 (2026-10-24) |
 | SQL Editor 에 여러 문장을 넣었는데 결과가 하나만 보임 | 마지막 `select` 의 결과만 보인다. 확인용 `select` 를 맨 끝에 둔다(§4.2 ③) |
 
