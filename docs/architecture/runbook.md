@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| 상태 | 1판 (2026-10-22), 2026-10-23 복구 리허설 반영 — 절차 중 실제로 해 본 것은 `[해 봄]`, 아직 없는 장치에 기대는 것은 `[Y-4 이후]`·`[운영 저장소 이후]`, 확인 못 한 것은 `[미확인]` |
+| 상태 | 1판 (2026-10-22), 2026-10-23 복구 리허설·2026-10-24 모의 실행(R-1·R-2·R-7 ②, 임시 프로젝트) 반영 — 절차 중 실제로 해 본 것은 `[해 봄]`, 아직 없는 장치에 기대는 것은 `[Y-4 이후]`·`[운영 저장소 이후]`, 확인 못 한 것은 `[미확인]` |
 | 근거 | [RFC-0003](rfc/0003-yunabi-v2.md) §14·§15·§17.4~§17.7·§20 · [ADR-0022](../adr/0022-security-baseline.md) S3·S7·S9·S10·"결과" · [ADR-0020](../adr/0020-hosting-github-pages-actions.md) · [ERD v2](erd-v2.md) OQ-E1·E5·E6·E7·E8·E10 · [y3s-automated-checks](y3s-automated-checks.md) · `docs/session-handoff.md` (2026-10-22 실제 작업) |
 | 형식 | 운영 런북 하나. 새 설계 결정 없음 — RFC-0003 §17.7 R-1~R-8 의 전문과 ADR-0022 "결과" 의 런북 범위(배포·롤백·복구·키 교체·CAPTCHA 켜기·관리자 추가·대량 숨김 복원)를 실행 절차로 옮긴다 |
 | 실행자 | 책임자 1명(D25). 대리인 없음 |
@@ -82,7 +82,7 @@ C-1~C-4 는 출시 전 점검(RFC §17.6 6번 "스위치 ON 상태에서 ① 사
 
 공통: 콘솔 시각 입력은 **일본 시간(JST)**, SQL 의 `timestamptz` 리터럴에는 `+09` 를 붙인다. SQL 은 Supabase SQL Editor(역할 `postgres`)에서 실행한다.
 
-### 4.1 R-1 대량 숨김 (대량 신고 공격)
+### 4.1 R-1 대량 숨김 (대량 신고 공격) `[해 봄 2026-10-24 — 임시 프로젝트, "CAPTCHA 없이" 경로 2~5]`
 
 **신호:** 자동 숨김이 1시간에 여럿(RFC §17.4 제안 기준 5건 초과), 신고 계정들이 같은 시간대에 생겼다.
 
@@ -96,8 +96,8 @@ C-1~C-4 는 출시 전 점검(RFC §17.6 6번 "스위치 ON 상태에서 ① 사
    group by a.ref, a.created_at
    order by reports desc;
    ```
-3. 공격 계정 정지 — 콘솔 **Accounts** 탭에 `a-…` 를 넣고 "Suspend this account"(= `admin_suspend`). 정지된 계정의 미처리 신고는 더 이상 세지 않는다(M-2a). 계정마다 메모 "R-1 <이슈 번호>". 되돌리기: 같은 화면의 "Unsuspend"(`admin_unsuspend`).
-4. 일괄 복원 — 콘솔 **Queue** 탭 아래 "Restore after a wave of reports" 상자(`admin_restore_bulk`). From = 공격 시작, To = 지금 → **Preview** → 목록 확인 → "Restore these N". SQL 로 하지 않는다(미리보기 토큰·항목별 기록이 콘솔 경로에 있다). "The list changed since the preview" 가 나오면 다시 미리 보고 실행. 정지된 계정의 숨김 항목은 빠진다(정지 해제 뒤 하나씩 복원).
+3. 공격 계정 정지 — 콘솔 **Accounts** 탭에 `a-…` 를 넣고 "Suspend this account"(= `admin_suspend`). 정지된 계정의 미처리 신고는 더 이상 세지 않는다(M-2a — 모의 실행에서 미처리 신고 3건 중 1건이 정지 계정 것인 항목이 숨겨지지 않음을 확인). 계정마다 메모 "R-1 <이슈 번호>" — 모의 실행에서 비워 두었더니 나중에 왜 정지했는지 콘솔에 남지 않았다. 되돌리기: 같은 화면의 "Unsuspend"(`admin_unsuspend`). 정지·기각은 브라우저 확인 상자를 거친다 — 앱 안의 미리보기 창처럼 확인 상자를 막는 곳에서는 **눌러도 아무 일도 없다**(§12). 일반 브라우저에서 한다.
+4. 일괄 복원 — 콘솔 **Queue** 탭 아래 "Restore after a wave of reports" 상자(`admin_restore_bulk`). From = 공격 시작, To = 지금 → **Preview** → 목록 확인 → "Restore these N". SQL 로 하지 않는다(미리보기 토큰·항목별 기록이 콘솔 경로에 있다). "The list changed since the preview" 가 나오면 다시 미리 보고 실행. 정지된 계정의 숨김 항목은 빠진다(정지 해제 뒤 하나씩 복원) — 모의 실행: 숨김 4건 중 3건 복원, 공격 계정 소유 1건은 숨김 유지. 확인: `select action, count(*) from app.mod_actions where created_at >= '<공격 시작>'::timestamptz group by 1;` 의 자동 숨김·정지·복원·기각 수가 한 일과 맞는지(모의: 4·3·3·1).
 5. 남은 신고 — 보이는 항목에 쌓인 신고는 항목 상세에서 "Dismiss reports"(`admin_dismiss`).
 6. 하루 뒤 S-5 가 잠잠하면 §3.4 로 스위치 OFF. 이슈 닫기.
 
@@ -107,9 +107,9 @@ C-1~C-4 는 출시 전 점검(RFC §17.6 6번 "스위치 ON 상태에서 ① 사
 - 매 회차의 시각·정지 수·복원 수·정리 수를 비공개 이슈에 남긴다.
 - **"공격이 멈췄다" 판단:** §6.3 의 수동 점검을 **연속 3회(최소 반나절 간격)** 돌려 S-4·S-5(필요하면 S-2·S-3)가 공격 전 수준으로 돌아와 있으면 멈춘 것으로 본다. 그 뒤 하루는 하루 2회 점검을 유지한다. (횟수는 이 문서의 제안 — 경보가 생기면 다시 정한다.)
 
-### 4.2 R-2 가입 한도 소진
+### 4.2 R-2 가입 한도 소진 `[해 봄 2026-10-24 — 임시 프로젝트: 한도 낮춤 → 한도+1 번째 가입 429 → ③ 정리 → 원복]`
 
-**신호:** 최근 1시간 익명 생성이 전역 한도(`anon_signups_per_hour`)의 절반 이상, `security_events` 의 `signup_throttled`, 사용자의 "잠시 후 다시".
+**신호:** 최근 1시간 익명 생성이 전역 한도(`anon_signups_per_hour`)의 절반 이상, `security_events` 의 `signup_throttled`(훅이 가입을 거절해도 이 기록은 남는다 — 모의 실행 확인), 사용자의 "잠시 후 다시".
 
 1. CAPTCHA 켜기 — §3. 자동화는 막히고 사람은 위젯을 통과한다. **켤 수 없으면** 2 를 건너뛰고(한도를 올리지 않는다) §4.1 끝의 "CAPTCHA 없이" 경로로 3 을 되풀이한다.
 2. **CAPTCHA 로 공격이 막힌 뒤에만** 전역 한도를 잠시 올린다. 먼저 지금 값을 읽어 이슈에 적는다.
@@ -128,23 +128,23 @@ C-1~C-4 는 출시 전 점검(RFC §17.6 6번 "스위치 ON 상태에서 ① 사
      and not exists (select 1 from app.accounts a where a.user_id = u.id)
      and not exists (select 1 from app.admins d where d.user_id = u.id);
    ```
-   **되돌릴 수 없음** — 한 트랜잭션으로 지우고, 지운 수가 위에서 센 수와 같을 때만 확정한다:
+   **되돌릴 수 없음** — SQL Editor 는 칸의 문장을 한 번에 실행해 중간에 멈출 수 없다. 그래서 같은 삭제를 **먼저 `rollback` 으로 미리 보고**, 숫자가 맞을 때만 `commit` 으로 다시 실행한다 `[해 봄 2026-10-24 — SQL Editor 에서 begin/rollback 이 적용됨, 결과 창에는 마지막 select 가 보임]`:
    ```sql
+   -- (가) 미리 보기: 결과 창의 left_after_delete 가 0 이어야 한다
    begin;
    delete from auth.users u
    where u.is_anonymous
      and u.created_at between '<시작>'::timestamptz and '<끝>'::timestamptz
      and not exists (select 1 from app.accounts a where a.user_id = u.id)
      and not exists (select 1 from app.admins d where d.user_id = u.id);
-   -- 남은 수가 0 인지 (위의 select count(*) 를 다시)
-   select count(*) from auth.users u
+   select count(*) as left_after_delete from auth.users u
    where u.is_anonymous
      and u.created_at between '<시작>'::timestamptz and '<끝>'::timestamptz
      and not exists (select 1 from app.accounts a where a.user_id = u.id)
      and not exists (select 1 from app.admins d where d.user_id = u.id);
-   commit;   -- 숫자가 이상하면 commit 대신 rollback;
+   rollback;
    ```
-   SQL Editor 가 문장을 한 번에 보내 중간에 멈출 수 없다면 `psql` 에서 한다. 지워진 기기는 다음 쓰기 때 새 익명 계정을 받는다(가진 항목이 없으므로 잃는 것 없음).
+   (나) 위의 "먼저 세기" 를 다시 돌려 **처음 센 수 그대로**인지 본다(되돌려졌다는 확인). (다) (가)의 `rollback;` 을 `commit;` 으로 바꿔 실행하고 "먼저 세기" 가 0, `select count(*) from app.accounts;` 가 줄지 않았는지 본다. `<끝>` 은 (가)~(다)에서 **같은 고정 시각**으로 쓴다(`now()` 를 쓰면 그사이 생긴 계정까지 지운다 — 모의 실행은 `now()` 로 했고, 고정 시각은 해 보지 않은 권고다). 지워진 기기는 다음 쓰기 때 새 익명 계정을 받는다(가진 항목이 없으므로 잃는 것 없음).
 4. 스위치 OFF(§3.4)와 한도 원복을 같은 날 하지 않는다 — 한도를 먼저 되돌리고 하루 본 뒤 스위치를 끈다.
 
 ### 4.3 R-3 쓰기 폭주
@@ -311,11 +311,11 @@ Remove-Item Env:SB_SECRET, Env:NEW_PW, Env:ADMIN_UID, Env:EXPECT_REF; Remove-Var
 ### 5.3 R-7 TOTP 기기 분실
 
 - **① 예비가 있다** `[해 봄 2026-10-22 — 모의 실행 성공]`: 콘솔 로그인 → "Which authenticator will you use?" 에서 예비 선택 → **Security** 탭 → 새 기기에 "Add an authenticator" → 잃은 요소 "Remove". 다시 2개.
-- **② 예비도 없다 (break-glass)** `[해 봄 2026-10-23 — 리허설 프로젝트에서: 비밀번호 먼저 교체 → 요소 0개 확인 → 콘솔에서 TOTP 2개 재등록 → aal2]` — 복원된 사용자는 요소가 0개였으므로 3번(요소 삭제)은 **실행해 보지 않았다**. §5.2 와 같은 터미널에서(변수 설정까지 하고, `Remove-Item` 정리는 맨 끝에) 이 순서로, 몇 분 안에 끝낸다(요소가 0개인 동안은 비밀번호를 아는 사람이 먼저 등록할 수 있다 — T-03a):
+- **② 예비도 없다 (break-glass)** `[해 봄 2026-10-24 — 임시 프로젝트에서 1~4 전부: 비밀번호 교체 → 요소 2개 → 삭제 ×2 → 0개 → 열려 있던 콘솔 탭은 목록을 다시 불러오자 곧바로 로그인 화면으로 → 새 비밀번호 로그인 → TOTP 2개 재등록 → aal2]` (2026-10-23 리허설은 요소가 0개인 복원 사용자라 3번 없이). §5.2 와 같은 터미널에서(변수 설정까지 하고, `Remove-Item` 정리는 맨 끝에) 이 순서로, 몇 분 안에 끝낸다(요소가 0개인 동안은 비밀번호를 아는 사람이 먼저 등록할 수 있다 — T-03a):
   1. `node admin.mjs password` — **비밀번호부터** 바꾼다.
   2. `node admin.mjs factors` — 요소 id 확인.
   3. `node admin.mjs delete <factor id>` — 요소마다. **되돌릴 수 없음**(지운 요소는 살릴 수 없다). 모든 세션이 로그아웃된다.
-  4. 곧바로 콘솔에 새 비밀번호로 로그인 → TOTP 2개 재등록.
+  4. 곧바로 콘솔에 새 비밀번호로 로그인 → TOTP 2개 재등록. **3번 전에 콘솔 로그인 화면을 새 탭에 열어 둔다.** 모의 실행: 삭제 → 첫 재등록(요소 0개인 위험 창, T-03a) 약 11분 55초, 삭제 → 두 번째 등록까지 12분 43초. 대부분 로컬 콘솔을 다시 켜는 시간이었고, 등록 두 개 사이는 25초. 확인: `node admin.mjs factors` 에 verified 2개(새 id).
   5. 기록: 메모만 남기는 관리 함수는 없다. 비공개 이슈에 "MFA 재설정" 을 적고, 다음 관리 조치의 메모에도 남긴다.
 - **③ Supabase 계정 접근까지 잃었다:** Supabase 지원 절차. 그동안 관리 기능은 없지만 자동 숨김·한도·정리는 계속 돈다. 이 계정의 2단계 인증과 복구 코드가 마지막 근거다(부록 A).
 
@@ -616,6 +616,8 @@ rm app.dump auth.dump
 | API·MCP 로 새로 만든 프로젝트의 DB 비밀번호 | 아무도 모른다. 대시보드에서 **먼저 재설정** |
 | Auth 설정을 바꿨는데 그대로임 (예: 익명 로그인) | 토글 뒤 **저장**을 누르지 않은 것. 다시 열어 확인 |
 | break-glass 도우미가 Node 20 에서 요청 전에 멈춤 / `401 Invalid API key` | supabase-js 대신 §5.2 의 fetch 도우미. `sb_secret_…` 키는 `apikey` 헤더에만 |
+| 콘솔의 정지·기각을 눌러도 아무 일이 없음 | 브라우저 확인 상자(`confirm`)가 막힌 창(앱 안 미리보기 등). 일반 브라우저에서 (2026-10-24) |
+| SQL Editor 에 여러 문장을 넣었는데 결과가 하나만 보임 | 마지막 `select` 의 결과만 보인다. 확인용 `select` 를 맨 끝에 둔다(§4.2 ③) |
 
 ---
 
@@ -624,7 +626,7 @@ rm app.dump auth.dump
 - 마이그레이션 20개를 책임자가 `supabase db push --db-url`(Session pooler, 주소는 `Read-Host` 로 받고 **dry-run 먼저**)로 적용. 첫 push 가 `200_checks` ⑨ 에서 실패 → ⑨ 를 "바꿀 수 있는 역할만 실패, 나머지는 notice" 로 고친 뒤 통과(`2ff2ed3`).
 - 대시보드 Auth: 익명 로그인 ON, 익명 로그인 한도 150, 가입 훅 `app.hook_before_user_created`, TOTP, Data API 노출 = `public` 만.
 - 클라우드 확인: 61번째 쓰기 429, 가짜 XFF 무시(`xff_trusted_hops = 1`), GraphQL 꺼짐, 익명 가입에도 훅 호출·초대 없는 이메일 403, `postgres` 가 `auth.sessions` 를 읽고, `auth.sessions`·`auth.mfa_factors`·`auth.users` 를 지울 수 있음. 시험 데이터는 지웠다.
-- 관리자: 초대 → "Add user"(Auto Confirm) → `bind_admin`(**UID 로**) → 콘솔에서 TOTP 2개(주 = 휴대폰 앱, 예비 = 휴대폰 밖에 보관한 비밀 — 보관 방식은 비공개 기록) → **R-7 ① 모의 실행 성공**. R-7 ② 는 아직.
+- 관리자: 초대 → "Add user"(Auto Confirm) → `bind_admin`(**UID 로**) → 콘솔에서 TOTP 2개(주 = 휴대폰 앱, 예비 = 휴대폰 밖에 보관한 비밀 — 보관 방식은 비공개 기록) → **R-7 ① 모의 실행 성공**. R-7 ② 는 운영에서는 하지 않았다(임시 프로젝트 모의 실행 2026-10-24, §5.3).
 - 콘솔: `npm run build:admin` → `npx wrangler@4.86.0 deploy` **수동** 배포, 헤더 실측, 실제 주소에서 aal2 로그인. 사이트 키 없이 빌드됨(§3.1 C-1).
 
 ---
@@ -662,7 +664,7 @@ rm app.dump auth.dump
 | 2 | 대시보드에서 한 사용자의 세션을 끊는 경로(무료 플랜) — R-4 는 SQL(ⓑ, 권한 확인됨 2026-10-22)과 요소 삭제(ⓐ)로 충분하므로 낮은 우선순위 | R-4 |
 | 3 | `wrangler rollback` 을 이 프로젝트에서 한 번 시험할지 | §8 |
 | 4 | ~~복구 순서(§9.2) 리허설~~ — 2026-10-23 끝남: `auth.users` 복원 권한·`session_replication_role` 허용, 제외 표 문제 없음(§9.2 4번) | RFC §17.6 6번, OQ-E6 |
-| 5 | R-7 ② break-glass — 2026-10-23 리허설 프로젝트에서 비밀번호 교체·재등록은 해 봄. 요소 삭제(3번)만 아직 | PL-3 |
+| 5 | ~~R-7 ② break-glass 요소 삭제~~ — 2026-10-24 임시 프로젝트에서 1~4 전부 끝남(§5.3 ②) | PL-3 |
 | 6 | 경보가 생기기 전까지의 수동 주기(§6.3)를 받아들일지, 출시를 `monitor.yml` 뒤로 둘지 | RFC §17.4, PL-5 |
 | 7 | 메모만 남기는 관리 기록 수단이 필요한지(R-7 ② 의 "MFA 재설정" 기록) — 지금은 비공개 이슈로 대신 | RFC §17.7 R-7 |
 | 8 | 책임자 PC 를 Node 22 로 올리고 wrangler 고정을 풀지 | §7.2 |
