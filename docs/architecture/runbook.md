@@ -52,8 +52,8 @@
 |---|---|---|---|
 | C-1 | **배포된 콘솔에 사이트 키가 들어 있다** | 콘솔 로그인 화면에 Turnstile 확인 상자가 보인다. `src/admin/Login.tsx` 는 `VITE_TURNSTILE_SITE_KEY` 가 빌드에 있을 때만 위젯을 그린다. `npm run build:admin` 은 이 값을 요구하지 않으므로(`vite.admin.config.ts` 는 `VITE_SUPABASE_URL` 만 검사) **빠진 채로도 빌드·배포가 성공한다** | **없음.** 이 상태에서 켜면 관리자 로그인이 토큰 없이 거절되어 **관리자가 잠긴다**. Y-4 에서 키를 넣어 재배포할 때까지 켜지 않는다 |
 | C-2 | 배포된 사용자 앱에 사이트 키가 들어 있다 | 앱은 서버가 CAPTCHA 를 요구할 때만 위젯을 띄운다(`src/actions/captcha.ts`, `src/ui/Captcha.tsx`). 배포 전 `dist/assets/*.js` 에서 사이트 키 문자열을 검색해 확인 | v2 앱은 아직 배포 전(D23) |
-| C-3 | Turnstile 위젯의 허용 호스트 = 앱 호스트(`underthesun7213.github.io`)와 `yunabi-admin.juha.dev` | Cloudflare 대시보드 → Turnstile → 위젯 → Hostname Management | Y-4 에서 위젯을 만들 때 |
-| C-4 | Turnstile **비밀 키**가 Supabase 에 등록되어 있다(스위치는 끈 채로) | Supabase 대시보드 → Authentication 설정 → Bot and Abuse Protection → 제공자 Turnstile, 비밀 키 입력 | 미등록 |
+| C-3 | Turnstile 위젯의 허용 호스트 = 앱 호스트(`underthesun7213.github.io`)와 `yunabi-admin.juha.dev` | Cloudflare 대시보드 → Turnstile → 위젯 → Hostname Management | **2026-10-24 위젯 생성** — 허용 호스트 3개(앱 옛 주소·`yunabi.juha.dev`·콘솔). 사이트 키는 비공개 기록 |
+| C-4 | Turnstile **비밀 키**가 Supabase 에 등록되어 있다(스위치는 끈 채로) | Supabase 대시보드 → Authentication 설정 → Attack Protection → 제공자 Turnstile, 비밀 키 입력 | 미등록 — Supabase 화면은 토글을 켜야 공급자·비밀 키 칸이 나타난다(2026-10-24 확인). 사이트 키 배포(C-1·C-2)와 함께 Y-4 에서 등록 |
 | C-5 | 방침에 Turnstile 문구가 있다(TS-Q6 — 켜는 순간 Cloudflare 로 기기 신호가 간다) | 게시된 방침 확인 | Y-4 |
 
 C-1~C-4 는 출시 전 점검(RFC §17.6 6번 "스위치 ON 상태에서 ① 사용자 첫 쓰기 ② 관리자 로그인")에서 한 번 켜고 끄며 확인해 둔다.
@@ -61,7 +61,7 @@ C-1~C-4 는 출시 전 점검(RFC §17.6 6번 "스위치 ON 상태에서 ① 사
 ### 3.2 켜기
 
 1. 콘솔에 **미리 로그인해 둔 탭을 하나 남긴다**(이미 있는 세션은 스위치의 영향을 받지 않는 것으로 *추정* — 잠겨도 끌 시간을 번다).
-2. Supabase 대시보드 → Bot and Abuse Protection → **Enable CAPTCHA protection ON** → 저장.
+2. Supabase 대시보드 → Attack Protection → **Enable CAPTCHA protection ON** → 저장.
 3. 비공개 이슈에 켠 시각을 적는다.
 
 ### 3.3 켠 뒤 확인 (5분 안에)
@@ -567,7 +567,7 @@ rm app.dump auth.dump
 | Supabase **publishable 키** | 대시보드 API Keys → 새 publishable 키 | 앱·콘솔 다시 빌드·배포(§7) → 설치된 앱이 갱신될 시간을 두고 옛 키 삭제(**되돌릴 수 없음**) | 옛 키를 먼저 지우면 갱신 안 된 설치본이 끊긴다 |
 | 레거시 `anon`/`service_role` JWT 키 | 대시보드 → 비활성 확인 | — | 점검 항목: 비활성이어야 한다 |
 | **DB 비밀번호** | 대시보드 Database 설정 → 비밀번호 재설정 | GitHub `production` Environment 의 DB 주소 `[Y-4 이후]`, `yunabi-ops` 백업 비밀값 | 바꾸는 동안 진행 중인 `db push`·덤프는 실패 |
-| **Turnstile 비밀 키** | Cloudflare → Turnstile → 위젯 → 비밀 키 교체 | Supabase Bot and Abuse Protection 의 비밀 키 | 스위치가 켜져 있으면 갱신 전까지 로그인·첫 쓰기가 실패 — 끈 상태에서 |
+| **Turnstile 비밀 키** | Cloudflare → Turnstile → 위젯 → 비밀 키 교체 | Supabase Attack Protection 의 비밀 키 | 스위치가 켜져 있으면 갱신 전까지 로그인·첫 쓰기가 실패 — 끈 상태에서 |
 | **Turnstile 사이트 키** | 새 위젯(허용 호스트 §3.1 C-3) | `VITE_TURNSTILE_SITE_KEY` 로 앱·콘솔 다시 빌드·배포, Supabase 비밀 키도 새 위젯 것으로 | 공개값이라 유출 대응은 필요 없다. 위젯을 바꿀 때만 |
 | **관리자 비밀번호** | §5.2 (`node admin.mjs password`) | 비밀번호 금고 | — |
 | **관리자 TOTP** | 콘솔 Security (추가 → 제거) | 예비 비밀의 보관 장소 | 늘 2개 유지 |
