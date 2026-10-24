@@ -47,5 +47,5 @@ ADR-0020 은 설치된 PWA·`yui.v1.*` 저장을 잇기 위해 사용자 앱을 
 
 | # | 질문 |
 |---|---|
-| CF-Q1 | `juha.dev` 영역에서 스크립트를 끼워 넣는 기능이 꺼져 있는지, 켜져 있으면 `yunabi.juha.dev` 만 제외하는 Configuration Rule 로 충분한지 — 첫 배포 전 확인(런북 §7.3) |
-| CF-Q2 | Workers 의 `/index.html` → `/` 리디렉션과 Workbox 사전 캐시가 맞물리는지(오프라인 새로 고침) — 실제 주소에서만 확인 가능, 첫 배포 뒤 |
+| CF-Q1 | `juha.dev` 영역에서 스크립트를 끼워 넣는 기능이 꺼져 있는지, 켜져 있으면 `yunabi.juha.dev` 만 제외하는 Configuration Rule 로 충분한지 — **닫힘 2026-10-25:** Bot Fight Mode·Rocket Loader 는 꺼져 있었고, Email Obfuscation·Web Analytics 자동 삽입은 켜져 있어 껐다(영역 전체). 끄기 직전에 받은 첫 응답에는 Web Analytics 비컨이 들어 있어 CSP 위반 2건(차단됨) — 새로 받은 응답에는 없음 |
+| CF-Q2 | Workers 의 `/index.html` → `/` 리디렉션과 Workbox 사전 캐시가 맞물리는지(오프라인 새로 고침) — **2026-10-25 확인:** 사전 캐시 61개, `index.html` 은 리디렉션 표시 없이 200 전체 페이지로 저장. 네트워크를 끈 실제 새로 고침은 기기에서 확인할 일로 남음 |
