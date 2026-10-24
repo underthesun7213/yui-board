@@ -26,11 +26,11 @@
     "test:backend": "playwright test -c playwright.backend.config.ts"
   },
   "dependencies": {
-    "@supabase/auth-js": "2.117.3",
+    "@supabase/auth-js": "2.118.0",
     "leaflet": "1.9.4",
     "leaflet.markercluster": "1.5.3",
-    "react": "19.3.0",
-    "react-dom": "19.3.0"
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
   },
   "devDependencies": {
     "@eslint/js": "9.39.5",
