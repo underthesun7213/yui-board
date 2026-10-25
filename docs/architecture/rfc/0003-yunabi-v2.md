@@ -453,13 +453,13 @@ sequenceDiagram
 
 | 자리 | 경로·파일명 | 비율 | 권장 크기 | 비고 |
 |---|---|---|---|---|
-| 만화 컷 | `src/art/lessons/<lid>/<nn>.webp` — `lid` = `l1`~`l7`, `nn` = 컷 순서 2자리 1부터(`01`) | 4:3 | 1200×900 | 예: `src/art/lessons/l2/05.webp` = 2화 5번째 컷 |
+| 만화 페이지 **(2026-10-25 변경)** | `src/art/lessons/<lid>/p1`·`p2` — `lid` = `l1`~`l7`, 레벨마다 2쪽 × 4칸, 말풍선은 그림 속 일본어 | **세로 2:3**(±1%) | 짧은 변 ≥ 1000px, ≤ 400KB | 예: `src/art/lessons/l2/p1.webp` = 2화 1쪽. 칸별 대사·번역은 데이터(`Panel`)에서 그림 아래 목록으로. 콘티 대본: `docs/06-design/comic-scripts.md`(생성 문서) |
 | 분기 게임 장면 | `src/art/vn/<route>/<nn>.webp` — `route` = `osaka`·`kyoto` | 4:3 | 1200×900 | |
 | 엔딩 카드 | `src/art/endings/<ending_id>.webp` — `e_osaka_best` 등 5개 | **3:2 원본** | 1200×800 | 엔딩 화면은 3:2 그대로, 컬렉션 격자(4:3)는 가운데 기준 `object-fit: cover` 로 잘림 → **좌우 각 약 6% 는 잘려도 되게** 그린다 |
 
 - 형식: `.webp` 우선, `.png`·`.jpg` 도 허용(같은 이름이 둘이면 빌드 실패).
-- 동작: `src/content/art.ts` 가 `import.meta.glob('/src/art/**/*.{webp,png,jpg}', { eager: true, query: '?url', import: 'default' })` 로 **빌드 시점에 있는 파일 목록**을 만든다. `ArtImage` 컴포넌트는 키(`lessons/l2/05`)가 목록에 있으면 `<img>`, 없으면 회색 자리를 그린다. 코드 수정 없이 파일 하나를 넣고 빌드(=`main` 푸시 → CI 배포)하면 그 칸만 바뀐다(Y-J3 수락 기준).
-- 파일은 해시 이름으로 출력되어 캐시 무효화가 자동이고, 서비스워커 사전 캐시에 들어간다(그림 총량이 커지면 사전 캐시에서 빼고 런타임 캐시로 — OQ-10).
+- 동작: `src/content/art.ts` 가 `import.meta.glob('/src/art/**/*.{webp,png,jpg}', { eager: true, query: '?url', import: 'default' })` 로 **빌드 시점에 있는 파일 목록**을 만든다. `ArtImage` 컴포넌트는 키(예: `vn/osaka/02`, 만화는 `ComicPage` 가 `lessons/l2/p1`)가 목록에 있으면 `<img>`, 없으면 회색 자리를 그린다. 코드 수정 없이 파일 하나를 넣고 빌드(=`main` 푸시 → CI 배포)하면 그 칸만 바뀐다(Y-J3 수락 기준).
+- 파일은 해시 이름으로 출력되어 캐시 무효화가 자동이다. 분기 게임·엔딩 그림은 서비스워커 사전 캐시에 들어가고, **만화 페이지는 `assets/comic/` 으로 따로 출력되어 사전 캐시에서 빠지고 처음 볼 때 저장**(CacheFirst, 최대 20개 — OQ-10 의 답, 2026-10-25). SW 에 `clientsClaim` 이 없어 첫 방문 세션에 본 페이지는 다음 방문부터 저장된다.
 - 검사: 단위 테스트가 `src/art/` 의 모든 파일 이름이 실제 자리(레슨 컷 수·장면 수·엔딩 id)에 대응하는지 확인 — 오타 파일이 조용히 무시되지 않게.
 - `alt`: 컷의 일본어 대사(`jp`)를 대체 텍스트로.
 
