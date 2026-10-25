@@ -1,7 +1,7 @@
 /* The server's rules, checked early so the form can say what is wrong before
    sending. The server checks again; these only explain. Field names match the
    server's {status:'invalid', field}. */
-import { addDays, dayDiff } from './calendar/dates';
+import { addDays, dayDiff, tokyoTime, tokyoToday } from './calendar/dates';
 
 const CNTRL = /\p{Cc}/u;
 /* invisible or direction-changing characters, C1 controls, line separators (as the server) */
@@ -63,7 +63,20 @@ export interface EventInput {
   body: string;
   lang: string;
 }
-export function checkEvent(e: EventInput, today: string, startLocked = false): string | null {
+/** A new event's slot until the person changes it. */
+export const NEW_EVENT_SLOT = { start: '18:00', end: '19:00' };
+/** The day a new event starts on: today, or tomorrow once today's slot has ended. */
+export const newEventDay = (now: Date = new Date()) =>
+  tokyoTime(now) < NEW_EVENT_SLOT.end ? tokyoToday(now) : addDays(tokyoToday(now), 1);
+
+/** `nowTime` (HH:MM in Japan) is given for a new event: the server refuses one
+    that has already ended today. */
+export function checkEvent(
+  e: EventInput,
+  today: string,
+  startLocked = false,
+  nowTime: string | null = null,
+): string | null {
   const title = trimText(e.title);
   if (!title || !singleLine(title, LIMITS.title, true)) return 'title';
   if (!/^\d{4}-\d\d-\d\d$/.test(e.start_date)) return 'start_date';
@@ -72,7 +85,8 @@ export function checkEvent(e: EventInput, today: string, startLocked = false): s
   if (
     !/^\d\d:\d\d$/.test(e.start_time) ||
     !/^\d\d:\d\d$/.test(e.end_time) ||
-    e.end_time <= e.start_time
+    e.end_time <= e.start_time ||
+    (nowTime != null && e.start_date === today && e.end_time <= nowTime)
   )
     return 'time';
   if (e.weekly_until != null) {
