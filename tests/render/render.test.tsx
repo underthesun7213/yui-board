@@ -20,6 +20,8 @@ import { collection } from '../../src/state/collection';
 import { data, setData } from '../../src/state/data';
 import { location, type LocState } from '../../src/state/location';
 import { mapUi } from '../../src/state/mapUi';
+import { prefIntro } from '../../src/state/prefIntro';
+import { PREF_INTRO } from '../../src/content/prefIntro';
 import { prefs } from '../../src/state/prefs';
 import { route, type Route } from '../../src/state/route';
 import { vn, VN_START } from '../../src/state/vn';
@@ -79,6 +81,7 @@ function reset() {
   collection.set({ cg: {} });
   vn.set(VN_START);
   ui.set({ report: null });
+  prefIntro.set({ texts: null });
 }
 
 type Case = [name: string, r: Route, setup?: () => void, mark?: RegExp];
@@ -123,6 +126,12 @@ const cases: Case[] = [
     () => mapUi.set({ mode: 'japan', pref: '27', cat: 'daily', pl: 3 }),
   ],
   ['map-pref-13', { name: 'map' }, () => mapUi.set({ mode: 'japan', pref: '13' })],
+  [
+    'map-pref-intro',
+    { name: 'map' },
+    () => (prefIntro.set({ texts: PREF_INTRO }), mapUi.set({ mode: 'japan', pref: '26' })),
+    /class="prefintro"/,
+  ],
   ['map-fail', { name: 'map' }, () => mapUi.set({ mapFail: true, tileFail: true })],
   [
     'map-empty',

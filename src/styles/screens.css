@@ -576,6 +576,12 @@ main {
   font-size: 18px;
   font-weight: 700;
 }
+.prefintro {
+  margin: 2px var(--gutter) 0;
+  font-size: 14px;
+  color: var(--body);
+  line-height: 1.6;
+}
 .filters {
   display: flex;
   gap: 8px;
