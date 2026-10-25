@@ -18,9 +18,12 @@ grant execute on all functions in schema tests to public;
 
 select tests.as_user(tests.id('a'));
 -- Y-K4: today or later; end after start
--- the latest slot of the day, so the test does not depend on the hour it runs
-select is((public.create_event(gen_random_uuid(), 'Board games', tests.today(), '23:00', '23:59', null, 'Lounge', 'Come by', 'en'))->>'status',
-  'ok', 'an event today');
+-- the latest slot of the day, so the test does not depend on the hour it runs;
+-- in the day's last minute even that one has ended, and there is nothing to test
+select case when (now() at time zone 'Asia/Tokyo')::time < '23:59'
+  then is((public.create_event(gen_random_uuid(), 'Board games', tests.today(), '23:00', '23:59', null, 'Lounge', 'Come by', 'en'))->>'status',
+    'ok', 'an event today')
+  else pass('an event today (not testable in the last minute of the day)') end;
 select is((tests.ev(tests.today() - 1))->>'field', 'start_date', 'not in the past');
 select is((public.create_event(gen_random_uuid(), 'x', tests.today(), '19:00', '19:00', null, '', '', 'en'))->>'field',
   'time', 'end must be after start');
@@ -36,8 +39,11 @@ select is((public.create_event(gen_random_uuid(), 'x', tests.today() + 1, '23:00
   'time', '24:00 is not a time');
 select is((public.create_event(gen_random_uuid(), 'x', tests.today() + 1, '10:00:30', '11:00', null, '', '', 'en'))->>'field',
   'time', 'whole minutes only');
-select is((public.create_event(gen_random_uuid(), 'x', tests.today(), '00:00', '00:01', null, '', '', 'en'))->>'field',
-  'time', 'a slot that already ended today');
+-- right after midnight no slot of today has ended yet
+select case when (now() at time zone 'Asia/Tokyo')::time >= '00:02'
+  then is((public.create_event(gen_random_uuid(), 'x', tests.today(), '00:00', '00:01', null, '', '', 'en'))->>'field',
+    'time', 'a slot that already ended today')
+  else pass('a slot that already ended today (not testable before 00:02)') end;
 
 -- Y-K6: weekly, same weekday, at most 26 times
 insert into r select 'w', tests.ev(tests.today() + 1, tests.today() + 1 + 175);
