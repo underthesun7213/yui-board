@@ -54,6 +54,7 @@ type Handle = {
     };
     set(p: { places: unknown[] }): void;
   };
+  setData(places: unknown[], events: unknown[], overrides: unknown[], fetchedAt: string): void;
   map(): {
     map: L.Map | null;
     container: HTMLElement | null;

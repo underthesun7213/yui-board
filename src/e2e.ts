@@ -2,7 +2,7 @@
    on the stores and the map so the tests can check state, not just pixels. */
 import { inspect } from './map/runtime';
 import { collection } from './state/collection';
-import { data } from './state/data';
+import { data, setData } from './state/data';
 import { location } from './state/location';
 import { mapUi } from './state/mapUi';
 import { prefs } from './state/prefs';
@@ -15,5 +15,7 @@ import { route } from './state/route';
   location,
   mapUi,
   data,
+  /** replaces places and events and rebuilds the schedule, as a server read would */
+  setData,
   map: inspect,
 };

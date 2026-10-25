@@ -75,3 +75,92 @@ test.describe('user text stays text', () => {
     expect(titles).toContain(payload);
   });
 });
+
+/* Japan date `n` days from now, as the app counts days */
+const jpDay = (n: number) =>
+  new Date(Date.now() + 9 * 3600_000 + n * 864e5).toISOString().slice(0, 10);
+
+test.describe('long text without spaces', () => {
+  test.use({
+    geolocation: { latitude: 34.8252, longitude: 135.653 },
+    permissions: ['geolocation'],
+  });
+  test('a link or handle as a name, title or detail wraps on every screen', async ({
+    page,
+    errors,
+  }) => {
+    void errors;
+    const run = 'https://instagram.com/the_corner_bakery_official_account_x';
+    const link = 'https://www.example.com/slides/study-group/week-1-introduction-to-keigo.pdf';
+    const day = jpDay(1);
+    await page.goto('./#/map');
+    await mapReady(page);
+    /* a screen change can read the fixtures again, so the items go back in after each */
+    const inject = async () => {
+      await page.waitForTimeout(300);
+      await page.waitForFunction(() => window.__yunabi.data.get().status === 'ok');
+      await page.evaluate(
+        ({ run, link, day }) => {
+          const d = window.__yunabi.data.get();
+          const near = {
+            ...d.places[0]!,
+            id: 900,
+            name: run,
+            description: link,
+            lat: 34.8251,
+            lng: 135.6529,
+          };
+          const ev = {
+            id: 900,
+            title: run,
+            start_date: day,
+            start_time: '18:00',
+            end_time: '19:00',
+            weekly_until: null,
+            place_text: 'Room_B204_next_to_the_laundry_and_the_vending_machines',
+            body: link,
+            lang: 'en',
+            created_on: day,
+            edited_on: null,
+          };
+          const places = d.places.filter((x) => x.id !== 900);
+          window.__yunabi.setData([...places, near], [ev], [], new Date().toISOString());
+        },
+        { run, link, day },
+      );
+    };
+    await inject();
+    const wide = () => page.evaluate(() => document.documentElement.scrollWidth);
+    await tap(page, '[data-loc="skip"]');
+    await page.locator('.plist button', { hasText: run }).click();
+    await expect(page.locator('.pcard h3')).toHaveText(run);
+    expect(await wide(), 'map').toBeLessThanOrEqual(375);
+    for (const [hash, shown] of [
+      ['#/', run],
+      ['#/cal', run],
+      [`#/cal/event/900/${day}`, link],
+    ] as const) {
+      await page.evaluate((h) => (location.hash = h), hash);
+      await inject();
+      await expect(page.getByText(shown).first()).toBeVisible();
+      expect(await wide(), hash).toBeLessThanOrEqual(375);
+    }
+  });
+});
+
+test('Y-K4 after 19:00 in Japan a new event starts tomorrow, not in a slot already over', async ({
+  page,
+  errors,
+}) => {
+  void errors;
+  await page.clock.install({ time: new Date('2026-10-25T19:30:00+09:00') });
+  await page.goto('./#/cal/new');
+  await expect(page.locator('#ef-date')).toHaveValue('2026-10-26');
+  /* moved back to today, the slot is refused before anything is sent */
+  await page.fill('#ef-title', 'Study group');
+  await page.fill('#ef-date', '2026-10-25');
+  await page.click('.form button[type=submit]');
+  await expect(
+    page.getByText('The end has to be after the start, and not already past.'),
+  ).toBeVisible();
+});
