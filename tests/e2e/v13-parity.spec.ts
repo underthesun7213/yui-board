@@ -23,7 +23,10 @@ test.describe('home, tabs, language, back', () => {
     await tap(page, '.hcard.jp');
     await expect(page.locator('.lesson')).toHaveCount(8);
     await tap(page, '[data-lesson="l1"]');
-    await expect(page.locator('.cut')).toHaveCount(8);
+    /* two comic pages of four panels (Y-J1); no art yet, so no full-screen button */
+    await expect(page.locator('.cpage')).toHaveCount(2);
+    await expect(page.locator('.panels li')).toHaveCount(8);
+    await expect(page.locator('[data-zoom]')).toHaveCount(0);
     await tap(page, '.bar .back');
     await expect(page.locator('.lesson')).toHaveCount(8);
     await page.goBack();
@@ -86,7 +89,7 @@ test.describe('home, tabs, language, back', () => {
     await expect(page.locator('.lesson')).toHaveCount(8);
     await page.evaluate(() => scrollTo(0, 245));
     await tap(page, '[data-lesson="l5"]');
-    await expect(page.locator('.cut').first()).toBeVisible();
+    await expect(page.locator('.cpage').first()).toBeVisible();
     expect(await page.evaluate(() => scrollY)).toBe(0);
     await page.goBack();
     await expect(page.locator('.lesson')).toHaveCount(8);
