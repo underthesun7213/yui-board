@@ -122,51 +122,51 @@ export const LESSONS: Lesson[] = [
             s: 'Student at the small ticket window of Gotenyama Station',
           },
           {
-            jp: 'ここは各駅停車だけなんですよ。',
-            tr: { en: 'Only local trains stop here.', ko: '여기는 각역 정차만 서요.' },
+            jp: 'ここは特急が止まらないんですよ。',
+            tr: { en: "Limited expresses don't stop here.", ko: '여기는 특급이 안 서요.' },
             s: 'Station staff behind the window',
           },
           {
-            jp: '枚方市で乗り換えですか？',
-            tr: { en: 'Do I change at Hirakatashi?', ko: '히라카타시에서 갈아타나요?' },
+            jp: 'どこで乗り換えですか？',
+            tr: { en: 'Where do I change?', ko: '어디서 갈아타요?' },
             s: 'Student checking a route app on their phone',
           },
           {
-            jp: 'はい。枚方市から特急が出ています。',
+            jp: '樟葉で特急に乗り換えてください。',
             tr: {
-              en: 'Yes. Limited expresses leave from Hirakatashi.',
-              ko: '네. 히라카타시에서 특급이 출발해요.',
+              en: 'Change to a limited express at Kuzuha.',
+              ko: '구즈하에서 특급으로 갈아타세요.',
             },
-            s: 'Staff pointing at a route map on the wall',
+            s: 'Staff pointing at Kuzuha on a route map on the wall',
           },
         ],
       },
       {
         panels: [
           {
-            cap: '枚方市駅',
+            cap: '樟葉駅',
             jp: '特急は何番ホームですか？',
             tr: {
-              en: '(Hirakatashi Station) Which platform is the limited express?',
-              ko: '(히라카타시역) 특급은 몇 번 승강장이에요?',
+              en: '(Kuzuha Station) Which platform is the limited express?',
+              ko: '(구즈하역) 특급은 몇 번 승강장이에요?',
             },
-            s: 'Student on a busy platform concourse at Hirakatashi',
+            s: 'Student on a busy platform concourse at Kuzuha',
           },
           {
-            jp: '3番ホーム、出町柳行きです。',
+            jp: '1番か2番、出町柳行きです。',
             tr: {
-              en: 'Platform 3, bound for Demachiyanagi.',
-              ko: '3번 승강장, 데마치야나기행이에요.',
+              en: 'Platform 1 or 2, bound for Demachiyanagi.',
+              ko: '1번이나 2번, 데마치야나기행이에요.',
             },
             s: 'Staff gesturing toward a staircase, departure board overhead',
           },
           {
-            jp: 'この電車、樟葉には止まりませんからね。',
+            jp: '祇園四条で降りると便利ですよ。',
             tr: {
-              en: "Just so you know, this train doesn't stop at Kuzuha.",
-              ko: '이 전철은 구즈하에는 안 서니까요.',
+              en: "Get off at Gion-Shijo, it's handy.",
+              ko: '기온시조에서 내리면 편해요.',
             },
-            s: 'Staff adding a warning, finger raised',
+            s: 'Staff adding a tip with a smile, finger on the route map',
           },
           {
             jp: 'ありがとうございます！',
@@ -215,7 +215,7 @@ export const LESSONS: Lesson[] = [
       ko: '병원 가기',
     },
     d: {
-      ja: '受付から会計まで',
+      ja: '受付から薬局まで',
       en: 'From the reception desk to the pharmacy',
       ko: '접수부터 약국까지',
     },

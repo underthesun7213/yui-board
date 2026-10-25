@@ -10,7 +10,6 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 /* paths from the repository root, wherever the script is run from */
 const root = (p) => fileURLToPath(new URL(`../${p}`, import.meta.url));
 export const OUT = 'docs/06-design/comic-scripts.md';
-const SLOTS = ['맨 위', '둘째', '셋째', '맨 아래'];
 const cell = (s) => (s ? String(s).replace(/\|/g, '\\|') : '—');
 
 /** The document for these lessons (comic levels only). */
@@ -25,8 +24,7 @@ export function renderComicScripts(lessons) {
     '- 레벨마다 2쪽: `src/art/lessons/<레벨 id>/p1`, `p2` — `.webp`·`.png`·`.jpg` 중 하나(한 쪽에 파일 하나).',
     '- **세로 2:3**(오차 1%), 짧은 변 **1000px 이상**, 한 장 **400KB 이하**(넘으면 webp 로). 맞지 않으면 단위 시험이 실패한다.',
     '- 말풍선 글자 = 아래 표의 **말풍선**과 글자까지 같게. 네모 상자(내레이션) = **내레이션** — 괄호 없이.',
-    '- 칸 순서는 일본 만화식(오른쪽→왼쪽, 위→아래). 앱은 그림 아래에 칸 번호 순서로 대사와 번역을 보여 준다.',
-    '- 권장 배치: 한 쪽에 칸 4개를 세로로(맨 위 → 맨 아래). 다른 배치를 쓰면 번호 순서만 지킨다.',
+    '- 칸 나누기와 배치는 책임자의 콘티대로. 칸 번호는 읽는 순서(일본 만화식: 오른쪽→왼쪽, 위→아래)이고, 앱은 그림 아래에 그 순서로 대사와 번역을 보여 준다.',
     '- 그림 생성기(Gemini 등)가 일본어 글자를 틀리게 그리면, 그림만 만들고 글자는 편집기에서 넣는 것을 권한다.',
     '- 확인: 그림을 넣은 뒤 표의 **대조** 칸에 표시.',
     '',
@@ -38,12 +36,12 @@ export function renderComicScripts(lessons) {
       out.push(
         `### ${pi + 1}쪽 — \`src/art/lessons/${l.id}/p${pi + 1}\``,
         '',
-        '| 칸 | 위치 | 장면 메모 | 내레이션 | 말풍선 | 번역(ko) | 대조 |',
-        '|---|---|---|---|---|---|---|',
+        '| 칸 | 장면 메모 | 내레이션 | 말풍선 | 번역(ko) | 대조 |',
+        '|---|---|---|---|---|---|',
       );
       page.panels.forEach((p, i) => {
         out.push(
-          `| ${i + 1} | ${SLOTS[i]} | ${cell(p.s)} | ${cell(p.cap)} | ${cell(p.jp)} | ${cell(p.tr.ko)} | [ ] |`,
+          `| ${i + 1} | ${cell(p.s)} | ${cell(p.cap)} | ${cell(p.jp)} | ${cell(p.tr.ko)} | [ ] |`,
         );
       });
       out.push('');
