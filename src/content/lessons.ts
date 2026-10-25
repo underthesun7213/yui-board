@@ -46,7 +46,7 @@ export const LESSONS: Lesson[] = [
         panels: [
           {
             jp: 'あ、大丈夫です。持ってます。',
-            tr: { en: "Oh, I'm fine. I have one.", ko: '아, 괜찮아요. 가지고 있어요.' },
+            tr: { en: 'Oh, no thanks. I have one.', ko: '아, 괜찮아요. 가지고 있어요.' },
             s: 'Student pulling out an eco bag',
           },
           {
@@ -378,7 +378,7 @@ export const LESSONS: Lesson[] = [
           },
           {
             jp: 'でしたら、こちらのほうが。',
-            tr: { en: 'In that case, this one would be better.', ko: '그러시면 이쪽이 나아요.' },
+            tr: { en: "In that case, this one's cheaper.", ko: '그러시면 이쪽이 더 싸요.' },
             s: 'Staff offering a cheaper box',
           },
         ],
@@ -432,7 +432,7 @@ export const LESSONS: Lesson[] = [
         panels: [
           {
             jp: '何かお探しですか？',
-            tr: { en: 'Are you looking for anything?', ko: '뭐 찾으시는 거 있으세요?' },
+            tr: { en: 'Can I help you find anything?', ko: '뭐 찾으시는 거 있으세요?' },
             s: 'Shop assistant approaching a browsing customer',
           },
           {
@@ -550,7 +550,7 @@ export const LESSONS: Lesson[] = [
           {
             jp: 'お通しやで。席料みたいなもん。',
             tr: {
-              en: "It's otōshi. Kind of like a cover charge.",
+              en: "It's otoushi. Kind of like a cover charge.",
               ko: '오토시야. 자릿세 같은 거.',
             },
             s: 'Friend explaining across the table',
@@ -562,7 +562,7 @@ export const LESSONS: Lesson[] = [
           },
           {
             jp: '取り皿、もらえますか？',
-            tr: { en: 'Could we have some small plates?', ko: '앞접시 좀 주시겠어요?' },
+            tr: { en: 'Could we have some plates to share?', ko: '앞접시 좀 주시겠어요?' },
             s: 'Shared fried food in the middle of the table',
           },
           {

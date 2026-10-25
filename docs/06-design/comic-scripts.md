@@ -98,7 +98,7 @@
 | 1 | 맨 위 | Student turning the box over, reading the back | — | 1日何回飲みますか？ | 하루에 몇 번 먹어요? | [ ] |
 | 2 | 둘째 | Staff pointing at the label | — | 食後に3回。眠くなる成分が入っています。 | 식후에 세 번이요. 졸음이 오는 성분이 들어 있어요. | [ ] |
 | 3 | 셋째 | Student comparing two boxes | — | もう少し安いのはありますか？ | 조금 더 싼 건 있어요? | [ ] |
-| 4 | 맨 아래 | Staff offering a cheaper box | — | でしたら、こちらのほうが。 | 그러시면 이쪽이 나아요. | [ ] |
+| 4 | 맨 아래 | Staff offering a cheaper box | — | でしたら、こちらのほうが。 | 그러시면 이쪽이 더 싸요. | [ ] |
 
 ## 레벨 5 · 服を買う / 옷 사기 (`l5`)
 

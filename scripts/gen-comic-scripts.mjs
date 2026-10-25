@@ -2,11 +2,13 @@
 // script the owner draws the comic pages from (Y-J1, Y-J3). The lessons file
 // is the source; run this after changing it (`node scripts/gen-comic-scripts.mjs`).
 // tests/unit/domain.test.ts fails when the document is out of date.
-import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { pathToFileURL } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
+/* paths from the repository root, wherever the script is run from */
+const root = (p) => fileURLToPath(new URL(`../${p}`, import.meta.url));
 export const OUT = 'docs/06-design/comic-scripts.md';
 const SLOTS = ['맨 위', '둘째', '셋째', '맨 아래'];
 const cell = (s) => (s ? String(s).replace(/\|/g, '\\|') : '—');
@@ -54,16 +56,21 @@ export function renderComicScripts(lessons) {
    has only type imports), so no new tool is needed and Node 20 works. */
 async function loadLessons() {
   const ts = (await import('typescript')).default;
-  const src = readFileSync('src/content/lessons.ts', 'utf8');
+  const src = readFileSync(root('src/content/lessons.ts'), 'utf8');
   const js = ts.transpileModule(src, {
     compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 },
   }).outputText;
-  const file = join(mkdtempSync(join(tmpdir(), 'yunabi-')), 'lessons.mjs');
+  const dir = mkdtempSync(join(tmpdir(), 'yunabi-'));
+  const file = join(dir, 'lessons.mjs');
   writeFileSync(file, js);
-  return (await import(pathToFileURL(file).href)).LESSONS;
+  try {
+    return (await import(pathToFileURL(file).href)).LESSONS;
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  writeFileSync(OUT, renderComicScripts(await loadLessons()) + '\n');
+  writeFileSync(root(OUT), renderComicScripts(await loadLessons()) + '\n');
   console.log(`wrote ${OUT}`);
 }

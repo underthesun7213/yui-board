@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { formatRoute, legacyRoute, parseRoute } from '../../src/app/routes';
-import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { OUT, renderComicScripts } from '../../scripts/gen-comic-scripts.mjs';
 import { ART, endingKey, pageKey, sceneKey } from '../../src/content/art';
@@ -246,11 +246,8 @@ describe('art', () => {
         else files.push(p.split('\\').join('/'));
       }
     };
-    try {
-      walk(root);
-    } catch {
-      return; // no comic pages yet
-    }
+    if (!existsSync(root)) return; // no comic pages yet
+    walk(root);
     const seen = new Set<string>();
     for (const f of files) {
       expect(/[.](webp|png|jpg)$/.test(f), `${f}: use .webp, .png or .jpg`).toBe(true);

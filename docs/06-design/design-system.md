@@ -245,9 +245,9 @@ MAP-01 의 필터 칩(선택 시 `--c` 로 주입, 1520행), 지도 핀 `.pindot
 | 캘린더 | `.mnav`, `.wdrow .wd(.sun)`, `.grid`, `.cell`, `.cdots`, `.cd.*` | `.cell.today` (beni 굵게), `.cell[aria-pressed]` (ai 채움), `.cell.out` (빈칸), 점 최대 3개 (1451행) | CAL-01 |
 | 이벤트 행 | `.ev.{kind}`, `.clock`, `.sub`, `.chips`, `.chip` | `.chip.rep` (↻ 매주), `.chip.full` (만원), `:hover` | CAL-01 |
 | 이벤트 정보 | `.evwrap`, `.when`, `dl.facts` (dt 78px 고정), `.evbtns`, `.go` | `.go[aria-pressed]` → 외곽선형 "✓ 참가 예정"; `disabled` (만원) **스타일 없음** | CAL-02 |
-| 에피소드 행 | `.lesson`, `.lvbadge(.vn)`, `.lmain`, `.lcuts` | 8화는 beni 배지 ▶ | JP-01 |
+| 에피소드 행 | `.lesson`, `.lvbadge(.vn)`, `.lmain`, ~~`.lcuts`~~(2026-10-25 삭제) | 8화는 beni 배지 ▶ | JP-01 |
 | 컬렉션 행 | `.colrow`, `.colthumbs i(.on)` | 획득 = beni 썸네일 | JP-01 |
-| 만화 컷 | `figure.cut`, `.cutph` (자리 표시), `figcaption` | `img` 있으면 이미지, 없으면 번호 + 장면 메모 `s` + "준비 중" | JP-02 |
+| 만화 컷 → **페이지(2026-10-25 대체)** | ~~`figure.cut`, `.cutph`, `figcaption`~~ → `.cpage`, `.cpageart`(2:3), `ol.panels`(`.cap`·`.jp`·`.tr`), 덮개 `.zoom` | `img` 있으면 이미지, 없으면 번호 + 장면 메모 `s` + "준비 중" | JP-02 |
 | 표현 카드 | `.expr`, `.rd` | — | JP-02 |
 | VN 루트 카드 | `.routes`, `.route` | — | JP-03 |
 | VN 장면 | `.vnwrap`, `.vndots i(.past/.now)`, `.cgart`, `.vnline` | 진행 점 3상태 | JP-04 |

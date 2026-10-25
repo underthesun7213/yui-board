@@ -325,7 +325,7 @@ describe.each(['en', 'ja', 'ko'] as const)('%s', (lang) => {
       route.set({ route: { name: 'lesson', lid }, prev: 'learn', taps: 0 });
       const out = await html();
       expect(out.match(/class="tr"/g)?.length ?? 0).toBe(lang === 'ja' ? 0 : 8);
-      expect(out.match(/<li>/g)?.length).toBe(8);
+      expect(out.split('class="panels"').slice(1).join('').match(/<li>/g)?.length).toBe(8);
     },
   );
 

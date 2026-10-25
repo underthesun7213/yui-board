@@ -956,7 +956,6 @@ main {
   inset: 0;
   z-index: 80;
   background: #000;
-  overscroll-behavior: contain;
 }
 .zoomscroll {
   display: flex;
@@ -965,6 +964,7 @@ main {
   justify-content: safe center;
   height: 100%;
   overflow: auto;
+  overscroll-behavior: contain;
   touch-action: pan-x pan-y pinch-zoom;
 }
 .zoomscroll img {
@@ -975,7 +975,7 @@ main {
 .zoomx {
   position: absolute;
   top: calc(8px + env(safe-area-inset-top));
-  right: 8px;
+  right: calc(8px + env(safe-area-inset-right));
   z-index: 1;
   width: 44px;
   height: 44px;
