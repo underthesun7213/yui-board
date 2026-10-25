@@ -161,7 +161,7 @@ export const en = {
     lang: 'Pick the language you wrote in.',
     title: 'Title: 1 to 60 characters on one line.',
     start_date: 'Pick today or a later date.',
-    time: 'The end has to be after the start.',
+    time: 'The end has to be after the start, and not already past.',
     weekly_until: 'Pick a last week on the same weekday, at most 26 weeks later.',
     place_text: 'Where: up to 60 characters on one line.',
     body: 'Details: up to 500 characters.',

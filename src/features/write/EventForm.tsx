@@ -1,9 +1,16 @@
 import { useEffect, useState } from 'react';
 import { back } from '../../app/router';
 import { dropDraft, explain, loadOwn, openDraft, saveDraft, saveEvent } from '../../actions/write';
-import { addDays, tokyoToday } from '../../domain/calendar/dates';
+import { addDays, tokyoTime, tokyoToday } from '../../domain/calendar/dates';
 import { LANGS, type EventSeries, type Lang } from '../../domain/types';
-import { checkEvent, lastWeekMax, LIMITS, type EventInput } from '../../domain/validation';
+import {
+  checkEvent,
+  lastWeekMax,
+  LIMITS,
+  NEW_EVENT_SLOT,
+  newEventDay,
+  type EventInput,
+} from '../../domain/validation';
 import { LANG_NAME } from '../../i18n';
 import { useT } from '../../i18n/useT';
 import { data } from '../../state/data';
@@ -73,9 +80,9 @@ function EventFormBody({
         }
       : openDraft<EventInput>('event', {
           title: '',
-          start_date: today,
-          start_time: '18:00',
-          end_time: '19:00',
+          start_date: newEventDay(),
+          start_time: NEW_EVENT_SLOT.start,
+          end_time: NEW_EVENT_SLOT.end,
           weekly_until: null,
           place_text: '',
           body: '',
@@ -116,7 +123,7 @@ function EventFormBody({
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    const bad = checkEvent(f, today, startLocked);
+    const bad = checkEvent(f, today, startLocked, id ? null : tokyoTime());
     if (bad) return setErr({ field: bad, msg: m.inv[bad as keyof typeof m.inv] ?? m.inv.other });
     setBusy(true);
     const r = await saveEvent(f, { id, token: draft.token });
