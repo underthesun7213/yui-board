@@ -111,7 +111,8 @@ test.describe('game and collection', () => {
     void errors;
     await page.goto('./#/learn/l8');
     await tap(page, '[data-route="osaka"]');
-    for (let i = 0; i < 5; i++) {
+    /* play to the end however many scenes the route has (they grow with new lines) */
+    for (let i = 0; i < 20 && !(await page.locator('.vnend').count()); i++) {
       await tap(page, '[data-opt="0"]');
       await tap(page, '.vnwrap .primary');
     }
