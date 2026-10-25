@@ -423,9 +423,9 @@ export const LESSONS: Lesson[] = [
       ko: '옷 사기',
     },
     d: {
-      ja: '声をかけられたときの逃げ方も',
-      en: 'Including how to escape when staff approach',
-      ko: '점원이 말 걸 때 빠져나가는 법도',
+      ja: '冬服を探す。試着と品切れ',
+      en: 'Looking for winter clothes, trying on, sold out',
+      ko: '겨울옷 찾기. 입어 보기와 품절',
     },
     pages: [
       {
@@ -436,19 +436,22 @@ export const LESSONS: Lesson[] = [
             s: 'Shop assistant approaching a browsing customer',
           },
           {
-            jp: '見てるだけです。',
-            tr: { en: "I'm just looking.", ko: '그냥 보는 거예요.' },
-            s: 'Student holding up a hand, smiling politely',
+            jp: '冬に着る暖かい服を見に来ました。',
+            tr: {
+              en: "I'm looking for something warm to wear this winter.",
+              ko: '겨울에 입을 따뜻한 옷을 보러 왔어요.',
+            },
+            s: 'Student describing what they want, hugging themselves as if cold',
+          },
+          {
+            jp: 'それでしたら、この服はどうですか？',
+            tr: { en: 'In that case, how about this one?', ko: '그러시면 이 옷은 어떠세요?' },
+            s: 'Assistant holding up a thick winter coat',
           },
           {
             jp: '試着してもいいですか？',
             tr: { en: 'May I try this on?', ko: '입어 봐도 돼요?' },
-            s: 'Student holding a coat on a hanger',
-          },
-          {
-            jp: 'どうぞ。試着室はこちらです。',
-            tr: { en: 'Of course. The fitting room is this way.', ko: '네. 피팅룸은 이쪽이에요.' },
-            s: 'Assistant pulling back a fitting-room curtain',
+            s: 'Student holding the coat on a hanger',
           },
         ],
       },
@@ -457,7 +460,7 @@ export const LESSONS: Lesson[] = [
           {
             jp: 'サイズ、いかがですか？',
             tr: { en: "How's the size?", ko: '사이즈 어떠세요?' },
-            s: 'Assistant calling through the curtain',
+            s: 'Assistant calling through the fitting-room curtain',
           },
           {
             jp: 'ちょっと大きいです。Mはありますか？',
@@ -479,12 +482,12 @@ export const LESSONS: Lesson[] = [
     ],
     ex: [
       {
-        jp: '見てるだけです',
-        rd: 'miteru dake desu',
+        jp: '〜を見に来ました',
+        rd: '...o mi ni kimashita',
         g: {
-          ja: '声をかけられたらこれ一つ。失礼にならない',
-          en: "The one phrase for 'just browsing'. Not rude at all",
-          ko: '말 걸어오면 이 한마디. 전혀 실례가 아니다',
+          ja: '来た目的を一言で。店員が合うものを探してくれる',
+          en: 'Say what you came for in one line, and the staff will find something that fits',
+          ko: '온 목적을 한마디로. 점원이 맞는 걸 찾아 준다',
         },
       },
       {
@@ -516,9 +519,9 @@ export const LESSONS: Lesson[] = [
       ko: '이자카야 가기',
     },
     d: {
-      ja: 'お通し、取り皿、お会計',
-      en: 'The cover charge, shared plates, splitting the bill',
-      ko: '오토시, 앞접시, 계산',
+      ja: 'お通し、お冷、お会計',
+      en: 'The cover charge, water, splitting the bill',
+      ko: '오토시, 찬물, 계산',
     },
     pages: [
       {
@@ -539,14 +542,19 @@ export const LESSONS: Lesson[] = [
             s: 'A friend ordering the moment they sit down',
           },
           {
-            jp: 'これ、頼んでないけど……',
-            tr: { en: "We didn't order this…", ko: '이거 안 시켰는데……' },
-            s: 'Student staring at a small dish that arrived unordered',
+            jp: 'お冷、3つもらえますか？',
+            tr: { en: 'Could we get three glasses of water?', ko: '찬물 세 잔 주시겠어요?' },
+            s: 'Student asking the staff for water, three fingers up again',
           },
         ],
       },
       {
         panels: [
+          {
+            jp: 'これ、頼んでないけど……',
+            tr: { en: "We didn't order this…", ko: '이거 안 시켰는데……' },
+            s: 'Student staring at a small dish that arrived unordered',
+          },
           {
             jp: 'お通しやで。席料みたいなもん。',
             tr: {
@@ -556,14 +564,9 @@ export const LESSONS: Lesson[] = [
             s: 'Friend explaining across the table',
           },
           {
-            jp: 'すみません、注文お願いします。',
-            tr: { en: "Excuse me, we'd like to order.", ko: '저기요, 주문할게요.' },
-            s: 'Student raising a hand toward the staff',
-          },
-          {
-            jp: '取り皿、もらえますか？',
-            tr: { en: 'Could we have some plates to share?', ko: '앞접시 좀 주시겠어요?' },
-            s: 'Shared fried food in the middle of the table',
+            jp: 'お箸、替えてもらえますか？',
+            tr: { en: 'Could I get a new pair of chopsticks?', ko: '젓가락 바꿔 주시겠어요?' },
+            s: 'Chopsticks on the floor, student raising a hand to the staff',
           },
           {
             jp: 'お会計、別々でお願いします。',

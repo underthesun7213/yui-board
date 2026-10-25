@@ -101,29 +101,29 @@
 
 ## 레벨 5 · 服を買う / 옷 사기 (`l5`)
 
-점원이 말 걸 때 빠져나가는 법도
+겨울옷 찾기. 입어 보기와 품절
 
 ### 1쪽 — `src/art/lessons/l5/p1`
 
 | 칸 | 장면 메모 | 내레이션 | 말풍선 | 번역(ko) | 대조 |
 |---|---|---|---|---|---|
 | 1 | Shop assistant approaching a browsing customer | — | 何かお探しですか？ | 뭐 찾으시는 거 있으세요? | [ ] |
-| 2 | Student holding up a hand, smiling politely | — | 見てるだけです。 | 그냥 보는 거예요. | [ ] |
-| 3 | Student holding a coat on a hanger | — | 試着してもいいですか？ | 입어 봐도 돼요? | [ ] |
-| 4 | Assistant pulling back a fitting-room curtain | — | どうぞ。試着室はこちらです。 | 네. 피팅룸은 이쪽이에요. | [ ] |
+| 2 | Student describing what they want, hugging themselves as if cold | — | 冬に着る暖かい服を見に来ました。 | 겨울에 입을 따뜻한 옷을 보러 왔어요. | [ ] |
+| 3 | Assistant holding up a thick winter coat | — | それでしたら、この服はどうですか？ | 그러시면 이 옷은 어떠세요? | [ ] |
+| 4 | Student holding the coat on a hanger | — | 試着してもいいですか？ | 입어 봐도 돼요? | [ ] |
 
 ### 2쪽 — `src/art/lessons/l5/p2`
 
 | 칸 | 장면 메모 | 내레이션 | 말풍선 | 번역(ko) | 대조 |
 |---|---|---|---|---|---|
-| 1 | Assistant calling through the curtain | — | サイズ、いかがですか？ | 사이즈 어떠세요? | [ ] |
+| 1 | Assistant calling through the fitting-room curtain | — | サイズ、いかがですか？ | 사이즈 어떠세요? | [ ] |
 | 2 | Student in the coat, sleeves too long | — | ちょっと大きいです。Mはありますか？ | 좀 커요. M 있어요? | [ ] |
 | 3 | Assistant checking a tablet, apologetic | — | 申し訳ありません、Mは品切れで。 | 죄송합니다, M은 품절이라서요. | [ ] |
 | 4 | Student handing the coat back, leaving | — | じゃあ、また来ます。 | 그럼 다음에 올게요. | [ ] |
 
 ## 레벨 6 · 居酒屋に行く / 이자카야 가기 (`l6`)
 
-오토시, 앞접시, 계산
+오토시, 찬물, 계산
 
 ### 1쪽 — `src/art/lessons/l6/p1`
 
@@ -132,15 +132,15 @@
 | 1 | Staff greeting a group at an izakaya entrance | — | 何名様ですか？ | 몇 분이세요? | [ ] |
 | 2 | Student holding up three fingers | — | 3人です。 | 세 명이요. | [ ] |
 | 3 | A friend ordering the moment they sit down | — | とりあえず生で。 | 일단 생맥주요. | [ ] |
-| 4 | Student staring at a small dish that arrived unordered | — | これ、頼んでないけど…… | 이거 안 시켰는데…… | [ ] |
+| 4 | Student asking the staff for water, three fingers up again | — | お冷、3つもらえますか？ | 찬물 세 잔 주시겠어요? | [ ] |
 
 ### 2쪽 — `src/art/lessons/l6/p2`
 
 | 칸 | 장면 메모 | 내레이션 | 말풍선 | 번역(ko) | 대조 |
 |---|---|---|---|---|---|
-| 1 | Friend explaining across the table | — | お通しやで。席料みたいなもん。 | 오토시야. 자릿세 같은 거. | [ ] |
-| 2 | Student raising a hand toward the staff | — | すみません、注文お願いします。 | 저기요, 주문할게요. | [ ] |
-| 3 | Shared fried food in the middle of the table | — | 取り皿、もらえますか？ | 앞접시 좀 주시겠어요? | [ ] |
+| 1 | Student staring at a small dish that arrived unordered | — | これ、頼んでないけど…… | 이거 안 시켰는데…… | [ ] |
+| 2 | Friend explaining across the table | — | お通しやで。席料みたいなもん。 | 오토시야. 자릿세 같은 거. | [ ] |
+| 3 | Chopsticks on the floor, student raising a hand to the staff | — | お箸、替えてもらえますか？ | 젓가락 바꿔 주시겠어요? | [ ] |
 | 4 | At the register, three people with wallets out | — | お会計、別々でお願いします。 | 계산은 따로따로 해 주세요. | [ ] |
 
 ## 레벨 7 · 電話で予約する / 전화로 예약하기 (`l7`)
