@@ -3,6 +3,7 @@ import { FIXTURE_MODE } from '../api/config';
 import { myItems, write as rpcWrite, type WriteResult } from '../api/rpc';
 import { captchaNeeded, takeCaptchaToken } from './captcha';
 import { navigate } from '../app/router';
+import { distM, HOME, NEAR_M } from '../domain/geo/geo';
 import type { EventSeries, Place } from '../domain/types';
 import { trimText, type EventInput, type PlaceInput } from '../domain/validation';
 import { t } from '../i18n';
@@ -10,6 +11,7 @@ import { confirmAction, newId } from '../platform/dialog';
 import { isFramed } from '../platform/frame';
 import { store } from '../platform/storage';
 import { data } from '../state/data';
+import { location } from '../state/location';
 import { mapUi } from '../state/mapUi';
 import { prefs } from '../state/prefs';
 import { session } from '../state/session';
@@ -134,14 +136,17 @@ export async function savePlace(
       navigate({ name: 'me' }, { replace: true });
     } else {
       navigate({ name: 'map' }, { replace: true });
-      /* show it: its prefecture under All of Japan, card open */
-      mapUi.set((s) => ({
-        mode: 'japan',
-        pref: r.pref ?? s.pref,
-        pl: id,
-        cat: '',
-        fitSeq: s.fitSeq + 1,
-      }));
+      /* show it, card open: where the person was if "Near me" already
+         shows it, otherwise its prefecture under All of Japan */
+      const saved = data.get().places.find((x) => x.id === id);
+      const l = location.get();
+      const from = l.state === 'ok' && l.loc ? l.loc : HOME;
+      const stay = mapUi.get().mode === 'near' && !!saved && distM(from, saved) <= NEAR_M;
+      mapUi.set((s) =>
+        stay
+          ? { pl: id, cat: '', fitSeq: s.fitSeq + 1 }
+          : { mode: 'japan', pref: r.pref ?? s.pref, pl: id, cat: '', fitSeq: s.fitSeq + 1 },
+      );
     }
   }
   return r;

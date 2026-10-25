@@ -47,7 +47,8 @@ test('Y-M6 the first post creates the account; another device sees the place', a
   await page.click('.form button[type=submit]');
   await expect(page.locator('.pcard h3')).toHaveText('Corner bakery');
   expect(await hasAccount(page)).toBe(true);
-  expect(await y(page, (a) => a.mapUi.get().pref)).toBe('27');
+  /* saved next to the dorm from "Near me": the map stays there, card open */
+  expect(await y(page, (a) => a.mapUi.get().mode)).toBe('near');
   /* the owner sees edit and delete */
   await expect(page.locator('.pcard .mine')).toBeVisible();
 

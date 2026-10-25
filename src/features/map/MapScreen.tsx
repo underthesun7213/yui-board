@@ -255,14 +255,8 @@ function PlaceList() {
     }
     return (
       <>
-        {none && (
-          <div className="empty slim">
-            <p>{m.emptyPlaces}</p>
-            <button className="primary" onClick={() => go({ name: 'placeNew' })}>
-              ＋ {m.addPlace}
-            </button>
-          </div>
-        )}
+        {/* adding is only the header button, as in the calendar (owner, 2026-10-25) */}
+        {none && <p className="empty slim">{m.emptyPlaces}</p>}
         {(Object.keys(m.regions) as Region[]).map((r) => (
           <div key={r}>
             <div className="sect">{m.regions[r]}</div>
@@ -289,12 +283,9 @@ function PlaceList() {
   }
   if (!list.length)
     return (
-      <div className="empty">
-        <p>{!places.length && loaded ? m.emptyPlaces : near ? m.nearEmpty : m.prefEmpty}</p>
-        <button className="primary" onClick={() => go({ name: 'placeNew' })}>
-          ＋ {m.addPlace}
-        </button>
-      </div>
+      <p className="empty">
+        {!places.length && loaded ? m.emptyPlaces : near ? m.nearEmpty : m.prefEmpty}
+      </p>
     );
   return (
     <ul className="plist" aria-label={m.aPlaces}>
