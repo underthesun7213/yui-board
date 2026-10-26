@@ -34,6 +34,7 @@
 | [0023](../adr/0023-frontend-framework-react.md) | React 19 + Vite 8 + TS 정적 SPA. 지도 런타임·라우터·상태·i18n 은 React 밖(react-leaflet·React Router·Zustand·i18next 없음), `react/no-danger`, 홈 예산 75 KB(→ ADR-0024 로 100 KB 대체) | **승인됨** (D24) — 본문은 그대로, 보완은 ADR-0024 |
 | [0024](../adr/0024-react-switch-review-fixes.md) | React 전환 검토 보완: 홈 예산 **100 KB**(react-dom 19.3.0 실측 67.2 KB), `useStore` 의 `getServerSnapshot`, `prerender` 렌더 검사, Leaflet 인자 허용 목록 린트, `detach` 세대, 지연 라우트 오류 경계·전환, history state, 버전 고정(TS 6.0.3) | **승인됨** (D27) |
 | [0025](../adr/0025-user-app-on-cloudflare-custom-domain.md) | 사용자 앱을 `https://yunabi.juha.dev/` 의 Cloudflare Workers 정적 자산으로(`wrangler.app.jsonc`), `dist/_headers` 로 헤더 CSP(`frame-ancestors 'none'`)·HSTS·`nosniff`, 배포는 `npm run build:deploy` 산출물만. ADR-0020 결정 1·2·4 대체, 결정 6 실행 | **승인됨** (2026-10-24, HO-Q2 → D29) — 아직 배포 전 |
+| [0026](../adr/0026-english-place-names-and-description-translation.md) | 장소 이름은 영어 한 칸(라틴 글자 1개 이상, D31), 설명은 저장 뒤 비동기 기계 번역(D32) — 쓰기 경로는 그대로, 번역 큐 + Edge Function + `place_translations`, 제공자 추천 Azure Translator F0 | 제안됨 |
 
 ADR-0009 의 상태 줄을 "ADR-0017으로 일부 대체됨" 으로 바꿨다(본문 그대로). ADR-0011(정적 데이터)·ADR-0013(빌드 없음)도 v2 에서 사실상 대체되지만 상태 줄은 책임자 확인 후 바꾼다(RFC-0003 OQ-15).
 
