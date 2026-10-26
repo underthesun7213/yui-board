@@ -155,4 +155,9 @@ export default tseslint.config(
     files: ['*.{js,ts,mjs}', 'scripts/**', 'tests/**'],
     languageOptions: { globals: { ...globals.node, ...globals.browser } },
   },
+  {
+    /* Supabase Edge Functions run on Deno */
+    files: ['supabase/functions/**/*.ts'],
+    languageOptions: { globals: { ...globals.browser, Deno: 'readonly' } },
+  },
 );

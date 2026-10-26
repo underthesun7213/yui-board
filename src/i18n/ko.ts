@@ -96,6 +96,9 @@ export const ko = {
   reload: '다시 불러오기',
   updateReady: '새 버전이 있습니다.',
   reopen: '다시 열기',
+  autoTranslated: '자동 번역',
+  showOriginal: '원문 보기',
+  showTranslation: '번역 보기',
   langBadge: {
     ja: '일본어',
     en: '영어',

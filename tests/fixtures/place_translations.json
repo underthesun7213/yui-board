@@ -1,0 +1,32 @@
+[
+  {
+    "place_id": 1,
+    "lang": "en",
+    "description": "The nearest station. Only local trains stop here, so for Kyoto or Osaka it is often faster to change at Hirakatashi."
+  },
+  {
+    "place_id": 1,
+    "lang": "ko",
+    "description": "가장 가까운 역. 보통 열차만 서기 때문에 교토·오사카로 갈 때는 히라카타시역에서 갈아타는 편이 빠른 경우가 많습니다."
+  },
+  {
+    "place_id": 4,
+    "lang": "ja",
+    "description": "セブン-イレブンより少し遠いけれど、KGUの学生が実際に歩いて行くのはこちら。夜の散歩にちょうどいい距離です。"
+  },
+  {
+    "place_id": 4,
+    "lang": "ko",
+    "description": "세븐일레븐보다 조금 멀지만, KGU 학생들이 실제로 걸어가는 곳은 여기입니다. 밤 산책하기 좋은 거리."
+  },
+  {
+    "place_id": 7,
+    "lang": "en",
+    "description": "The closest and cheapest supermarket to 結. Side dishes and sandwiches can be about 30% cheaper than elsewhere in town. Open daily 9:00–22:00."
+  },
+  {
+    "place_id": 7,
+    "lang": "ja",
+    "description": "結からいちばん近くて、いちばん安いスーパー。お惣菜やサンドイッチが市内のほかの店より3割ほど安いことも。毎日9〜22時。"
+  }
+]

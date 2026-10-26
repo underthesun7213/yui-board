@@ -96,6 +96,9 @@ export const en = {
   reload: 'Reload',
   updateReady: 'A new version is ready.',
   reopen: 'Reload',
+  autoTranslated: 'Translated automatically',
+  showOriginal: 'Show original',
+  showTranslation: 'Show translation',
   langBadge: {
     ja: 'Japanese',
     en: 'English',
