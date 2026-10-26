@@ -4,19 +4,19 @@ values ('00000000-0000-4000-8000-0000000000f1', 'authenticated', 'authenticated'
 insert into app.accounts (user_id) values ('00000000-0000-4000-8000-0000000000f1');
 
 insert into app.places (id, name, category, description, gmaps_url, lat, lng, pref, lang) overriding system value values
-  (1, '京阪 御殿山駅', 'transit', 'いちばん近い駅。各駅停車のみなので、京都・大阪へは枚方市で乗り換えるほうが早いことが多いです。', 'https://www.google.com/maps/place/?q=place_id:ChIJBaoYa_QcAWARR6zUK4K7Jcw', 34.8293711, 135.6541524, '27', 'ja'),
-  (2, '駐輪場（御殿山東）', 'transit', '1日100円。枚方市駅まで歩くと13分ですが自転車なら5分ほどなので、自転車があると生活がかなり変わります。', 'https://www.google.com/maps/place/?q=place_id:ChIJ49uAXvQcAWAR3Xi1em0k6Ts', 34.8288914, 135.6547265, '27', 'ja'),
-  (3, 'セブン-イレブン（御殿山駅前）', 'daily', '24時間。ATM、宅配便の受け取り、書類のプリントもここで。駅前なので帰りに寄りやすいです。', 'https://www.google.com/maps/place/?q=place_id:ChIJuycsxYYdAWARtzQ3ix1Jeso', 34.8286027, 135.6541948, '27', 'ja'),
+  (1, 'Keihan Gotenyama Station', 'transit', 'いちばん近い駅。各駅停車のみなので、京都・大阪へは枚方市で乗り換えるほうが早いことが多いです。', 'https://www.google.com/maps/place/?q=place_id:ChIJBaoYa_QcAWARR6zUK4K7Jcw', 34.8293711, 135.6541524, '27', 'ja'),
+  (2, 'Bicycle Parking, Gotenyama East', 'transit', '1日100円。枚方市駅まで歩くと13分ですが自転車なら5分ほどなので、自転車があると生活がかなり変わります。', 'https://www.google.com/maps/place/?q=place_id:ChIJ49uAXvQcAWAR3Xi1em0k6Ts', 34.8288914, 135.6547265, '27', 'ja'),
+  (3, '7-Eleven Gotenyama Station', 'daily', '24時間。ATM、宅配便の受け取り、書類のプリントもここで。駅前なので帰りに寄りやすいです。', 'https://www.google.com/maps/place/?q=place_id:ChIJuycsxYYdAWARtzQ3ix1Jeso', 34.8286027, 135.6541948, '27', 'ja'),
   (4, 'FamilyMart', 'daily', 'A bit further than the 7-Eleven, but this is the one KGU students actually walk to. Good distance for a night stroll.', 'https://www.google.com/maps/place/?q=place_id:ChIJQbh4OWEcAWARKZNvlWh31J0', 34.828033, 135.6578698, '27', 'en'),
   (5, 'Nagisatanano Family Clinic', 'health', 'Closest general clinic and used to seeing foreign patients. Open Saturday afternoons, closed Sundays. Bring your insurance card.', 'https://www.google.com/maps/place/?q=place_id:ChIJcfvzF04dAWARFG4_nDHiDxs', 34.8275837, 135.6550048, '27', 'en'),
   (6, 'Nagisa Post Office', 'admin', 'Japan Post bank account and international mail. Counter closes 5pm weekdays, shut at weekends. The ATM next door runs 24 hours.', 'https://www.google.com/maps/place/?q=place_id:ChIJNUbPi_QcAWAR0YTfOa-O1Ck', 34.8296043, 135.6552418, '27', 'en'),
-  (7, '만다이 히라카타점', 'daily', '결에서 가장 가까운 슈퍼이면서 가장 쌉니다. 반찬이나 샌드위치는 시내 다른 곳보다 30% 정도 싼 경우도. 매일 9~22시.', 'https://www.google.com/maps/place/?q=place_id:ChIJT97BVVkcAWARoq6_Y4Rr-RA', 34.820445, 135.6524256, '27', 'ko'),
-  (8, '라이프 고텐야마점', 'daily', '북쪽 슈퍼. 만다이가 더 가깝고 싸기 때문에, 고텐야마역에서 돌아오는 길에 들르는 정도로 씁니다.', 'https://www.google.com/maps/place/?q=place_id:ChIJxUjHpPMcAWARgvFCnPhg0To', 34.8317389, 135.6547329, '27', 'ko'),
-  (9, '枚方市駅', 'transit', '特急が止まる駅。京都・大阪へはここから。行きは下り坂、帰りは登り坂なので体感がかなり違います。', 'https://www.google.com/maps/place/?q=place_id:ChIJJ46ph1ocAWARGOoXxgvMqNo', 34.8160589, 135.6485734, '27', 'ja'),
+  (7, 'Mandai Hirakata', 'daily', '결에서 가장 가까운 슈퍼이면서 가장 쌉니다. 반찬이나 샌드위치는 시내 다른 곳보다 30% 정도 싼 경우도. 매일 9~22시.', 'https://www.google.com/maps/place/?q=place_id:ChIJT97BVVkcAWARoq6_Y4Rr-RA', 34.820445, 135.6524256, '27', 'ko'),
+  (8, 'LIFE Gotenyama', 'daily', '북쪽 슈퍼. 만다이가 더 가깝고 싸기 때문에, 고텐야마역에서 돌아오는 길에 들르는 정도로 씁니다.', 'https://www.google.com/maps/place/?q=place_id:ChIJxUjHpPMcAWARgvFCnPhg0To', 34.8317389, 135.6547329, '27', 'ko'),
+  (9, 'Keihan Hirakatashi Station', 'transit', '特急が止まる駅。京都・大阪へはここから。行きは下り坂、帰りは登り坂なので体感がかなり違います。', 'https://www.google.com/maps/place/?q=place_id:ChIJJ46ph1ocAWARGOoXxgvMqNo', 34.8160589, 135.6485734, '27', 'ja'),
   (10, 'DAISO (Hirakata Mall 4F)', 'daily', 'Covers almost everything you need in your first week — hangers, dishes, cleaning kit. Connected to the station, so fine in the rain.', 'https://www.google.com/maps/place/?q=place_id:ChIJj-mUegAdAWAR2OvMldT3Y5o', 34.8172193, 135.6498164, '27', 'en'),
-  (11, '히라카타 T-SITE', 'study', '아침 7시부터 밤 10시까지. 위층이 조용해서 시험기간에 많이 옵니다. 스타벅스도 있어요.', 'https://www.google.com/maps/place/?q=place_id:ChIJZek-cVAcAWARVFe0gnysw1E', 34.81606, 135.64957, '27', 'ko'),
-  (12, '枚方市役所', 'admin', '転入届と国民健康保険の手続き。来日から14日以内です。書類さえ揃っていれば15分ほどで終わります。平日9時〜17時半のみ。', 'https://www.google.com/maps/place/?q=place_id:ChIJiVvS20QcAWARuwLSMt7jPb8', 34.8147157, 135.6512887, '27', 'ja'),
-  (13, '주카소바 후모토', 'food', '히라카타시역 근처. 쇼유라멘과 볶음밥으로 평이 좋습니다. 점심과 저녁 사이에는 문을 닫으니 시간 확인 필요.', 'https://www.google.com/maps/place/?q=place_id:ChIJ56H-ngsdAWARj4IbGeBgHF4', 34.8154322, 135.6462713, '27', 'ko');
+  (11, 'Hirakata T-SITE', 'study', '아침 7시부터 밤 10시까지. 위층이 조용해서 시험기간에 많이 옵니다. 스타벅스도 있어요.', 'https://www.google.com/maps/place/?q=place_id:ChIJZek-cVAcAWARVFe0gnysw1E', 34.81606, 135.64957, '27', 'ko'),
+  (12, 'Hirakata City Hall (枚方市役所)', 'admin', '転入届と国民健康保険の手続き。来日から14日以内です。書類さえ揃っていれば15分ほどで終わります。平日9時〜17時半のみ。', 'https://www.google.com/maps/place/?q=place_id:ChIJiVvS20QcAWARuwLSMt7jPb8', 34.8147157, 135.6512887, '27', 'ja'),
+  (13, 'Chuka Soba Fumoto', 'food', '히라카타시역 근처. 쇼유라멘과 볶음밥으로 평이 좋습니다. 점심과 저녁 사이에는 문을 닫으니 시간 확인 필요.', 'https://www.google.com/maps/place/?q=place_id:ChIJ56H-ngsdAWARj4IbGeBgHF4', 34.8154322, 135.6462713, '27', 'ko');
 insert into app.place_owners (place_id, owner_id, client_token) select id, '00000000-0000-4000-8000-0000000000f1', gen_random_uuid() from app.places;
 select setval(pg_get_serial_sequence('app.places', 'id'), (select max(id) from app.places));
 

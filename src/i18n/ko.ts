@@ -115,6 +115,8 @@ export const ko = {
   editEvent: '일정 수정',
   editWeek: '이 회차만',
   fName: '이름',
+  fNameHint:
+    '영어로: 고유명사는 소리대로(Mandai), 나머지는 뜻대로(Station, City Hall). 도움이 되면 일본어를 괄호로(教務課).',
   fCategory: '카테고리',
   fDesc: '설명',
   fLink: 'Google 지도 링크',
@@ -153,6 +155,7 @@ export const ko = {
   framed: '글을 올리려면 YUNABI 를 별도 창으로 열어 주세요.',
   inv: {
     name: '이름은 한 줄로 1~60자.',
+    name_latin: '이름은 영어로 써 주세요(로마자 한 글자 이상). 일본어는 괄호로 덧붙일 수 있어요.',
     category: '카테고리를 골라 주세요.',
     description: '설명은 500자까지입니다.',
     gmaps_url:

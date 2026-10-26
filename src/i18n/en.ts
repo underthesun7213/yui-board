@@ -115,6 +115,8 @@ export const en = {
   editEvent: 'Edit event',
   editWeek: 'This week only',
   fName: 'Name',
+  fNameHint:
+    'In English: names by sound (Mandai), other words by meaning (Station, City Hall). Add Japanese in brackets if it helps, e.g. (教務課).',
   fCategory: 'Category',
   fDesc: 'Description',
   fLink: 'Google Maps link',
@@ -153,6 +155,8 @@ export const en = {
   framed: 'To post, open YUNABI in its own window.',
   inv: {
     name: 'Name: 1 to 60 characters on one line.',
+    name_latin:
+      'Write the name in English, with at least one Latin letter. Japanese can follow in brackets.',
     category: 'Pick a category.',
     description: 'Description: up to 500 characters.',
     gmaps_url:

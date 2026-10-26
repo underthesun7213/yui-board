@@ -111,6 +111,7 @@ function PlaceFormBody({ id, editing, mine }: { id?: number; editing?: Place; mi
 
   const set = <K extends keyof Fields>(k: K, v: Fields[K]) => setF((x) => ({ ...x, [k]: v }));
   const fieldErr = (k: string) => (err?.field === k ? err.msg : null);
+  const nameErr = fieldErr('name') ?? fieldErr('name_latin');
   const input: PlaceInput = { ...f, lat: pick?.lat ?? null, lng: pick?.lng ?? null };
 
   async function submit(e: React.FormEvent) {
@@ -168,7 +169,8 @@ function PlaceFormBody({ id, editing, mine }: { id?: number; editing?: Place; mi
         <Field
           id="pf-name"
           label={m.fName}
-          error={fieldErr('name')}
+          hint={m.fNameHint}
+          error={nameErr}
           count={[[...f.name].length, LIMITS.name]}
         >
           <input
@@ -176,8 +178,8 @@ function PlaceFormBody({ id, editing, mine }: { id?: number; editing?: Place; mi
             value={f.name}
             maxLength={LIMITS.name}
             autoComplete="off"
-            aria-invalid={!!fieldErr('name')}
-            aria-describedby={describedBy('pf-name', false, fieldErr('name'))}
+            aria-invalid={!!nameErr}
+            aria-describedby={describedBy('pf-name', true, nameErr)}
             onChange={(e) => set('name', e.target.value)}
           />
         </Field>

@@ -123,3 +123,25 @@ test.describe('user text stays text', () => {
     expect(dialogs).toBe(0);
   });
 });
+
+test('Y-M12 a place name needs a Latin letter; the form says so before sending', async ({
+  page,
+  errors,
+}) => {
+  void errors;
+  await page.addInitScript(() => localStorage.setItem('yui.v1.lang', JSON.stringify('ko')));
+  await page.goto('./#/map/new');
+  /* opened straight from a link, the form's map still has Leaflet's styles: clipped, not covering the page */
+  await expect(page.locator('#lmap')).toHaveCSS('overflow', 'hidden');
+  await expect(page.locator('#pf-name-hint')).toContainText('Mandai');
+  await page.fill('#pf-name', '만다이');
+  await page.click('.form button[type=submit]');
+  await expect(page.locator('#pf-name-err')).toHaveText(
+    '이름은 영어로 써 주세요(로마자 한 글자 이상). 일본어는 괄호로 덧붙일 수 있어요.',
+  );
+  await expect(page.locator('#pf-name')).toHaveAttribute('aria-invalid', 'true');
+  /* with Japanese kept in brackets the name is fine: the next problem is another field */
+  await page.fill('#pf-name', 'Academic Affairs Office (教務課)');
+  await page.click('.form button[type=submit]');
+  await expect(page.locator('#pf-name-err')).toHaveCount(0);
+});

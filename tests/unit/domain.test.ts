@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { formatRoute, legacyRoute, parseRoute } from '../../src/app/routes';
 import { ART, cutKey, endingKey, sceneKey } from '../../src/content/art';
@@ -10,7 +11,7 @@ import { HOME, mainBounds, regionOf, shownPlaces, walkMin } from '../../src/doma
 import { PREFS } from '../../src/domain/geo/prefs';
 import { buildIcs, icsEsc, icsFold } from '../../src/domain/ics';
 import { safeMapsUrl } from '../../src/domain/links';
-import { checkEvent, checkPlace } from '../../src/domain/validation';
+import { checkEvent, checkPlace, HAS_LATIN } from '../../src/domain/validation';
 import type { EventSeries, OccurrenceOverride, Place } from '../../src/domain/types';
 import { en } from '../../src/i18n/en';
 import { ja } from '../../src/i18n/ja';
@@ -211,6 +212,29 @@ describe('validation mirrors the server', () => {
     expect(checkPlace({ ...place, name: '\u2800' })).toBe('name');
     expect(checkPlace({ ...place, description: 'a\rb' })).toBe('description');
     expect(checkPlace({ ...place, description: 'a\nb\tc' })).toBe(null);
+  });
+  it('wants a Latin letter in a place name, as app.has_latin does (D31)', () => {
+    /* the same inputs as pgTAP G-76 */
+    const cases: [string, boolean][] = [
+      ['Mandai Hirakata', true],
+      ['Academic Affairs Office (教務課)', true],
+      ['히라카타 T-SITE', true],
+      ['枚方市駅', false],
+      ['만다이', false],
+      ['ＡＢＣ', false],
+    ];
+    /* the server lists the 52 letters in the migration; its class must be exactly A-Z a-z */
+    const sql = readFileSync('supabase/migrations/20261026000250_place_name_latin.sql', 'utf8');
+    const classes = [...sql.matchAll(/~ '\[([A-Za-z]+)\]'/g)].map((m) => m[1]);
+    expect(classes.length).toBeGreaterThanOrEqual(2);
+    for (const c of classes)
+      expect([...c!].sort().join('')).toBe('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz');
+    const server = new RegExp(`[${classes[0]}]`);
+    for (const [name, ok] of cases) {
+      expect(HAS_LATIN.test(name), name).toBe(ok);
+      expect(server.test(name), name).toBe(ok);
+      expect(checkPlace({ ...place, name }), name).toBe(ok ? null : 'name_latin');
+    }
   });
   it('refuses tricky links', () => {
     expect(checkPlace({ ...place, gmaps_url: 'https://www.google.com/maps/../url?q=x' })).toBe(

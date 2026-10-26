@@ -1,7 +1,7 @@
 -- Places: G-10, G-13, G-14, G-15, G-16, G-21, G-23 (places), G-27, Y-E1~E3.
 begin;
 \ir _helpers.sql
-select plan(53);
+select plan(63);
 
 create temp table ids (k text primary key, v uuid);
 insert into ids values ('a', tests.user()), ('b', tests.user());
@@ -34,7 +34,7 @@ select is((select count(*)::int from public.places_public where name = 'Mandai')
 -- G-15: malformed input is a status with the field, never an exception
 select is(tests.bad('', 'food', '', null, 34.82, 135.65, 'en'), 'invalid:name', 'empty name');
 select is(tests.bad(repeat('あ', 61), 'food', '', null, 34.82, 135.65, 'en'), 'invalid:name', '61 characters');
-select is(tests.bad(repeat('あ', 60), 'food', '', null, 34.82, 135.65, 'en'), 'ok:', '60 characters is fine');
+select is(tests.bad('A' || repeat('あ', 59), 'food', '', null, 34.82, 135.65, 'en'), 'ok:', '60 characters is fine');
 select is(tests.bad('a' || chr(10) || 'b', 'food', '', null, 34.82, 135.65, 'en'), 'invalid:name', 'control character in name');
 select is(tests.bad('x', null, '', null, 34.82, 135.65, 'en'), 'invalid:category', 'no category');
 select is(tests.bad('x', 'food', repeat('a', 501), null, 34.82, 135.65, 'en'), 'invalid:description', '501-character description');
@@ -109,6 +109,25 @@ select is((select state from public.my_items() where kind = 'place' and id = (se
   'deleted', 'owner sees it deleted');
 select is((public.update_place((select (v->>'id')::bigint from r where k = 'p1'), 'again', 'daily', '', null, 34.82, 135.65, 'ko'))->>'status',
   'not_found', 'a deleted place cannot be edited');
+
+-- G-76 (D31, Y-M12): a place name holds at least one ASCII Latin letter
+select tests.as_owner();
+delete from app.write_log;
+select tests.as_user(tests.id('a'));
+select is(tests.bad('枚方市駅', 'transit', '', null, 34.82, 135.65, 'ja'), 'invalid:name_latin', 'Japanese-only name refused');
+select is(tests.bad('만다이', 'daily', '', null, 34.82, 135.65, 'ko'), 'invalid:name_latin', 'Korean-only name refused');
+select is(tests.bad('ＡＢＣ', 'daily', '', null, 34.82, 135.65, 'en'), 'invalid:name_latin', 'full-width letters are not ASCII');
+select is(tests.bad('Mandai Hirakata', 'daily', '', null, 34.82, 135.65, 'en'), 'ok:', 'an English name');
+select is(tests.bad('Academic Affairs Office (教務課)', 'admin', '', null, 34.82, 135.65, 'en'), 'ok:', 'Japanese in brackets is fine');
+select is(tests.bad('히라카타 T-SITE', 'study', '', null, 34.82, 135.65, 'ko'), 'ok:', 'one Latin word is enough');
+insert into r select 'lat1', public.create_place(gen_random_uuid(), 'Latin first', 'food', '', null, 34.82, 135.65, 'en');
+select is((select v->>'status' from r where k = 'lat1'), 'ok', 'a place to edit');
+select is((public.update_place((select (v->>'id')::bigint from r where k = 'lat1'), '만다이', 'food', '', null, 34.82, 135.65, 'ko'))->>'field',
+  'name_latin', 'an edit to a Korean-only name is refused too');
+select tests.as_owner();
+select ok(exists (select 1 from app.security_events where kind = 'invalid_input' and detail = 'name_latin'), 'the refusal is recorded');
+select throws_ok($insert into app.places (name, category, lat, lng, pref, lang) values ('枚方市駅', 'transit', 34.82, 135.65, '27', 'ja')$,
+  '23514', null, 'the table refuses it as well (places_name_latin)');
 
 -- G-14: the 11th place in a day is refused
 select tests.as_owner();
