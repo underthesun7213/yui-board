@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 import {
   azure,
   runOnce,
+  sameSecret,
   TranslateFailure,
   type Job,
   type Lang,
@@ -103,6 +104,16 @@ describe('translate worker', () => {
     expect((applied[0]!.results[0] as { out: unknown }).out).toEqual([
       { lang: 'en', text: 'only English' },
     ]);
+  });
+});
+
+describe('wake-up secret', () => {
+  it('accepts only the exact secret, and never an empty one', () => {
+    expect(sameSecret('s3cret', 's3cret')).toBe(true);
+    expect(sameSecret('s3creT', 's3cret')).toBe(false);
+    expect(sameSecret('s3cre', 's3cret')).toBe(false);
+    expect(sameSecret(null, 's3cret')).toBe(false);
+    expect(sameSecret('', '')).toBe(false);
   });
 });
 

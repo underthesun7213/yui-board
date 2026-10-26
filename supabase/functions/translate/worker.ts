@@ -72,6 +72,15 @@ export async function runOnce(rpc: Rpc, tr: Translator, maxJobs = 20) {
   return { status: 'ok', jobs: jobs.length, failed };
 }
 
+/** Compares the wake-up secret in constant time, so the response time does
+    not tell an attacker how much of a guess was right. */
+export function sameSecret(given: string | null, expected: string): boolean {
+  if (!expected || given === null || given.length !== expected.length) return false;
+  let diff = 0;
+  for (let i = 0; i < expected.length; i++) diff |= given.charCodeAt(i) ^ expected.charCodeAt(i);
+  return diff === 0;
+}
+
 const AZURE = 'https://api.cognitive.microsofttranslator.com/translate';
 
 /** Azure AI Translator v3 (the recommended provider, TR-Q1). Plain text, one
@@ -81,7 +90,7 @@ export function azure(
   key: string,
   region: string,
   fetchFn: typeof fetch = fetch,
-  timeoutMs = 5000,
+  timeoutMs = 10000,
 ): Translator {
   return {
     name: 'azure',

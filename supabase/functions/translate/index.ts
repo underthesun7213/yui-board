@@ -2,15 +2,15 @@
    the two service_role database functions with its own secret key and Azure
    with the translator key. All four values are function secrets, never in the
    repository. Answers with counts only. Logic and tests: worker.ts. */
-import { azure, runOnce, type Rpc } from './worker.ts';
+import { azure, runOnce, sameSecret, type Rpc } from './worker.ts';
 
 const env = (k: string) => Deno.env.get(k) ?? '';
 
 Deno.serve(async (req) => {
   if (req.method !== 'POST') return new Response(null, { status: 405 });
-  const kick = env('TRANSLATE_KICK_SECRET');
-  if (!kick || req.headers.get('x-yunabi-kick') !== kick)
-    return new Response(null, { status: 403 });
+  /* only the database's scheduled kick may run it; a wrong secret touches nothing */
+  if (!sameSecret(req.headers.get('x-yunabi-kick'), env('TRANSLATE_KICK_SECRET')))
+    return new Response(null, { status: 401 });
 
   const base = env('SUPABASE_URL');
   const key = env('TRANSLATE_SERVICE_KEY');
@@ -32,6 +32,7 @@ Deno.serve(async (req) => {
     const done = await runOnce(
       rpc,
       azure(env('AZURE_TRANSLATOR_KEY'), env('AZURE_TRANSLATOR_REGION')),
+      25,
     );
     return Response.json(done);
   } catch {

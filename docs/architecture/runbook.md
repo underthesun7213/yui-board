@@ -30,6 +30,7 @@
 | 데이터가 지워졌다·망가졌다, 프로젝트를 잃었다 | — | §9 복구 |
 | 비밀값이 새었을 수 있다, gitleaks 가 진짜 값을 찾았다 | — | §10 키 교체 (**교체가 먼저**) |
 | 2주 이상 자리를 비운다 | — | **R-8** (§5.4) |
+| 번역이 오래 안 붙는다, 이상한 번역 문의, 번역 키가 샜을 수 있다 | §7.4 확인 2~4 | **R-9** (§4.5) |
 | 정리 작업 실패 (보관 기간이 지켜지지 않음) | §6.2 S-9 | §6.2 S-9 아래 "기대값", 일시정지였다면 §6.1 사이트 가동 |
 
 ## 2. 처음 5분
@@ -182,6 +183,16 @@ C-1~C-4 는 출시 전 점검(RFC §17.6 6번 "스위치 ON 상태에서 ① 사
 7. 낯선 조치가 있었다면 그 항목을 되돌린다(복원 `admin_restore`, 정지 해제 `admin_unsuspend`). `mod_actions` 는 추가 전용이라 기록은 남는다.
 
 ---
+
+### 4.5 R-9 번역 이상 (D32) `[아직 해 보지 않음]`
+
+**언제:** 번역이 오래 안 붙는다, 이상한 번역에 대한 문의, 번역 키·전용 secret 키가 샜을 수 있다.
+
+1. **멈추기:** `update app.settings set int_value = 0 where key = 'translation_enabled';` — 이미 저장된 번역은 계속 보인다. 서비스는 원문으로 그대로 돈다.
+2. **잘못된 번역 지우기:** 한 장소면 `delete from app.place_translations where place_id = <id>;` 전부면 `delete from app.place_translations;`. 그 장소를 다시 번역하려면 대기열에 넣는다: `insert into app.translation_jobs (place_id, source_hash, next_attempt_at) select id, sha256(convert_to(description, 'UTF8')), now() from app.places where id = <id> on conflict (place_id) do update set attempts = 0, claim_id = null, next_attempt_at = now();`
+3. **오래 안 붙음:** `select * from app.translation_state;`(멈춤 이유: `quota` = 이번 달 한도, `rate` = 1시간), `select count(*), max(attempts), max(last_error) from app.translation_jobs;`, §7.4 확인 2(함수 호출 결과). Azure 포털에서 사용량·키 상태.
+4. **키 유출:** ① 전용 `sb_secret` 폐기·재발급 → 함수 비밀값 `TRANSLATE_SERVICE_KEY` 교체 ② Azure 에서 KEY 2 로 바꾸고 KEY 1 재발급 → `AZURE_TRANSLATOR_KEY` 교체 ③ 깨우기 비밀 교체 — 함수 비밀값 `TRANSLATE_KICK_SECRET` 과 Vault 둘 다(`select vault.update_secret((select id from vault.secrets where name = 'translate_kick_secret'), '<새 값>');`) ④ 공격자가 번역 표에 글을 썼을 수 있으면 ② 로 전부 지우고 다시 번역. 전용 키는 번역 함수 둘만 부를 수 있어 원문·소유·숨김·신고는 바뀌지 않는다(RFC-0003 T-29).
+5. 원인을 고친 뒤 다시 켠다(§7.4 켜기).
 
 ## 5. 관리자 계정 R-5 ~ R-8
 
@@ -497,6 +508,62 @@ Remove-Item Env:YUNABI_ORIGIN, Env:VITE_SUPABASE_URL, Env:VITE_SUPABASE_PUBLISHA
 **2026-10-25 첫 배포 결과:** Worker 버전 `c8c522de`. 확인 1 — 헤더 전부 기대값, `/sw.js` `no-cache`, `/.vite/manifest.json`·`/_headers`·`/.assetsignore` 404(`/data/README.md` 는 지도 경계 데이터의 출처 메모라 공개해도 됨). 확인 2 — 새 탭에서 콘솔 오류·CSP 위반 0, 지도 타일 표시, 운영 Supabase 읽기 4건 성공, 서비스워커 제어·사전 캐시 61개. **네트워크를 끈 새로 고침과 "내 주위"(위치 허용)는 기기에서 확인할 일로 남음.** 확인 3 — `http://` → 301 https. 배포 판 검사 안 publishable 키 자리에 secret 키가 붙여 넣어진 첫 빌드를 `check-dist-secrets` 가 막았다(§12). 0a 에서 Email Obfuscation·Web Analytics 자동 삽입을 껐는데, 끄기 직전에 받은 첫 응답에는 Web Analytics 비컨이 들어 있어 CSP 위반 2건이 났다(차단됨, 앱 동작 영향 없음) — 새로 받은 응답에는 없다.
 
 ---
+
+### 7.4 번역 켜기 (D32, ADR-0026) `[아직 해 보지 않음]`
+
+장소 설명을 화면 언어로 번역하는 Edge Function `translate` 를 배포하고 켠다. 번역을 꺼도 서비스는 그대로다(원문 표시).
+
+**먼저 끝나 있어야 하는 것 (하나라도 아니면 켜지 않는다):**
+
+1. 마이그레이션 260(`place_translations`)·270(`translation_kick`)이 운영에 적용됐다(§7.1).
+2. **개인정보처리방침에 번역 위탁처(Microsoft, Azure AI Translator)와 해외 이전 행이 게시됐다** — 켜는 순간 사용자 글이 Microsoft 로 간다(B-16, RFC-0003 §16).
+3. Edge Function 비밀값 4개가 들어 있다: `AZURE_TRANSLATOR_KEY`, `AZURE_TRANSLATOR_REGION`(예: `japaneast`), `TRANSLATE_KICK_SECRET`, `TRANSLATE_SERVICE_KEY`(번역 전용 `sb_secret`, 감시 키와 따로). 값은 대시보드에만 — 저장소·채팅·DB 에 쓰지 않는다. 깨우기 비밀은 비공개 운영 기록에도 남긴다(아래 Vault 에 같은 값을 넣는다).
+
+**배포 (책임자 PC, 저장소 폴더):**
+
+```powershell
+git switch main; git pull --ff-only
+supabase functions deploy translate --project-ref tsbipaffirkswsgkydav --no-verify-jwt
+```
+
+- `--no-verify-jwt`: 게이트웨이의 JWT 검사를 끄고 함수가 깨우기 비밀로 직접 막는다(틀리면 401, DB 를 부르지 않는다). 새 API 키와 게이트웨이 검사의 관계는 *확인 필요*(ERD v2 OQ-E11, RFC PL-7) — 배포 뒤 아래 확인 2 로 본다.
+- 함수 주소: `https://tsbipaffirkswsgkydav.supabase.co/functions/v1/translate`
+
+**Vault 에 주소와 깨우기 비밀 넣기 (SQL Editor, 처음 한 번):**
+
+```sql
+select vault.create_secret('https://tsbipaffirkswsgkydav.supabase.co/functions/v1/translate', 'translate_function_url');
+select vault.create_secret('<TRANSLATE_KICK_SECRET 과 같은 값>', 'translate_kick_secret');
+-- 이름만 확인한다 (값은 꺼내 보지 않는다)
+select name from vault.secrets where name like 'translate_%';
+```
+
+- 정의자 함수(소유자 `postgres`)가 `vault.decrypted_secrets` 를 읽을 수 있는지는 *확인 필요*(OQ-E11) — 아래 확인 3 에서 요청이 나가지 않으면 이것부터 본다.
+
+**예약 확인:**
+
+```sql
+select jobname, schedule, active from cron.job where jobname like 'yunabi-%';
+```
+
+`yunabi-translation-kick`(매분)과 `yunabi-purge-translation`(매시 15분)이 있어야 한다. 마이그레이션 때 `pg_net` 이나 Vault 가 없었다면 깨우기 예약이 빠져 있다 — 그때만 직접 건다: `select cron.schedule('yunabi-translation-kick', '* * * * *', 'select app.translation_kick()');`
+
+**켜기:**
+
+```sql
+update app.settings set int_value = 1 where key = 'translation_enabled';
+```
+
+**켠 뒤 확인 (5분 안에):**
+
+1. 설명이 있는 장소가 하나 이상 있어야 한다(없으면 앱에서 하나 등록하고 1~2분 기다린다).
+2. 함수 호출 결과 — `select status_code, created from net._http_response order by created desc limit 5;` 에 `200` 이 보인다. `401` 이면 Vault 와 함수 비밀값의 깨우기 비밀이 다르다. 게이트웨이가 막으면(JWT 오류) 배포의 `--no-verify-jwt` 를 확인한다.
+3. 번역이 들어온다 — `select lang, count(*) from app.place_translations group by lang;`
+4. 대기열이 비어 간다 — `select count(*), max(attempts), max(last_error) from app.translation_jobs;`
+5. 앱에서 그 장소를 다른 화면 언어로 연다: 「自動翻訳 / Translated automatically / 자동 번역」 표시와 원문 보기.
+6. 결과를 점검 기록에 남긴다(새 브랜치 + PR).
+
+**끄기 (되돌리기):** `update app.settings set int_value = 0 where key = 'translation_enabled';` — 깨우기가 바로 멈춘다. 이미 들어온 번역은 계속 보인다. 지우려면 R-9 ②.
 
 ## 8. 롤백
 
