@@ -1,5 +1,3 @@
-import 'leaflet/dist/leaflet.css';
-import 'leaflet.markercluster/dist/MarkerCluster.css';
 import { reload } from '../../actions/app';
 import { go } from '../../actions/nav';
 import { openReport } from '../../actions/report';
