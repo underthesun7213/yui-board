@@ -126,7 +126,7 @@ select is((public.update_place((select (v->>'id')::bigint from r where k = 'lat1
   'name_latin', 'an edit to a Korean-only name is refused too');
 select tests.as_owner();
 select ok(exists (select 1 from app.security_events where kind = 'invalid_input' and detail = 'name_latin'), 'the refusal is recorded');
-select throws_ok($insert into app.places (name, category, lat, lng, pref, lang) values ('枚方市駅', 'transit', 34.82, 135.65, '27', 'ja')$,
+select throws_ok($$insert into app.places (name, category, lat, lng, pref, lang) values ('枚方市駅', 'transit', 34.82, 135.65, '27', 'ja')$$,
   '23514', null, 'the table refuses it as well (places_name_latin)');
 
 -- G-14: the 11th place in a day is refused
