@@ -109,104 +109,55 @@ export function renderGameScript(vn, endings, bestMisses) {
   return out.join('\n');
 }
 
-/* The art direction every prompt starts with, set by the owner's reference
-   pictures in docs/06-design/characters/ (2026-10-27, Gemini). */
-const REFS = 'docs/06-design/characters/';
+/* The art direction every prompt starts with (2026-10-28, Gemini). The
+   owner's pictures in docs/06-design/characters/ show the style. */
 const STYLE =
-  'Style: match the attached reference pictures. Korean-webtoon anime illustration, clean dark line art, soft painterly cel shading, muted natural colours, natural proportions (not chibi). Everyday places in Kansai, Japan, drawn as they really look, with detailed backgrounds.';
-/* Each person: who they are (face, hair, manner — the same in every picture),
-   the pictures to attach, the pronoun, and what they wear. Clothes change
-   with the day: one outfit for a whole game route (one day out), another for
-   the comics; Ayano's kimono is in the reference for her face only. */
-const CAST = {
-  james: {
-    look: 'James: an American exchange student, about 20, short wavy light-brown hair, friendly open face.',
-    attach: `${REFS}james-sheet`,
-    he: 'he',
-    wear: { comic: 'navy hoodie over a white T-shirt, dark jeans, grey backpack' },
-  },
-  you: {
-    look: 'The player: a female exchange student, about 20, shoulder-length dark hair in a low ponytail. Shown only from behind or from the side, face never shown.',
-    attach: `${REFS}player-sheet`,
-    he: 'she',
-    wear: { game: 'beige coat, small cross-body bag' },
-  },
-  osaka: {
-    look: 'Yuki (Osaka, face and hair as in the reference): a young man, about 20, curly ash-blond hair with dark roots, warm brown eyes; loud, quick, laughs easily.',
-    attach: `${REFS}yuki-front.webp, ${REFS}yuki-back-laugh.webp`,
-    he: 'he',
-    wear: {
-      game: 'olive-green zip jacket over a black and white layered T-shirt, thin gold chain, loose grey jeans, black boots (as in the reference)',
-      comic: 'oversized black hoodie, light-wash jeans, white sneakers',
-    },
-  },
-  kyoto: {
-    look: 'Ayano (Kyoto, face and hair as in the reference — not the kimono): a young woman, about 20, dark brown hair in a low bun with straight bangs, a small red hair ornament; quiet, graceful, small gestures.',
-    attach: `${REFS}ayano-front.webp, ${REFS}ayano-pose.webp`,
-    he: 'she',
-    wear: {
-      game: 'everyday clothes: cream knit sweater, long navy pleated skirt, beige trench coat, small leather shoulder bag, loafers',
-      comic: 'everyday clothes: white blouse, soft grey cardigan, long camel skirt',
-    },
-  },
+  'Style: Korean-webtoon anime illustration, clean dark line art, soft painterly cel shading, muted natural colours, natural proportions (not chibi). Everyday places in Kansai, Japan, drawn as they really look, with detailed backgrounds.';
+/* Each comic level has its own student, so no face has to stay the same
+   across levels — only across a level's two pages, drawn in one chat. Level
+   7's student says his name, James. */
+const STUDENTS = {
+  l1: 'Mali, a Thai exchange student, a woman about 20, long straight black hair, warm brown skin, oversized cream sweatshirt, wide-leg jeans, tote bag',
+  l2: 'Diego, a Mexican exchange student, a man about 20, short dark curly hair, light-brown skin, denim jacket over a grey T-shirt, black trousers, sneakers',
+  l3: 'Amelia, a British exchange student of Ghanaian descent, a Black woman about 20, natural coily hair in a puff, dark skin, mustard cardigan, long black skirt, glasses',
+  l4: 'Minjun, a Korean exchange student, a man about 20, short black hair, light skin, black puffer vest over a white hoodie, grey joggers',
+  l5: 'Priya, an Indian exchange student, a woman about 20, long dark wavy hair in a braid, medium-brown skin, light denim jacket, maroon top, black jeans',
+  l6: 'Lin, a Chinese exchange student, a woman about 20, black bob with bangs, light skin, beige trench coat over a striped top; with two friends from the dorm (a tall man with glasses, a woman with short red hair)',
+  l7: 'James, an American exchange student, a white man about 20, short wavy light-brown hair, navy hoodie over a white T-shirt, dark jeans, grey backpack',
 };
-/** The person as drawn in one kind of picture ('comic' or 'game'). */
-const person = (k, where) => `${CAST[k].look} Wearing: ${CAST[k].wear[where]}.`;
-/* comic levels where the game's two friends appear too (level 6: the izakaya
-   party of three) */
-const FRIENDS_IN = new Set(['l6']);
 
-/** Prompts to paste into Gemini, one per picture: the two sheets still to
-    make, then each comic page, game scene and ending card, built from the
-    scene notes and lines so they stay in step with the content. */
+/** Prompts to paste into Gemini, one per picture, built from the scene notes
+    and lines so they stay in step with the content. */
 export function renderImagePrompts(lessons, vn, endings) {
   const block = (lines) => ['```text', ...lines, '```', ''];
-  const attach = (keys) => 'Attach: ' + keys.map((k) => CAST[k].attach).join(', ') + '.';
   const out = [
     '# 그림 생성 프롬프트 (Gemini)',
     '',
-    '> **생성 문서 — 고치지 말 것.** 대본(`lessons.ts`·`vn.ts`·`endings.ts`)과 `scripts/gen-comic-scripts.mjs` 의 그림체·인물 설정에서 만든다. 대사나 장면 메모를 바꾸면 다시 생성한다.',
+    '> **생성 문서 — 고치지 말 것.** 대본(`lessons.ts`·`vn.ts`·`endings.ts`)과 `scripts/gen-comic-scripts.mjs` 의 그림체·학생 설정에서 만든다. 대사나 장면 메모를 바꾸면 다시 생성한다.',
     '',
     '## 순서',
     '',
-    '1. 기준 그림: 유우키·아야노와 그림체는 `docs/06-design/characters/` 의 책임자 그림이다. **제임스와 플레이어 시트 2장**만 먼저 만들어 같은 폴더에 `james-sheet`·`player-sheet` 로 저장한다(아래 "인물").',
-    '2. 그림마다 새 대화에서 프롬프트를 붙여 넣고, **첫 줄 `Attach:` 의 그림을 함께 첨부**한다.',
-    '3. 만화의 일본어 글자가 틀리면 같은 프롬프트 끝에 `Leave every speech balloon and caption box empty.` 를 붙여 다시 만들고, 글자는 편집기에서 넣는다(글자는 대본의 **말풍선**과 똑같이).',
-    '4. 저장: 만화 `src/art/lessons/<id>/p1`·`p2`(세로 2:3, 짧은 변 1000px 이상, 400KB 이하), 게임 `src/art/vn/<친구>/<nn>`(가로 4:3), 엔딩 `src/art/endings/<id>`(가로 3:2). `.webp`·`.png`·`.jpg`. 크기·이름은 맞추지 못해도 파일을 주면 맞춰 넣는다.',
+    '1. 만화: 레벨마다 학생이 다르다(D36). **한 레벨의 1쪽과 2쪽은 같은 Gemini 대화에서** 이어 만든다 — 2쪽 프롬프트가 1쪽의 학생을 그대로 쓰라고 한다. 레벨이 바뀌면 새 대화.',
+    '2. 게임 장면과 엔딩 카드는 **사람 없는 배경**이다. 친구의 이름과 대사는 앱이 그림 아래에 보여 준다.',
+    '3. 그림체를 맞추려면 `docs/06-design/characters/bg-osaka-shinsekai.webp` 를 첨부하고 "이 그림체로" 라고 덧붙여도 된다(선택).',
+    '4. 만화의 일본어 글자가 틀리면 같은 프롬프트 끝에 `Leave every speech balloon and caption box empty.` 를 붙여 다시 만들고, 글자는 편집기에서 넣는다(글자는 대본의 **말풍선**과 똑같이).',
+    '5. 저장: 만화 `src/art/lessons/<id>/p1`·`p2`(세로 2:3, 짧은 변 1000px 이상, 400KB 이하), 게임 `src/art/vn/<친구>/<nn>`(가로 4:3), 엔딩 `src/art/endings/<id>`(가로 3:2). `.webp`·`.png`·`.jpg`. 크기·이름은 맞추지 못해도 파일을 주면 맞춰 넣는다.',
     '',
-    '## 인물',
+    '## 만화 (레벨 1~7)',
     '',
   ];
-  for (const [k, where, name] of [
-    ['james', 'comic', '제임스 (만화 레벨 1~7 의 학생) → `james-sheet`'],
-    ['you', 'game', '플레이어 (게임, 뒷모습만) → `player-sheet`'],
-  ]) {
-    out.push(`### ${name}`, '');
-    out.push(
-      ...block([
-        `Attach: ${REFS}yuki-front.webp (for the style only).`,
-        STYLE,
-        person(k, where),
-        'Make a character reference sheet on a plain light-grey background: the same person front, three-quarter and back view, full body, plus three head shots (smiling, surprised, thinking). No text.',
-      ]),
-    );
-  }
-
-  out.push('## 만화 (레벨 1~7)', '');
   for (const l of lessons) {
     if (l.vn) continue;
-    const cast = FRIENDS_IN.has(l.id) ? ['james', 'osaka', 'kyoto'] : ['james'];
     l.pages.forEach((page, pi) => {
       out.push(
         `### 레벨 ${l.lv} ${l.t.ko} — ${pi + 1}쪽 → \`src/art/lessons/${l.id}/p${pi + 1}\``,
         '',
       );
       const lines = [
-        attach(cast),
         STYLE,
-        ...cast.map((k) => person(k, 'comic')),
-        'James is "the student" below.' +
-          (cast.length > 1 ? ' Yuki and Ayano are his friends, the rest of his party.' : ''),
+        pi === 0
+          ? `"The student" below is ${STUDENTS[l.id]}.`
+          : '"The student" below is the same person as on the previous page, in the same clothes.',
         'One vertical comic page, aspect ratio 2:3. Four panels in a 2×2 grid with thin white gutters, read in Japanese order: panel 1 top right, panel 2 top left, panel 3 bottom right, panel 4 bottom left.',
       ];
       page.panels.forEach((p, i) => {
@@ -223,42 +174,25 @@ export function renderImagePrompts(lessons, vn, endings) {
     });
   }
 
+  const place = (ratio, note) => [
+    STYLE,
+    `One horizontal background illustration, aspect ratio ${ratio}, of the place where this happens, seen at eye level: ${note}.`,
+    'Draw the place only: no people in the foreground, at most a few small distant passers-by with no visible faces. No text, signs left blank or unreadable, no speech balloons.',
+  ];
   out.push('## 게임 장면 (레벨 8)', '');
   for (const [route, r] of Object.entries(vn)) {
-    const name = route === 'osaka' ? 'Yuki' : 'Ayano';
     r.scenes.forEach((sc, i) => {
       out.push(
         `### ${r.name.ko} 장면 ${i + 1} → \`src/art/vn/${route}/${String(i + 1).padStart(2, '0')}\``,
         '',
       );
-      out.push(
-        ...block([
-          attach([route, 'you']),
-          STYLE,
-          person(route, 'game'),
-          person('you', 'game'),
-          `One horizontal illustration, aspect ratio 4:3, seen from the player's point of view: ${name} faces the viewer; if the player appears, only from behind. ${sc.s}.`,
-          `Mood of the moment (do not write it): ${CAST[route].he} has just said 「${plain(sc.jp)}」`,
-          'No text, no speech balloons.',
-        ]),
-      );
+      out.push(...block(place('4:3', sc.s)));
     });
   }
-
   out.push('## 엔딩 카드', '');
   for (const e of endings) {
-    const who = e.route === 'both' ? ['osaka', 'kyoto'] : [e.route];
     out.push(`### ${e.t.ko} → \`src/art/endings/${e.id}\``, '');
-    out.push(
-      ...block([
-        attach([...who, 'you']),
-        STYLE,
-        ...who.map((k) => person(k, 'game')),
-        person('you', 'game'),
-        `One horizontal illustration, aspect ratio 3:2, a memorable closing shot: ${e.s}. The player only from behind or the side.`,
-        'No text, no speech balloons.',
-      ]),
-    );
+    out.push(...block([...place('3:2', e.s), 'Make it feel like the last shot of a good day.']));
   }
   return out.join('\n');
 }
