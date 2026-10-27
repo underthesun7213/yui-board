@@ -245,9 +245,9 @@ MAP-01 의 필터 칩(선택 시 `--c` 로 주입, 1520행), 지도 핀 `.pindot
 | 캘린더 | `.mnav`, `.wdrow .wd(.sun)`, `.grid`, `.cell`, `.cdots`, `.cd.*` | `.cell.today` (beni 굵게), `.cell[aria-pressed]` (ai 채움), `.cell.out` (빈칸), 점 최대 3개 (1451행) | CAL-01 |
 | 이벤트 행 | `.ev.{kind}`, `.clock`, `.sub`, `.chips`, `.chip` | `.chip.rep` (↻ 매주), `.chip.full` (만원), `:hover` | CAL-01 |
 | 이벤트 정보 | `.evwrap`, `.when`, `dl.facts` (dt 78px 고정), `.evbtns`, `.go` | `.go[aria-pressed]` → 외곽선형 "✓ 참가 예정"; `disabled` (만원) **스타일 없음** | CAL-02 |
-| 에피소드 행 | `.lesson`, `.lvbadge(.vn)`, `.lmain`, `.lcuts` | 8화는 beni 배지 ▶ | JP-01 |
+| 에피소드 행 | `.lesson`, `.lvbadge(.vn)`, `.lmain`, ~~`.lcuts`~~(2026-10-25 삭제) | 8화는 beni 배지 ▶ | JP-01 |
 | 컬렉션 행 | `.colrow`, `.colthumbs i(.on)` | 획득 = beni 썸네일 | JP-01 |
-| 만화 컷 | `figure.cut`, `.cutph` (자리 표시), `figcaption` | `img` 있으면 이미지, 없으면 번호 + 장면 메모 `s` + "준비 중" | JP-02 |
+| 만화 컷 → **페이지(2026-10-25 대체)** | ~~`figure.cut`, `.cutph`, `figcaption`~~ → `.cpage`, `.cpageart`(2:3), `ol.panels`(`.cap`·`.jp`·`.tr`), 덮개 `.zoom` | `img` 있으면 이미지, 없으면 번호 + 장면 메모 `s` + "준비 중" | JP-02 |
 | 표현 카드 | `.expr`, `.rd` | — | JP-02 |
 | VN 루트 카드 | `.routes`, `.route` | — | JP-03 |
 | VN 장면 | `.vnwrap`, `.vndots i(.past/.now)`, `.cgart`, `.vnline` | 진행 점 3상태 | JP-04 |
@@ -365,7 +365,7 @@ MAP-01 의 필터 칩(선택 시 `--c` 로 주입, 1520행), 지도 핀 `.pindot
 | # | 갭 | 근거 | 권장 |
 |---|---|---|---|
 | DG-1 | **다크 모드 없음.** `color-scheme: light` 만 선언 | 10행 | 토큰이 이미 `:root` 에 모여 있어 `prefers-color-scheme: dark` 세트 추가가 쉽다. washi/sumi 를 반전한 야간 팔레트 정의 |
-| DG-2 | **만화·엔딩·VN 아트워크 미완.** 모든 컷이 점선 자리 표시 `.cutph`/`.cgart` + 장면 메모 `s` + "준비 중" | 1644–1661(`lesson`), 1629–1642(`collection`), 1663–1716(`vnView`)행, README "Next" | 아트 디렉션 정의: 비율(컷 4:3, 엔딩 3:2), 라인 스타일, 캐릭터 시트. `s` 를 생성 프롬프트로 사용 |
+| DG-2 | **만화·엔딩·VN 아트워크 미완.** 모든 컷이 점선 자리 표시 `.cutph`/`.cgart` + 장면 메모 `s` + "준비 중" | 1644–1661(`lesson`), 1629–1642(`collection`), 1663–1716(`vnView`)행, README "Next" | 아트 디렉션 정의: 비율(만화 페이지 세로 2:3 — 2026-10-25, 장면 4:3, 엔딩 3:2), 라인 스타일, 캐릭터 시트. `s` 를 생성 프롬프트로 사용 — [comic-scripts.md](comic-scripts.md) |
 | DG-3 | **로딩 · 오류 · 오프라인 상태 없음.** 데이터가 전부 인메모리라 스켈레톤·재시도·오프라인 배너가 디자인되어 있지 않다. 오류 UI 는 지도 `.maperr` 1개뿐 | 256, 1542행 | 실데이터 전환 전에 스켈레톤 행, 인라인 오류, 오프라인 배너(SW 캐시 시) 정의 |
 | DG-4 | 호버 원칙 위반 2건: `.langmenu button:hover`, `.ev:hover` 가 `@media(hover:hover)` 밖에 있다 | 102, 278행 | 미디어쿼리 안으로 이동 |
 | DG-5 | **비활성 상태 미정의.** 마감된 이벤트 `.go[disabled]` 가 활성 버튼과 똑같이 보인다. `.submit` 은 비활성 상태 자체가 없다(빈 입력 시 조용히 무시, 1835행) | 300–302, 1493행 | 공통 `:disabled` 스타일 (예: `--card` 바탕 + `--sumi-faint`) |

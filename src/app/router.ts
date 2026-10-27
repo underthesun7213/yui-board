@@ -70,8 +70,8 @@ export function isPrefEntry(pref: string): boolean {
   }
 }
 
-/* The report sheet is a history step on the same URL, so system back closes
-   it (RFC-0003 §338). */
+/* The report sheet and the full-screen comic page are a history step on the
+   same URL, so system back closes them (RFC-0003 §338). */
 export function pushSheetState() {
   try {
     history.pushState({ ...(history.state as HistState | null), sheet: true }, '');
@@ -91,8 +91,8 @@ function onPop(e: PopStateEvent) {
   const to = parseRoute(location.hash) ?? { name: 'home' };
   /* back from the sheet's step: only the sheet closes; the screen (and the
      map's open card) stays as it is */
-  if (ui.get().report) {
-    ui.set({ report: null });
+  if (ui.get().report || ui.get().zoom) {
+    ui.set({ report: null, zoom: null });
     if (formatRoute(to) === formatRoute(route.get().route)) return;
   }
   const st = (e.state ?? { prev: null }) as HistState;

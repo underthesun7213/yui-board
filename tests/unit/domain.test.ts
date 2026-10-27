@@ -1,17 +1,26 @@
-import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { formatRoute, legacyRoute, parseRoute } from '../../src/app/routes';
-import { ART, cutKey, endingKey, sceneKey } from '../../src/content/art';
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
+import { join } from 'node:path';
+import { OUT, renderComicScripts } from '../../scripts/gen-comic-scripts.mjs';
+import { ART, endingKey, pageKey, sceneKey } from '../../src/content/art';
 import { ENDINGS } from '../../src/content/endings';
 import { LESSONS } from '../../src/content/lessons';
 import { VN } from '../../src/content/vn';
-import { addMonths, monthCells, tokyoToday, weekday } from '../../src/domain/calendar/dates';
+import {
+  addMonths,
+  monthCells,
+  tokyoTime,
+  tokyoToday,
+  weekday,
+} from '../../src/domain/calendar/dates';
 import { makeSchedule, occOn, upcoming } from '../../src/domain/calendar/occurrences';
 import { HOME, mainBounds, regionOf, shownPlaces, walkMin } from '../../src/domain/geo/geo';
 import { PREFS } from '../../src/domain/geo/prefs';
+import { PREF_INTRO } from '../../src/content/prefIntro';
 import { buildIcs, icsEsc, icsFold } from '../../src/domain/ics';
 import { safeMapsUrl } from '../../src/domain/links';
-import { checkEvent, checkPlace, HAS_LATIN } from '../../src/domain/validation';
+import { checkEvent, checkPlace, HAS_LATIN, newEventDay } from '../../src/domain/validation';
 import type { EventSeries, OccurrenceOverride, Place } from '../../src/domain/types';
 import { en } from '../../src/i18n/en';
 import { ja } from '../../src/i18n/ja';
@@ -58,6 +67,21 @@ describe('calendar', () => {
   });
   it('uses Japan time for today', () => {
     expect(tokyoToday(new Date('2026-10-11T15:30:00Z'))).toBe('2026-10-12');
+    expect(tokyoTime(new Date('2026-10-11T15:05:00Z'))).toBe('00:05');
+    expect(tokyoTime(new Date('2026-10-11T10:30:00Z'))).toBe('19:30');
+  });
+});
+
+describe('prefecture introductions', () => {
+  it('has one for every prefecture, in all three languages, short enough for the map', () => {
+    expect(Object.keys(PREF_INTRO).sort()).toEqual(PREFS.map(([c]) => c));
+    for (const [code, intro] of Object.entries(PREF_INTRO))
+      for (const lang of ['ja', 'en', 'ko'] as const) {
+        const t = intro[lang];
+        expect(t.trim(), `${code} ${lang}`).toBe(t);
+        expect([...t].length, `${code} ${lang}`).toBeGreaterThan(20);
+        expect([...t].length, `${code} ${lang}`).toBeLessThanOrEqual(200);
+      }
   });
 });
 
@@ -182,10 +206,89 @@ describe('strings', () => {
   });
 });
 
+describe('comic pages (Y-J1)', () => {
+  const comics = LESSONS.flatMap((l) => (l.vn ? [] : [l]));
+  it('are levels 1–7, two pages of four panels each', () => {
+    expect(comics.map((l) => l.lv)).toEqual([1, 2, 3, 4, 5, 6, 7]);
+    for (const l of comics) {
+      expect(l.pages).toHaveLength(2);
+      for (const p of l.pages) expect(p.panels).toHaveLength(4);
+    }
+  });
+  it('has a balloon or a caption in every panel, a translation, and no brackets', () => {
+    for (const l of comics)
+      for (const p of l.pages)
+        for (const c of p.panels) {
+          expect(c.jp || c.cap, `${l.id}: empty panel`).toBeTruthy();
+          expect(c.tr.en && c.tr.ko, `${l.id}: missing translation`).toBeTruthy();
+          for (const t of [c.jp, c.cap])
+            if (t) expect(/[（）()]/.test(t), `${l.id}: brackets in ${t}`).toBe(false);
+        }
+  });
+  it('has a storyboard script that matches the data (node scripts/gen-comic-scripts.mjs)', () => {
+    const doc = readFileSync(OUT, 'utf8').split(String.fromCharCode(13)).join('');
+    expect(doc).toBe(renderComicScripts(LESSONS) + String.fromCharCode(10));
+  });
+});
+
+/* Width and height from a PNG, JPEG or WebP header, without a dependency. */
+function imageSize(b: Buffer): [number, number] | null {
+  if (b.subarray(1, 4).toString() === 'PNG') return [b.readUInt32BE(16), b.readUInt32BE(20)];
+  if (b.subarray(0, 4).toString() === 'RIFF' && b.subarray(8, 12).toString() === 'WEBP') {
+    const kind = b.subarray(12, 16).toString();
+    if (kind === 'VP8X') return [1 + b.readUIntLE(24, 3), 1 + b.readUIntLE(27, 3)];
+    if (kind === 'VP8L') {
+      const v = b.readUInt32LE(21);
+      return [1 + (v & 0x3fff), 1 + ((v >> 14) & 0x3fff)];
+    }
+    if (kind === 'VP8 ') return [b.readUInt16LE(26) & 0x3fff, b.readUInt16LE(28) & 0x3fff];
+    return null;
+  }
+  if (b[0] === 0xff && b[1] === 0xd8) {
+    let i = 2;
+    while (i < b.length) {
+      const marker = b[i + 1] ?? 0;
+      const len = b.readUInt16BE(i + 2);
+      if (marker >= 0xc0 && marker <= 0xcf && ![0xc4, 0xc8, 0xcc].includes(marker))
+        return [b.readUInt16BE(i + 7), b.readUInt16BE(i + 5)];
+      i += 2 + len;
+    }
+  }
+  return null;
+}
+
 describe('art', () => {
+  it('has comic pages that fit the rule: one per slot, 2:3, 1000 px, 400 KB', () => {
+    const root = 'src/art/lessons';
+    const files: string[] = [];
+    const walk = (d: string) => {
+      for (const f of readdirSync(d)) {
+        const p = join(d, f);
+        if (statSync(p).isDirectory()) walk(p);
+        else files.push(p.split('\\').join('/'));
+      }
+    };
+    if (!existsSync(root)) return; // no comic pages yet
+    walk(root);
+    const seen = new Set<string>();
+    for (const f of files) {
+      expect(/[.](webp|png|jpg)$/.test(f), `${f}: use .webp, .png or .jpg`).toBe(true);
+      const slot = f.replace(/[.][^.]+$/, '');
+      expect(seen.has(slot), `${slot}: two files for one page`).toBe(false);
+      seen.add(slot);
+      const buf = readFileSync(f);
+      expect(buf.length <= 400 * 1024, `${f}: over 400 KB (try .webp)`).toBe(true);
+      const size = imageSize(buf);
+      expect(size, `${f}: unreadable image`).not.toBeNull();
+      const [w, h] = size!;
+      expect(Math.min(w, h) >= 1000, `${f}: ${w}x${h}, short side under 1000 px`).toBe(true);
+      expect(Math.abs(w / h - 2 / 3) <= (2 / 3) * 0.01, `${f}: ${w}x${h} is not 2:3`).toBe(true);
+    }
+  });
   it('only has files for slots that exist', () => {
     const slots = new Set<string>();
-    for (const l of LESSONS) l.cuts.forEach((_, i) => slots.add(cutKey(l.id, i)));
+    for (const l of LESSONS)
+      if (!l.vn) for (const n of [1, 2] as const) slots.add(pageKey(l.id, n));
     for (const r of ['osaka', 'kyoto'] as const)
       VN[r].scenes.forEach((_, i) => slots.add(sceneKey(r, i)));
     for (const e of ENDINGS) slots.add(endingKey(e.id));
@@ -255,6 +358,29 @@ describe('validation mirrors the server', () => {
     };
     expect(checkEvent(e, '2026-10-12')).toBe('start_date');
     expect(checkEvent({ ...e, start_date: '2026-10-20' }, '2026-10-12')).toBe(null);
+  });
+  it('refuses a new event that already ended today, as the server does', () => {
+    const e = {
+      title: 'Study group',
+      start_date: '2026-10-12',
+      start_time: '18:00',
+      end_time: '19:00',
+      weekly_until: null,
+      place_text: '',
+      body: '',
+      lang: 'en',
+    };
+    expect(checkEvent(e, '2026-10-12', false, '18:30')).toBe(null);
+    expect(checkEvent(e, '2026-10-12', false, '19:00')).toBe('time');
+    expect(checkEvent(e, '2026-10-12', false, '19:30')).toBe('time');
+    expect(checkEvent({ ...e, start_date: '2026-10-13' }, '2026-10-12', false, '19:30')).toBe(null);
+    /* an edit is not held to it (the server checks the whole series instead) */
+    expect(checkEvent(e, '2026-10-12', false, null)).toBe(null);
+  });
+  it("starts a new event tomorrow once today's default slot has ended", () => {
+    expect(newEventDay(new Date('2026-10-12T09:59:00Z'))).toBe('2026-10-12'); // 18:59 JST
+    expect(newEventDay(new Date('2026-10-12T10:00:00Z'))).toBe('2026-10-13'); // 19:00 JST
+    expect(newEventDay(new Date('2026-10-12T14:59:00Z'))).toBe('2026-10-13'); // 23:59 JST
   });
 });
 

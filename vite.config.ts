@@ -89,6 +89,19 @@ export default defineConfig({
     target: 'es2022',
     manifest: true,
     modulePreload: { polyfill: false },
+    rolldownOptions: {
+      output: {
+        /* Comic pages get their own folder so the service worker can leave
+           them out of the install download and cache each when first seen
+           (src/sw.ts); everything else keeps the default name. */
+        assetFileNames: (a) =>
+          (a.originalFileNames ?? []).some((f) =>
+            f.replace(/\\/g, '/').includes('src/art/lessons/'),
+          )
+            ? 'assets/comic/[name]-[hash][extname]'
+            : 'assets/[name]-[hash][extname]',
+      },
+    },
   },
   plugins: [
     react(),
@@ -101,6 +114,8 @@ export default defineConfig({
       manifest: false,
       injectManifest: {
         globPatterns: ['**/*.{js,css,html,png,webp,jpg,svg,webmanifest,geojson}'],
+        /* comic pages: cached on first view instead (src/sw.ts) */
+        globIgnores: ['assets/comic/**'],
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
       },
     }),

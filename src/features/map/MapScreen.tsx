@@ -22,6 +22,7 @@ import { MapSlot } from '../../map/MapSlot';
 import { data } from '../../state/data';
 import { location } from '../../state/location';
 import { mapUi } from '../../state/mapUi';
+import { prefIntro } from '../../state/prefIntro';
 import { prefs } from '../../state/prefs';
 import { useStore } from '../../state/useStore';
 import { DataStatus } from '../../ui/DataStatus';
@@ -79,17 +80,25 @@ function StatusBar() {
   const mode = useStore(mapUi, (s) => s.mode);
   const pref = useStore(mapUi, (s) => s.pref);
   const prefFail = useStore(mapUi, (s) => s.prefFail);
+  const intro = useStore(prefIntro, (s) => (pref ? s.texts?.[pref]?.[lang] : undefined));
   const tileFail = useStore(mapUi, (s) => s.tileFail);
   const loc = useStore(location, (s) => s.state);
   let main: React.ReactNode = null;
   if (mode === 'japan') {
     main = pref ? (
-      <div className="prefbar">
-        <b>{prefName(pref, lang)}</b>
-        <button data-pref="" onClick={() => selectPref(null)}>
-          {m.prefAll}
-        </button>
-      </div>
+      <>
+        <div className="prefbar">
+          <b>{prefName(pref, lang)}</b>
+          <button data-pref="" onClick={() => selectPref(null)}>
+            {m.prefAll}
+          </button>
+        </div>
+        {intro && (
+          <p className="prefintro" lang={lang}>
+            {intro}
+          </p>
+        )}
+      </>
     ) : (
       <>
         <p className="mmsg">{m.prefPick}</p>
@@ -253,14 +262,8 @@ function PlaceList() {
     }
     return (
       <>
-        {none && (
-          <div className="empty slim">
-            <p>{m.emptyPlaces}</p>
-            <button className="primary" onClick={() => go({ name: 'placeNew' })}>
-              ＋ {m.addPlace}
-            </button>
-          </div>
-        )}
+        {/* adding is only the header button, as in the calendar (owner, 2026-10-25) */}
+        {none && <p className="empty slim">{m.emptyPlaces}</p>}
         {(Object.keys(m.regions) as Region[]).map((r) => (
           <div key={r}>
             <div className="sect">{m.regions[r]}</div>
@@ -287,12 +290,9 @@ function PlaceList() {
   }
   if (!list.length)
     return (
-      <div className="empty">
-        <p>{!places.length && loaded ? m.emptyPlaces : near ? m.nearEmpty : m.prefEmpty}</p>
-        <button className="primary" onClick={() => go({ name: 'placeNew' })}>
-          ＋ {m.addPlace}
-        </button>
-      </div>
+      <p className="empty">
+        {!places.length && loaded ? m.emptyPlaces : near ? m.nearEmpty : m.prefEmpty}
+      </p>
     );
   return (
     <ul className="plist" aria-label={m.aPlaces}>
