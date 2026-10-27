@@ -360,7 +360,7 @@ create type app.item_kind      as enum ('place','event');
 
 **`app.security_events`**: `kind text check (kind in ('forbidden','not_owner','rate_limited_account','rate_limited_ip','suspended_write','admin_denied','signup_throttled','invalid_input'))`, `user_id uuid` (계정 삭제 시 set null), `ip_key bytea` (**48시간 뒤 null** — V-8 과 맞춤 `[검토 #8]`), `detail text check (char_length(detail) <= 200)`. 행은 90일 보관(집계용, IP 연결 없이).
 
-**`app.settings`**: `('report_hide_threshold',3)`, `('place_create_per_day',10)`, `('event_create_per_day',10)`, `('edit_per_day',30)`, `('report_per_day',20)`, `('ip_writes_per_5min',60)`, `('ip_writes_per_5min_dorm',600)` `[검토 #6]`, `('xff_trusted_hops', Y-2 실측)`, `('anon_signups_per_hour',200)`, `('accounts_per_hour',200)` `[재검토 #1]`, `('admin_session_hours',12)`, `('deleted_retention_days',30)`. 값 변경은 SQL 로(관리자 콘솔 편집은 범위 밖).
+**`app.settings`**: `('report_hide_threshold',3)`, `('place_create_per_day',15)`, `('event_create_per_day',15)` (D30, 마이그레이션 `20261026000240` — 030 의 첫 값은 10), `('edit_per_day',30)`, `('report_per_day',20)`, `('ip_writes_per_5min',60)`, `('ip_writes_per_5min_dorm',600)` `[검토 #6]`, `('xff_trusted_hops', Y-2 실측)`, `('anon_signups_per_hour',200)`, `('accounts_per_hour',200)` `[재검토 #1]`, `('admin_session_hours',12)`, `('deleted_retention_days',30)`. 값 변경은 SQL 로(관리자 콘솔 편집은 범위 밖).
 
 **`app.data_version`**: 한 행. 항목·회차·숨김이 바뀌는 문장 트리거가 `v = v + 1`. `[ADR-0026]` 번역 표(`place_translations`)의 변경도 올린다.
 

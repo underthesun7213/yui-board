@@ -110,13 +110,13 @@ select is((select state from public.my_items() where kind = 'place' and id = (se
 select is((public.update_place((select (v->>'id')::bigint from r where k = 'p1'), 'again', 'daily', '', null, 34.82, 135.65, 'ko'))->>'status',
   'not_found', 'a deleted place cannot be edited');
 
--- G-14: the 11th place in a day is refused
+-- G-14: the 16th place in a day is refused (Y-A3, D30: 15 a day)
 select tests.as_owner();
 delete from app.write_log;
 select tests.as_user(tests.id('b'));
 select is((select count(*)::int from (select public.create_place(gen_random_uuid(), 'p' || i, 'food', '', null, 34.82, 135.65, 'en') ->> 'status' s
-             from generate_series(1, 10) i) x where s = 'ok'), 10, 'ten places a day');
-select is((public.create_place(gen_random_uuid(), 'eleven', 'food', '', null, 34.82, 135.65, 'en'))->>'status', 'rate_limited', 'the eleventh is refused');
+             from generate_series(1, 15) i) x where s = 'ok'), 15, 'fifteen places a day');
+select is((public.create_place(gen_random_uuid(), 'sixteen', 'food', '', null, 34.82, 135.65, 'en'))->>'status', 'rate_limited', 'the sixteenth is refused');
 
 select * from finish();
 rollback;
