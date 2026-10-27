@@ -10,7 +10,7 @@
 | Y-1 React 재작성 | 완료, 검토 통과 | — |
 | Y-2 백엔드(Supabase)·등록 | 완료, 재검토 통과 | `6ea14ca` |
 | Y-3 신고·자동 숨김·관리자 콘솔·계정 정지 | 완료, 재검토 "pass with fixes" → 남은 지적까지 반영 | `a9742c0` |
-| `.mcp.json` (Supabase MCP, 프로젝트 `tsbipaffirkswsgkydav` "yunabi", 도쿄 `ap-northeast-1`) | 커밋됨 — 모든 기능 그룹, 읽기 전용 아님. 2026-10-18 설계(infra.md §3 1번)대로 도쿄에 새로 만들어 ref 를 바꿈. 이전 프로젝트 `lpgfovocymnlcqmpwjih`(us-east-1, 비어 있었음)는 2026-10-22 책임자가 삭제 | `4dbd6a4` |
+| `.mcp.json` (Supabase MCP, 프로젝트 `tsbipaffirkswsgkydav` "yunabi", 도쿄 `ap-northeast-1`) | 커밋됨 — **2026-10-26 부터 읽기 전용(`read_only=true`), 기능 그룹은 docs·database·debugging·development 만** (운영 DB 에는 누구나 쓸 수 있는 글이 있어 MCP 로 읽은 글의 지시가 쓰기로 이어지지 않게 함; 운영 변경은 책임자의 `supabase db push`). 2026-10-18 설계(infra.md §3 1번)대로 도쿄에 새로 만들어 ref 를 바꿈. 이전 프로젝트 `lpgfovocymnlcqmpwjih`(us-east-1, 비어 있었음)는 2026-10-22 책임자가 삭제 | `4dbd6a4` |
 | **Y-3S 보안 점검** | **다음 할 일** | |
 | Y-4 약관·방침·연락 창구, 배포, 실기기 확인 | 그 다음 | |
 
@@ -43,7 +43,7 @@ Y-3 에서 만든 것 (자세한 건 RFC-0003 §12.2 끝의 `[Y-3 구현]` 메�
 ## 3. 책임자에게서 아직 답을 못 받은 것
 
 - 진행 중인 주간 일정의 시리즈를 고치면 지난 회차도 바뀌는 현재 동작을 유지할지 (지금은 유지, 검토자도 유지 권장).
-- `.mcp.json` 을 `read_only=true` 로 바꿀지 (Y-4 배포 전까지는 읽기 전용을 권했음).
+- ~~`.mcp.json` 을 `read_only=true` 로 바꿀지~~ — 2026-10-26 바꿈. 출시 뒤에는 MCP 를 개발용 프로젝트에 연결하는 것을 검토.
 
 ## 4. 지켜야 할 것 (대화에서 정해진 것)
 
