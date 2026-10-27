@@ -20,6 +20,7 @@ import {
   MyItems,
   PlaceForm,
   ReportSheet,
+  ComicZoom,
   WeekForm,
 } from './screens';
 import { ui } from '../state/ui';
@@ -60,6 +61,7 @@ export function App() {
   const nav = useStore(route, (s) => s);
   const current = nav.route.name;
   const reporting = useStore(ui, (s) => !!s.report);
+  const zooming = useStore(ui, (s) => !!s.zoom);
   /* While a new screen's chunk loads, the old screen stays up instead of
      flashing "Loading" (store updates cannot be transitions themselves). */
   const deferred = useDeferredValue(nav);
@@ -101,6 +103,13 @@ export function App() {
         <ScreenBoundary fallback={null}>
           <Suspense fallback={null}>
             <ReportSheet />
+          </Suspense>
+        </ScreenBoundary>
+      )}
+      {zooming && (
+        <ScreenBoundary fallback={null}>
+          <Suspense fallback={null}>
+            <ComicZoom />
           </Suspense>
         </ScreenBoundary>
       )}

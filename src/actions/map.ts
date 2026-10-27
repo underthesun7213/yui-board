@@ -7,6 +7,7 @@ import { getPosition } from '../platform/geolocation';
 import { store } from '../platform/storage';
 import { location } from '../state/location';
 import { mapUi } from '../state/mapUi';
+import { prefIntro } from '../state/prefIntro';
 import { route } from '../state/route';
 
 const bumpFit = () => mapUi.set((s) => ({ fitSeq: s.fitSeq + 1 }));
@@ -63,6 +64,7 @@ export function skipLocation() {
 
 let prefLoad: Promise<void> | null = null;
 export function ensurePrefs(): Promise<void> {
+  void ensurePrefIntro();
   if (mapUi.get().prefReady) return Promise.resolve();
   prefLoad ??= fetchPrefectures()
     .then((g) => {
@@ -74,6 +76,19 @@ export function ensurePrefs(): Promise<void> {
       mapUi.set({ prefFail: true });
     });
   return prefLoad;
+}
+
+/* The short introductions shown for a picked prefecture: their own chunk, so
+   they stay out of the map bundle. Without them the screen just shows none. */
+let introLoad: Promise<void> | null = null;
+export function ensurePrefIntro(): Promise<void> {
+  if (prefIntro.get().texts) return Promise.resolve();
+  introLoad ??= import('../content/prefIntro')
+    .then((c) => prefIntro.set({ texts: c.PREF_INTRO }))
+    .catch(() => {
+      introLoad = null;
+    });
+  return introLoad;
 }
 
 /* Switching mode returns to where that mode was left (the runtime keeps each

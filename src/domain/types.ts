@@ -1,8 +1,16 @@
 export type Lang = 'ja' | 'en' | 'ko';
 export const LANGS: Lang[] = ['en', 'ja', 'ko'];
 
-export type Category = 'transit' | 'daily' | 'food' | 'study' | 'admin' | 'health';
-export const CATEGORIES: Category[] = ['transit', 'daily', 'food', 'study', 'admin', 'health'];
+export type Category = 'transit' | 'daily' | 'food' | 'study' | 'admin' | 'health' | 'sights';
+export const CATEGORIES: Category[] = [
+  'transit',
+  'daily',
+  'food',
+  'study',
+  'admin',
+  'health',
+  'sights',
+];
 
 export interface LatLng {
   lat: number;
