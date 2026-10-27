@@ -207,3 +207,21 @@ test('Y-K4 after 19:00 in Japan a new event starts tomorrow, not in a slot alrea
     page.getByText('The end has to be after the start, and not already past.'),
   ).toBeVisible();
 });
+
+test('a picked prefecture shows its introduction, in the app language', async ({
+  page,
+  errors,
+}) => {
+  void errors;
+  await page.addInitScript(() => localStorage.setItem('yui.v1.lang', JSON.stringify('ko')));
+  await page.goto('./#/map');
+  await mapReady(page);
+  await tap(page, '[data-mode="japan"]');
+  await tap(page, '.preflist [data-pref="26"]');
+  await expect(page.locator('.prefintro')).toContainText('게이한선');
+  await expect(page.locator('.prefintro')).toHaveAttribute('lang', 'ko');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(375);
+  /* back to all of Japan: no introduction */
+  await tap(page, '.prefbar [data-pref=""]');
+  await expect(page.locator('.prefintro')).toHaveCount(0);
+});

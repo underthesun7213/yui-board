@@ -17,6 +17,7 @@ import {
 import { makeSchedule, occOn, upcoming } from '../../src/domain/calendar/occurrences';
 import { HOME, mainBounds, regionOf, shownPlaces, walkMin } from '../../src/domain/geo/geo';
 import { PREFS } from '../../src/domain/geo/prefs';
+import { PREF_INTRO } from '../../src/content/prefIntro';
 import { buildIcs, icsEsc, icsFold } from '../../src/domain/ics';
 import { safeMapsUrl } from '../../src/domain/links';
 import { checkEvent, checkPlace, newEventDay } from '../../src/domain/validation';
@@ -68,6 +69,19 @@ describe('calendar', () => {
     expect(tokyoToday(new Date('2026-10-11T15:30:00Z'))).toBe('2026-10-12');
     expect(tokyoTime(new Date('2026-10-11T15:05:00Z'))).toBe('00:05');
     expect(tokyoTime(new Date('2026-10-11T10:30:00Z'))).toBe('19:30');
+  });
+});
+
+describe('prefecture introductions', () => {
+  it('has one for every prefecture, in all three languages, short enough for the map', () => {
+    expect(Object.keys(PREF_INTRO).sort()).toEqual(PREFS.map(([c]) => c));
+    for (const [code, intro] of Object.entries(PREF_INTRO))
+      for (const lang of ['ja', 'en', 'ko'] as const) {
+        const t = intro[lang];
+        expect(t.trim(), `${code} ${lang}`).toBe(t);
+        expect([...t].length, `${code} ${lang}`).toBeGreaterThan(20);
+        expect([...t].length, `${code} ${lang}`).toBeLessThanOrEqual(200);
+      }
   });
 });
 
