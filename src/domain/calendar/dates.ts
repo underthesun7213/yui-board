@@ -11,6 +11,16 @@ export function tokyoToday(now: Date = new Date()): string {
   }).format(now);
 }
 
+/** The time of day in Japan, HH:MM. */
+export function tokyoTime(now: Date = new Date()): string {
+  return new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Asia/Tokyo',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  }).format(now);
+}
+
 const ms = (k: string) => Date.parse(k + 'T00:00:00Z');
 export const addDays = (k: string, n: number) =>
   new Date(ms(k) + n * 864e5).toISOString().slice(0, 10);

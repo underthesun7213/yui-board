@@ -93,6 +93,15 @@ describe('episode 8', () => {
     expect(endingFor('osaka', 0).best).toBe(false);
   });
 
+  it('gives the best ending with at most one miss on either route', () => {
+    for (const r of ['osaka', 'kyoto'] as const) {
+      const n = VN[r].scenes.length;
+      expect(endingFor(r, n).best).toBe(true);
+      expect(endingFor(r, n - 1).best).toBe(true);
+      expect(endingFor(r, n - 2).best).toBe(false);
+    }
+  });
+
   it('gives the both-routes card only after both routes', () => {
     play('kyoto', false);
     expect(collection.get().cg.e_both).toBeUndefined();

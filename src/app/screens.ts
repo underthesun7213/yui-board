@@ -15,6 +15,7 @@ export const loaders = {
   weekForm: () => import('../features/write/WeekForm'),
   me: () => import('../features/me/MyItems'),
   report: () => import('../features/report/ReportSheet'),
+  zoom: () => import('../features/learn/ComicZoom'),
 };
 
 export const LearnList = lazy(() => loaders.learn().then((m) => ({ default: m.LearnList })));
@@ -28,6 +29,7 @@ export const EventForm = lazy(() => loaders.eventForm().then((m) => ({ default: 
 export const WeekForm = lazy(() => loaders.weekForm().then((m) => ({ default: m.WeekForm })));
 export const MyItems = lazy(() => loaders.me().then((m) => ({ default: m.MyItems })));
 export const ReportSheet = lazy(() => loaders.report().then((m) => ({ default: m.ReportSheet })));
+export const ComicZoom = lazy(() => loaders.zoom().then((m) => ({ default: m.ComicZoom })));
 
 export function preload() {
   for (const load of Object.values(loaders)) load().catch(() => {});

@@ -5,7 +5,8 @@ import {
   precacheAndRoute,
 } from 'workbox-precaching';
 import { NavigationRoute, registerRoute } from 'workbox-routing';
-import { NetworkFirst } from 'workbox-strategies';
+import { CacheFirst, NetworkFirst } from 'workbox-strategies';
+import { ExpirationPlugin } from 'workbox-expiration';
 
 declare const self: ServiceWorkerGlobalScope & {
   __WB_MANIFEST: (string | { url: string; revision: string | null })[];
@@ -17,7 +18,7 @@ cleanupOutdatedCaches();
 
 /* Navigations: network first with a 3 s limit, then the cached shell. Other
    origins (map tiles, the API) are not handled here: data caching lives in
-   the app, in one place. */
+   the app, in one place. The one other route is the comic pages, below. */
 const shell = createHandlerBoundToURL('index.html');
 const network = new NetworkFirst({ cacheName: 'yunabi-pages', networkTimeoutSeconds: 3 });
 registerRoute(
@@ -27,6 +28,21 @@ registerRoute(
     } catch {
       return shell(opts);
     }
+  }),
+);
+
+/* Comic pages (src/art/lessons, built into assets/comic/) are left out of
+   the install download and kept the first time a page is shown, so a level
+   read once can be read offline. Their names carry a hash, so a redrawn page
+   is a new URL; old entries age out. The first visit is not controlled by
+   this worker yet (no clientsClaim), so pages seen then are kept from the
+   next visit on. */
+const comic = new URL('assets/comic/', self.registration.scope).pathname;
+registerRoute(
+  ({ url }) => url.origin === self.location.origin && url.pathname.startsWith(comic),
+  new CacheFirst({
+    cacheName: 'yunabi-comic',
+    plugins: [new ExpirationPlugin({ maxEntries: 20, purgeOnQuotaError: true })],
   }),
 );
 
