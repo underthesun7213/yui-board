@@ -1,7 +1,7 @@
 [
   {
     "id": 1,
-    "name": "京阪 御殿山駅",
+    "name": "Keihan Gotenyama Station",
     "category": "transit",
     "description": "いちばん近い駅。各駅停車のみなので、京都・大阪へは枚方市で乗り換えるほうが早いことが多いです。",
     "gmaps_url": "https://www.google.com/maps/place/?q=place_id:ChIJBaoYa_QcAWARR6zUK4K7Jcw",
@@ -14,7 +14,7 @@
   },
   {
     "id": 2,
-    "name": "駐輪場（御殿山東）",
+    "name": "Bicycle Parking, Gotenyama East",
     "category": "transit",
     "description": "1日100円。枚方市駅まで歩くと13分ですが自転車なら5分ほどなので、自転車があると生活がかなり変わります。",
     "gmaps_url": "https://www.google.com/maps/place/?q=place_id:ChIJ49uAXvQcAWAR3Xi1em0k6Ts",
@@ -27,7 +27,7 @@
   },
   {
     "id": 3,
-    "name": "セブン-イレブン（御殿山駅前）",
+    "name": "7-Eleven Gotenyama Station",
     "category": "daily",
     "description": "24時間。ATM、宅配便の受け取り、書類のプリントもここで。駅前なので帰りに寄りやすいです。",
     "gmaps_url": "https://www.google.com/maps/place/?q=place_id:ChIJuycsxYYdAWARtzQ3ix1Jeso",
@@ -79,7 +79,7 @@
   },
   {
     "id": 7,
-    "name": "만다이 히라카타점",
+    "name": "Mandai Hirakata",
     "category": "daily",
     "description": "결에서 가장 가까운 슈퍼이면서 가장 쌉니다. 반찬이나 샌드위치는 시내 다른 곳보다 30% 정도 싼 경우도. 매일 9~22시.",
     "gmaps_url": "https://www.google.com/maps/place/?q=place_id:ChIJT97BVVkcAWARoq6_Y4Rr-RA",
@@ -92,7 +92,7 @@
   },
   {
     "id": 8,
-    "name": "라이프 고텐야마점",
+    "name": "LIFE Gotenyama",
     "category": "daily",
     "description": "북쪽 슈퍼. 만다이가 더 가깝고 싸기 때문에, 고텐야마역에서 돌아오는 길에 들르는 정도로 씁니다.",
     "gmaps_url": "https://www.google.com/maps/place/?q=place_id:ChIJxUjHpPMcAWARgvFCnPhg0To",
@@ -105,7 +105,7 @@
   },
   {
     "id": 9,
-    "name": "枚方市駅",
+    "name": "Keihan Hirakatashi Station",
     "category": "transit",
     "description": "特急が止まる駅。京都・大阪へはここから。行きは下り坂、帰りは登り坂なので体感がかなり違います。",
     "gmaps_url": "https://www.google.com/maps/place/?q=place_id:ChIJJ46ph1ocAWARGOoXxgvMqNo",
@@ -131,7 +131,7 @@
   },
   {
     "id": 11,
-    "name": "히라카타 T-SITE",
+    "name": "Hirakata T-SITE",
     "category": "study",
     "description": "아침 7시부터 밤 10시까지. 위층이 조용해서 시험기간에 많이 옵니다. 스타벅스도 있어요.",
     "gmaps_url": "https://www.google.com/maps/place/?q=place_id:ChIJZek-cVAcAWARVFe0gnysw1E",
@@ -144,7 +144,7 @@
   },
   {
     "id": 12,
-    "name": "枚方市役所",
+    "name": "Hirakata City Hall (枚方市役所)",
     "category": "admin",
     "description": "転入届と国民健康保険の手続き。来日から14日以内です。書類さえ揃っていれば15分ほどで終わります。平日9時〜17時半のみ。",
     "gmaps_url": "https://www.google.com/maps/place/?q=place_id:ChIJiVvS20QcAWARuwLSMt7jPb8",
@@ -157,7 +157,7 @@
   },
   {
     "id": 13,
-    "name": "주카소바 후모토",
+    "name": "Chuka Soba Fumoto",
     "category": "food",
     "description": "히라카타시역 근처. 쇼유라멘과 볶음밥으로 평이 좋습니다. 점심과 저녁 사이에는 문을 닫으니 시간 확인 필요.",
     "gmaps_url": "https://www.google.com/maps/place/?q=place_id:ChIJ56H-ngsdAWARj4IbGeBgHF4",

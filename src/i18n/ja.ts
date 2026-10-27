@@ -119,6 +119,8 @@ export const ja = {
   editEvent: 'イベントを編集',
   editWeek: 'この回だけ',
   fName: '名前',
+  fNameHint:
+    '英語で：固有名は読みのローマ字（Mandai）、ほかは意味で（Station、City Hall）。役に立つなら日本語をかっこで（教務課）。',
   fCategory: 'カテゴリー',
   fDesc: '説明',
   fLink: 'Google マップのリンク',
@@ -157,6 +159,7 @@ export const ja = {
   framed: '投稿するには、YUNABI を単独のウィンドウで開いてください。',
   inv: {
     name: '名前は1〜60文字、1行で。',
+    name_latin: '名前は英語で書いてください（ローマ字を1文字以上）。日本語はかっこで添えられます。',
     category: 'カテゴリーを選んでください。',
     description: '説明は500文字までです。',
     gmaps_url:

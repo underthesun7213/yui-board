@@ -38,9 +38,14 @@ export interface PlaceInput {
   lng: number | null;
   lang: string;
 }
+/** D31: a place name is written in English, so it holds an ASCII Latin letter.
+    The server checks the same 52 letters (app.has_latin). */
+export const HAS_LATIN = /[A-Za-z]/;
+
 export function checkPlace(p: PlaceInput): string | null {
   const name = trimText(p.name);
   if (!name || !singleLine(name, LIMITS.name, true)) return 'name';
+  if (!HAS_LATIN.test(name)) return 'name_latin';
   if (!p.category) return 'category';
   if (!multiLine(p.description, LIMITS.description)) return 'description';
   const url = trimText(p.gmaps_url);
