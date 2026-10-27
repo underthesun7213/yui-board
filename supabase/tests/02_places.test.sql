@@ -129,13 +129,13 @@ select ok(exists (select 1 from app.security_events where kind = 'invalid_input'
 select throws_ok($$insert into app.places (name, category, lat, lng, pref, lang) values ('枚方市駅', 'transit', 34.82, 135.65, '27', 'ja')$$,
   '23514', null, 'the table refuses it as well (places_name_latin)');
 
--- G-14: the 11th place in a day is refused
+-- G-14: the 16th place in a day is refused (Y-A3, D30: 15 a day)
 select tests.as_owner();
 delete from app.write_log;
 select tests.as_user(tests.id('b'));
 select is((select count(*)::int from (select public.create_place(gen_random_uuid(), 'p' || i, 'food', '', null, 34.82, 135.65, 'en') ->> 'status' s
-             from generate_series(1, 10) i) x where s = 'ok'), 10, 'ten places a day');
-select is((public.create_place(gen_random_uuid(), 'eleven', 'food', '', null, 34.82, 135.65, 'en'))->>'status', 'rate_limited', 'the eleventh is refused');
+             from generate_series(1, 15) i) x where s = 'ok'), 15, 'fifteen places a day');
+select is((public.create_place(gen_random_uuid(), 'sixteen', 'food', '', null, 34.82, 135.65, 'en'))->>'status', 'rate_limited', 'the sixteenth is refused');
 
 select * from finish();
 rollback;
