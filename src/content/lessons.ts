@@ -8,9 +8,9 @@ export const LESSONS: Lesson[] = [
     id: 'l1',
     lv: 1,
     t: {
-      ja: 'コンビニとスーパー',
-      en: 'Konbini and supermarket',
-      ko: '편의점과 슈퍼',
+      ja: 'コンビニのレジ',
+      en: 'At the konbini register',
+      ko: '편의점 계산대',
     },
     d: {
       ja: 'レジで必ず聞かれること',
@@ -60,12 +60,9 @@ export const LESSONS: Lesson[] = [
             s: 'Student shaking their head slightly',
           },
           {
-            cap: 'スーパーは{夜|よる}8{時|じ}すぎると{半額|はんがく}シールが{貼|は}られる',
-            tr: {
-              en: 'After 8 p.m., supermarkets put half-price stickers on.',
-              ko: '슈퍼는 밤 8시가 지나면 반값 스티커가 붙는다.',
-            },
-            s: 'Supermarket deli shelf in the evening, red half-price stickers on bento',
+            jp: 'カードでお{願|ねが}いします。',
+            tr: { en: 'By card, please.', ko: '카드로 할게요.' },
+            s: 'Student holding out a card toward the payment terminal',
           },
         ],
       },
@@ -90,12 +87,12 @@ export const LESSONS: Lesson[] = [
         },
       },
       {
-        jp: '{半額|はんがく}シール',
-        rd: 'hangaku shiiru',
+        jp: 'カードでお{願|ねが}いします',
+        rd: 'kaado de onegai shimasu',
         g: {
-          ja: '閉店前の値引き。スーパーは夜が狙い目',
-          en: 'The discount sticker before closing. Supermarkets are worth a late visit',
-          ko: '폐점 전 할인 스티커. 슈퍼는 밤이 노려볼 만하다',
+          ja: '払い方を伝える定番。「現金で」「PayPayで」も同じ形',
+          en: 'How you say how you will pay. 現金で (cash) and PayPayで work the same way',
+          ko: '결제 방법을 말하는 기본형. 現金で(현금), PayPayで도 같은 형태',
         },
       },
     ],

@@ -12,7 +12,7 @@
 
 ## 만화 (레벨 1~7)
 
-### 레벨 1 편의점과 슈퍼 — 1쪽 → `src/art/lessons/l1/p1`
+### 레벨 1 편의점 계산대 — 1쪽 → `src/art/lessons/l1/p1`
 
 ```text
 Style: Korean-webtoon anime illustration, clean dark line art, soft painterly cel shading, muted natural colours, natural proportions (not chibi). Everyday places in Kansai, Japan, drawn as they really look, with detailed backgrounds.
@@ -25,7 +25,7 @@ Panel 4: Cashier holding up a plastic bag. Speech balloon from the person speaki
 Write the Japanese exactly as given, horizontally or vertically, nothing else: no other text, sound effects, panel numbers or signature.
 ```
 
-### 레벨 1 편의점과 슈퍼 — 2쪽 → `src/art/lessons/l1/p2`
+### 레벨 1 편의점 계산대 — 2쪽 → `src/art/lessons/l1/p2`
 
 ```text
 Style: Korean-webtoon anime illustration, clean dark line art, soft painterly cel shading, muted natural colours, natural proportions (not chibi). Everyday places in Kansai, Japan, drawn as they really look, with detailed backgrounds.
@@ -34,7 +34,7 @@ One vertical comic page, aspect ratio 2:3. Four panels in a 2×2 grid with thin 
 Panel 1: Student pulling out an eco bag. Speech balloon from the person speaking, Japanese text exactly: 「あ、大丈夫です。持ってます。」
 Panel 2: Cashier at the register screen. Speech balloon from the person speaking, Japanese text exactly: 「ポイントカードはお持ちですか？」
 Panel 3: Student shaking their head slightly. Speech balloon from the person speaking, Japanese text exactly: 「持ってないです。」
-Panel 4: Supermarket deli shelf in the evening, red half-price stickers on bento. Rectangular caption box, Japanese text exactly: スーパーは夜8時すぎると半額シールが貼られる
+Panel 4: Student holding out a card toward the payment terminal. Speech balloon from the person speaking, Japanese text exactly: 「カードでお願いします。」
 Write the Japanese exactly as given, horizontally or vertically, nothing else: no other text, sound effects, panel numbers or signature.
 ```
 
