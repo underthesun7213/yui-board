@@ -12,6 +12,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 const root = (p) => fileURLToPath(new URL(`../${p}`, import.meta.url));
 export const OUT = 'docs/06-design/comic-scripts.md';
 export const GAME_OUT = 'docs/06-design/game-script.md';
+export const PROMPTS_OUT = 'docs/06-design/image-prompts.md';
 const cell = (s) => (s ? String(s).replace(/\|/g, '\\|') : '—');
 /* furigana markup {漢字|かんじ} (src/content/ruby.ts): the plain text as the
    artwork shows it, and a reading form for review, 漢字(かんじ) */
@@ -108,6 +109,121 @@ export function renderGameScript(vn, endings, bestMisses) {
   return out.join('\n');
 }
 
+/* The art direction every prompt starts with (2026-10-27: soft webtoon, Gemini). */
+const STYLE =
+  'Style: soft Korean webtoon. Clean thin line art, flat soft colours with gentle cel shading, warm off-white paper tones with deep indigo accents. Friendly, natural proportions (not chibi). Everyday places in Kansai, Japan, drawn as they really look.';
+const CHARS = {
+  james:
+    'James: an American exchange student, about 20, short wavy light-brown hair, friendly open face, navy hoodie over a white T-shirt, dark jeans, grey backpack.',
+  you: 'The player: a female exchange student, about 20, shoulder-length dark hair in a low ponytail, beige coat, small cross-body bag. Shown only from behind or from the side, face never shown.',
+  osaka:
+    'Yuki: an Osaka woman, about 20, short bob with a bright clip, big grin, orange bomber jacket, sneakers; loud, quick, expressive gestures.',
+  kyoto:
+    'Ayano: a Kyoto woman, about 20, long straight black hair, calm small smile, muted lavender knit and long skirt; quiet, graceful, small gestures.',
+};
+
+/** Prompts to paste into Gemini, one per picture: character sheets first,
+    then each comic page, game scene and ending card, built from the scene
+    notes and lines so they stay in step with the content. */
+export function renderImagePrompts(lessons, vn, endings) {
+  const block = (lines) => ['```text', ...lines, '```', ''];
+  const out = [
+    '# 그림 생성 프롬프트 (Gemini)',
+    '',
+    '> **생성 문서 — 고치지 말 것.** 대본(`lessons.ts`·`vn.ts`·`endings.ts`)과 `scripts/gen-comic-scripts.mjs` 의 그림체·인물 설정에서 만든다. 대사나 장면 메모를 바꾸면 다시 생성한다.',
+    '',
+    '## 순서',
+    '',
+    '1. **인물 시트 4장**을 먼저 만들고 저장한다(아래 "인물"). 마음에 들 때까지 다시 만든다 — 이후 모든 그림의 기준이다.',
+    '2. 그림마다 새 대화에서 프롬프트를 붙여 넣고, **그 그림에 나오는 인물의 시트를 함께 첨부**한다(프롬프트 첫 줄에 적혀 있다).',
+    '3. 만화의 일본어 글자가 틀리면 같은 프롬프트 끝에 `Leave every speech balloon and caption box empty.` 를 붙여 다시 만들고, 글자는 편집기에서 넣는다(글자는 대본의 **말풍선**과 똑같이).',
+    '4. 저장: 만화 `src/art/lessons/<id>/p1`·`p2`(세로 2:3, 짧은 변 1000px 이상, 400KB 이하), 게임 `src/art/vn/<친구>/<nn>`(가로 4:3), 엔딩 `src/art/endings/<id>`(가로 3:2). `.webp`·`.png`·`.jpg`. 크기·이름은 맞추지 못해도 파일을 주면 맞춰 넣는다.',
+    '',
+    '## 인물',
+    '',
+  ];
+  const sheet = (k, name) => {
+    out.push(`### ${name}`, '');
+    out.push(
+      ...block([
+        STYLE,
+        CHARS[k],
+        'Make a character reference sheet on a plain off-white background: the same person front, three-quarter and side view, full body, plus three head shots (smiling, surprised, thinking). No text.',
+      ]),
+    );
+  };
+  sheet('james', '제임스 (만화 레벨 1~7 의 학생)');
+  sheet('you', '플레이어 (게임, 뒷모습만)');
+  sheet('osaka', '유우키 (게임, 오사카)');
+  sheet('kyoto', '아야노 (게임, 교토)');
+
+  out.push('## 만화 (레벨 1~7)', '');
+  for (const l of lessons) {
+    if (l.vn) continue;
+    l.pages.forEach((page, pi) => {
+      out.push(
+        `### 레벨 ${l.lv} ${l.t.ko} — ${pi + 1}쪽 → \`src/art/lessons/${l.id}/p${pi + 1}\``,
+        '',
+      );
+      const lines = [
+        'Attach: James sheet.',
+        STYLE,
+        CHARS.james + ' He is "the student" below.',
+        'One vertical comic page, aspect ratio 2:3. Four panels in a 2×2 grid with thin white gutters, read in Japanese order: panel 1 top right, panel 2 top left, panel 3 bottom right, panel 4 bottom left.',
+      ];
+      page.panels.forEach((p, i) => {
+        let t = `Panel ${i + 1}: ${p.s}.`;
+        if (p.cap) t += ` Rectangular caption box, Japanese text exactly: ${plain(p.cap)}`;
+        if (p.jp)
+          t += ` Speech balloon from the person speaking, Japanese text exactly: 「${plain(p.jp)}」`;
+        lines.push(t);
+      });
+      lines.push(
+        'Write the Japanese exactly as given, horizontally or vertically, nothing else: no other text, sound effects, panel numbers or signature.',
+      );
+      out.push(...block(lines));
+    });
+  }
+
+  out.push('## 게임 장면 (레벨 8)', '');
+  for (const [route, r] of Object.entries(vn)) {
+    r.scenes.forEach((sc, i) => {
+      out.push(
+        `### ${r.name.ko} 장면 ${i + 1} → \`src/art/vn/${route}/${String(i + 1).padStart(2, '0')}\``,
+        '',
+      );
+      out.push(
+        ...block([
+          `Attach: ${route === 'osaka' ? 'Yuki' : 'Ayano'} sheet, player sheet.`,
+          STYLE,
+          CHARS[route],
+          CHARS.you,
+          `One horizontal illustration, aspect ratio 4:3, seen from the player's point of view: ${route === 'osaka' ? 'Yuki' : 'Ayano'} faces the viewer; if the player appears, only from behind. ${sc.s}.`,
+          `Mood of the moment (do not write it): she has just said 「${plain(sc.jp)}」`,
+          'No text, no speech balloons.',
+        ]),
+      );
+    });
+  }
+
+  out.push('## 엔딩 카드', '');
+  for (const e of endings) {
+    const who = e.route === 'both' ? [CHARS.osaka, CHARS.kyoto] : [CHARS[e.route]];
+    out.push(`### ${e.t.ko} → \`src/art/endings/${e.id}\``, '');
+    out.push(
+      ...block([
+        `Attach: ${e.route === 'both' ? 'Yuki, Ayano' : e.route === 'osaka' ? 'Yuki' : 'Ayano'} sheet, player sheet.`,
+        STYLE,
+        ...who,
+        CHARS.you,
+        `One horizontal illustration, aspect ratio 3:2, a memorable closing shot: ${e.s}. The player only from behind or the side.`,
+        'No text, no speech balloons.',
+      ]),
+    );
+  }
+  return out.join('\n');
+}
+
 /* Reads a content file with the TypeScript already in devDependencies (these
    files have only type imports), so no new tool is needed and Node 20 works. */
 async function load(path) {
@@ -134,4 +250,6 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   const { ENDINGS } = await load('src/content/endings.ts');
   writeFileSync(root(GAME_OUT), renderGameScript(VN, ENDINGS, BEST_MISSES) + '\n');
   console.log(`wrote ${GAME_OUT}`);
+  writeFileSync(root(PROMPTS_OUT), renderImagePrompts(LESSONS, VN, ENDINGS) + '\n');
+  console.log(`wrote ${PROMPTS_OUT}`);
 }

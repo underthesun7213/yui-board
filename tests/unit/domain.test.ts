@@ -4,9 +4,11 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   GAME_OUT,
+  PROMPTS_OUT,
   OUT,
   renderComicScripts,
   renderGameScript,
+  renderImagePrompts,
 } from '../../scripts/gen-comic-scripts.mjs';
 import { ART, endingKey, pageKey, sceneKey } from '../../src/content/art';
 import { ENDINGS } from '../../src/content/endings';
@@ -234,6 +236,10 @@ describe('comic pages (Y-J1)', () => {
   it('has a storyboard script that matches the data (node scripts/gen-comic-scripts.mjs)', () => {
     const doc = readFileSync(OUT, 'utf8').split(String.fromCharCode(13)).join('');
     expect(doc).toBe(renderComicScripts(LESSONS) + String.fromCharCode(10));
+  });
+  it('has image prompts that match the data (node scripts/gen-comic-scripts.mjs)', () => {
+    const doc = readFileSync(PROMPTS_OUT, 'utf8').split(String.fromCharCode(13)).join('');
+    expect(doc).toBe(renderImagePrompts(LESSONS, VN, ENDINGS) + String.fromCharCode(10));
   });
   it('has a game script that matches the data (node scripts/gen-comic-scripts.mjs)', () => {
     const doc = readFileSync(GAME_OUT, 'utf8').split(String.fromCharCode(13)).join('');
