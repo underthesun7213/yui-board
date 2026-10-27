@@ -60,6 +60,9 @@ export const en = {
   learnS: 'Scenes you will actually meet in the dorm',
   lvL: 'Level',
   exprT: 'Phrases from this episode',
+  pageN: 'Page {n}',
+  zoomPage: 'Open page {n} full screen',
+  close: 'Close',
   colT: 'Collection',
   colS: 'Endings you have found',
   colOpen: 'Open the collection',
@@ -79,6 +82,7 @@ export const en = {
     study: 'Study',
     admin: 'Paperwork',
     health: 'Health',
+    sights: 'Sights',
   },
   here: '結',
   openMap: 'Open in Google Maps',
@@ -118,6 +122,8 @@ export const en = {
   editEvent: 'Edit event',
   editWeek: 'This week only',
   fName: 'Name',
+  fNameHint:
+    'In English: names by sound (Mandai), other words by meaning (Station, City Hall). Add Japanese in brackets if it helps, e.g. (教務課).',
   fCategory: 'Category',
   fDesc: 'Description',
   fLink: 'Google Maps link',
@@ -156,6 +162,8 @@ export const en = {
   framed: 'To post, open YUNABI in its own window.',
   inv: {
     name: 'Name: 1 to 60 characters on one line.',
+    name_latin:
+      'Write the name in English, with at least one Latin letter. Japanese can follow in brackets.',
     category: 'Pick a category.',
     description: 'Description: up to 500 characters.',
     gmaps_url:
@@ -164,7 +172,7 @@ export const en = {
     lang: 'Pick the language you wrote in.',
     title: 'Title: 1 to 60 characters on one line.',
     start_date: 'Pick today or a later date.',
-    time: 'The end has to be after the start.',
+    time: 'The end has to be after the start, and not already past.',
     weekly_until: 'Pick a last week on the same weekday, at most 26 weeks later.',
     place_text: 'Where: up to 60 characters on one line.',
     body: 'Details: up to 500 characters.',

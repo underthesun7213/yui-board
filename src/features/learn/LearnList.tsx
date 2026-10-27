@@ -27,7 +27,6 @@ export function LearnList() {
             <b>{l.t[lang]}</b>
             <em>{l.d[lang]}</em>
           </span>
-          <span className="lcuts">{l.vn ? '' : l.cuts.length}</span>
         </button>
       ))}
       <div className="sect">{m.colT}</div>

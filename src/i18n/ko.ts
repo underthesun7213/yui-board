@@ -60,6 +60,9 @@ export const ko = {
   learnS: '기숙사에서 실제로 만나는 장면',
   lvL: '레벨',
   exprT: '이번 편의 표현',
+  pageN: '{n}쪽',
+  zoomPage: '{n}쪽 크게 보기',
+  close: '닫기',
   colT: '컬렉션',
   colS: '엔딩 모으기',
   colOpen: '모은 카드 보기',
@@ -79,6 +82,7 @@ export const ko = {
     study: '공부',
     admin: '행정',
     health: '의료',
+    sights: '관광',
   },
   here: '결',
   openMap: '구글 지도에서 열기',
@@ -118,6 +122,8 @@ export const ko = {
   editEvent: '일정 수정',
   editWeek: '이 회차만',
   fName: '이름',
+  fNameHint:
+    '영어로: 고유명사는 소리대로(Mandai), 나머지는 뜻대로(Station, City Hall). 도움이 되면 일본어를 괄호로(教務課).',
   fCategory: '카테고리',
   fDesc: '설명',
   fLink: 'Google 지도 링크',
@@ -156,6 +162,7 @@ export const ko = {
   framed: '글을 올리려면 YUNABI 를 별도 창으로 열어 주세요.',
   inv: {
     name: '이름은 한 줄로 1~60자.',
+    name_latin: '이름은 영어로 써 주세요(로마자 한 글자 이상). 일본어는 괄호로 덧붙일 수 있어요.',
     category: '카테고리를 골라 주세요.',
     description: '설명은 500자까지입니다.',
     gmaps_url:
@@ -164,7 +171,7 @@ export const ko = {
     lang: '작성 언어를 골라 주세요.',
     title: '제목은 한 줄로 1~60자.',
     start_date: '오늘 이후 날짜를 골라 주세요.',
-    time: '끝은 시작보다 뒤여야 해요.',
+    time: '끝은 시작보다 뒤이고, 아직 지나지 않은 시각이어야 해요.',
     weekly_until: '마지막 회차는 같은 요일로, 26주 안에서 골라 주세요.',
     place_text: '장소는 한 줄로 60자까지.',
     body: '설명은 500자까지입니다.',

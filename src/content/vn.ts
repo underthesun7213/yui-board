@@ -149,6 +149,40 @@ export const VN: Record<Route, VnRoute> = {
         ],
       },
       {
+        /* owner, 2026-10-25: the Yoshimoto Shinkigeki door gag */
+        s: 'Yuki sliding open the door of a small okonomiyaki shop, grinning back over a shoulder',
+        jp: '邪魔すんでー。',
+        opts: [
+          {
+            jp: '邪魔すんなら帰ってー。',
+            ok: true,
+            fb: {
+              ja: '吉本新喜劇の定番のかけ合い。ユウキ「わかってるやん！」',
+              en: "The classic Yoshimoto Shinkigeki comeback. Yuki: 'You get it!'",
+              ko: '요시모토 신희극의 단골 주고받기. 유우키 "알고 있네!"',
+            },
+          },
+          {
+            jp: 'どうぞ、どうぞ。',
+            ok: false,
+            fb: {
+              ja: '普通に通すとボケが宙に浮く。ここは返すところ',
+              en: 'Letting it pass leaves the joke hanging. This is your cue to hit back',
+              ko: '그냥 들여보내면 보케가 허공에 뜬다. 여기선 받아칠 차례',
+            },
+          },
+          {
+            jp: 'お邪魔します。',
+            ok: false,
+            fb: {
+              ja: '丁寧で正しいが、ユウキが待っているのはツッコミ',
+              en: 'Polite and correct, but Yuki is waiting for the comeback',
+              ko: '정중하고 맞는 말이지만, 유우키가 기다리는 건 츳코미',
+            },
+          },
+        ],
+      },
+      {
         s: 'Ticket gates at night, the friend already walking backwards, waving',
         jp: 'ほな、またな！',
         opts: [
