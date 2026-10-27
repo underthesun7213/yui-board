@@ -17,7 +17,7 @@
 | 6. UI 디자인 | 색·타이포·컴포넌트 | [디자인 시스템](06-design/design-system.md). 기존 화면의 시안·프로토타입은 [`index.html`](../index.html) | 디자인 시스템 초안. **신규 화면(AUTH-01, ME-01, 댓글 입력, 숨김 목록, 상태 화면) 시안 미작성** — BL-68 |
 | 7. 개발 핸드오프 | 스펙·에셋·API 명세 | [핸드오프 문서](07-handoff/handoff.md) — 화면↔데이터 매핑, 데이터 모델, API, 에셋 목록 | 데이터·API·에셋 초안. **신규 화면 디자인 스펙 미작성** — BL-69 |
 | 8. QA·검증 | 테스트 케이스, QA, 사용성 테스트 | [테스트 계획](08-qa/test-plan.md), [QA 리포트](08-qa/qa-report.md), [사용성 테스트 계획](08-qa/usability-test-plan.md) | 프로토타입 대상 QA 수행. **사용성 테스트 미수행** |
-| 9. 출시·운영 | 배포, 지표, 개선 | [출시·운영 계획](09-release/release-plan.md) — 릴리스 노트(v0.1), 지표 대시보드 **정의**, [개선 백로그](09-release/backlog.md) | 출시 전. 대시보드는 M3 이후 구현 |
+| 9. 출시·운영 | 배포, 지표, 개선 | [출시·운영 계획](09-release/release-plan.md) — 릴리스 노트(v0.1), 지표 대시보드 **정의**, [개선 백로그](09-release/backlog.md)(보류), **v2 는 [YUNABI 백로그](09-release/backlog-yunabi.md)** | 출시 전. 대시보드는 M3 이후 구현 |
 
 ## 이 프로젝트에 맞춘 방식
 
