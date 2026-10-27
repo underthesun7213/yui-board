@@ -100,6 +100,9 @@ export const ja = {
   reload: '再読み込み',
   updateReady: '新しいバージョンがあります。',
   reopen: '開き直す',
+  autoTranslated: '自動翻訳',
+  showOriginal: '原文を見る',
+  showTranslation: '翻訳を見る',
   langBadge: {
     ja: '日本語',
     en: '英語',

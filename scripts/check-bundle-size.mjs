@@ -10,7 +10,7 @@ const BUDGETS = [
   { name: 'home (first screen)', kb: 100, roots: ['index.html'], dynamic: false },
   {
     name: 'map',
-    kb: 60,
+    kb: 61, // D33: 60 until the description translation toggle (2026-10-27)
     roots: [
       'src/features/map/MapScreen.tsx',
       'node_modules/leaflet/dist/leaflet-src.js',

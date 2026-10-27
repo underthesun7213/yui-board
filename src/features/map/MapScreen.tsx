@@ -26,7 +26,7 @@ import { prefIntro } from '../../state/prefIntro';
 import { prefs } from '../../state/prefs';
 import { useStore } from '../../state/useStore';
 import { DataStatus } from '../../ui/DataStatus';
-import { LangBadge } from '../../ui/LangText';
+import { Described, LangBadge } from '../../ui/LangText';
 
 export function MapScreen() {
   const m = useT();
@@ -205,7 +205,7 @@ function PlaceCard() {
         {near && ' · ' + fill(m.walkAbout, { n: walkMin(from, p) })}
       </div>
       <h3 lang={p.lang}>{p.name}</h3>
-      {p.description && <p lang={p.lang}>{p.description}</p>}
+      {p.description && <Described key={p.id} text={p.description} lang={p.lang} tr={p.tr} />}
       <LangBadge lang={p.lang} />
       <p className="dates">
         {fill(m.addedOn, { d: day(p.created_on) })}

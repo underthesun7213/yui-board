@@ -247,3 +247,32 @@ test('Y-M12 a place name needs a Latin letter; the form says so before sending',
   await page.click('.form button[type=submit]');
   await expect(page.locator('#pf-name-err')).toHaveCount(0);
 });
+
+test.describe('D32 description translation', () => {
+  test.use({
+    geolocation: { latitude: 34.8252, longitude: 135.653 },
+    permissions: ['geolocation'],
+  });
+  test('a description written in another language shows translated, with the original one tap away', async ({
+    page,
+    errors,
+  }) => {
+    void errors;
+    await page.addInitScript(() => localStorage.setItem('yui.v1.lang', JSON.stringify('ko')));
+    await page.goto('./#/map');
+    await mapReady(page);
+    await tap(page, '[data-loc="skip"]');
+    await tap(page, '[data-pl="1"]');
+    const card = page.locator('.pcard');
+    await expect(card).toContainText('가장 가까운 역.');
+    await expect(card.locator('.trnote')).toContainText('자동 번역');
+    await card.getByRole('button', { name: '원문 보기' }).click();
+    await expect(card).toContainText('いちばん近い駅。');
+    await expect(card.locator('p[lang="ja"]').first()).toBeVisible();
+    await card.getByRole('button', { name: '번역 보기' }).click();
+    await expect(card).toContainText('가장 가까운 역.');
+    /* a place with no translation shows its own text and no note */
+    await tap(page, '[data-pl="2"]');
+    await expect(page.locator('.pcard .trnote')).toHaveCount(0);
+  });
+});

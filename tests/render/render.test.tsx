@@ -33,6 +33,8 @@ import { ui } from '../../src/state/ui';
 import events from '../fixtures/events.json';
 import occurrences from '../fixtures/occurrences.json';
 import places from '../fixtures/places.json';
+import placeTranslations from '../fixtures/place_translations.json';
+import { withTranslations, type Translation } from '../../src/api/rest';
 
 /* the fixtures are dated around this day */
 vi.useFakeTimers({ toFake: ['Date'] });
@@ -144,6 +146,18 @@ const cases: Case[] = [
   ['cal-data-error', { name: 'cal' }, () => data.set({ status: 'error' }), /class="dstatus warn"/],
   ['map-data-error', { name: 'map' }, () => data.set({ status: 'error' }), /class="dstatus warn"/],
   ['map-near-pl', { name: 'map' }, () => (location.set({ state: 'skip' }), mapUi.set({ pl: 1 }))],
+  [
+    /* D32: the card shows a translated description where the screen language has one */
+    'map-translated',
+    { name: 'map' },
+    () => (
+      location.set({ state: 'skip' }),
+      data.set({
+        places: withTranslations(places as Place[], placeTranslations as Translation[]),
+      }),
+      mapUi.set({ pl: 1 })
+    ),
+  ],
   ['map-japan', { name: 'map' }, () => mapUi.set({ mode: 'japan', prefFail: true })],
   [
     'map-pref-27',

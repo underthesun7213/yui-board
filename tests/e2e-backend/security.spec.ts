@@ -252,6 +252,9 @@ const CALLS: Record<string, { get?: string; post?: Record<string, unknown> }> = 
   my_place: { get: `?p_id=${X}` },
   my_event: { get: `?p_id=${X}` },
   ops_health: { get: '' },
+  /* D32: the translate Edge Function's two functions, service_role only */
+  translation_claim: { post: { p_max_jobs: 1 } },
+  translation_apply: { post: { p_provider: 'azure', p_results: [] } },
   create_place: { post: place() },
   update_place: {
     post: {
@@ -364,12 +367,23 @@ test('Y-S10 the monitor key reads ops_health over REST (the pre-request hook run
   expect(((await r.json()) as { version: number }).version).toBe(2);
 });
 
+test('D32 the service key may claim translation work; it is off until the owner turns it on', async ({
+  request,
+}) => {
+  const r = await request.post(`${API}/rest/v1/rpc/translation_claim`, {
+    headers: { apikey: SERVICE, authorization: `Bearer ${SERVICE}` },
+    data: { p_max_jobs: 1 },
+  });
+  expect(r.status()).toBe(200);
+  expect(((await r.json()) as { status: string }).status).toBe('disabled');
+});
+
 test('G-30 ②③ / G-31 a non-admin account: admin functions are 403, admin_whoami answers forbidden', async ({
   request,
 }) => {
   /* ② an anonymous account */
   const a = await account(request);
-  for (const fn of [...ADMIN_FNS, 'ops_health'])
+  for (const fn of [...ADMIN_FNS, 'ops_health', 'translation_claim', 'translation_apply'])
     expect(await outcome(await call(request, fn, a)), fn).toEqual({ status: 403, code: '42501' });
   const denied = () =>
     Number(psql("select count(*) from app.security_events where kind = 'admin_denied'"));

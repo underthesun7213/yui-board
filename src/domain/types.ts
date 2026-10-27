@@ -28,6 +28,8 @@ export interface Place extends LatLng {
   lang: Lang;
   created_on: string;
   edited_on: string | null;
+  /** the description in the other UI languages, once translated (D32) */
+  tr?: Partial<Record<Lang, string>>;
 }
 
 /** An event series (openapi-v2 EventSeries), times as HH:MM. */
