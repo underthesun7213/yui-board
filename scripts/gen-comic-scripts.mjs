@@ -114,29 +114,44 @@ export function renderGameScript(vn, endings, bestMisses) {
 const REFS = 'docs/06-design/characters/';
 const STYLE =
   'Style: match the attached reference pictures. Korean-webtoon anime illustration, clean dark line art, soft painterly cel shading, muted natural colours, natural proportions (not chibi). Everyday places in Kansai, Japan, drawn as they really look, with detailed backgrounds.';
-/* each person: the description, the pictures to attach, and the pronoun */
+/* Each person: who they are (face, hair, manner — the same in every picture),
+   the pictures to attach, the pronoun, and what they wear. Clothes change
+   with the day: one outfit for a whole game route (one day out), another for
+   the comics; Ayano's kimono is in the reference for her face only. */
 const CAST = {
   james: {
-    text: 'James: an American exchange student, about 20, short wavy light-brown hair, friendly open face, navy hoodie over a white T-shirt, dark jeans, grey backpack.',
+    look: 'James: an American exchange student, about 20, short wavy light-brown hair, friendly open face.',
     attach: `${REFS}james-sheet`,
     he: 'he',
+    wear: { comic: 'navy hoodie over a white T-shirt, dark jeans, grey backpack' },
   },
   you: {
-    text: 'The player: a female exchange student, about 20, shoulder-length dark hair in a low ponytail, beige coat, small cross-body bag. Shown only from behind or from the side, face never shown.',
+    look: 'The player: a female exchange student, about 20, shoulder-length dark hair in a low ponytail. Shown only from behind or from the side, face never shown.',
     attach: `${REFS}player-sheet`,
     he: 'she',
+    wear: { game: 'beige coat, small cross-body bag' },
   },
   osaka: {
-    text: 'Yuki (Osaka, as in the reference): a young man, about 20, curly ash-blond hair with dark roots, warm brown eyes, olive-green zip jacket over a black and white layered T-shirt, thin gold chain, loose grey jeans, black boots; loud, quick, laughs easily.',
+    look: 'Yuki (Osaka, face and hair as in the reference): a young man, about 20, curly ash-blond hair with dark roots, warm brown eyes; loud, quick, laughs easily.',
     attach: `${REFS}yuki-front.webp, ${REFS}yuki-back-laugh.webp`,
     he: 'he',
+    wear: {
+      game: 'olive-green zip jacket over a black and white layered T-shirt, thin gold chain, loose grey jeans, black boots (as in the reference)',
+      comic: 'oversized black hoodie, light-wash jeans, white sneakers',
+    },
   },
   kyoto: {
-    text: 'Ayano (Kyoto, as in the reference): a young woman, about 20, dark brown hair in a low bun with straight bangs, red hair ornament with a hanging tassel, red kimono with large white peonies, gold obi with a black cord, navy handbag, zori; quiet, graceful, small gestures.',
+    look: 'Ayano (Kyoto, face and hair as in the reference — not the kimono): a young woman, about 20, dark brown hair in a low bun with straight bangs, a small red hair ornament; quiet, graceful, small gestures.',
     attach: `${REFS}ayano-front.webp, ${REFS}ayano-pose.webp`,
     he: 'she',
+    wear: {
+      game: 'everyday clothes: cream knit sweater, long navy pleated skirt, beige trench coat, small leather shoulder bag, loafers',
+      comic: 'everyday clothes: white blouse, soft grey cardigan, long camel skirt',
+    },
   },
 };
+/** The person as drawn in one kind of picture ('comic' or 'game'). */
+const person = (k, where) => `${CAST[k].look} Wearing: ${CAST[k].wear[where]}.`;
 /* comic levels where the game's two friends appear too (level 6: the izakaya
    party of three) */
 const FRIENDS_IN = new Set(['l6']);
@@ -162,16 +177,16 @@ export function renderImagePrompts(lessons, vn, endings) {
     '## 인물',
     '',
   ];
-  for (const [k, name] of [
-    ['james', '제임스 (만화 레벨 1~7 의 학생) → `james-sheet`'],
-    ['you', '플레이어 (게임, 뒷모습만) → `player-sheet`'],
+  for (const [k, where, name] of [
+    ['james', 'comic', '제임스 (만화 레벨 1~7 의 학생) → `james-sheet`'],
+    ['you', 'game', '플레이어 (게임, 뒷모습만) → `player-sheet`'],
   ]) {
     out.push(`### ${name}`, '');
     out.push(
       ...block([
         `Attach: ${REFS}yuki-front.webp (for the style only).`,
         STYLE,
-        CAST[k].text,
+        person(k, where),
         'Make a character reference sheet on a plain light-grey background: the same person front, three-quarter and back view, full body, plus three head shots (smiling, surprised, thinking). No text.',
       ]),
     );
@@ -189,7 +204,7 @@ export function renderImagePrompts(lessons, vn, endings) {
       const lines = [
         attach(cast),
         STYLE,
-        ...cast.map((k) => CAST[k].text),
+        ...cast.map((k) => person(k, 'comic')),
         'James is "the student" below.' +
           (cast.length > 1 ? ' Yuki and Ayano are his friends, the rest of his party.' : ''),
         'One vertical comic page, aspect ratio 2:3. Four panels in a 2×2 grid with thin white gutters, read in Japanese order: panel 1 top right, panel 2 top left, panel 3 bottom right, panel 4 bottom left.',
@@ -220,8 +235,8 @@ export function renderImagePrompts(lessons, vn, endings) {
         ...block([
           attach([route, 'you']),
           STYLE,
-          CAST[route].text,
-          CAST.you.text,
+          person(route, 'game'),
+          person('you', 'game'),
           `One horizontal illustration, aspect ratio 4:3, seen from the player's point of view: ${name} faces the viewer; if the player appears, only from behind. ${sc.s}.`,
           `Mood of the moment (do not write it): ${CAST[route].he} has just said 「${plain(sc.jp)}」`,
           'No text, no speech balloons.',
@@ -238,8 +253,8 @@ export function renderImagePrompts(lessons, vn, endings) {
       ...block([
         attach([...who, 'you']),
         STYLE,
-        ...who.map((k) => CAST[k].text),
-        CAST.you.text,
+        ...who.map((k) => person(k, 'game')),
+        person('you', 'game'),
         `One horizontal illustration, aspect ratio 3:2, a memorable closing shot: ${e.s}. The player only from behind or the side.`,
         'No text, no speech balloons.',
       ]),

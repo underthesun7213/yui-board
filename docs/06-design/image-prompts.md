@@ -16,7 +16,7 @@
 ```text
 Attach: docs/06-design/characters/yuki-front.webp (for the style only).
 Style: match the attached reference pictures. Korean-webtoon anime illustration, clean dark line art, soft painterly cel shading, muted natural colours, natural proportions (not chibi). Everyday places in Kansai, Japan, drawn as they really look, with detailed backgrounds.
-James: an American exchange student, about 20, short wavy light-brown hair, friendly open face, navy hoodie over a white T-shirt, dark jeans, grey backpack.
+James: an American exchange student, about 20, short wavy light-brown hair, friendly open face. Wearing: navy hoodie over a white T-shirt, dark jeans, grey backpack.
 Make a character reference sheet on a plain light-grey background: the same person front, three-quarter and back view, full body, plus three head shots (smiling, surprised, thinking). No text.
 ```
 
@@ -25,7 +25,7 @@ Make a character reference sheet on a plain light-grey background: the same pers
 ```text
 Attach: docs/06-design/characters/yuki-front.webp (for the style only).
 Style: match the attached reference pictures. Korean-webtoon anime illustration, clean dark line art, soft painterly cel shading, muted natural colours, natural proportions (not chibi). Everyday places in Kansai, Japan, drawn as they really look, with detailed backgrounds.
-The player: a female exchange student, about 20, shoulder-length dark hair in a low ponytail, beige coat, small cross-body bag. Shown only from behind or from the side, face never shown.
+The player: a female exchange student, about 20, shoulder-length dark hair in a low ponytail. Shown only from behind or from the side, face never shown. Wearing: beige coat, small cross-body bag.
 Make a character reference sheet on a plain light-grey background: the same person front, three-quarter and back view, full body, plus three head shots (smiling, surprised, thinking). No text.
 ```
 
@@ -36,7 +36,7 @@ Make a character reference sheet on a plain light-grey background: the same pers
 ```text
 Attach: docs/06-design/characters/james-sheet.
 Style: match the attached reference pictures. Korean-webtoon anime illustration, clean dark line art, soft painterly cel shading, muted natural colours, natural proportions (not chibi). Everyday places in Kansai, Japan, drawn as they really look, with detailed backgrounds.
-James: an American exchange student, about 20, short wavy light-brown hair, friendly open face, navy hoodie over a white T-shirt, dark jeans, grey backpack.
+James: an American exchange student, about 20, short wavy light-brown hair, friendly open face. Wearing: navy hoodie over a white T-shirt, dark jeans, grey backpack.
 James is "the student" below.
 One vertical comic page, aspect ratio 2:3. Four panels in a 2×2 grid with thin white gutters, read in Japanese order: panel 1 top right, panel 2 top left, panel 3 bottom right, panel 4 bottom left.
 Panel 1: Student walking into a Japanese konbini at night, bento in hand. Speech balloon from the person speaking, Japanese text exactly: 「いらっしゃいませ。」
@@ -51,7 +51,7 @@ Write the Japanese exactly as given, horizontally or vertically, nothing else: n
 ```text
 Attach: docs/06-design/characters/james-sheet.
 Style: match the attached reference pictures. Korean-webtoon anime illustration, clean dark line art, soft painterly cel shading, muted natural colours, natural proportions (not chibi). Everyday places in Kansai, Japan, drawn as they really look, with detailed backgrounds.
-James: an American exchange student, about 20, short wavy light-brown hair, friendly open face, navy hoodie over a white T-shirt, dark jeans, grey backpack.
+James: an American exchange student, about 20, short wavy light-brown hair, friendly open face. Wearing: navy hoodie over a white T-shirt, dark jeans, grey backpack.
 James is "the student" below.
 One vertical comic page, aspect ratio 2:3. Four panels in a 2×2 grid with thin white gutters, read in Japanese order: panel 1 top right, panel 2 top left, panel 3 bottom right, panel 4 bottom left.
 Panel 1: Student pulling out an eco bag. Speech balloon from the person speaking, Japanese text exactly: 「あ、大丈夫です。持ってます。」
@@ -66,7 +66,7 @@ Write the Japanese exactly as given, horizontally or vertically, nothing else: n
 ```text
 Attach: docs/06-design/characters/james-sheet.
 Style: match the attached reference pictures. Korean-webtoon anime illustration, clean dark line art, soft painterly cel shading, muted natural colours, natural proportions (not chibi). Everyday places in Kansai, Japan, drawn as they really look, with detailed backgrounds.
-James: an American exchange student, about 20, short wavy light-brown hair, friendly open face, navy hoodie over a white T-shirt, dark jeans, grey backpack.
+James: an American exchange student, about 20, short wavy light-brown hair, friendly open face. Wearing: navy hoodie over a white T-shirt, dark jeans, grey backpack.
 James is "the student" below.
 One vertical comic page, aspect ratio 2:3. Four panels in a 2×2 grid with thin white gutters, read in Japanese order: panel 1 top right, panel 2 top left, panel 3 bottom right, panel 4 bottom left.
 Panel 1: Student at the small ticket window of Gotenyama Station. Speech balloon from the person speaking, Japanese text exactly: 「すみません、京都に行きたいんですが。」
@@ -81,7 +81,7 @@ Write the Japanese exactly as given, horizontally or vertically, nothing else: n
 ```text
 Attach: docs/06-design/characters/james-sheet.
 Style: match the attached reference pictures. Korean-webtoon anime illustration, clean dark line art, soft painterly cel shading, muted natural colours, natural proportions (not chibi). Everyday places in Kansai, Japan, drawn as they really look, with detailed backgrounds.
-James: an American exchange student, about 20, short wavy light-brown hair, friendly open face, navy hoodie over a white T-shirt, dark jeans, grey backpack.
+James: an American exchange student, about 20, short wavy light-brown hair, friendly open face. Wearing: navy hoodie over a white T-shirt, dark jeans, grey backpack.
 James is "the student" below.
 One vertical comic page, aspect ratio 2:3. Four panels in a 2×2 grid with thin white gutters, read in Japanese order: panel 1 top right, panel 2 top left, panel 3 bottom right, panel 4 bottom left.
 Panel 1: Student on a busy platform concourse at Kuzuha. Rectangular caption box, Japanese text exactly: 樟葉駅 Speech balloon from the person speaking, Japanese text exactly: 「特急は何番ホームですか？」
@@ -96,7 +96,7 @@ Write the Japanese exactly as given, horizontally or vertically, nothing else: n
 ```text
 Attach: docs/06-design/characters/james-sheet.
 Style: match the attached reference pictures. Korean-webtoon anime illustration, clean dark line art, soft painterly cel shading, muted natural colours, natural proportions (not chibi). Everyday places in Kansai, Japan, drawn as they really look, with detailed backgrounds.
-James: an American exchange student, about 20, short wavy light-brown hair, friendly open face, navy hoodie over a white T-shirt, dark jeans, grey backpack.
+James: an American exchange student, about 20, short wavy light-brown hair, friendly open face. Wearing: navy hoodie over a white T-shirt, dark jeans, grey backpack.
 James is "the student" below.
 One vertical comic page, aspect ratio 2:3. Four panels in a 2×2 grid with thin white gutters, read in Japanese order: panel 1 top right, panel 2 top left, panel 3 bottom right, panel 4 bottom left.
 Panel 1: Student at a small clinic reception counter. Speech balloon from the person speaking, Japanese text exactly: 「初めてなんですが。」
@@ -111,7 +111,7 @@ Write the Japanese exactly as given, horizontally or vertically, nothing else: n
 ```text
 Attach: docs/06-design/characters/james-sheet.
 Style: match the attached reference pictures. Korean-webtoon anime illustration, clean dark line art, soft painterly cel shading, muted natural colours, natural proportions (not chibi). Everyday places in Kansai, Japan, drawn as they really look, with detailed backgrounds.
-James: an American exchange student, about 20, short wavy light-brown hair, friendly open face, navy hoodie over a white T-shirt, dark jeans, grey backpack.
+James: an American exchange student, about 20, short wavy light-brown hair, friendly open face. Wearing: navy hoodie over a white T-shirt, dark jeans, grey backpack.
 James is "the student" below.
 One vertical comic page, aspect ratio 2:3. Four panels in a 2×2 grid with thin white gutters, read in Japanese order: panel 1 top right, panel 2 top left, panel 3 bottom right, panel 4 bottom left.
 Panel 1: Doctor with a tongue depressor. Speech balloon from the person speaking, Japanese text exactly: 「喉を見せてください。あーんして。」
@@ -126,7 +126,7 @@ Write the Japanese exactly as given, horizontally or vertically, nothing else: n
 ```text
 Attach: docs/06-design/characters/james-sheet.
 Style: match the attached reference pictures. Korean-webtoon anime illustration, clean dark line art, soft painterly cel shading, muted natural colours, natural proportions (not chibi). Everyday places in Kansai, Japan, drawn as they really look, with detailed backgrounds.
-James: an American exchange student, about 20, short wavy light-brown hair, friendly open face, navy hoodie over a white T-shirt, dark jeans, grey backpack.
+James: an American exchange student, about 20, short wavy light-brown hair, friendly open face. Wearing: navy hoodie over a white T-shirt, dark jeans, grey backpack.
 James is "the student" below.
 One vertical comic page, aspect ratio 2:3. Four panels in a 2×2 grid with thin white gutters, read in Japanese order: panel 1 top right, panel 2 top left, panel 3 bottom right, panel 4 bottom left.
 Panel 1: Student lost between tall drugstore aisles. Speech balloon from the person speaking, Japanese text exactly: 「すみません、風邪薬はどこですか？」
@@ -141,7 +141,7 @@ Write the Japanese exactly as given, horizontally or vertically, nothing else: n
 ```text
 Attach: docs/06-design/characters/james-sheet.
 Style: match the attached reference pictures. Korean-webtoon anime illustration, clean dark line art, soft painterly cel shading, muted natural colours, natural proportions (not chibi). Everyday places in Kansai, Japan, drawn as they really look, with detailed backgrounds.
-James: an American exchange student, about 20, short wavy light-brown hair, friendly open face, navy hoodie over a white T-shirt, dark jeans, grey backpack.
+James: an American exchange student, about 20, short wavy light-brown hair, friendly open face. Wearing: navy hoodie over a white T-shirt, dark jeans, grey backpack.
 James is "the student" below.
 One vertical comic page, aspect ratio 2:3. Four panels in a 2×2 grid with thin white gutters, read in Japanese order: panel 1 top right, panel 2 top left, panel 3 bottom right, panel 4 bottom left.
 Panel 1: Student turning the box over, reading the back. Speech balloon from the person speaking, Japanese text exactly: 「1日何回飲みますか？」
@@ -156,7 +156,7 @@ Write the Japanese exactly as given, horizontally or vertically, nothing else: n
 ```text
 Attach: docs/06-design/characters/james-sheet.
 Style: match the attached reference pictures. Korean-webtoon anime illustration, clean dark line art, soft painterly cel shading, muted natural colours, natural proportions (not chibi). Everyday places in Kansai, Japan, drawn as they really look, with detailed backgrounds.
-James: an American exchange student, about 20, short wavy light-brown hair, friendly open face, navy hoodie over a white T-shirt, dark jeans, grey backpack.
+James: an American exchange student, about 20, short wavy light-brown hair, friendly open face. Wearing: navy hoodie over a white T-shirt, dark jeans, grey backpack.
 James is "the student" below.
 One vertical comic page, aspect ratio 2:3. Four panels in a 2×2 grid with thin white gutters, read in Japanese order: panel 1 top right, panel 2 top left, panel 3 bottom right, panel 4 bottom left.
 Panel 1: Shop assistant approaching a browsing customer. Speech balloon from the person speaking, Japanese text exactly: 「何かお探しですか？」
@@ -171,7 +171,7 @@ Write the Japanese exactly as given, horizontally or vertically, nothing else: n
 ```text
 Attach: docs/06-design/characters/james-sheet.
 Style: match the attached reference pictures. Korean-webtoon anime illustration, clean dark line art, soft painterly cel shading, muted natural colours, natural proportions (not chibi). Everyday places in Kansai, Japan, drawn as they really look, with detailed backgrounds.
-James: an American exchange student, about 20, short wavy light-brown hair, friendly open face, navy hoodie over a white T-shirt, dark jeans, grey backpack.
+James: an American exchange student, about 20, short wavy light-brown hair, friendly open face. Wearing: navy hoodie over a white T-shirt, dark jeans, grey backpack.
 James is "the student" below.
 One vertical comic page, aspect ratio 2:3. Four panels in a 2×2 grid with thin white gutters, read in Japanese order: panel 1 top right, panel 2 top left, panel 3 bottom right, panel 4 bottom left.
 Panel 1: Assistant calling through the fitting-room curtain. Speech balloon from the person speaking, Japanese text exactly: 「サイズ、いかがですか？」
@@ -186,9 +186,9 @@ Write the Japanese exactly as given, horizontally or vertically, nothing else: n
 ```text
 Attach: docs/06-design/characters/james-sheet, docs/06-design/characters/yuki-front.webp, docs/06-design/characters/yuki-back-laugh.webp, docs/06-design/characters/ayano-front.webp, docs/06-design/characters/ayano-pose.webp.
 Style: match the attached reference pictures. Korean-webtoon anime illustration, clean dark line art, soft painterly cel shading, muted natural colours, natural proportions (not chibi). Everyday places in Kansai, Japan, drawn as they really look, with detailed backgrounds.
-James: an American exchange student, about 20, short wavy light-brown hair, friendly open face, navy hoodie over a white T-shirt, dark jeans, grey backpack.
-Yuki (Osaka, as in the reference): a young man, about 20, curly ash-blond hair with dark roots, warm brown eyes, olive-green zip jacket over a black and white layered T-shirt, thin gold chain, loose grey jeans, black boots; loud, quick, laughs easily.
-Ayano (Kyoto, as in the reference): a young woman, about 20, dark brown hair in a low bun with straight bangs, red hair ornament with a hanging tassel, red kimono with large white peonies, gold obi with a black cord, navy handbag, zori; quiet, graceful, small gestures.
+James: an American exchange student, about 20, short wavy light-brown hair, friendly open face. Wearing: navy hoodie over a white T-shirt, dark jeans, grey backpack.
+Yuki (Osaka, face and hair as in the reference): a young man, about 20, curly ash-blond hair with dark roots, warm brown eyes; loud, quick, laughs easily. Wearing: oversized black hoodie, light-wash jeans, white sneakers.
+Ayano (Kyoto, face and hair as in the reference — not the kimono): a young woman, about 20, dark brown hair in a low bun with straight bangs, a small red hair ornament; quiet, graceful, small gestures. Wearing: everyday clothes: white blouse, soft grey cardigan, long camel skirt.
 James is "the student" below. Yuki and Ayano are his friends, the rest of his party.
 One vertical comic page, aspect ratio 2:3. Four panels in a 2×2 grid with thin white gutters, read in Japanese order: panel 1 top right, panel 2 top left, panel 3 bottom right, panel 4 bottom left.
 Panel 1: Staff greeting a group at an izakaya entrance. Speech balloon from the person speaking, Japanese text exactly: 「何名様ですか？」
@@ -203,9 +203,9 @@ Write the Japanese exactly as given, horizontally or vertically, nothing else: n
 ```text
 Attach: docs/06-design/characters/james-sheet, docs/06-design/characters/yuki-front.webp, docs/06-design/characters/yuki-back-laugh.webp, docs/06-design/characters/ayano-front.webp, docs/06-design/characters/ayano-pose.webp.
 Style: match the attached reference pictures. Korean-webtoon anime illustration, clean dark line art, soft painterly cel shading, muted natural colours, natural proportions (not chibi). Everyday places in Kansai, Japan, drawn as they really look, with detailed backgrounds.
-James: an American exchange student, about 20, short wavy light-brown hair, friendly open face, navy hoodie over a white T-shirt, dark jeans, grey backpack.
-Yuki (Osaka, as in the reference): a young man, about 20, curly ash-blond hair with dark roots, warm brown eyes, olive-green zip jacket over a black and white layered T-shirt, thin gold chain, loose grey jeans, black boots; loud, quick, laughs easily.
-Ayano (Kyoto, as in the reference): a young woman, about 20, dark brown hair in a low bun with straight bangs, red hair ornament with a hanging tassel, red kimono with large white peonies, gold obi with a black cord, navy handbag, zori; quiet, graceful, small gestures.
+James: an American exchange student, about 20, short wavy light-brown hair, friendly open face. Wearing: navy hoodie over a white T-shirt, dark jeans, grey backpack.
+Yuki (Osaka, face and hair as in the reference): a young man, about 20, curly ash-blond hair with dark roots, warm brown eyes; loud, quick, laughs easily. Wearing: oversized black hoodie, light-wash jeans, white sneakers.
+Ayano (Kyoto, face and hair as in the reference — not the kimono): a young woman, about 20, dark brown hair in a low bun with straight bangs, a small red hair ornament; quiet, graceful, small gestures. Wearing: everyday clothes: white blouse, soft grey cardigan, long camel skirt.
 James is "the student" below. Yuki and Ayano are his friends, the rest of his party.
 One vertical comic page, aspect ratio 2:3. Four panels in a 2×2 grid with thin white gutters, read in Japanese order: panel 1 top right, panel 2 top left, panel 3 bottom right, panel 4 bottom left.
 Panel 1: Student pointing at a small dish that arrived unordered, asking the staff. Speech balloon from the person speaking, Japanese text exactly: 「すみません、これ、頼んでないんですが……」
@@ -220,7 +220,7 @@ Write the Japanese exactly as given, horizontally or vertically, nothing else: n
 ```text
 Attach: docs/06-design/characters/james-sheet.
 Style: match the attached reference pictures. Korean-webtoon anime illustration, clean dark line art, soft painterly cel shading, muted natural colours, natural proportions (not chibi). Everyday places in Kansai, Japan, drawn as they really look, with detailed backgrounds.
-James: an American exchange student, about 20, short wavy light-brown hair, friendly open face, navy hoodie over a white T-shirt, dark jeans, grey backpack.
+James: an American exchange student, about 20, short wavy light-brown hair, friendly open face. Wearing: navy hoodie over a white T-shirt, dark jeans, grey backpack.
 James is "the student" below.
 One vertical comic page, aspect ratio 2:3. Four panels in a 2×2 grid with thin white gutters, read in Japanese order: panel 1 top right, panel 2 top left, panel 3 bottom right, panel 4 bottom left.
 Panel 1: Restaurant staff answering a phone behind a counter. Speech balloon from the person speaking, Japanese text exactly: 「お電話ありがとうございます、〇〇でございます。」
@@ -235,7 +235,7 @@ Write the Japanese exactly as given, horizontally or vertically, nothing else: n
 ```text
 Attach: docs/06-design/characters/james-sheet.
 Style: match the attached reference pictures. Korean-webtoon anime illustration, clean dark line art, soft painterly cel shading, muted natural colours, natural proportions (not chibi). Everyday places in Kansai, Japan, drawn as they really look, with detailed backgrounds.
-James: an American exchange student, about 20, short wavy light-brown hair, friendly open face, navy hoodie over a white T-shirt, dark jeans, grey backpack.
+James: an American exchange student, about 20, short wavy light-brown hair, friendly open face. Wearing: navy hoodie over a white T-shirt, dark jeans, grey backpack.
 James is "the student" below.
 One vertical comic page, aspect ratio 2:3. Four panels in a 2×2 grid with thin white gutters, read in Japanese order: panel 1 top right, panel 2 top left, panel 3 bottom right, panel 4 bottom left.
 Panel 1: Staff scanning the page. Speech balloon from the person speaking, Japanese text exactly: 「申し訳ありません、7時は満席でして。」
@@ -252,8 +252,8 @@ Write the Japanese exactly as given, horizontally or vertically, nothing else: n
 ```text
 Attach: docs/06-design/characters/yuki-front.webp, docs/06-design/characters/yuki-back-laugh.webp, docs/06-design/characters/player-sheet.
 Style: match the attached reference pictures. Korean-webtoon anime illustration, clean dark line art, soft painterly cel shading, muted natural colours, natural proportions (not chibi). Everyday places in Kansai, Japan, drawn as they really look, with detailed backgrounds.
-Yuki (Osaka, as in the reference): a young man, about 20, curly ash-blond hair with dark roots, warm brown eyes, olive-green zip jacket over a black and white layered T-shirt, thin gold chain, loose grey jeans, black boots; loud, quick, laughs easily.
-The player: a female exchange student, about 20, shoulder-length dark hair in a low ponytail, beige coat, small cross-body bag. Shown only from behind or from the side, face never shown.
+Yuki (Osaka, face and hair as in the reference): a young man, about 20, curly ash-blond hair with dark roots, warm brown eyes; loud, quick, laughs easily. Wearing: olive-green zip jacket over a black and white layered T-shirt, thin gold chain, loose grey jeans, black boots (as in the reference).
+The player: a female exchange student, about 20, shoulder-length dark hair in a low ponytail. Shown only from behind or from the side, face never shown. Wearing: beige coat, small cross-body bag.
 One horizontal illustration, aspect ratio 4:3, seen from the player's point of view: Yuki faces the viewer; if the player appears, only from behind. Two friends meeting at a crowded Osaka Station concourse, one waving hard.
 Mood of the moment (do not write it): he has just said 「おー、こっちこっち！めっちゃ待ったで〜」
 No text, no speech balloons.
@@ -264,8 +264,8 @@ No text, no speech balloons.
 ```text
 Attach: docs/06-design/characters/yuki-front.webp, docs/06-design/characters/yuki-back-laugh.webp, docs/06-design/characters/player-sheet.
 Style: match the attached reference pictures. Korean-webtoon anime illustration, clean dark line art, soft painterly cel shading, muted natural colours, natural proportions (not chibi). Everyday places in Kansai, Japan, drawn as they really look, with detailed backgrounds.
-Yuki (Osaka, as in the reference): a young man, about 20, curly ash-blond hair with dark roots, warm brown eyes, olive-green zip jacket over a black and white layered T-shirt, thin gold chain, loose grey jeans, black boots; loud, quick, laughs easily.
-The player: a female exchange student, about 20, shoulder-length dark hair in a low ponytail, beige coat, small cross-body bag. Shown only from behind or from the side, face never shown.
+Yuki (Osaka, face and hair as in the reference): a young man, about 20, curly ash-blond hair with dark roots, warm brown eyes; loud, quick, laughs easily. Wearing: olive-green zip jacket over a black and white layered T-shirt, thin gold chain, loose grey jeans, black boots (as in the reference).
+The player: a female exchange student, about 20, shoulder-length dark hair in a low ponytail. Shown only from behind or from the side, face never shown. Wearing: beige coat, small cross-body bag.
 One horizontal illustration, aspect ratio 4:3, seen from the player's point of view: Yuki faces the viewer; if the player appears, only from behind. A takoyaki stall, steam rising, friend already eating.
 Mood of the moment (do not write it): he has just said 「ここのたこ焼き、めっちゃうまいねん。」
 No text, no speech balloons.
@@ -276,8 +276,8 @@ No text, no speech balloons.
 ```text
 Attach: docs/06-design/characters/yuki-front.webp, docs/06-design/characters/yuki-back-laugh.webp, docs/06-design/characters/player-sheet.
 Style: match the attached reference pictures. Korean-webtoon anime illustration, clean dark line art, soft painterly cel shading, muted natural colours, natural proportions (not chibi). Everyday places in Kansai, Japan, drawn as they really look, with detailed backgrounds.
-Yuki (Osaka, as in the reference): a young man, about 20, curly ash-blond hair with dark roots, warm brown eyes, olive-green zip jacket over a black and white layered T-shirt, thin gold chain, loose grey jeans, black boots; loud, quick, laughs easily.
-The player: a female exchange student, about 20, shoulder-length dark hair in a low ponytail, beige coat, small cross-body bag. Shown only from behind or from the side, face never shown.
+Yuki (Osaka, face and hair as in the reference): a young man, about 20, curly ash-blond hair with dark roots, warm brown eyes; loud, quick, laughs easily. Wearing: olive-green zip jacket over a black and white layered T-shirt, thin gold chain, loose grey jeans, black boots (as in the reference).
+The player: a female exchange student, about 20, shoulder-length dark hair in a low ponytail. Shown only from behind or from the side, face never shown. Wearing: beige coat, small cross-body bag.
 One horizontal illustration, aspect ratio 4:3, seen from the player's point of view: Yuki faces the viewer; if the player appears, only from behind. A covered shopping arcade, an older shopkeeper leaning out of her stall.
 Mood of the moment (do not write it): he has just said 「お姉ちゃん、ええの入ってるで。」
 No text, no speech balloons.
@@ -288,8 +288,8 @@ No text, no speech balloons.
 ```text
 Attach: docs/06-design/characters/yuki-front.webp, docs/06-design/characters/yuki-back-laugh.webp, docs/06-design/characters/player-sheet.
 Style: match the attached reference pictures. Korean-webtoon anime illustration, clean dark line art, soft painterly cel shading, muted natural colours, natural proportions (not chibi). Everyday places in Kansai, Japan, drawn as they really look, with detailed backgrounds.
-Yuki (Osaka, as in the reference): a young man, about 20, curly ash-blond hair with dark roots, warm brown eyes, olive-green zip jacket over a black and white layered T-shirt, thin gold chain, loose grey jeans, black boots; loud, quick, laughs easily.
-The player: a female exchange student, about 20, shoulder-length dark hair in a low ponytail, beige coat, small cross-body bag. Shown only from behind or from the side, face never shown.
+Yuki (Osaka, face and hair as in the reference): a young man, about 20, curly ash-blond hair with dark roots, warm brown eyes; loud, quick, laughs easily. Wearing: olive-green zip jacket over a black and white layered T-shirt, thin gold chain, loose grey jeans, black boots (as in the reference).
+The player: a female exchange student, about 20, shoulder-length dark hair in a low ponytail. Shown only from behind or from the side, face never shown. Wearing: beige coat, small cross-body bag.
 One horizontal illustration, aspect ratio 4:3, seen from the player's point of view: Yuki faces the viewer; if the player appears, only from behind. Both sitting on a river wall at Dotonbori, neon reflected in the water.
 Mood of the moment (do not write it): he has just said 「俺な、昨日道で100万円拾ってん。」
 No text, no speech balloons.
@@ -300,8 +300,8 @@ No text, no speech balloons.
 ```text
 Attach: docs/06-design/characters/yuki-front.webp, docs/06-design/characters/yuki-back-laugh.webp, docs/06-design/characters/player-sheet.
 Style: match the attached reference pictures. Korean-webtoon anime illustration, clean dark line art, soft painterly cel shading, muted natural colours, natural proportions (not chibi). Everyday places in Kansai, Japan, drawn as they really look, with detailed backgrounds.
-Yuki (Osaka, as in the reference): a young man, about 20, curly ash-blond hair with dark roots, warm brown eyes, olive-green zip jacket over a black and white layered T-shirt, thin gold chain, loose grey jeans, black boots; loud, quick, laughs easily.
-The player: a female exchange student, about 20, shoulder-length dark hair in a low ponytail, beige coat, small cross-body bag. Shown only from behind or from the side, face never shown.
+Yuki (Osaka, face and hair as in the reference): a young man, about 20, curly ash-blond hair with dark roots, warm brown eyes; loud, quick, laughs easily. Wearing: olive-green zip jacket over a black and white layered T-shirt, thin gold chain, loose grey jeans, black boots (as in the reference).
+The player: a female exchange student, about 20, shoulder-length dark hair in a low ponytail. Shown only from behind or from the side, face never shown. Wearing: beige coat, small cross-body bag.
 One horizontal illustration, aspect ratio 4:3, seen from the player's point of view: Yuki faces the viewer; if the player appears, only from behind. Yuki sliding open the door of a small okonomiyaki shop, grinning back over a shoulder.
 Mood of the moment (do not write it): he has just said 「邪魔すんでー。」
 No text, no speech balloons.
@@ -312,8 +312,8 @@ No text, no speech balloons.
 ```text
 Attach: docs/06-design/characters/yuki-front.webp, docs/06-design/characters/yuki-back-laugh.webp, docs/06-design/characters/player-sheet.
 Style: match the attached reference pictures. Korean-webtoon anime illustration, clean dark line art, soft painterly cel shading, muted natural colours, natural proportions (not chibi). Everyday places in Kansai, Japan, drawn as they really look, with detailed backgrounds.
-Yuki (Osaka, as in the reference): a young man, about 20, curly ash-blond hair with dark roots, warm brown eyes, olive-green zip jacket over a black and white layered T-shirt, thin gold chain, loose grey jeans, black boots; loud, quick, laughs easily.
-The player: a female exchange student, about 20, shoulder-length dark hair in a low ponytail, beige coat, small cross-body bag. Shown only from behind or from the side, face never shown.
+Yuki (Osaka, face and hair as in the reference): a young man, about 20, curly ash-blond hair with dark roots, warm brown eyes; loud, quick, laughs easily. Wearing: olive-green zip jacket over a black and white layered T-shirt, thin gold chain, loose grey jeans, black boots (as in the reference).
+The player: a female exchange student, about 20, shoulder-length dark hair in a low ponytail. Shown only from behind or from the side, face never shown. Wearing: beige coat, small cross-body bag.
 One horizontal illustration, aspect ratio 4:3, seen from the player's point of view: Yuki faces the viewer; if the player appears, only from behind. Ticket gates at night, the friend already walking backwards, waving.
 Mood of the moment (do not write it): he has just said 「ほな、またな！」
 No text, no speech balloons.
@@ -324,8 +324,8 @@ No text, no speech balloons.
 ```text
 Attach: docs/06-design/characters/ayano-front.webp, docs/06-design/characters/ayano-pose.webp, docs/06-design/characters/player-sheet.
 Style: match the attached reference pictures. Korean-webtoon anime illustration, clean dark line art, soft painterly cel shading, muted natural colours, natural proportions (not chibi). Everyday places in Kansai, Japan, drawn as they really look, with detailed backgrounds.
-Ayano (Kyoto, as in the reference): a young woman, about 20, dark brown hair in a low bun with straight bangs, red hair ornament with a hanging tassel, red kimono with large white peonies, gold obi with a black cord, navy handbag, zori; quiet, graceful, small gestures.
-The player: a female exchange student, about 20, shoulder-length dark hair in a low ponytail, beige coat, small cross-body bag. Shown only from behind or from the side, face never shown.
+Ayano (Kyoto, face and hair as in the reference — not the kimono): a young woman, about 20, dark brown hair in a low bun with straight bangs, a small red hair ornament; quiet, graceful, small gestures. Wearing: everyday clothes: cream knit sweater, long navy pleated skirt, beige trench coat, small leather shoulder bag, loafers.
+The player: a female exchange student, about 20, shoulder-length dark hair in a low ponytail. Shown only from behind or from the side, face never shown. Wearing: beige coat, small cross-body bag.
 One horizontal illustration, aspect ratio 4:3, seen from the player's point of view: Ayano faces the viewer; if the player appears, only from behind. Kyoto Station's great staircase, one friend waiting with a small bow.
 Mood of the moment (do not write it): she has just said 「わざわざ来てくれはって、おおきに。」
 No text, no speech balloons.
@@ -336,8 +336,8 @@ No text, no speech balloons.
 ```text
 Attach: docs/06-design/characters/ayano-front.webp, docs/06-design/characters/ayano-pose.webp, docs/06-design/characters/player-sheet.
 Style: match the attached reference pictures. Korean-webtoon anime illustration, clean dark line art, soft painterly cel shading, muted natural colours, natural proportions (not chibi). Everyday places in Kansai, Japan, drawn as they really look, with detailed backgrounds.
-Ayano (Kyoto, as in the reference): a young woman, about 20, dark brown hair in a low bun with straight bangs, red hair ornament with a hanging tassel, red kimono with large white peonies, gold obi with a black cord, navy handbag, zori; quiet, graceful, small gestures.
-The player: a female exchange student, about 20, shoulder-length dark hair in a low ponytail, beige coat, small cross-body bag. Shown only from behind or from the side, face never shown.
+Ayano (Kyoto, face and hair as in the reference — not the kimono): a young woman, about 20, dark brown hair in a low bun with straight bangs, a small red hair ornament; quiet, graceful, small gestures. Wearing: everyday clothes: cream knit sweater, long navy pleated skirt, beige trench coat, small leather shoulder bag, loafers.
+The player: a female exchange student, about 20, shoulder-length dark hair in a low ponytail. Shown only from behind or from the side, face never shown. Wearing: beige coat, small cross-body bag.
 One horizontal illustration, aspect ratio 4:3, seen from the player's point of view: Ayano faces the viewer; if the player appears, only from behind. Nishiki Market, narrow and crowded, a skewer held out.
 Mood of the moment (do not write it): she has just said 「これ、食べてみはる？」
 No text, no speech balloons.
@@ -348,8 +348,8 @@ No text, no speech balloons.
 ```text
 Attach: docs/06-design/characters/ayano-front.webp, docs/06-design/characters/ayano-pose.webp, docs/06-design/characters/player-sheet.
 Style: match the attached reference pictures. Korean-webtoon anime illustration, clean dark line art, soft painterly cel shading, muted natural colours, natural proportions (not chibi). Everyday places in Kansai, Japan, drawn as they really look, with detailed backgrounds.
-Ayano (Kyoto, as in the reference): a young woman, about 20, dark brown hair in a low bun with straight bangs, red hair ornament with a hanging tassel, red kimono with large white peonies, gold obi with a black cord, navy handbag, zori; quiet, graceful, small gestures.
-The player: a female exchange student, about 20, shoulder-length dark hair in a low ponytail, beige coat, small cross-body bag. Shown only from behind or from the side, face never shown.
+Ayano (Kyoto, face and hair as in the reference — not the kimono): a young woman, about 20, dark brown hair in a low bun with straight bangs, a small red hair ornament; quiet, graceful, small gestures. Wearing: everyday clothes: cream knit sweater, long navy pleated skirt, beige trench coat, small leather shoulder bag, loafers.
+The player: a female exchange student, about 20, shoulder-length dark hair in a low ponytail. Shown only from behind or from the side, face never shown. Wearing: beige coat, small cross-body bag.
 One horizontal illustration, aspect ratio 4:3, seen from the player's point of view: Ayano faces the viewer; if the player appears, only from behind. A temple garden, gravel path, the friend speaking very quietly.
 Mood of the moment (do not write it): she has just said 「ここ、静かにしといた方がええかもしれへんね。」
 No text, no speech balloons.
@@ -360,8 +360,8 @@ No text, no speech balloons.
 ```text
 Attach: docs/06-design/characters/ayano-front.webp, docs/06-design/characters/ayano-pose.webp, docs/06-design/characters/player-sheet.
 Style: match the attached reference pictures. Korean-webtoon anime illustration, clean dark line art, soft painterly cel shading, muted natural colours, natural proportions (not chibi). Everyday places in Kansai, Japan, drawn as they really look, with detailed backgrounds.
-Ayano (Kyoto, as in the reference): a young woman, about 20, dark brown hair in a low bun with straight bangs, red hair ornament with a hanging tassel, red kimono with large white peonies, gold obi with a black cord, navy handbag, zori; quiet, graceful, small gestures.
-The player: a female exchange student, about 20, shoulder-length dark hair in a low ponytail, beige coat, small cross-body bag. Shown only from behind or from the side, face never shown.
+Ayano (Kyoto, face and hair as in the reference — not the kimono): a young woman, about 20, dark brown hair in a low bun with straight bangs, a small red hair ornament; quiet, graceful, small gestures. Wearing: everyday clothes: cream knit sweater, long navy pleated skirt, beige trench coat, small leather shoulder bag, loafers.
+The player: a female exchange student, about 20, shoulder-length dark hair in a low ponytail. Shown only from behind or from the side, face never shown. Wearing: beige coat, small cross-body bag.
 One horizontal illustration, aspect ratio 4:3, seen from the player's point of view: Ayano faces the viewer; if the player appears, only from behind. A traditional living room, late afternoon light, a teapot being lifted.
 Mood of the moment (do not write it): she has just said 「そろそろ、お茶漬けでもどうどす？」
 No text, no speech balloons.
@@ -372,8 +372,8 @@ No text, no speech balloons.
 ```text
 Attach: docs/06-design/characters/ayano-front.webp, docs/06-design/characters/ayano-pose.webp, docs/06-design/characters/player-sheet.
 Style: match the attached reference pictures. Korean-webtoon anime illustration, clean dark line art, soft painterly cel shading, muted natural colours, natural proportions (not chibi). Everyday places in Kansai, Japan, drawn as they really look, with detailed backgrounds.
-Ayano (Kyoto, as in the reference): a young woman, about 20, dark brown hair in a low bun with straight bangs, red hair ornament with a hanging tassel, red kimono with large white peonies, gold obi with a black cord, navy handbag, zori; quiet, graceful, small gestures.
-The player: a female exchange student, about 20, shoulder-length dark hair in a low ponytail, beige coat, small cross-body bag. Shown only from behind or from the side, face never shown.
+Ayano (Kyoto, face and hair as in the reference — not the kimono): a young woman, about 20, dark brown hair in a low bun with straight bangs, a small red hair ornament; quiet, graceful, small gestures. Wearing: everyday clothes: cream knit sweater, long navy pleated skirt, beige trench coat, small leather shoulder bag, loafers.
+The player: a female exchange student, about 20, shoulder-length dark hair in a low ponytail. Shown only from behind or from the side, face never shown. Wearing: beige coat, small cross-body bag.
 One horizontal illustration, aspect ratio 4:3, seen from the player's point of view: Ayano faces the viewer; if the player appears, only from behind. A narrow lane at dusk, the friend standing in a doorway.
 Mood of the moment (do not write it): she has just said 「また寄っとくれやす。」
 No text, no speech balloons.
@@ -386,8 +386,8 @@ No text, no speech balloons.
 ```text
 Attach: docs/06-design/characters/yuki-front.webp, docs/06-design/characters/yuki-back-laugh.webp, docs/06-design/characters/player-sheet.
 Style: match the attached reference pictures. Korean-webtoon anime illustration, clean dark line art, soft painterly cel shading, muted natural colours, natural proportions (not chibi). Everyday places in Kansai, Japan, drawn as they really look, with detailed backgrounds.
-Yuki (Osaka, as in the reference): a young man, about 20, curly ash-blond hair with dark roots, warm brown eyes, olive-green zip jacket over a black and white layered T-shirt, thin gold chain, loose grey jeans, black boots; loud, quick, laughs easily.
-The player: a female exchange student, about 20, shoulder-length dark hair in a low ponytail, beige coat, small cross-body bag. Shown only from behind or from the side, face never shown.
+Yuki (Osaka, face and hair as in the reference): a young man, about 20, curly ash-blond hair with dark roots, warm brown eyes; loud, quick, laughs easily. Wearing: olive-green zip jacket over a black and white layered T-shirt, thin gold chain, loose grey jeans, black boots (as in the reference).
+The player: a female exchange student, about 20, shoulder-length dark hair in a low ponytail. Shown only from behind or from the side, face never shown. Wearing: beige coat, small cross-body bag.
 One horizontal illustration, aspect ratio 3:2, a memorable closing shot: Dotonbori at night, two friends laughing on the river wall, neon reflections. The player only from behind or the side.
 No text, no speech balloons.
 ```
@@ -397,8 +397,8 @@ No text, no speech balloons.
 ```text
 Attach: docs/06-design/characters/yuki-front.webp, docs/06-design/characters/yuki-back-laugh.webp, docs/06-design/characters/player-sheet.
 Style: match the attached reference pictures. Korean-webtoon anime illustration, clean dark line art, soft painterly cel shading, muted natural colours, natural proportions (not chibi). Everyday places in Kansai, Japan, drawn as they really look, with detailed backgrounds.
-Yuki (Osaka, as in the reference): a young man, about 20, curly ash-blond hair with dark roots, warm brown eyes, olive-green zip jacket over a black and white layered T-shirt, thin gold chain, loose grey jeans, black boots; loud, quick, laughs easily.
-The player: a female exchange student, about 20, shoulder-length dark hair in a low ponytail, beige coat, small cross-body bag. Shown only from behind or from the side, face never shown.
+Yuki (Osaka, face and hair as in the reference): a young man, about 20, curly ash-blond hair with dark roots, warm brown eyes; loud, quick, laughs easily. Wearing: olive-green zip jacket over a black and white layered T-shirt, thin gold chain, loose grey jeans, black boots (as in the reference).
+The player: a female exchange student, about 20, shoulder-length dark hair in a low ponytail. Shown only from behind or from the side, face never shown. Wearing: beige coat, small cross-body bag.
 One horizontal illustration, aspect ratio 3:2, a memorable closing shot: Station ticket gates at night, one friend waving from the far side. The player only from behind or the side.
 No text, no speech balloons.
 ```
@@ -408,8 +408,8 @@ No text, no speech balloons.
 ```text
 Attach: docs/06-design/characters/ayano-front.webp, docs/06-design/characters/ayano-pose.webp, docs/06-design/characters/player-sheet.
 Style: match the attached reference pictures. Korean-webtoon anime illustration, clean dark line art, soft painterly cel shading, muted natural colours, natural proportions (not chibi). Everyday places in Kansai, Japan, drawn as they really look, with detailed backgrounds.
-Ayano (Kyoto, as in the reference): a young woman, about 20, dark brown hair in a low bun with straight bangs, red hair ornament with a hanging tassel, red kimono with large white peonies, gold obi with a black cord, navy handbag, zori; quiet, graceful, small gestures.
-The player: a female exchange student, about 20, shoulder-length dark hair in a low ponytail, beige coat, small cross-body bag. Shown only from behind or from the side, face never shown.
+Ayano (Kyoto, face and hair as in the reference — not the kimono): a young woman, about 20, dark brown hair in a low bun with straight bangs, a small red hair ornament; quiet, graceful, small gestures. Wearing: everyday clothes: cream knit sweater, long navy pleated skirt, beige trench coat, small leather shoulder bag, loafers.
+The player: a female exchange student, about 20, shoulder-length dark hair in a low ponytail. Shown only from behind or from the side, face never shown. Wearing: beige coat, small cross-body bag.
 One horizontal illustration, aspect ratio 3:2, a memorable closing shot: A narrow Kyoto lane at dusk, two friends walking slowly, lanterns lit. The player only from behind or the side.
 No text, no speech balloons.
 ```
@@ -419,8 +419,8 @@ No text, no speech balloons.
 ```text
 Attach: docs/06-design/characters/ayano-front.webp, docs/06-design/characters/ayano-pose.webp, docs/06-design/characters/player-sheet.
 Style: match the attached reference pictures. Korean-webtoon anime illustration, clean dark line art, soft painterly cel shading, muted natural colours, natural proportions (not chibi). Everyday places in Kansai, Japan, drawn as they really look, with detailed backgrounds.
-Ayano (Kyoto, as in the reference): a young woman, about 20, dark brown hair in a low bun with straight bangs, red hair ornament with a hanging tassel, red kimono with large white peonies, gold obi with a black cord, navy handbag, zori; quiet, graceful, small gestures.
-The player: a female exchange student, about 20, shoulder-length dark hair in a low ponytail, beige coat, small cross-body bag. Shown only from behind or from the side, face never shown.
+Ayano (Kyoto, face and hair as in the reference — not the kimono): a young woman, about 20, dark brown hair in a low bun with straight bangs, a small red hair ornament; quiet, graceful, small gestures. Wearing: everyday clothes: cream knit sweater, long navy pleated skirt, beige trench coat, small leather shoulder bag, loafers.
+The player: a female exchange student, about 20, shoulder-length dark hair in a low ponytail. Shown only from behind or from the side, face never shown. Wearing: beige coat, small cross-body bag.
 One horizontal illustration, aspect ratio 3:2, a memorable closing shot: A traditional room, teapot on the table, afternoon light going amber. The player only from behind or the side.
 No text, no speech balloons.
 ```
@@ -430,9 +430,9 @@ No text, no speech balloons.
 ```text
 Attach: docs/06-design/characters/yuki-front.webp, docs/06-design/characters/yuki-back-laugh.webp, docs/06-design/characters/ayano-front.webp, docs/06-design/characters/ayano-pose.webp, docs/06-design/characters/player-sheet.
 Style: match the attached reference pictures. Korean-webtoon anime illustration, clean dark line art, soft painterly cel shading, muted natural colours, natural proportions (not chibi). Everyday places in Kansai, Japan, drawn as they really look, with detailed backgrounds.
-Yuki (Osaka, as in the reference): a young man, about 20, curly ash-blond hair with dark roots, warm brown eyes, olive-green zip jacket over a black and white layered T-shirt, thin gold chain, loose grey jeans, black boots; loud, quick, laughs easily.
-Ayano (Kyoto, as in the reference): a young woman, about 20, dark brown hair in a low bun with straight bangs, red hair ornament with a hanging tassel, red kimono with large white peonies, gold obi with a black cord, navy handbag, zori; quiet, graceful, small gestures.
-The player: a female exchange student, about 20, shoulder-length dark hair in a low ponytail, beige coat, small cross-body bag. Shown only from behind or from the side, face never shown.
+Yuki (Osaka, face and hair as in the reference): a young man, about 20, curly ash-blond hair with dark roots, warm brown eyes; loud, quick, laughs easily. Wearing: olive-green zip jacket over a black and white layered T-shirt, thin gold chain, loose grey jeans, black boots (as in the reference).
+Ayano (Kyoto, face and hair as in the reference — not the kimono): a young woman, about 20, dark brown hair in a low bun with straight bangs, a small red hair ornament; quiet, graceful, small gestures. Wearing: everyday clothes: cream knit sweater, long navy pleated skirt, beige trench coat, small leather shoulder bag, loafers.
+The player: a female exchange student, about 20, shoulder-length dark hair in a low ponytail. Shown only from behind or from the side, face never shown. Wearing: beige coat, small cross-body bag.
 One horizontal illustration, aspect ratio 3:2, a memorable closing shot: A split scene: Osaka neon on one side, a quiet Kyoto lane on the other, the same student in both. The player only from behind or the side.
 No text, no speech balloons.
 ```
