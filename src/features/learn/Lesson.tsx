@@ -21,6 +21,16 @@ export function Lesson({ lid }: { lid: string }) {
         <h1>{l.t[lang]}</h1>
         <p>{l.d[lang]}</p>
       </div>
+      <p className="readorder">
+        {/* the panel order as a small 2×2 grid: 2 1 / 4 3 */}
+        <span className="rogrid" aria-hidden="true">
+          <i>2</i>
+          <i>1</i>
+          <i>4</i>
+          <i>3</i>
+        </span>
+        {m.readOrder}
+      </p>
       <ComicPage lid={l.id} n={1} page={l.pages[0]} />
       <ComicPage lid={l.id} n={2} page={l.pages[1]} />
       <div className="sect">{m.exprT}</div>

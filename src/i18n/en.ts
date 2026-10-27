@@ -61,6 +61,7 @@ export const en = {
   lvL: 'Level',
   exprT: 'Phrases from this episode',
   pageN: 'Page {n}',
+  readOrder: 'Japanese comics read from the top right: right to left, then down.',
   zoomPage: 'Open page {n} full screen',
   close: 'Close',
   colT: 'Collection',

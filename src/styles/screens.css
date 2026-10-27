@@ -913,6 +913,31 @@ rt {
 }
 
 /* comic pages (Y-J1): portrait art, then the panel list */
+.readorder {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 var(--gutter) 12px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.rogrid {
+  flex: none;
+  display: grid;
+  grid-template-columns: 14px 14px;
+  gap: 2px;
+}
+.rogrid i {
+  font-style: normal;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 14px;
+  text-align: center;
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  color: var(--primary);
+}
 .cpage {
   padding: 12px var(--gutter) 8px;
 }
