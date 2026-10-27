@@ -2,11 +2,16 @@ import { describe, expect, it } from 'vitest';
 import { formatRoute, legacyRoute, parseRoute } from '../../src/app/routes';
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
-import { OUT, renderComicScripts } from '../../scripts/gen-comic-scripts.mjs';
+import {
+  GAME_OUT,
+  OUT,
+  renderComicScripts,
+  renderGameScript,
+} from '../../scripts/gen-comic-scripts.mjs';
 import { ART, endingKey, pageKey, sceneKey } from '../../src/content/art';
 import { ENDINGS } from '../../src/content/endings';
 import { LESSONS } from '../../src/content/lessons';
-import { VN } from '../../src/content/vn';
+import { BEST_MISSES, VN } from '../../src/content/vn';
 import {
   addMonths,
   monthCells,
@@ -228,6 +233,10 @@ describe('comic pages (Y-J1)', () => {
   it('has a storyboard script that matches the data (node scripts/gen-comic-scripts.mjs)', () => {
     const doc = readFileSync(OUT, 'utf8').split(String.fromCharCode(13)).join('');
     expect(doc).toBe(renderComicScripts(LESSONS) + String.fromCharCode(10));
+  });
+  it('has a game script that matches the data (node scripts/gen-comic-scripts.mjs)', () => {
+    const doc = readFileSync(GAME_OUT, 'utf8').split(String.fromCharCode(13)).join('');
+    expect(doc).toBe(renderGameScript(VN, ENDINGS, BEST_MISSES) + String.fromCharCode(10));
   });
 });
 

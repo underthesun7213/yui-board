@@ -3,6 +3,10 @@ import type { Route, VnRoute } from './types';
 /* Episode 8. Two routes, drawn with a broad brush on purpose: the Osaka friend
    is loud and direct, the Kyoto friend says things sideways. Real people are
    not their prefecture, and the notes say so where it matters. */
+/* The best ending allows one miss on any route, so a route with more scenes
+   (Osaka has six since 2026-10-25, Kyoto five) is no easier or harder. */
+export const BEST_MISSES = 1;
+
 export const VN: Record<Route, VnRoute> = {
   osaka: {
     name: {
