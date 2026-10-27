@@ -23,6 +23,10 @@ body {
   min-height: 100dvh;
   overscroll-behavior-y: none;
   -webkit-tap-highlight-color: transparent;
+  /* what people write can hold a long run without spaces (a link, a handle):
+     it wraps rather than widening the page, which on a phone zooms out and
+     sends taps to the wrong place */
+  overflow-wrap: anywhere;
 }
 /* System fonts per language, including text someone wrote in another language (Y-C5). */
 :lang(ja) {
@@ -40,7 +44,6 @@ html:lang(ja) body {
 /* Korean wraps at spaces, not mid-word. */
 html:lang(ko) body {
   word-break: keep-all;
-  overflow-wrap: anywhere;
 }
 #root {
   display: contents;

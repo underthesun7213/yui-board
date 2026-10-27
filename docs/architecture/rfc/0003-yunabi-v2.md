@@ -36,6 +36,8 @@
 
 **개정 (Y-2 구현 반영, 브랜치 `claude/sharp-einstein-3m78cy` `e2e1597` — 리뷰 수정 포함).** 구현과 리뷰가 바꾸거나 확정한 곳에 `[Y-2 구현]` 을 달았다: IP 한도가 경로 대신 메서드로 셈(§11.1, §13.3, §14), 클라이언트의 읽기 페이지 나눔·401 재시도·세션 분실·CAPTCHA·언어 청크(§8, §11, §12.1), 로컬 테스트 스택(§19), 실제 프로젝트에서 확인할 항목(§17.6a PL-6). DB 쪽 세부는 [ERD v2](../erd-v2.md) 의 같은 표시.
 
+**개정 (2026-10-26, 책임자 결정 D31·D32 — [ADR-0026](../../adr/0026-english-place-names-and-description-translation.md), 제안됨).** 장소 이름은 영어 한 칸 + 라틴 글자 1개 이상(D31), 장소 설명은 저장 뒤 비동기 기계 번역(D32). **사용자 쓰기 경로는 바뀌지 않는다.** 고친 곳에 `[ADR-0026]` 을 달았다: §2, §4.1, §4.2, §4.3, §5.2, §8, §11.1, **§11.4·§11.5(새 절)**, §13.2, §13.4, §16, §17.1, §17.2(T-28~T-35), §17.4, §17.6a(PL-7), §17.7(R-9), §19.1, §21, §23, §24(OQ-22~OQ-24). 아직 구현되지 않은 **제안**이다.
+
 ---
 
 ## 1. 배경과 문제
@@ -60,7 +62,7 @@ v1.3 은 서버 없이 직접 넣은 장소·일정을 보여주는 단일 HTML 
 
 **목표** — PRD G1~G6 과 §6.1. 운영비 0 목표.
 
-**비목표** — PRD §3 비목표 그대로(게시판, 참가 신청, 일반 사용자 로그인, 컬렉션 동기화, 번역). 추가로: 서버 렌더링, 푸시 알림, 다중 관리자 권한 등급, 신고 자격 조건·평판 시스템(D20 이 제외), 앱 안의 사용 지표(ADR-0007 은 재사용하지 않음).
+**비목표** — PRD §3 비목표 그대로(게시판, 참가 신청, 일반 사용자 로그인, 컬렉션 동기화). 번역은 D32 로 목표가 됐다(장소 설명 — §11.4) `[ADR-0026]`. 추가로: 서버 렌더링, 푸시 알림, 다중 관리자 권한 등급, 신고 자격 조건·평판 시스템(D20 이 제외), 앱 안의 사용 지표(ADR-0007 은 재사용하지 않음).
 
 ## 3. 품질 속성과 목표치
 
@@ -98,6 +100,7 @@ C4Context
   System_Ext(geo, "기기 위치 서비스", "브라우저 Geolocation")
   System_Ext(gh, "GitHub", "저장소, Actions(CI·배포·백업·감시)")
   System_Ext(ts, "Cloudflare Turnstile", "CAPTCHA 스위치를 켤 때만")
+  System_Ext(mt, "기계 번역 API", "추천 Azure AI Translator F0 — 장소 설명 원문만 (ADR-0026)")
   Rel(user, pwa, "사용")
   Rel(admin, console, "로그인·조치")
   Rel(outsider, admin, "이메일 요청 (SYS-04 연락처)")
@@ -109,6 +112,7 @@ C4Context
   Rel(pwa, geo, "안내 수락 후")
   Rel(user, gmaps, "링크 이동")
   Rel(pwa, ts, "스위치 ON 일 때 위젯")
+  Rel(sb, mt, "Edge Function translate: 설명 원문 → 번역 (ADR-0026)")
   Rel(gh, sb, "마이그레이션(수동 승인), 백업 덤프, 감시 RPC (secret 키, Actions 비밀값)")
 ```
 
@@ -133,7 +137,8 @@ C4Container
     Container(auth, "Auth (GoTrue)", "익명 로그인, 이메일+비밀번호, TOTP, CAPTCHA 스위치, before-user-created 훅")
     Container(rest, "PostgREST", "Data API — public 스키마의 뷰·함수만 노출")
     ContainerDb(pg, "Postgres", "app 스키마(비노출): 테이블. public: 공개 뷰·RPC. PostGIS 경계")
-    Container(cron, "Supabase Cron", "pg_cron", "보관 기간 정리, 비활동 계정 삭제")
+    Container(cron, "Supabase Cron", "pg_cron", "보관 기간 정리, 비활동 계정 삭제, 번역 깨우기 (ADR-0026)")
+    Container(ef, "Edge Function translate", "Deno", "번역 대기열 처리 — service_role 함수 둘만 부름 (ADR-0026)")
   }
   System_Ext(gh, "GitHub Actions")
   System_Ext(cf, "Cloudflare Workers 정적 자산", "사용자 앱 yunabi + 관리자 콘솔, 각자 _headers")
@@ -146,6 +151,8 @@ C4Container
   Rel(rest, pg, "역할 anon / authenticated")
   Rel(auth, pg, "훅: before-user-created")
   Rel(cron, pg, "정리 함수")
+  Rel(cron, ef, "pg_net: 할 일이 있을 때만 깨움 (데이터 없음)")
+  Rel(ef, rest, "POST rpc translation_claim / translation_apply (전용 sb_secret)")
   Rel(app, map, "import() 지연")
   Rel(app, ls, "store")
   Rel(app, idb, "snapshot")
@@ -188,6 +195,7 @@ flowchart LR
 | 0 → 1 | 모든 클라이언트, 공격자 포함 | 공개 뷰의 공개 열(등록자·신고자 없음). RPC 결과는 자기 것만 | 기본 테이블 비노출 스키마 + GRANT 0, 뷰 열 제한, RPC 정의자 함수 안 검사 (Y-S1, Y-M9, Y-R9) |
 | 관리자 RPC | 허용 목록 + `is_anonymous=false` + `aal=aal2` + 세션 12시간 이내 | 신고 수·사유, 가명 계정 ID(`accounts.ref`) — 신고자 없음 | `require_admin()` (Y-R5, Y-S3, Y-P2, Y-R9) |
 | 2 → 3 | 책임자, CI | 전부 (uuid, 신고자, 관리자 이메일) | 프로젝트 멤버 = 책임자 1명(D25), 비밀값은 Actions 비밀값에만, 덤프 암호화 (Y-S2, Y-S9) |
+| 번역 작업자 `[ADR-0026]` | Edge Function `translate`(Supabase, Deno). 비밀값: 번역 API 키, 전용 `sb_secret`(역할 `service_role`), 깨우기 비밀 — Edge Function 비밀값에만 | 공개 상태인 장소의 설명 원문(이미 공개된 글)과 장소 id. 작성자·좌표·이름·IP 없음 | `service_role` 은 표 권한 0(V-1). EXECUTE 는 `translation_claim`·`translation_apply`(+ 기존 `ops_health`)뿐이고, 두 함수가 쓸 수 있는 곳은 번역 표·대기열·사용량 표뿐(§11.4, T-28~T-35) |
 
 > **익명성의 범위 (ADR-0001 재검토).** v2 의 약속은 "등록자·신고자는 **다른 사용자**에게 보이지 않는다(Y-M9, Y-R9). 관리자는 등록자의 **가명 ID** 만 본다(Y-P2, Q-Y11)." 경계 3(책임자)은 기술적으로 모두 볼 수 있다 — 개인정보처리방침에 쓴다(Y-P4).
 
@@ -254,6 +262,7 @@ React 판. 첫 판(Svelte)과의 차이: `*.svelte` → `*.tsx`, `state/*.svelte
 ├─ supabase/
 │  ├─ config.toml
 │  ├─ migrations/             ERD v2 §8
+│  ├─ functions/translate/    Edge Function (Deno) — 설명 번역 `[ADR-0026]` (§11.4)
 │  ├─ tests/                  pgTAP (*.test.sql)
 │  └─ seed/                   fixtures.sql (로컬·CI 전용, 운영에는 적용 안 함)
 ├─ tests/
@@ -386,7 +395,7 @@ v1.3 은 URL 을 `./` 로 고정하고 화면을 `history.state` 에만 두었�
 | React 연결 `[D24]` | `t()` 는 언어를 인자로 받는 순수 함수. 컴포넌트는 `const t = useT()`(= `useStore(prefs, s => s.lang)` 로 언어를 구독해 그 언어의 `t` 를 돌려줌). 언어를 바꾸면 구독한 컴포넌트만 다시 그려진다. 지도 라벨은 런타임이 `prefs` 를 직접 구독(§9). 날짜·수 서식은 `Intl.DateTimeFormat`·`Intl.NumberFormat`, 복수형이 필요한 영어 문구는 `Intl.PluralRules` (일본어·한국어는 복수형 구분 없음) |
 | 신규 문구 | 폼 라벨·검증·서버 상태 코드(§13.4)·빈 상태(Y-M5, Y-K3)·신고 사유(Y-R1)·Y-A2 안내·Y-M7 경고·Y-K11·법적 페이지. 모두 3개 언어(Y-C2) |
 | 콘텐츠 | 레슨·게임·엔딩의 `{ja,en,ko}` 필드는 `src/content/` 의 타입 데이터로 유지. 장면 메모 `s` 는 데이터에 남기되 렌더하지 않는다(Y-J2, 현행 `8ce701a` 와 같음; 남길지는 Q-Y8) |
-| 사용자 글 | 번역 없음. `lang` 이 화면 언어와 다르면 작은 언어 배지(Y-C5) |
+| 사용자 글 `[ADR-0026]` | ~~번역 없음.~~ 장소 **설명**은 화면 언어의 기계 번역을 기본으로 보이고, [원문 보기]로 원문 + 언어 배지(D32, §11.5). 번역이 없으면 지금처럼 원문 + `lang` 이 화면 언어와 다를 때 작은 언어 배지(Y-C5). 장소 **이름**은 영어 한 칸이라 번역하지 않는다(D31). 일정 글은 OQ-22 |
 | 라이브러리 `[D24]` | 쓰지 않는다. **i18next + react-i18next, react-intl** 은 네임스페이스 지연 로드·언어 감지·ICU 메시지가 핵심인데 3개 언어·고정 문자열·번역 없음(Q-Y4)에는 필요 없고, 크기(자료가 상충하나 약 10~45 KB gzip)가 첫 화면 예산(§3)에 부담이다. Paraglide 같은 컴파일러형도 후보였으나(tech-stack-v2 §2.2) 현재 `T` 의 배열·객체 구조를 그대로 옮기는 편이 비용이 작다. 언어가 5개 이상이 되거나 외부 번역자가 붙으면 다시 본다(ADR-0023 결정 6) |
 | 검사 | 단위 테스트: 세 언어 키 집합 동일·빈 문자열 없음. 렌더 검사: 모든 라우트 × 언어에서 `undefined`·`NaN`·`[object Object]` 없음 |
 | 관리자 콘솔 | 영어·일본어·한국어 중 **관리자 언어 하나**로 시작해도 되는지 — OQ-9 (Y-C2 는 "새 화면의 모든 문구" 라 원칙상 3개 언어) |
@@ -453,15 +462,15 @@ sequenceDiagram
 
 | 자리 | 경로·파일명 | 비율 | 권장 크기 | 비고 |
 |---|---|---|---|---|
-| 만화 컷 | `src/art/lessons/<lid>/<nn>.webp` — `lid` = `l1`~`l7`, `nn` = 컷 순서 2자리 1부터(`01`) | 4:3 | 1200×900 | 예: `src/art/lessons/l2/05.webp` = 2화 5번째 컷 |
+| 만화 페이지 **(2026-10-25 변경)** | `src/art/lessons/<lid>/p1`·`p2` — `lid` = `l1`~`l7`, 레벨마다 2쪽 × 4칸, 말풍선은 그림 속 일본어 | **세로 2:3**(±1%) | 짧은 변 ≥ 1000px, ≤ 400KB | 예: `src/art/lessons/l2/p1.webp` = 2화 1쪽. 칸별 대사·번역은 데이터(`Panel`)에서 그림 아래 목록으로. 콘티 대본: `docs/06-design/comic-scripts.md`(생성 문서) |
 | 분기 게임 장면 | `src/art/vn/<route>/<nn>.webp` — `route` = `osaka`·`kyoto` | 4:3 | 1200×900 | |
 | 엔딩 카드 | `src/art/endings/<ending_id>.webp` — `e_osaka_best` 등 5개 | **3:2 원본** | 1200×800 | 엔딩 화면은 3:2 그대로, 컬렉션 격자(4:3)는 가운데 기준 `object-fit: cover` 로 잘림 → **좌우 각 약 6% 는 잘려도 되게** 그린다 |
 
 - 형식: `.webp` 우선, `.png`·`.jpg` 도 허용(같은 이름이 둘이면 빌드 실패).
-- 동작: `src/content/art.ts` 가 `import.meta.glob('/src/art/**/*.{webp,png,jpg}', { eager: true, query: '?url', import: 'default' })` 로 **빌드 시점에 있는 파일 목록**을 만든다. `ArtImage` 컴포넌트는 키(`lessons/l2/05`)가 목록에 있으면 `<img>`, 없으면 회색 자리를 그린다. 코드 수정 없이 파일 하나를 넣고 빌드(=`main` 푸시 → CI 배포)하면 그 칸만 바뀐다(Y-J3 수락 기준).
-- 파일은 해시 이름으로 출력되어 캐시 무효화가 자동이고, 서비스워커 사전 캐시에 들어간다(그림 총량이 커지면 사전 캐시에서 빼고 런타임 캐시로 — OQ-10).
-- 검사: 단위 테스트가 `src/art/` 의 모든 파일 이름이 실제 자리(레슨 컷 수·장면 수·엔딩 id)에 대응하는지 확인 — 오타 파일이 조용히 무시되지 않게.
-- `alt`: 컷의 일본어 대사(`jp`)를 대체 텍스트로.
+- 동작: `src/content/art.ts` 가 `import.meta.glob('/src/art/**/*.{webp,png,jpg}', { eager: true, query: '?url', import: 'default' })` 로 **빌드 시점에 있는 파일 목록**을 만든다. `ArtImage` 컴포넌트는 키(예: `vn/osaka/02`, 만화는 `ComicPage` 가 `lessons/l2/p1`)가 목록에 있으면 `<img>`, 없으면 회색 자리를 그린다. 코드 수정 없이 파일 하나를 넣고 빌드(=`main` 푸시 → CI 배포)하면 그 칸만 바뀐다(Y-J3 수락 기준).
+- 파일은 해시 이름으로 출력되어 캐시 무효화가 자동이다. 분기 게임·엔딩 그림은 서비스워커 사전 캐시에 들어가고, **만화 페이지는 `assets/comic/` 으로 따로 출력되어 사전 캐시에서 빠지고 처음 볼 때 저장**(CacheFirst, 최대 20개 — OQ-10 의 답, 2026-10-25). SW 에 `clientsClaim` 이 없어 첫 방문 세션에 본 페이지는 다음 방문부터 저장된다.
+- 검사: 단위 테스트가 `src/art/` 의 모든 파일 이름이 실제 자리(만화 `p1`·`p2`, 장면 수, 엔딩 id)에 대응하는지, 만화 페이지가 한 쪽에 파일 하나·2:3·짧은 변 1000px·400KB 이하인지 확인 — 오타 파일이 조용히 무시되지 않게.
+- `alt`: 장면·엔딩은 일본어 대사(`jp`). 만화 페이지는 `alt=""` — 대사는 그림 아래 목록(`lang="ja"`)에 있고, 그림 버튼의 이름은 "n쪽 크게 보기"(3개 언어).
 
 ## 11. 데이터 읽기·캐시·오프라인·반영 (제안)
 
@@ -474,6 +483,7 @@ sequenceDiagram
 | 판 번호 | **`GET /rest/v1/rpc/data_version`** → bigint (`stable` 함수, `rpc('data_version', {}, {get:true})`) | 장소·일정·회차·숨김이 바뀔 때마다 오르는 카운터. 같으면 다시 받지 않는다 |
 | 내 항목 | **`GET /rest/v1/rpc/my_items`** (계정이 있을 때만, `stable`) | 숨김·삭제 상태 포함(Y-R8). 응답의 id 로 카드에 [수정]·[삭제] 표시 |
 | 수정할 내 항목 `[Y-2 구현]` | **`GET /rest/v1/rpc/my_place?p_id=…`**, **`GET /rest/v1/rpc/my_event?p_id=…`** (계정이 있을 때만, `stable`) | 숨겨진 내 항목은 공개 뷰에 없으므로 수정 폼을 이것으로 채운다(Y-E1). 삭제되지 않은 내 것만, 아니면 null (ERD v2 §7.1) |
+| 설명 번역 `[ADR-0026]` | `GET /rest/v1/place_translations_public?select=place_id,lang,description` | 보이는 장소의 번역 전부(세 언어). 장소와 같은 페이지 나눔(`order=place_id,lang`)으로 같은 갱신에서 받고 스냅샷에 함께 둔다 — 오프라인에서 언어를 바꿔도 번역이 바뀐다. 1,000곳 × 두 언어 × 평균 120자 ≈ gzip 40 KB(*추정*). 장소가 2,000곳을 넘으면(OQ-11) 화면 언어만 받는다 |
 
 **페이지 나눔 `[Y-2 구현]`:** 클라우드 Data API 는 한 요청에 최대 1,000행만 돌려준다(최대 행 수 설정). 세 뷰 읽기는 `order=` 를 붙여 `limit=1000&offset=…` 으로 마지막 페이지(1,000행 미만)까지 이어 받는다 — 잘린 목록을 조용히 쓰지 않게(`src/api/rest.ts`). 로컬 스택도 `db-max-rows = 1000` 으로 같은 조건을 만든다(§19).
 
@@ -498,6 +508,80 @@ sequenceDiagram
 | 내가 쓴 직후 | 응답을 바로 반영 + 다시 받기 | 즉시 |
 
 PRD 는 "10초 안에 다른 기기에서" 를 요구한다(Y-M6, Y-K4, Y-R3). 열린 화면에 10초를 보장하려면 Supabase Realtime(브로드캐스트) 구독이 필요하다 — 의존성·연결 수가 늘어 이 RFC 는 30초 폴링을 제안하고 OQ-1 로 책임자 확인을 요청한다. 폴링 egress 추정: 동시에 화면을 연 사용자 10명 × 하루 2,880회 × 약 400 B ≈ 월 350 MB(*추정*).
+
+### 11.4 설명 번역 — 저장 뒤 비동기 `[ADR-0026]`
+
+**원칙.** 사용자 쓰기 경로(§13)는 그대로다. 번역은 원문이 저장된 **뒤에** 붙고, 실패하면 원문이 보인다(지금 동작). 규칙(길이·문자·공개 조건·해시·한도)은 모두 DB 함수에 있다. Edge Function 은 제공자를 부르기만 한다.
+
+```mermaid
+flowchart LR
+  subgraph DB["Postgres (app 스키마 — Data API 비노출)"]
+    P[(places)] -- "트리거: 설명이 바뀜 → 옛 번역 삭제" --> J[(translation_jobs)]
+    K["app.translation_kick()<br/>pg_cron 1분마다"] -- "할 일 있음?" --> J
+    C["public.translation_claim<br/>service_role 전용"] --> J
+    A["public.translation_apply<br/>service_role 전용"] --> T[(place_translations)]
+    A --> J
+    C --> U[(translation_usage)]
+    T --> V["public.place_translations_public<br/>anon 읽기"]
+  end
+  K -- "pg_net POST — 깨우기 비밀만, 데이터 없음" --> F["Edge Function translate (Deno)"]
+  F -- "POST rpc (전용 sb_secret)" --> C
+  F -- "plain text" --> MT["기계 번역 API (추천 Azure F0)"]
+  F -- "POST rpc" --> A
+  APP[PWA] -- GET --> V
+```
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant W as create_place / update_place (정의자 — 바뀌지 않음)
+  participant TR as places 트리거
+  participant CR as pg_cron → translation_kick
+  participant EF as Edge Function translate
+  participant CL as translation_claim
+  participant MT as 번역 API
+  participant AP as translation_apply
+  W->>TR: insert / update (같은 트랜잭션)
+  TR->>TR: 설명이 바뀌었으면 옛 번역 삭제, 작업 upsert (새 해시, next_attempt_at = now() + 60초)
+  CR->>CR: 켜짐 · 멈춤 아님 · 기한 된 작업 있음?
+  CR->>EF: net.http_post (헤더: 깨우기 비밀, 본문 없음)
+  EF->>EF: 비밀을 상수 시간 비교 — 틀리면 401, DB 호출 없음
+  EF->>CL: POST {p_max_jobs: 25}
+  CL->>CL: 공개 상태인 장소만, for update skip locked, 하루·월 문자 한도 안, 임대 5분, 사용량에 미리 더함
+  CL-->>EF: {status, jobs:[{claim, place_id, text, src, targets, hash}]}
+  EF->>MT: 배치 요청 (textType=plain, to = 두 언어, 타임아웃 10초)
+  MT-->>EF: 번역 + 감지 언어
+  EF->>AP: POST {p_provider, p_results:[{claim, place_id, hash, out:[{lang, text}] 또는 error}]}
+  AP->>AP: 임대 확인 → 해시 = 지금 원문의 해시? → 길이·문자 검사 → upsert 번역, 작업 삭제 / 실패면 백오프
+  AP-->>EF: {status:'ok', stored, stale, rejected, retried}
+  Note over AP: place_translations 문장 트리거 → data_version++ → 클라이언트가 다시 받음 (§11.3)
+```
+
+| 항목 | 설계 |
+|---|---|
+| 대기열에 넣기 | `app.places` 의 `after insert or update of description, deleted_at` 행 트리거. 트리거 함수는 invoker 다(`create_place` 등 정의자 함수 안에서 돈다). 설명이 비었으면 번역·작업을 지운다. 설명이 바뀌었으면 옛 번역을 지우고 `translation_jobs` 를 새 해시로 upsert 한다(`attempts = 0`, `next_attempt_at = now() + translation_delay_seconds`) — 연달아 고치면 한 번만 번역된다. 삭제(`deleted_at` 이 채워짐)면 번역·작업을 지운다 |
+| 깨우기 | `pg_cron` 1분마다 `app.translation_kick()`(정의자, EXECUTE 부여 없음). `translation_enabled = 1` 이고 멈춤(`paused_until`)이 지났고 기한 된 작업이 있을 때만 `net.http_post`. URL 과 깨우기 비밀은 Vault 에 둔다. 마이그레이션은 `pg_cron`·`pg_net`·`vault` 가 모두 있을 때만 예약을 건다(로컬에는 없다 — 정리 작업과 같은 방식, ERD v2 §6) |
+| 가져가기 | `translation_claim(p_max_jobs)` — **공개 상태인 장소만**(숨김 중이면 기다리고, 복원되면 이어서). 오래된 순, `for update skip locked`, 한 번에 문자 10,000 이하. 문자 수(원문 길이 × 대상 언어 수)는 **가져갈 때** 사용량에 더한다 — 실패해도 센다(보수적). 하루·월 한도를 넘으면 `{status:'budget'}` |
+| 대상 언어 | `{en, ja, ko}` 에서 작성 언어(`lang`)를 뺀 둘. 원문 언어는 제공자가 감지한다. 감지 언어가 대상과 같으면 그 언어는 저장하지 않는다(이미 그 언어) |
+| 돌려주기 | `translation_apply(p_provider, p_results)` — 임대 id 가 맞고 `source_hash` 가 **지금 원문의 해시와 같을 때만** 저장한다(다르면 `stale`). 번역문은 1~2,000자 + `check_text` 여러 줄 규칙. 어긋나면 버리고 작업에 `rejected_output`. 오류는 지수 백오프(2^n 분, 최대 6시간), 5회 뒤 `failed` 로 남긴다. 제공자 한도 소진(`quota`)이면 `paused_until` = 다음 달 1일(UTC), 속도 제한(`rate`)이면 +1시간 |
+| 형식 오류 | 두 함수 모두 모양이 틀린 입력을 `{status:'invalid', field}` 로 돌려준다(예외 아님 — CLAUDE.md 규칙). POST 로 부르므로 `stable` 이 아니다 |
+| 반영 | `place_translations` 의 문장 트리거가 `data_version` 을 올린다. 쓰기 한 번에 다시 받기가 약 두 번(원문, 번역)이 된다 |
+| IP 한도 | Edge Function 의 POST 도 `db_pre_request` 가 센다(`service_role` 요청도 훅을 거친다 — ERD v2 §8 22). 한 번 실행 = POST 2번, 1분 간격 → 5분 10번 < 60. 리미터는 고치지 않는다 |
+| 한도·비용 | 설정 `translation_chars_per_day`(60,000), `translation_chars_per_month`(1,500,000 — Azure F0 월 2,000,000 의 75%. Google 이면 400,000), `translation_enabled`(기본 **0**), `translation_max_attempts`(5), `translation_delay_seconds`(60), `translation_lease_seconds`(300), `translation_batch_chars`(10,000). 계정 쓰기 한도(Y-A3)와 계정 생성 상한(§14)이 번역할 글의 양도 묶는다. 최악(시간당 계정 200 × 장소 10 × 1,000자)이어도 하루 한도에서 멈춘다 — 원문은 그대로 보인다 |
+| 출시 뒤 일괄 번역 | 마이그레이션이 보이는 장소 중 설명이 있는 것을 모두 넣는다. 하루 한도가 며칠로 나눈다. 그동안은 깨우기 간격 5분·한 번에 100건으로 한다(다시 받기 횟수를 줄이려고) |
+| Edge Function | `supabase/functions/translate/`: `index.ts`(Deno 진입 — 깨우기 비밀 확인, 환경 변수), `core.ts`(`runOnce({claim, apply, translator})` — Deno·네트워크 API 없음, Vitest 대상), `providers/azure.ts`(`translate(texts, to[]) → {text, detected}[]` — 제공자를 바꾸면 이 파일만). 게이트웨이의 JWT 검사는 끄고(`--no-verify-jwt`) 깨우기 비밀로 대신한다 — 새 API 키와 게이트웨이 JWT 검사가 어떻게 맞물리는지는 *확인 필요*(PL-7). 로그에는 수(가져온 수·저장 수·오류 코드)만 남기고 **글·번역문·장소 id 는 남기지 않는다** |
+
+### 11.5 번역 표시 `[ADR-0026]`
+
+| 항목 | 설계 |
+|---|---|
+| 데이터 | `state/data.ts` 에 `placeTr: Record<id, Partial<Record<Lang, string>>>`. 읽기 한 번에 한 번 만들고 그대로 둔다(선택자는 저장소 안의 객체를 돌려준다는 규칙). IndexedDB 스냅샷에 함께 저장하고, 옛 스냅샷에 없으면 `{}` |
+| 컴포넌트 | `src/ui/LangText.tsx` 에 `UserText({text, lang, tr})`. `lang === 화면 언어` 이거나 `tr` 이 없으면 원문 + `LangBadge`(지금과 같음). 아니면 번역문(`lang={화면 언어}`) + 작은 줄 "자동 번역 · [원문 보기]". 누르면 원문(`lang={원문 언어}`) + 언어 배지 + [번역 보기]. 전환 상태는 그 카드의 `useState`(화면 안에서만, 저장하지 않음). 버튼은 `aria-pressed` |
+| 문구 (*초안*, 3개 언어, 한국어 기준 폭) | `trAuto` en "Machine translation" / ja 「機械翻訳」 / ko "자동 번역". `trShowOriginal` en "Show original" / ja 「原文を表示」 / ko "원문 보기". `trShowTranslation` en "Show translation" / ja 「翻訳を表示」 / ko "번역 보기" |
+| 크기 예산 | 지도 청크 59.9/60 KB, 홈 94.5/100 KB. `UserText` 와 문구를 지도 청크에 두면 넘는다(*추정* 0.3~0.6 KB gzip). 그래서 **홈(`Home.tsx`)의 다음 일정 제목도 `UserText` 로 그린다** — 지금 홈은 일정 제목에 언어 배지가 없어 Y-C5 와도 어긋나 있다. 그러면 `LangText.tsx` 가 첫 화면 청크에 들어가고, `check-bundle-size` 는 지도 예산에서 첫 화면이 이미 받은 파일을 뺀다. 지도 청크에는 `PlaceCard` 의 호출 자리만 남는다. 번역 읽기(`api/rest.ts`)·저장소(`state/data.ts`)는 이미 첫 화면에 있다. 재어 보고 그래도 넘으면 OQ-24 |
+| 이름 | 번역하지 않는다(D31). 이름 규칙상 라틴 글자가 있으므로 카드 제목의 `lang` 속성은 작성 언어 대신 `en` 으로 둔다(괄호 안 일본어는 그대로) |
+| 신고·관리 | 신고와 관리자 화면은 **원문**을 기준으로 한다. 관리자 콘솔은 번역을 보이지 않는다 |
+| fixture 모드 | `tests/fixtures/place_translations.json` 을 뷰와 같은 모양으로 둔다 |
 
 ---
 
@@ -579,7 +663,7 @@ sequenceDiagram
 
 | 대상 | 규칙 (서버) | 근거 |
 |---|---|---|
-| 장소 이름 | 공백 정리 후 1~60자(`char_length`), 제어 문자 금지. `[Y-2 구현]` 모든 글 필드 공통: 앞뒤 공백·U+00A0·U+3000 정리, C1 제어·방향·폭 0·서식 문자 거절, 여러 줄 필드는 탭·LF 외 제어 문자 거절(CR 단독 포함), 필수 필드는 보이는 글자 1개 이상(ERD v2 §4.1) | Y-M6 |
+| 장소 이름 | 공백 정리 후 1~60자(`char_length`), 제어 문자 금지. `[Y-2 구현]` 모든 글 필드 공통: 앞뒤 공백·U+00A0·U+3000 정리, C1 제어·방향·폭 0·서식 문자 거절, 여러 줄 필드는 탭·LF 외 제어 문자 거절(CR 단독 포함), 필수 필드는 보이는 글자 1개 이상(ERD v2 §4.1). **`[ADR-0026]` ASCII 라틴 글자(A–Z, a–z) 1개 이상**(D31 — 한국어만·일본어만은 거절, "Academic Affairs Office (教務課)" 는 통과). 어긋나면 `{status:'invalid', field:'name_latin'}`. `domain/validation.ts` 도 같은 검사(두 번 검사 — 단위 테스트가 두 판정을 대조). 출시 뒤에 넣으면 `update_place` 는 이름이 바뀔 때만 검사 | Y-M6, Y-M12 |
 | 카테고리 | enum `transit, daily, food, study, admin, health` | Y-M6, v1.3 `CATCOLOR` |
 | 설명 | 0~500자 | Y-M6 |
 | Google 링크 | 선택. `https://` 만, 호스트가 정확히 `www.google.com`·`google.com`·`www.google.co.jp`·`google.co.jp` 이고 경로가 `/maps` 로 시작, 또는 호스트 `maps.app.goo.gl`. 최대 500자. 사용자 정보(`user@`)·포트 금지. `[Y-2 구현]` 점 경로 조각(`/../`, `%2e` 표기 포함)·역슬래시·공백 문자 금지. **`goo.gl/maps` 는 받지 않는다** — 지원 종료된 단축 링크 `[검토 nit]`, PRD 와의 차이는 OQ-16 | Y-M6, Y-S4 |
@@ -620,7 +704,7 @@ sequenceDiagram
 
 ### 13.4 상태 코드 (클라이언트는 `api/errors.ts` 한 곳에서 i18n 키로)
 
-`ok`, `duplicate`, `rate_limited`, `suspended`, `not_found`(남의 것·없음·삭제됨 — 구별하지 않음), `past_event`, `already_reported`, `invalid`(+`field`), `forbidden`(쓰기 경로 세션 없음, `admin_whoami`). HTTP 429 는 IP 한도, 401/403(SQLSTATE 42501)은 세션 문제 또는 관리 권한 실패, 400 은 예상 밖 서버 오류(일반 오류 문구).
+`ok`, `duplicate`, `rate_limited`, `suspended`, `not_found`(남의 것·없음·삭제됨 — 구별하지 않음), `past_event`, `already_reported`, `invalid`(+`field` — `[ADR-0026]` 장소 이름의 라틴 글자 규칙은 `name_latin`), `forbidden`(쓰기 경로 세션 없음, `admin_whoami`). HTTP 429 는 IP 한도, 401/403(SQLSTATE 42501)은 세션 문제 또는 관리 권한 실패, 400 은 예상 밖 서버 오류(일반 오류 문구).
 
 ## 14. 빈도 제한 (제안 — Y-A3, Y-S7)
 
@@ -702,10 +786,17 @@ DB 에서는 열 조합이다(ERD v2 §4.2): `deleted_at`, `auto_hidden_at`, `su
 | 사용자 좌표 | 기기 메모리만 | — | 등록한 장소 좌표만 서버로(Y-P3). 백엔드 요청에 사용자 위치 없음 |
 | 컬렉션·언어·위치 선택 | `localStorage yui.v1.*` | 사용자가 지울 때까지 | v1.3 그대로 |
 | 플랫폼 로그 (IP 등) | Supabase·GitHub·Cloudflare | 각 사업자 정책 | 방침에 명시(Y-P1) |
+| 설명 번역 `app.place_translations` `[ADR-0026]` | Supabase | 원문을 따른다: 설명을 고치면 즉시 삭제, 장소를 삭제하면(30일 보관이 시작될 때) 즉시 삭제. 숨김 동안은 남지만 공개 뷰에 없다 | 파생 데이터, 작성자 없음. 백업에 포함(빼면 복구 뒤 다시 번역하는 비용) |
+| 번역 작업 `app.translation_jobs` `[ADR-0026]` | Supabase | 성공하면 삭제. 실패(`failed`)는 30일 뒤 정리 | 원문 해시·시도 횟수·오류 코드만(글 사본 없음) |
+| 번역 사용량 `app.translation_usage` `[ADR-0026]` | Supabase | 90일 | 날짜별 문자 수만 |
+| 번역 제공자로 가는 글 `[ADR-0026]` | 번역 제공자(추천: Microsoft Azure) | 제공자 조건 — Azure 는 저장·학습하지 않음(No Trace, ADR-0026 비교표) | **설명 원문만**(id·좌표·이름·작성자·IP 없음). 처리 위탁 + 해외 이전(아래) |
+| Edge Function 로그 `[ADR-0026]` | Supabase | 사업자 정책 | 수와 오류 코드만, 글 없음 |
 
 **IP 의 표현 (방침 문구) `[검토 #8]`:** 첫 판은 IP 해시를 사실상 익명처럼 다뤘으나, 솔트가 같은 DB 에 있고 IPv4 공간이 2^32 이라 무차별 대입으로 되돌릴 수 있다. 방침에는 "부정 이용 방지를 위해 접속 IP 를 **가명 처리**한 값으로 최대 48시간 보관" 으로 쓴다.
 
 공개 뷰는 날짜만 내보낸다(`created_on`, `edited_on`) — 초 단위 시각으로 사용자 행동과 대조하는 것을 줄인다. 서버 위치(도쿄 리전 — 확인 필요 TS-Q8)와 미국 사업자(GitHub, Cloudflare, Supabase)의 해외 이전 여부를 방침에 적는다(Y-P4). 데이터 최소화 검토(Y-S12)는 ERD v2 §4 의 각 열에 "왜 필요한가" 를 적는 것으로 대신하고, 출시 전 점검표에 넣는다.
+
+**개인정보처리방침에 더할 것 `[ADR-0026]`** (초안 `docs/09-release/legal-draft.md` 는 열린 PR 에만 있어 여기서 고치지 않는다): ① 처리 위탁처 표에 번역 제공자 — 사업자명, 맡기는 일 "장소 설명의 기계 번역", 보내는 항목 "설명 원문", 보관 "제공자 조건(저장하지 않음)". ② 해외 이전 표에 그 제공자의 나라와 처리 지역. ③ 보관 기간 표에 번역(원문을 따름). 일본 개인정보보호법상의 근거 조항과 문구는 법무 검토에서 정한다. 이 행은 **첫 번역을 보내기 전에** 게시한다(출시 뒤에 넣으면 공지한 뒤 번역을 켠다 — ADR-0026).
 
 삭제 요청(Y-P6, Y-P7): 관리자 콘솔의 검색(이름·도도부현)으로 항목을 찾아 관리자 삭제 + 메모 "외부 요청". 30일 보관 중 노출은 없다(공개 뷰 제외).
 
@@ -724,6 +815,7 @@ DB 에서는 열 조합이다(ERD v2 §4.2): `deleted_at`, `auto_hidden_at`, `su
 | A5 사용자 기기의 세션·저장 | 개인 항목 수정 권한, 컬렉션 | 브라우저 |
 | A6 가용성 | 서비스 | Supabase 무료 한도, Cloudflare(앱·콘솔) |
 | A7 백업 | 복구 | 암호화 덤프 |
+| A8 번역 비밀 `[ADR-0026]` (번역 API 키, 전용 `sb_secret`, 깨우기 비밀) | 번역 표 쓰기, 번역 한도 | Supabase Edge Function 비밀값. 깨우기 비밀·함수 URL 은 Vault 에도 |
 
 ### 17.2 STRIDE
 
@@ -766,6 +858,14 @@ DB 에서는 열 조합이다(ERD v2 §4.2): `deleted_at`, `auto_hidden_at`, `su
 | T-25 | E | 서비스워커 하이재킹(같은 출처 다른 페이지가 범위 안 SW 등록) | A5 | 사용자 앱이 자기 출처 `yunabi.juha.dev` 를 쓰므로(ADR-0025) 같은 출처의 다른 페이지가 없다 — 옛 `github.io` 출처 공유 위험(R-3)은 설계상 해소. SW 범위 `./` | — | 첫 배포 뒤 실제 주소 확인 |
 | T-26 | I | 감시 경보를 **공개 저장소 이슈**로 열면 방어 상태(어느 한도가 언제 찼는지)가 공격자에게 보인다. 공개 저장소의 Actions 로그도 공개 `[검토 낮음]` | A6 | 감시·백업 워크플로는 **비공개 운영 저장소**(`yunabi-ops`)에서 돌리고 경보는 그 저장소의 이슈(메일 알림)로. 공개 저장소에는 비밀값이 필요한 예약 작업을 두지 않는다 | S10 | 점검표 |
 | T-27 | E | CAPTCHA 를 켜자 **관리자도 로그인 못 함**(비밀번호 로그인에도 적용) → 공격 중 대응 불가 `[검토 #5]` | A3 | 콘솔에 Turnstile 위젯 + 콘솔 CSP 허용, 사이트 키 빌드 포함 | S3, S7 | 점검표 "스위치 ON 에서 관리자 로그인" |
+| T-28 `[ADR-0026]` | S | 누구나 Edge Function 주소를 불러 실행을 일으킨다(호출 수·DB 호출 소모) | A6, A8 | 깨우기 비밀 헤더를 상수 시간으로 비교하고, 틀리면 DB 호출 없이 401. 맞아도 할 일만 처리 — 비용 상한은 DB 의 문자 한도 | S7 | Vitest(비밀 없음 → 401, claim 을 부르지 않음), PL-7 ⑤ |
+| T-29 `[ADR-0026]` | T/E | 전용 `sb_secret` 유출 → 번역 표에 아무 글이나 쓴다(모든 장소의 "번역"을 공격자 글로) | A1, A8 | `service_role` 은 표 권한 0, 함수는 둘 — 원문·소유·숨김·신고는 못 바꾼다. 번역문도 `check_text`·길이 검사를 거치고 화면은 텍스트로만. 감시 키와 따로라 이것만 폐기할 수 있다. 런북 R-9(키 폐기 → 번역 표 비우고 다시 넣기). 사용자에게는 "원문 보기"가 있다 | S1, S2 | pgTAP G-72, G-77 |
+| T-30 `[ADR-0026]` | I | 유출된 키로 숨김·삭제된 글을 읽는다 | A1, A2 | `translation_claim` 은 공개 상태인 장소의 글만 준다. 작성자·좌표·IP 를 주는 함수가 없다 | S1, S12 | G-71 |
+| T-31 `[ADR-0026]` | T | 사용자 글 안의 지시가 번역 결과를 조작한다(프롬프트 주입), 번역문에 HTML·스크립트가 섞인다 | A1, A5 | LLM 이 아닌 기계 번역 API, `textType=plain`. 결과는 길이·문자 검사, JSX 텍스트 출력, 사용자 앱 CSP | S4, S5 | e2e(번역문이 XSS 페이로드 → `dialog`·위반 0), G-72 |
+| T-32 `[ADR-0026]` | T | 수정과 번역이 엇갈려 **옛 글의 번역**이 새 글 옆에 남는다 | A1 | 트리거가 수정 때 옛 번역을 지우고, `translation_apply` 가 해시를 지금 원문과 비교한다(`stale`) | — | G-70, G-72 |
+| T-33 `[ADR-0026]` | I | 사용자 글이 외부 사업자에게 간다(제공자 쪽 보관·학습·유출), 함수 로그에 글이 남는다 | A2 | 설명 원문만 보냄(id·좌표·작성자 없음), 저장·학습하지 않는 등급(Azure No Trace — 무료 등급 포함), 숨긴(신고된) 글은 보내지 않음, 방침에 위탁·해외 이전, 로그에는 수만 | S12 | 점검표, 방침, Vitest(로그에 글 없음) |
+| T-34 `[ADR-0026]` | D | 대량 등록·수정으로 번역 한도·비용을 소진시킨다 | A6 | 하루·월 문자 한도(가져갈 때 셈), F0 는 넘어도 과금 없음, 계정 쓰기 한도·계정 생성 상한. 소진되면 원문 표시 — 서비스는 그대로 | S7, S10 | G-71, `ops_health` 경보 |
+| T-35 `[ADR-0026]` | I | 번역 API 키 유출 → 남이 우리 한도를 쓴다 | A8 | Edge Function 비밀값에만(저장소·빌드·DB 에 없음), F0 는 과금 없음, 런북 R-9 로 키 교체 | S2 | gitleaks, 점검표 |
 
 ### 17.3 사용자 앱 CSP — meta 와 헤더 (ADR-0025)
 
@@ -813,6 +913,9 @@ upgrade-insecure-requests
 |---|---|---|
 | 형식 오류 급증 | `security_events('invalid_input')` | 1시간 100건 초과 (자동화된 퍼징 징후) |
 | 가입 한도 접근 | 최근 1시간 익명 생성 | 전역 한도의 50% → 런북 R-2 검토 `[검토 #11]` |
+| 번역 지연 `[ADR-0026]` | `ops_health` 의 `translation.oldest_due_minutes` | 60분 초과(깨우기·함수·제공자 중 하나가 멈춤) → 런북 R-9 |
+| 번역 실패·멈춤 `[ADR-0026]` | `translation.failed`, `translation.paused` | 실패 1건 이상, 또는 멈춤 |
+| 번역 문자 수 `[ADR-0026]` | `translation.chars_month` / `month_limit` | 70% |
 
 ### 17.7 공격·운영 대응 런북 (요약 — 전문은 `docs/architecture/runbook.md`) `[검토 #10·#11]` `[D25]`
 
@@ -830,6 +933,7 @@ D25(관리자 = 책임자 1명)로 아래 모든 절차의 실행자는 책임�
 | R-6 관리자 재설정 메일이 안 옴 | — | 기본 SMTP 의 시간당 발신 한도가 익명 이메일 연결 요청에 소모됐을 수 있다 → 책임자가 신뢰하는 로컬 터미널에서 secret 키로 `auth.admin.updateUserById(userId, {password})` 를 실행해 비밀번호를 직접 바꾼다 `[재검토 #4]`. 대시보드에서 비밀번호를 직접 지정하는 기능은 확인하지 못해 이 경로를 쓴다 `[검토 R-9]` | 관리자 1명(D25)이라 이 절차로 충분. 사용자 SMTP 는 D26 으로 출시 전 결정(§17.6a) |
 | R-7 TOTP 기기 분실 `[D25]` | 책임자가 휴대폰을 잃음 | ① 콘솔 `Login` 에서 **예비 TOTP 요소를 골라**(§12.2 요소 선택 `[검토 R-9]`) 로그인 → 콘솔에서 잃은 요소 삭제 → 새 기기에 요소 등록(다시 2개). ② 예비도 없을 때(break-glass): 신뢰하는 로컬 터미널 **한 곳에서** secret 키로 모두 실행한다. secret 키는 Supabase 대시보드(책임자의 Supabase 계정 — 이 계정 자체의 2단계 인증이 전제, §17.6a)에서 꺼낸다. 순서: 먼저 `auth.admin.updateUserById(userId, {password})` 로 관리자 **비밀번호를 교체**한다(대시보드 직접 지정은 확인 못 함 `[검토 R-9]`) → `auth.admin.mfa.listFactors` → `deleteFactor({id, userId})`(검증된 요소를 지우면 그 사용자의 **모든 세션이 로그아웃** — 공식 문서) → 곧바로 콘솔에 새 비밀번호로 로그인해 TOTP 2개 재등록 → `mod_actions` 에 메모(콘솔 첫 조치로 "MFA 재설정" 기록). ③ Supabase 계정 접근까지 잃으면 Supabase 지원 절차 — 이 동안 관리 기능 없음(자동 숨김은 계속 동작) | ② 에서 요소가 0개인 동안은 비밀번호만 아는 사람이 먼저 등록할 수 있다(T-03a) → 비밀번호 교체를 먼저, 재등록까지 몇 분 안에. secret 키를 브라우저에 넣지 않는다 |
 | R-8 책임자 부재 (휴가·병가) `[D25]` | 대리 관리자가 없다 | **대리인 없음이 기본.** 시스템 쪽은 사람 없이 안전하게 기운다: 신고 3건 자동 숨김은 계속 동작(잘못 숨겨진 항목은 돌아올 때까지 숨김), 빈도 제한·전역 상한·정리 작업도 자동. 부재 전에: ① 감시 경보 메일이 휴대폰으로 오는지 확인 ② 공격이 걱정되는 긴 부재(2주 이상, 학기 초 제외)면 CAPTCHA 스위치를 **미리 ON** 하는 것을 고려(사람은 위젯 통과, 개인정보 문구 TS-Q6 필요) ③ SYS-04 연락처 페이지의 응답 기간 문구(예: "보통 7일 안에")가 부재 기간과 맞는지 확인. 돌아와서: 관리자 화면의 숨김·신고 대기열 처리, R-1 대량 숨김 흔적 확인.<br>**사용자에게 보이는 것** `[검토 R-10]`: 부재 중 잘못 숨겨진 항목은 책임자가 돌아올 때까지 숨겨져 있다(책임자 수용 여부 OQ-21). 문구는 *초안*이고 문구 확정은 기획이 한다. 키는 `me.hiddenReview`·`legal.replyTime`, 3개 언어(Y-C2).<br>· ME-02 의 `hidden_review` 항목 설명 — en "Under review — this isn't visible to others right now. It may reappear after the admin checks it. Checking can take a few days." / ja 「確認中 — 現在ほかの人には表示されていません。管理者の確認後、再び表示されることがあります。確認まで数日かかる場合があります。」 / ko "검토 중 — 지금은 다른 사람에게 보이지 않아요. 관리자가 확인한 뒤 다시 보일 수 있어요. 확인까지 며칠 걸릴 수 있어요." 숨김 원인(신고·정지)은 구별하지 않는다(M-14).<br>· SYS-04 응답 기간 — en "We usually reply within 7 days. It may take longer while the admin is away." / ja 「通常7日以内に返信します。管理者の不在中は、さらに時間がかかることがあります。」 / ko "보통 7일 안에 답장드려요. 관리자가 자리를 비운 동안에는 더 걸릴 수 있어요." "7일" 은 PL-5 에서 정하는 값이다 | 대리 관리자를 두려면 R-5 로 두 번째 계정(+ 그 사람의 TOTP 2개) — 그때는 SMTP·프로젝트 멤버·방침 문구를 다시 본다(OQ-19). 장기 부재·연락 두절 시 Supabase·GitHub·Cloudflare 계정 접근을 누가 이어받는지는 정해져 있지 않다(OQ-20) |
+| R-9 번역 이상 `[ADR-0026]` | 번역 경보(지연·실패·한도), 이상한 번역에 대한 문의, 키 유출 의심 | ① 멈추기: `update app.settings set int_value = 0 where key = 'translation_enabled'` — 이미 저장된 번역은 계속 보인다 ② 잘못된 번역 지우기: `delete from app.place_translations`(전부 또는 해당 장소) 후 해당 장소를 대기열에 다시 넣기 ③ 키 유출: 대시보드에서 전용 `sb_secret` 폐기·재발급, 번역 API 키 교체, 깨우기 비밀 교체(Edge Function 비밀값 + Vault) ④ 원인을 고친 뒤 스위치 ON | 번역을 멈춰도 서비스는 그대로다(원문 표시). 감시 키는 따로라 영향이 없다. 전문은 구현 때 런북에 |
 
 ### 17.5 백업·복구 (Y-S9)
 
@@ -860,6 +964,7 @@ D25(관리자 = 책임자 1명)로 아래 모든 절차의 실행자는 책임�
 | PL-4 | Supabase·GitHub·Cloudflare **계정 자체의 2단계 인증** `[D25]` | — | 세 계정 모두 2단계 인증 켜짐 확인(관리자 TOTP 를 잃었을 때 R-7 ② 의 마지막 근거가 Supabase 계정이다. 각 서비스의 2단계 인증 지원은 *일반 지식 — 출시 전 확인*) | R-7, T-10 |
 | PL-5 | 부재 대비 `[D25]` | — | 감시 경보가 휴대폰 메일로 오는지 시험(§17.6 알림 시험과 같이), SYS-04 의 응답 기간 문구와 ME-02 "검토 중" 설명 확정(R-8 초안 `[검토 R-10]`), R-8 확인, OQ-21 책임자 답 기록. **`[2026-10-22 책임자 결정]` 초안대로:** OQ-21 받아들임, ME-02 숨김 설명은 R-8 초안 그대로(`myHiddenHelp`, 3개 언어 — 앱에 들어감), SYS-04 응답 기간은 "보통 7일"(`legal.replyTime`, 문의 페이지와 함께 Y-4). 경보 메일 시험은 12번(운영 저장소)에서 | R-8, Y-P6, OQ-21 |
 | PL-6 | **로컬 스택과 다른 점 — 실제 프로젝트에서 확인** `[Y-2 구현]` | Y-2 는 로컬 스택(§19.1a)으로만 검증됨 | 첫 마이그레이션 적용 뒤 실제 프로젝트에서: ① `pgrst.db_pre_request` 가 켜졌는지 — 같은 IP 에서 61번째 쓰기가 **429**(ERD v2 OQ-E1) ② `xff_trusted_hops` 실측 — 앞단 프록시 수를 재고 G-54(왼쪽 위조 값 무시)를 HTTP 로 재현(OQ-E8) ③ `pg_graphql` 꺼짐 — `/graphql/v1`·`/rpc/graphql` 이 동작하지 않음 ④ 가입 훅이 **익명 가입에도** 호출되는지(로컬은 호출됨 — OQ-E5 일부 답) ⑤ `supabase_admin` default privileges 마이그레이션의 notice 유무(OQ-E10) ⑥ 기본 statement timeout 아래서 쓰기·정리 작업이 끝나는지 ⑦ 로컬에서는 `postgres` 가 superuser 라 가려졌을 수 있는 권한 오류 — 마이그레이션 전체(`checks` 포함)가 클라우드의 `postgres` 로 통과하는지 | ERD v2 OQ-E1·E5·E8·E10 |
+| PL-7 | **번역 파이프라인 — 클라우드에서만 확인되는 것** `[ADR-0026]` | `translation_enabled = 0` — 번역 없음, 원문 + 언어 배지(지금 동작) | ① 방침의 위탁·해외 이전 행 게시 ② 제공자 계정·키(OQ-23), 전용 `sb_secret`, 깨우기 비밀을 Edge Function 비밀값에, 깨우기 비밀·URL 을 Vault 에 ③ `pg_net` 이 `extensions` 스키마에 있고 `checks` ⑫·마이그레이션 24 의 자기 검사 통과(ERD v2 OQ-E11) ④ 예약 작업이 할 일이 있을 때만 호출하는지(호출 기록) ⑤ JWT 검사를 끈 함수가 깨우기 비밀 없이 401 ⑥ 실제 장소 하나로: 등록 → 2분 안에 다른 언어 화면에 번역 → 수정 → 옛 번역이 사라지고 새 번역 ⑦ 하루 한도를 1로 낮춰 `budget`·경보 확인 후 되돌림 ⑧ 함수 로그에 글이 없음 | ADR-0026, OQ-22~24 |
 
 ---
 
@@ -886,8 +991,8 @@ D25(관리자 = 책임자 1명)로 아래 모든 절차의 실행자는 책임�
 | 갱신 경로 | v1.3 SW 는 탐색 요청을 network-first 로 처리하므로 새 `index.html` 을 받는다 → 새 번들이 `sw.js` 를 다시 등록 → 바이트가 달라 새 SW 설치 |
 | 정리 | 새 SW `activate` 에서 `yui-` 로 시작하는 옛 캐시(`yui-v1`~`yui-v6`) 삭제 + Workbox 오래된 사전 캐시 정리. 캐시 이름은 `cacheId: 'yunabi'` 로 구분. 새 출처에는 옛 캐시가 없어 `yui-` 정리는 할 일이 없지만 무해해 그대로 둔다(ADR-0025 결정 7) |
 | 응답 헤더 | `/sw.js`·`/`·`/index.html`·`/manifest.webmanifest` 는 `Cache-Control: no-cache`(새 배포는 재검증으로), `/assets/*` 는 immutable(`dist/_headers`). Workers 는 `/index.html` 을 `/` 로 리디렉션한다 — Workbox 사전 캐시와 맞물리는지는 실제 주소의 오프라인 새로 고침으로만 확인된다(런북 §7.3) |
-| 사전 캐시 | Vite 산출물(해시 파일), `public/data/japan-prefectures.geojson`, 아이콘, `src/art/**`(OQ-10) |
-| 런타임 | 같은 출처 탐색: network-first + **3초 시간 제한** 후 캐시(RFC-0002 OQ-17 해결). 교차 출처(타일, Supabase)는 처리하지 않음 |
+| 사전 캐시 | Vite 산출물(해시 파일), `public/data/japan-prefectures.geojson`, 아이콘, 장면·엔딩 그림. **만화 페이지(`assets/comic/`)는 빠진다**(OQ-10, 2026-10-25) |
+| 런타임 | 같은 출처 탐색: network-first + **3초 시간 제한** 후 캐시(RFC-0002 OQ-17 해결). 같은 출처 `assets/comic/`: CacheFirst, 최대 20개(처음 볼 때 저장). 교차 출처(타일, Supabase)는 처리하지 않음 |
 | 갱신 알림 | 새 SW 가 대기하면 "새 버전 — 다시 열기" 토스트(3개 언어), `skipWaiting` 은 사용자가 누를 때 |
 | manifest | `id: "./"`, `start_url: "./"`, `scope: "./"` 유지. 바로가기 URL 은 `./#/map` 등 |
 
@@ -913,6 +1018,8 @@ D25(관리자 = 책임자 1명)로 아래 모든 절차의 실행자는 책임�
 | DB | pgTAP (`supabase test db`) | ERD v2 §9 권한 매트릭스, 검증, 빈도, 신고·숨김·보호·정지, 감사 기록, 정리 | `npm run test:db` |
 | 통합 E2E | Playwright + 로컬 Supabase | 첫 쓰기 익명 계정, 멱등 재전송, 다른 기기 반영, 신고 3건 숨김, 관리자 aal2 로그인·복원·삭제·정지 | `npm run test:backend` |
 | 보안 | Playwright `request` + 페이로드 세트, ZAP baseline | Y-S1, Y-S4, Y-S5, Y-S11 | CI(보안), 출시 전 |
+| 번역 `[ADR-0026]` | pgTAP · Vitest · Playwright | **SQL**(트리거·claim·apply·뷰·권한·한도·`ops_health`): pgTAP G-70~G-79 — 로컬 스택에 그대로 있다.<br>**Edge Function 로직:** `core.ts` 를 Vitest 로, 가짜 번역기(정해진 출력·감지 언어·오류·지연을 주입)와 가짜 claim/apply 로 시험한다 — 배치, 한도 응답, 한도 소진 → 멈춤, 감지 언어가 대상과 같으면 버림, 타임아웃, 깨우기 비밀, 로그에 글 없음(`console` 감시). 제공자 어댑터는 녹화한 응답으로(`fetch` 가짜).<br>**화면:** fixture 모드 e2e 에 `place_translations.json` — 번역 기본 표시, 원문 전환, 언어 배지, 375px ko 넘침, 번역문 XSS 페이로드. 렌더 검사에 번역 있음/없음/원문 보기 상태.<br>**통합:** 로컬 스택에는 Edge Function 런타임·`pg_cron`·`pg_net` 이 없다 → `test:backend` 가 `core.ts` 를 Node 에서 가짜 번역기와 로컬 service 키로 **한 번 실행**하는 스크립트를 부르고, 다른 브라우저 컨텍스트에 번역이 보이는지·수정 뒤 사라지는지 본다. 깨우기와 실제 제공자는 PL-7 | `npm test`, `npm run test:db`, `npm run test:backend` |
+| 이름 규칙 `[ADR-0026]` | Vitest · pgTAP · Playwright | `validation.ts` 와 서버 규칙이 같은 입력 세트로 같은 판정(단위 — `links` 와 같은 방식), G-76, 폼에서 한국어만인 이름 → `name_latin` 문구 | `npm test`, `npm run test:db`, e2e |
 
 ### 19.1a 로컬 테스트 스택 `[Y-2 구현]`
 
@@ -982,7 +1089,8 @@ flowchart LR
 | SvelteKit / Next.js / React Router framework 모드 같은 메타 프레임워크 | 서버 렌더 불필요, 정적 SPA 하나. 뒤로 가기 규칙은 작은 자체 라우터가 맞음 |
 | Svelte 5 (첫 판의 제안, ADR-0015) | 책임자 결정 D24 로 React — ADR-0023 |
 | React Router v8, react-leaflet 5, Zustand, i18next `[D24]` | ADR-0023 결정 3~6. 지도 수명을 컴포넌트와 분리(ADR-0014), 이동·상태를 React 밖에서도 쓰기, 첫 화면 예산 |
-| Edge Function 이 모든 쓰기를 대행 | 번역이 없어(Q-Y4) 서버 코드가 필요 없다. 검사는 DB 함수가 같은 트랜잭션에서 하는 편이 우회 경로가 없다 |
+| Edge Function 이 모든 쓰기를 대행 | ~~번역이 없어(Q-Y4) 서버 코드가 필요 없다.~~ `[ADR-0026]` 번역은 생겼지만(D32) 저장 **뒤** 비동기로 붙여 쓰기 경로에는 서버 코드가 필요 없다(§11.4). 검사는 DB 함수가 같은 트랜잭션에서 하는 편이 우회 경로가 없다 |
+| 쓰기 전 번역, LLM 번역, 브라우저 안 번역, 언어별 이름 열, 로마자 자동 변환 `[ADR-0026]` | ADR-0026 "고려한 대안" |
 | 테이블 직접 쓰기 + RLS 정책 | 빈도 제한·정지·멱등·자동 숨김을 정책 식으로 쓰기 어렵고, 열 단위 쓰기 권한을 세밀하게 관리해야 한다 |
 | 신고 자격 조건(계정 나이·평판), 전역 자동 숨김 차단기 | 처음 초안에 있었으나 D20 으로 제외 — 600명 규모에서 관리자 복원으로 충분 |
 | 익명 계정을 앱 열 때 생성 | Y-A1/Q-Y10 이 첫 쓰기로 정함. MAU·DB 증가가 없고 읽기가 Auth 장애와 무관해짐 |
@@ -1026,6 +1134,8 @@ flowchart LR
 | D24 | React (Vite + TS) | §5·§6·§7·§8·§9·§17.3·§19, ADR-0023, ADR-0024(검토 보완) | 린트·렌더(`prerender`)·E2E |
 | D25 | 관리자 = 책임자 1명 | §12.2, §17.7 R-5·R-7·R-8, §17.6a PL-3~5 | 점검표, R-7 모의 실행 |
 | D26 | 기숙사 IP·SMTP 미룸 | §17.6a PL-1·PL-2 | 출시 전 점검 기록 |
+| D31, Y-M12 `[ADR-0026]` | 장소 이름은 영어, 라틴 글자 1개 이상 | §13.2, ERD v2 §4.1 | 단위(두 규칙 일치), pgTAP G-76, E2E |
+| D32 `[ADR-0026]` | 설명 자동 번역 + 원문 보기 | §11.4, §11.5, §16, §17.2 T-28~T-35, ERD v2 §4.8·§7.5 | pgTAP G-70~G-79, Vitest(`core.ts`), E2E, PL-7 |
 | Y-B1, Y-B2 | 이름·로고 | 현행 유지(`8ce701a`), `public/` 아이콘 | E2E |
 | Y-B3 | `yui.v1.*` | §18.1 | E2E(옛 키 심고 시작) |
 | Y-J1 | 만화·게임·컬렉션 | §18.3, §19 | E2E·렌더 |
@@ -1051,7 +1161,7 @@ flowchart LR
 | Y-C1, Y-C2 | 3개 언어 | §8 | 단위·렌더·E2E |
 | Y-C3 | 오프라인 + 갱신 시각 | §11.2 | E2E |
 | Y-C4 | 멱등, 입력 보존 | §13.1 | pgTAP·E2E |
-| Y-C5 | 언어 배지 | §8 | 렌더 |
+| Y-C5 | 언어 배지, 설명 번역 표시 `[ADR-0026]` | §8, §11.5 | 렌더, E2E |
 | Y-P1~P7 | 개인정보·보관·연락 | §16 | 점검표 |
 | Y-S1 | 서버 권한 | §13, §17.2 T-01/05/05a/12/13/22/23 | pgTAP(G-03 카탈로그 전수 포함), HTTP 직접 요청 |
 | Y-S2 | 비밀 키 | §17.2 T-10/14, §19.2 (Environment·`pull_request_target` 금지) | CI |
@@ -1082,6 +1192,9 @@ flowchart LR
 | OQ-19 `[D25]` | 대리 관리자를 언젠가 둘 것인가(방학·장기 출장). 두면 R-5 로 두 번째 계정, 그 사람의 TOTP 2개, 사용자 SMTP(OQ-G), 방침의 "관리자" 범위 문구를 다시 본다 | 지금은 두지 않음(D25) |
 | OQ-20 `[D25]` | **승계:** 책임자가 장기간 연락이 안 될 때 Supabase·GitHub·Cloudflare·`yunabi-ops`·백업 `age` 개인 키에 누가 접근하는가. 지금은 아무도 없다 → 서비스는 자동으로 계속 돌지만 일시정지(B-4)·장애·삭제 요청(Y-P6)에 대응할 사람이 없다 | 봉인한 비상 접근 문서를 믿을 수 있는 사람에게 맡길지 책임자가 결정 |
 | OQ-21 `[검토 R-10]` | **책임자 부재 중 잘못 숨겨진 항목은 돌아올 때까지 숨겨져 있다** — 대리인이 없으므로(D25, R-8), 신고 3건으로 숨겨진 정상 항목은 부재 기간 내내 다른 사용자에게 보이지 않는다. 등록자는 ME-02 에서 "검토 중" 과 "며칠 걸릴 수 있음" 안내만 본다(R-8 문구 초안). 이것을 받아들이는가. **`[2026-10-22]` 책임자 답: 받아들임** | 받아들임 — 숨김 쪽으로 기우는 것이 안전하다. 긴 부재 전에 R-8 ② 와 SYS-04 문구를 맞춘다 |
+| OQ-22 `[ADR-0026]` | **일정 글(제목·장소·본문, 회차 덮어쓰기)도 번역할지** (ADR-0026 TR-Q2) | 번역한다 — 같은 파이프라인, `app.event_translations` 를 같은 모양으로. `.ics` 는 원문 |
+| OQ-23 `[ADR-0026]` | **번역 제공자**(TR-Q1)와 **도입 시기**(출시 전/후, TR-Q3) | Azure AI Translator F0, 출시 전 |
+| OQ-24 `[ADR-0026]` | 홈 배치(§11.5)로도 지도 청크가 60 KB 를 넘으면 예산을 61 KB 로 올릴지 (TR-Q7) | 재어 본 뒤 넘을 때만 묻는다 |
 
 ### PRD 에 대한 지적 (PRD 는 고치지 않음)
 
@@ -1096,7 +1209,7 @@ flowchart LR
 | OQ-7 | Y-P5 "1년간 활동 없는" 의 활동 = 쓰기·신고(서버가 아는 것). 읽기만 한 사용자는 계정이 없으므로 해당 없음 | 쓰기·신고 기준 |
 | OQ-8 | OS 뒤로 가기로 지도에 돌아올 때는 D14 대신 이전 상태 복원(현행 코드와 같음) — 맞는가 | 유지 |
 | OQ-9 | 관리자 콘솔도 3개 언어인가(Y-C2) | 3개 언어 (비용 작음) |
-| OQ-10 | 그림이 많아지면(수십 MB) 사전 캐시 대신 런타임 캐시 | 총량 5 MB 넘으면 전환 |
+| OQ-10 | ~~그림이 많아지면(수십 MB) 사전 캐시 대신 런타임 캐시~~ | **답 (2026-10-25):** 만화 페이지(14장 × 최대 400KB)는 런타임 캐시로 — §10 |
 | OQ-11 | 장소가 2,000건을 넘으면 도도부현 단위 로딩 | 그때 전환 |
 | OQ-12 | 감시 예약 실행이 무료 프로젝트 일시정지를 막는 효과를 의도로 받아들일지. 일시정지 조건 자체가 미확인(보안 검토도 확인 못 함) | 받아들임 (규정 확인 필요) |
 | OQ-13 | 백업 주기(주 1회 = 최대 7일 손실) | 학기 중 주 2회도 가능 |

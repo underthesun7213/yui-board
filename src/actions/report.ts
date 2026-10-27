@@ -3,7 +3,7 @@ import { ui, type ReportTarget } from '../state/ui';
 
 /** Opens the report sheet for a place or an event (Y-R1, Y-K10). */
 export function openReport(target: ReportTarget) {
-  if (ui.get().report) return;
+  if (ui.get().report || ui.get().zoom) return;
   ui.set({ report: target });
   pushSheetState();
 }

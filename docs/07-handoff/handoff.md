@@ -402,6 +402,8 @@ PRD §9 구성. 위치는 Supabase Edge Functions(도쿄 프로젝트와 같은 
 
 `l8` 은 `cuts: []` 이다(분기형). 각 항목에 `img:"경로"` 를 추가하면 자리표시가 교체된다 (`lesson()`, `vnView()`, `collection()`).
 
+> 2026-10-25: 만화 컷 규격은 **대체됨** — 레벨 1~7 은 2쪽 × 4칸 페이지(세로 2:3), 규칙은 [comic-scripts.md](../06-design/comic-scripts.md) 와 RFC-0003 §10. 아래는 v1.3 시절 기록.
+
 **규격 (제안)**
 
 | 항목 | 값 | 근거 |
