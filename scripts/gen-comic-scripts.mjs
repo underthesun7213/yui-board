@@ -109,24 +109,44 @@ export function renderGameScript(vn, endings, bestMisses) {
   return out.join('\n');
 }
 
-/* The art direction every prompt starts with (2026-10-27: soft webtoon, Gemini). */
+/* The art direction every prompt starts with, set by the owner's reference
+   pictures in docs/06-design/characters/ (2026-10-27, Gemini). */
+const REFS = 'docs/06-design/characters/';
 const STYLE =
-  'Style: soft Korean webtoon. Clean thin line art, flat soft colours with gentle cel shading, warm off-white paper tones with deep indigo accents. Friendly, natural proportions (not chibi). Everyday places in Kansai, Japan, drawn as they really look.';
-const CHARS = {
-  james:
-    'James: an American exchange student, about 20, short wavy light-brown hair, friendly open face, navy hoodie over a white T-shirt, dark jeans, grey backpack.',
-  you: 'The player: a female exchange student, about 20, shoulder-length dark hair in a low ponytail, beige coat, small cross-body bag. Shown only from behind or from the side, face never shown.',
-  osaka:
-    'Yuki: an Osaka woman, about 20, short bob with a bright clip, big grin, orange bomber jacket, sneakers; loud, quick, expressive gestures.',
-  kyoto:
-    'Ayano: a Kyoto woman, about 20, long straight black hair, calm small smile, muted lavender knit and long skirt; quiet, graceful, small gestures.',
+  'Style: match the attached reference pictures. Korean-webtoon anime illustration, clean dark line art, soft painterly cel shading, muted natural colours, natural proportions (not chibi). Everyday places in Kansai, Japan, drawn as they really look, with detailed backgrounds.';
+/* each person: the description, the pictures to attach, and the pronoun */
+const CAST = {
+  james: {
+    text: 'James: an American exchange student, about 20, short wavy light-brown hair, friendly open face, navy hoodie over a white T-shirt, dark jeans, grey backpack.',
+    attach: `${REFS}james-sheet`,
+    he: 'he',
+  },
+  you: {
+    text: 'The player: a female exchange student, about 20, shoulder-length dark hair in a low ponytail, beige coat, small cross-body bag. Shown only from behind or from the side, face never shown.',
+    attach: `${REFS}player-sheet`,
+    he: 'she',
+  },
+  osaka: {
+    text: 'Yuki (Osaka, as in the reference): a young man, about 20, curly ash-blond hair with dark roots, warm brown eyes, olive-green zip jacket over a black and white layered T-shirt, thin gold chain, loose grey jeans, black boots; loud, quick, laughs easily.',
+    attach: `${REFS}yuki-front.webp, ${REFS}yuki-back-laugh.webp`,
+    he: 'he',
+  },
+  kyoto: {
+    text: 'Ayano (Kyoto, as in the reference): a young woman, about 20, dark brown hair in a low bun with straight bangs, red hair ornament with a hanging tassel, red kimono with large white peonies, gold obi with a black cord, navy handbag, zori; quiet, graceful, small gestures.',
+    attach: `${REFS}ayano-front.webp, ${REFS}ayano-pose.webp`,
+    he: 'she',
+  },
 };
+/* comic levels where the game's two friends appear too (level 6: the izakaya
+   party of three) */
+const FRIENDS_IN = new Set(['l6']);
 
-/** Prompts to paste into Gemini, one per picture: character sheets first,
-    then each comic page, game scene and ending card, built from the scene
-    notes and lines so they stay in step with the content. */
+/** Prompts to paste into Gemini, one per picture: the two sheets still to
+    make, then each comic page, game scene and ending card, built from the
+    scene notes and lines so they stay in step with the content. */
 export function renderImagePrompts(lessons, vn, endings) {
   const block = (lines) => ['```text', ...lines, '```', ''];
+  const attach = (keys) => 'Attach: ' + keys.map((k) => CAST[k].attach).join(', ') + '.';
   const out = [
     '# 그림 생성 프롬프트 (Gemini)',
     '',
@@ -134,41 +154,44 @@ export function renderImagePrompts(lessons, vn, endings) {
     '',
     '## 순서',
     '',
-    '1. **인물 시트 4장**을 먼저 만들고 저장한다(아래 "인물"). 마음에 들 때까지 다시 만든다 — 이후 모든 그림의 기준이다.',
-    '2. 그림마다 새 대화에서 프롬프트를 붙여 넣고, **그 그림에 나오는 인물의 시트를 함께 첨부**한다(프롬프트 첫 줄에 적혀 있다).',
+    '1. 기준 그림: 유우키·아야노와 그림체는 `docs/06-design/characters/` 의 책임자 그림이다. **제임스와 플레이어 시트 2장**만 먼저 만들어 같은 폴더에 `james-sheet`·`player-sheet` 로 저장한다(아래 "인물").',
+    '2. 그림마다 새 대화에서 프롬프트를 붙여 넣고, **첫 줄 `Attach:` 의 그림을 함께 첨부**한다.',
     '3. 만화의 일본어 글자가 틀리면 같은 프롬프트 끝에 `Leave every speech balloon and caption box empty.` 를 붙여 다시 만들고, 글자는 편집기에서 넣는다(글자는 대본의 **말풍선**과 똑같이).',
     '4. 저장: 만화 `src/art/lessons/<id>/p1`·`p2`(세로 2:3, 짧은 변 1000px 이상, 400KB 이하), 게임 `src/art/vn/<친구>/<nn>`(가로 4:3), 엔딩 `src/art/endings/<id>`(가로 3:2). `.webp`·`.png`·`.jpg`. 크기·이름은 맞추지 못해도 파일을 주면 맞춰 넣는다.',
     '',
     '## 인물',
     '',
   ];
-  const sheet = (k, name) => {
+  for (const [k, name] of [
+    ['james', '제임스 (만화 레벨 1~7 의 학생) → `james-sheet`'],
+    ['you', '플레이어 (게임, 뒷모습만) → `player-sheet`'],
+  ]) {
     out.push(`### ${name}`, '');
     out.push(
       ...block([
+        `Attach: ${REFS}yuki-front.webp (for the style only).`,
         STYLE,
-        CHARS[k],
-        'Make a character reference sheet on a plain off-white background: the same person front, three-quarter and side view, full body, plus three head shots (smiling, surprised, thinking). No text.',
+        CAST[k].text,
+        'Make a character reference sheet on a plain light-grey background: the same person front, three-quarter and back view, full body, plus three head shots (smiling, surprised, thinking). No text.',
       ]),
     );
-  };
-  sheet('james', '제임스 (만화 레벨 1~7 의 학생)');
-  sheet('you', '플레이어 (게임, 뒷모습만)');
-  sheet('osaka', '유우키 (게임, 오사카)');
-  sheet('kyoto', '아야노 (게임, 교토)');
+  }
 
   out.push('## 만화 (레벨 1~7)', '');
   for (const l of lessons) {
     if (l.vn) continue;
+    const cast = FRIENDS_IN.has(l.id) ? ['james', 'osaka', 'kyoto'] : ['james'];
     l.pages.forEach((page, pi) => {
       out.push(
         `### 레벨 ${l.lv} ${l.t.ko} — ${pi + 1}쪽 → \`src/art/lessons/${l.id}/p${pi + 1}\``,
         '',
       );
       const lines = [
-        'Attach: James sheet.',
+        attach(cast),
         STYLE,
-        CHARS.james + ' He is "the student" below.',
+        ...cast.map((k) => CAST[k].text),
+        'James is "the student" below.' +
+          (cast.length > 1 ? ' Yuki and Ayano are his friends, the rest of his party.' : ''),
         'One vertical comic page, aspect ratio 2:3. Four panels in a 2×2 grid with thin white gutters, read in Japanese order: panel 1 top right, panel 2 top left, panel 3 bottom right, panel 4 bottom left.',
       ];
       page.panels.forEach((p, i) => {
@@ -187,6 +210,7 @@ export function renderImagePrompts(lessons, vn, endings) {
 
   out.push('## 게임 장면 (레벨 8)', '');
   for (const [route, r] of Object.entries(vn)) {
+    const name = route === 'osaka' ? 'Yuki' : 'Ayano';
     r.scenes.forEach((sc, i) => {
       out.push(
         `### ${r.name.ko} 장면 ${i + 1} → \`src/art/vn/${route}/${String(i + 1).padStart(2, '0')}\``,
@@ -194,12 +218,12 @@ export function renderImagePrompts(lessons, vn, endings) {
       );
       out.push(
         ...block([
-          `Attach: ${route === 'osaka' ? 'Yuki' : 'Ayano'} sheet, player sheet.`,
+          attach([route, 'you']),
           STYLE,
-          CHARS[route],
-          CHARS.you,
-          `One horizontal illustration, aspect ratio 4:3, seen from the player's point of view: ${route === 'osaka' ? 'Yuki' : 'Ayano'} faces the viewer; if the player appears, only from behind. ${sc.s}.`,
-          `Mood of the moment (do not write it): she has just said 「${plain(sc.jp)}」`,
+          CAST[route].text,
+          CAST.you.text,
+          `One horizontal illustration, aspect ratio 4:3, seen from the player's point of view: ${name} faces the viewer; if the player appears, only from behind. ${sc.s}.`,
+          `Mood of the moment (do not write it): ${CAST[route].he} has just said 「${plain(sc.jp)}」`,
           'No text, no speech balloons.',
         ]),
       );
@@ -208,14 +232,14 @@ export function renderImagePrompts(lessons, vn, endings) {
 
   out.push('## 엔딩 카드', '');
   for (const e of endings) {
-    const who = e.route === 'both' ? [CHARS.osaka, CHARS.kyoto] : [CHARS[e.route]];
+    const who = e.route === 'both' ? ['osaka', 'kyoto'] : [e.route];
     out.push(`### ${e.t.ko} → \`src/art/endings/${e.id}\``, '');
     out.push(
       ...block([
-        `Attach: ${e.route === 'both' ? 'Yuki, Ayano' : e.route === 'osaka' ? 'Yuki' : 'Ayano'} sheet, player sheet.`,
+        attach([...who, 'you']),
         STYLE,
-        ...who,
-        CHARS.you,
+        ...who.map((k) => CAST[k].text),
+        CAST.you.text,
         `One horizontal illustration, aspect ratio 3:2, a memorable closing shot: ${e.s}. The player only from behind or the side.`,
         'No text, no speech balloons.',
       ]),
