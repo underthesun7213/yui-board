@@ -144,7 +144,9 @@ function create(L: LT) {
     errs++;
   });
   tiles.on('load', () => mapUi.set({ tileFail: errs > 0 }));
-  homeMarker = L.marker([HOME.lat, HOME.lng], { zIndexOffset: 1000, interactive: false }).addTo(
+  /* below the pins: a place registered next to the dorm stays tappable
+     instead of hiding under the 結 mark (end-to-end check, 2026-10-25) */
+  homeMarker = L.marker([HOME.lat, HOME.lng], { zIndexOffset: -1000, interactive: false }).addTo(
     map,
   );
   cluster = L.markerClusterGroup({

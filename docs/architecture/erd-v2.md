@@ -11,7 +11,7 @@
 | 재개정 | **보안 재검토(조건부 승인) 반영** — `[재검토 #n]`: 계정 생성 전역 상한을 `require_writer` 에(#1), 관리자 연결 탈취 방지 `bind_admin`(#2), PostGIS 를 `extensions` 스키마에(#3), 익명 이메일 연결이 SMTP 를 소모하는 위험(#4), 관리 RPC 의 남은 감시 공백(#5) |
 | 책임자 결정 (2026-10-12) | **D24(React)** 는 DB 와 무관 — 이 문서에 프레임워크 의존 내용은 없다. **D25(관리자 = 책임자 1명)**: 스키마는 그대로(`admins` 는 여러 행을 허용하지만 운영 행은 1개), 생성 절차·TOTP 문구를 1인 기준으로 고쳤다(§4.5, §7 머리말, OQ-E9). **D26**: 기숙사 IP(`ip_tiers` 값)와 SMTP 는 출시 전 항목(RFC-0003 §17.6a) — `ip_tiers` 가 비어 있어도 함수는 기본 한도로 동작한다 |
 | Y-2 구현 반영 | **`[Y-2 구현]`** — `supabase/migrations/` (브랜치 `claude/sharp-einstein-3m78cy`, `e2e1597`, 리뷰 수정 포함)와 다른 점·확정된 점을 고친 곳에 표시: `db_pre_request` 가 GET/HEAD/OPTIONS 외 **모든** 요청을 셈(§7 머리말·§7.4), `pgrst.db_pre_request` 설정·`pg_graphql` 제거(§8 16), 전역 default privileges(§5.1 2a·§8 19·20), 읽기 RPC `my_place`·`my_event`(§5.2·§7.1), 입력 검증 보강(§4.1·§4.3, G-15). 이 문서의 "현행 DB 없음" 은 이 브랜치 기준으로는 낡았다 — 마이그레이션이 원본이다 |
-| ADR-0026 반영 (2026-10-26) | **`[ADR-0026]`** — 책임자 결정 D31(장소 이름은 영어, 라틴 글자 1개 이상)·D32(설명 자동 번역). 이름 CHECK(§4.1), 번역 표 4개(§4.8), 권한(§5.2), 정기 작업(§6), 함수(§7.5), 마이그레이션 23·24(§8), 시험 G-70~G-79(§9), OQ-E11~E13. 아직 구현되지 않은 **제안**이다 |
+| ADR-0026 반영 (2026-10-26) | **`[ADR-0026]`** — 책임자 결정 D31(장소 이름은 영어, 라틴 글자 1개 이상)·D32(설명 자동 번역). 이름 CHECK(§4.1), 번역 표 4개(§4.8), 권한(§5.2), 정기 작업(§6), 함수(§7.5), 마이그레이션 25·26(§8), 시험 G-70~G-79(§9), OQ-E11~E13. 아직 구현되지 않은 **제안**이다 |
 | 이어받는 교훈 | [erd.md](erd.md) (보류): 모든 GRANT 명시(N-1), 열 단위로 식별자 숨김(N-6), 정의자 함수는 필요한 곳에만 + `search_path` 고정, 정책·뷰가 부르는 헬퍼의 EXECUTE(§6.3), 방어 트리거는 invoker(S-1), 실패해도 남아야 하는 기록은 예외 대신 반환값(S-2), 확인 후 쓰기는 잠금 아래(D-10), 지연 만료 |
 
 > 이 문서의 SQL 은 **설계 설명용 조각**이다. 실제 파일은 §8 순서로 `supabase/migrations/` 에 새로 쓴다.
@@ -237,6 +237,7 @@ create schema app;                       -- Data API 노출 목록에 넣지 않
 revoke all on schema app from public, anon, authenticated;
 create type app.ui_lang        as enum ('en','ja','ko');
 create type app.place_category as enum ('transit','daily','food','study','admin','health');
+-- 2026-10-25 마이그레이션 23: alter type app.place_category add value 'sights';
 create type app.report_reason  as enum ('wrong','spam','inappropriate','privacy','other');   -- Y-R1
 create type app.item_kind      as enum ('place','event');
 ```
@@ -274,7 +275,7 @@ create type app.item_kind      as enum ('place','event');
 - **보이는 글자:** 최소 길이가 1 이상인 필드는 공백(위 집합)이 아닌 글자가 하나 있어야 한다.
 - **링크:** 위 허용 목록 정규식에 더해, 점 경로 조각(`/./`, `/../`, 끝의 `/.`·`/..`, `%2e`·`%2f` 로 쓴 것 포함, 대소문자 무시)과 역슬래시·공백 문자가 있으면 거절한다(`https://www.google.com/maps/../url?q=…` 같은 우회 — `tests/e2e-backend/security.spec.ts`).
 
-**이름의 라틴 글자 규칙 `[ADR-0026]`** (D31, Y-M12 — 마이그레이션 23):
+**이름의 라틴 글자 규칙 `[ADR-0026]`** (D31, Y-M12 — 마이그레이션 25):
 - **함수:** `create_place`·`update_place` 가 `check_text` 다음에 `app.has_latin(nm)` 을 검사하고, 아니면 `{status:'invalid', field:'name_latin'}` 을 돌려준다(예외 아님, `security_events('invalid_input')`). 출시 뒤에 넣으면 `update_place` 는 **이름이 바뀔 때만** 검사한다 — 옛 이름을 가진 등록자가 설명만 고칠 수 있게.
 - **`app.has_latin(p text) returns boolean`** — `language sql immutable set search_path = ''`, 본문 `select p ~ '[ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz]'`. 범위식 `[A-Za-z]` 대신 52글자를 나열한다 — Postgres 문서가 정규식의 범위는 정렬 규칙에 따라 달라질 수 있다고 경고하기 때문. 전각 `Ａ` 나 악센트 글자만 있는 이름은 통과하지 못한다(드묾, 수용).
 - **마지막 방어선:** `alter table app.places add constraint places_name_latin check (name ~ '[ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz]')` — CHECK 가 사용자 함수를 부르지 않게 같은 식을 그대로 쓴다. 운영 DB 에 기존 행이 있으면 `not valid` 로 넣고, 정리한 뒤 `validate constraint`.
@@ -363,7 +364,7 @@ create type app.item_kind      as enum ('place','event');
 
 **`app.data_version`**: 한 행. 항목·회차·숨김이 바뀌는 문장 트리거가 `v = v + 1`. `[ADR-0026]` 번역 표(`place_translations`)의 변경도 올린다.
 
-### 4.8 설명 번역 `[ADR-0026]` (D32 — 마이그레이션 24)
+### 4.8 설명 번역 `[ADR-0026]` (D32 — 마이그레이션 26)
 
 **`app.place_translations`** — 공개되는 번역.
 
@@ -659,8 +660,9 @@ end $$;
 | 20 | `checks` | 적용 후 점검, 실패 시 예외로 마이그레이션 실패: ① `app` 테이블 전부 RLS 활성·정책 0 ② `public`·`anon`·`authenticated` 의 `app` 테이블 권한 0 (`has_table_privilege`) ③ `public`·`anon` 이 `has_function_privilege(…,'EXECUTE')` 인 `public`·`app` 함수 = {`data_version`, `app.db_pre_request`} `[Y-2 구현]` ④ `authenticated` 의 같은 검사 = 허용 목록과 정확히 일치(`[Y-2 구현]` V-9 의 목록 — `my_place`·`my_event`·`app.db_pre_request` 포함) ⑤ 모든 정의자 함수의 `proconfig` 에 `search_path=` ⑥ 정의자 함수 본문(`prosrc`)에 `execute` 없음 ⑦ `mod_actions_guard` 의 `prosecdef = false` ⑧ 공개 뷰의 열 목록이 고정 목록과 일치 ⑨ `pg_default_acl` 에 `anon`·`authenticated`·**`PUBLIC`(grantee 0)** 의 EXECUTE 없음(`public`·`app` 스키마 행 + `postgres` 의 전역 행) ⑨b `[Y-2 구현]` `postgres` 의 **전역** 함수 기본 ACL 행이 존재하고 `PUBLIC` EXECUTE 가 없음 — 행이 없으면 내장 기본값(`PUBLIC` EXECUTE)이 살아 있다는 뜻 ⑩ `service_role` EXECUTE 함수 = {`ops_health`} ⑪ 이름이 `admin_%` 인 모든 `public` 함수(`admin_whoami` 제외)의 본문 첫 문장이 `perform app.require_admin()` `[검토 #2·#3]` ⑫ 확장(`pg_extension.extnamespace`)이 `public` 에 없음 — 특히 `postgis` `[재검토 #3]` ⑬ `app.bind_admin` 의 EXECUTE 는 `postgres` 외 없음 `[재검토 #2]` | V-1~V-9 |
 | 21 | `ops_health_signals` | `ops_health()` 2판(§7.4) — 같은 시그니처의 `create or replace` 라 소유자·`service_role` 부여·`checks` 허용 목록은 그대로. 운영에서는 `checks` 가 다시 돌지 않으므로 파일 끝 `do` 블록이 자기 효과(③④⑩ 의 `ops_health` 몫, ⑤, ⑥ 동적 SQL 없음, `stable` 정의자)를 검사해 어긋나면 실패. pgTAP `10_ops_health.test.sql` | Y-S10 |
 | 22 | `service_role_pre_request` | `service_role` 에 `app` 스키마 USAGE 와 `app.db_pre_request()` EXECUTE 만 준다. PostgREST 가 요청마다 이 훅을 요청 역할로 실행하는데, 없으면 감시 키(service_role)의 모든 REST 호출이 `permission denied for schema app`(403)로 실패했다 — 2026-10-23 첫 감시 실행에서 발견. 표 권한은 여전히 0(checks ②), ⑩ 의 service 전용 목록은 `ops_health` 그대로 | Y-S10 |
-| 23 `[ADR-0026]` | `place_name_latin` | `app.has_latin`. `create_place`·`update_place` 를 `create or replace`(같은 시그니처 — 권한·허용 목록 그대로)해 이름 규칙을 더한다. `places_name_latin` CHECK(`not valid` → 기존 행 확인 → `validate`). 파일 끝 `do` 블록이 자기 효과를 확인한다: 두 함수의 EXECUTE 가 `authenticated` 만, 정의자, `search_path`, ⑥ 동적 SQL 없음 | D31, Y-M12 |
-| 24 `[ADR-0026]` | `translations` | §4.8 표 4개 + RLS, 트리거 2개, 뷰, §7.5 함수, 설정 행, `ops_health` 3판. `create extension if not exists pg_net with schema extensions`(쓸 수 있을 때만). `pg_cron`·`pg_net`·`vault` 가 모두 있을 때만 `cron.schedule('yunabi-translate-kick', '* * * * *', 'select app.translation_kick()')`. 출시 뒤라면 기존 장소를 대기열에 넣는 `insert … select`. 권한: 뷰 SELECT → `anon, authenticated`, 두 함수 EXECUTE → `service_role`. **자기 검사(`do` 블록):** `checks` ③④⑩ 을 전체 카탈로그로 다시 한다 — `anon`·`authenticated` 목록은 그대로, `service_role` 전용 목록 = {`ops_health`, `translation_apply`, `translation_claim`}. 그리고 ① ② ⑤ ⑥ ⑧(`place_translations_public` = `place_id,lang,description`) ⑫ | D32 |
+| 23 | `place_category_sights` | `app.place_category` 에 `sights`(관광 — 신사·절, 공원, 전망, 박물관) 값을 더한다(책임자, 2026-10-25). 클라이언트는 이미 타입 USAGE 가 있고 `create_place`·`update_place` 가 이 타입을 받으므로 권한·`checks` 는 그대로 | Y-M6 |
+| 25 `[ADR-0026]` | `place_name_latin` | `app.has_latin`. `create_place`·`update_place` 를 `create or replace`(같은 시그니처 — 권한·허용 목록 그대로)해 이름 규칙을 더한다. `places_name_latin` CHECK(`not valid` → 기존 행 확인 → `validate`). 파일 끝 `do` 블록이 자기 효과를 확인한다: 두 함수의 EXECUTE 가 `authenticated` 만, 정의자, `search_path`, ⑥ 동적 SQL 없음 | D31, Y-M12 |
+| 26 `[ADR-0026]` | `translations` | §4.8 표 4개 + RLS, 트리거 2개, 뷰, §7.5 함수, 설정 행, `ops_health` 3판. `create extension if not exists pg_net with schema extensions`(쓸 수 있을 때만). `pg_cron`·`pg_net`·`vault` 가 모두 있을 때만 `cron.schedule('yunabi-translate-kick', '* * * * *', 'select app.translation_kick()')`. 출시 뒤라면 기존 장소를 대기열에 넣는 `insert … select`. 권한: 뷰 SELECT → `anon, authenticated`, 두 함수 EXECUTE → `service_role`. **자기 검사(`do` 블록):** `checks` ③④⑩ 을 전체 카탈로그로 다시 한다 — `anon`·`authenticated` 목록은 그대로, `service_role` 전용 목록 = {`ops_health`, `translation_apply`, `translation_claim`}. 그리고 ① ② ⑤ ⑥ ⑧(`place_translations_public` = `place_id,lang,description`) ⑫ | D32 |
 | seed | `supabase/seed/fixtures.sql` | 로컬·CI 전용: 테스트 계정(익명 A·B·C·D, 관리자 1 — TOTP 비밀 고정), `tests/fixtures` 와 같은 장소·일정. **운영에 적용하지 않는다**(초기 데이터 0, Y-M4) | PRD §7 |
 
 **`checks` 허용 목록은 어디에 두나 `[ADR-0026]`.** CLAUDE.md 는 새 함수를 grants 마이그레이션과 `…_checks.sql` 의 허용 목록에 넣으라고 한다. 그런데 `20261013000200_checks.sql` 은 빈 DB 에서 **24 보다 먼저** 돌고(그때는 새 함수가 없어 목록에 넣으면 실패한다), 운영에서는 이미 적용되어 **다시 돌지 않는다**(런북 §7.1 — 21 의 머리말과 같은 사정). 이미 적용된 마이그레이션을 고치면 운영과 저장소가 어긋난다. 그래서 21·22 처럼 **24 가 자기 권한을 주고, 파일 끝에서 전체 허용 목록을 다시 검사한다.** 이후 허용 목록의 원본은 "가장 최근의 자기 검사 블록"이다 — CLAUDE.md 의 해당 문장도 구현 때 그렇게 고친다.
@@ -756,7 +758,7 @@ HTTP 층 같은 케이스(PostgREST 경유)는 `tests/e2e-backend/security.spec.
 | G-53, G-54 | 05 | — (클라우드 확인 PL-6 ②) | — |
 | G-55 | 05 | `G-55 …` | — |
 | G-60 | — | — | reports `G-60 …` |
-| G-70~G-78 `[ADR-0026]` | 새 파일 `NN_translations.test.sql`, 마이그레이션 23·24 의 자기 검사 | G-79 | 번역 e2e·렌더, 단위(`core.ts`, 이름 규칙 일치) |
+| G-70~G-78 `[ADR-0026]` | 새 파일 `NN_translations.test.sql`, 마이그레이션 25·26 의 자기 검사 | G-79 | 번역 e2e·렌더, 단위(`core.ts`, 이름 규칙 일치) |
 | T-19a | 01 | `T-19a …` | — |
 | Y-S4 | — | — | v2 장소·일정 `Y-S4 …`, posting `Y-S4 …`, admin `Y-S4 …`, render `admin.test.tsx` |
 | Y-S8 HSTS | — | — | `scripts/check-admin-headers.mjs` (`build:admin`) |

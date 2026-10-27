@@ -82,6 +82,7 @@ export const en = {
     study: 'Study',
     admin: 'Paperwork',
     health: 'Health',
+    sights: 'Sights',
   },
   here: '結',
   openMap: 'Open in Google Maps',
