@@ -2,25 +2,42 @@ import type { Lang } from '../domain/types';
 
 export type L3 = Record<Lang, string>;
 
-export interface Cut {
-  jp: string;
+/** One comic panel (Y-J1). `cap` is a caption box (a place, an action, an
+    aside) drawn without brackets; `jp` is the balloon; a panel has at least
+    one of them, and the artwork carries them in Japanese. `tr` translates the
+    whole panel; the Japanese screen shows no translation line. */
+export interface Panel {
+  cap?: string;
+  jp?: string;
+  tr: { en: string; ko: string };
   /** Scene note for the artist. Not rendered. */
   s: string;
+}
+export interface Page {
+  panels: [Panel, Panel, Panel, Panel];
 }
 export interface Expression {
   jp: string;
   rd: string;
   g: L3;
 }
-export interface Lesson {
+interface LessonBase {
   id: string;
   lv: number;
-  vn?: boolean;
   t: L3;
   d: L3;
-  cuts: Cut[];
   ex: Expression[];
 }
+/** Levels 1–7: two pages of four panels. */
+export interface ComicLesson extends LessonBase {
+  vn?: false;
+  pages: [Page, Page];
+}
+/** Level 8: the branching conversation (VnGame). */
+export interface VnLesson extends LessonBase {
+  vn: true;
+}
+export type Lesson = ComicLesson | VnLesson;
 export type Route = 'osaka' | 'kyoto';
 export interface Ending {
   id: string;

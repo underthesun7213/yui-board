@@ -6,6 +6,8 @@ import { prerender } from 'react-dom/static';
 import { describe, expect, it, vi } from 'vitest';
 import { App } from '../../src/app/App';
 import { loadLang } from '../../src/i18n';
+import { ART, pageKey } from '../../src/content/art';
+import { LESSONS } from '../../src/content/lessons';
 import { VN } from '../../src/content/vn';
 import { CAT } from '../../src/domain/categories';
 import { PREFS } from '../../src/domain/geo/prefs';
@@ -78,8 +80,15 @@ function reset() {
   calendarUi.set({ day: null, month: null });
   collection.set({ cg: {} });
   vn.set(VN_START);
-  ui.set({ report: null });
+  ui.set({ report: null, zoom: null });
+  delete ART[FAKE_PAGE];
 }
+
+/* A comic page file for the cases that need one (there are none in src/art yet). */
+const FAKE_PAGE = pageKey('l1', 1);
+const withPage = () => {
+  ART[FAKE_PAGE] = '/assets/comic/p1-test.webp';
+};
 
 type Case = [name: string, r: Route, setup?: () => void, mark?: RegExp];
 const cases: Case[] = [
@@ -87,6 +96,22 @@ const cases: Case[] = [
   ['home-cards', { name: 'home' }, () => collection.set({ cg: { e_osaka_best: true } })],
   ['learn', { name: 'learn' }],
   ['lesson', { name: 'lesson', lid: 'l1' }],
+  ...LESSONS.filter((l) => !l.vn).map((l): Case => [
+    `lesson-${l.id}`,
+    { name: 'lesson', lid: l.id },
+    undefined,
+    /class="cpage"/,
+  ]),
+  ['lesson-art', { name: 'lesson', lid: 'l1' }, withPage, /<button class="cpageart"/],
+  [
+    'lesson-zoom',
+    { name: 'lesson', lid: 'l1' },
+    () => {
+      withPage();
+      ui.set({ zoom: { lid: 'l1', n: 1 } });
+    },
+    /role="dialog"/,
+  ],
   ['lesson-unknown', { name: 'lesson', lid: 'zz' }, undefined, /class="lesson"/],
   ['collection-empty', { name: 'collection' }],
   [
@@ -261,7 +286,7 @@ for (const st of ['ask', 'idle', 'wait', 'ok', 'denied', 'fail', 'skip'] as LocS
 const MARK: Record<Route['name'], RegExp> = {
   home: /class="hcards"/,
   learn: /class="lesson"/,
-  lesson: /class="(cut|route|vnwrap|vnend)"/,
+  lesson: /class="(cpage|route|vnwrap|vnend)"/,
   collection: /class="cgrid"/,
   map: /class="seg"/,
   cal: /class="mnav"/,
@@ -291,6 +316,18 @@ describe.each(['en', 'ja', 'ko'] as const)('%s', (lang) => {
     setup?.();
     check(await html(), mark);
   });
+
+  it.each(LESSONS.filter((l) => !l.vn).map((l) => l.id))(
+    'shows %s with a translation line per panel unless in Japanese',
+    async (lid) => {
+      reset();
+      prefs.set({ lang });
+      route.set({ route: { name: 'lesson', lid }, prev: 'learn', taps: 0 });
+      const out = await html();
+      expect(out.match(/class="tr"/g)?.length ?? 0).toBe(lang === 'ja' ? 0 : 8);
+      expect(out.split('class="panels"').slice(1).join('').match(/<li>/g)?.length).toBe(8);
+    },
+  );
 
   it.each(['osaka', 'kyoto'] as const)('plays the %s route through', async (k) => {
     reset();

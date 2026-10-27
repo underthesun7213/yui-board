@@ -23,9 +23,12 @@ export function pickOption(i: number) {
   vn.set({ picked: i, score: v.score + (ok ? 1 : 0) });
 }
 
-export const BEST_SCORE = 4;
+/* The best ending allows one miss on any route, so a route with more scenes
+   (Osaka has six since 2026-10-25, Kyoto five) is no easier or harder. */
+export const BEST_MISSES = 1;
 export function endingFor(route: Route, score: number) {
-  return ENDINGS.find((e) => e.route === route && e.best === score >= BEST_SCORE)!;
+  const best = score >= VN[route].scenes.length - BEST_MISSES;
+  return ENDINGS.find((e) => e.route === route && e.best === best)!;
 }
 
 export function nextScene() {

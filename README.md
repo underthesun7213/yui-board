@@ -83,11 +83,11 @@ of its slot and rebuild — no code change:
 
 | Slot | File | Ratio |
 |---|---|---|
-| Comic cut | `src/art/lessons/l2/05.webp` = episode 2, cut 5 | 4:3 (1200×900) |
+| Comic page | `src/art/lessons/l2/p1.webp` = level 2, page 1 (two pages of four panels per level; balloons in Japanese — [script](docs/06-design/comic-scripts.md)) | portrait 2:3, short side ≥ 1000 px, ≤ 400 KB |
 | Game scene | `src/art/vn/osaka/03.webp` | 4:3 |
 | Ending card | `src/art/endings/e_osaka_best.webp` | 3:2 (1200×800) |
 
-`.png` and `.jpg` work too. A file whose name matches no slot fails the tests.
+`.png` and `.jpg` work too, one file per slot. A file whose name matches no slot, or a comic page outside its size rule, fails the tests.
 
 ## Files
 

@@ -11,6 +11,7 @@
 | 재개정 | **보안 재검토(조건부 승인) 반영** — `[재검토 #n]`: 계정 생성 전역 상한을 `require_writer` 에(#1), 관리자 연결 탈취 방지 `bind_admin`(#2), PostGIS 를 `extensions` 스키마에(#3), 익명 이메일 연결이 SMTP 를 소모하는 위험(#4), 관리 RPC 의 남은 감시 공백(#5) |
 | 책임자 결정 (2026-10-12) | **D24(React)** 는 DB 와 무관 — 이 문서에 프레임워크 의존 내용은 없다. **D25(관리자 = 책임자 1명)**: 스키마는 그대로(`admins` 는 여러 행을 허용하지만 운영 행은 1개), 생성 절차·TOTP 문구를 1인 기준으로 고쳤다(§4.5, §7 머리말, OQ-E9). **D26**: 기숙사 IP(`ip_tiers` 값)와 SMTP 는 출시 전 항목(RFC-0003 §17.6a) — `ip_tiers` 가 비어 있어도 함수는 기본 한도로 동작한다 |
 | Y-2 구현 반영 | **`[Y-2 구현]`** — `supabase/migrations/` (브랜치 `claude/sharp-einstein-3m78cy`, `e2e1597`, 리뷰 수정 포함)와 다른 점·확정된 점을 고친 곳에 표시: `db_pre_request` 가 GET/HEAD/OPTIONS 외 **모든** 요청을 셈(§7 머리말·§7.4), `pgrst.db_pre_request` 설정·`pg_graphql` 제거(§8 16), 전역 default privileges(§5.1 2a·§8 19·20), 읽기 RPC `my_place`·`my_event`(§5.2·§7.1), 입력 검증 보강(§4.1·§4.3, G-15). 이 문서의 "현행 DB 없음" 은 이 브랜치 기준으로는 낡았다 — 마이그레이션이 원본이다 |
+| ADR-0026 반영 (2026-10-26) | **`[ADR-0026]`** — 책임자 결정 D31(장소 이름은 영어, 라틴 글자 1개 이상)·D32(설명 자동 번역). 이름 CHECK(§4.1), 번역 표 4개(§4.8), 권한(§5.2), 정기 작업(§6), 함수(§7.5), 마이그레이션 25·26(§8), 시험 G-70~G-79(§9), OQ-E11~E13. 아직 구현되지 않은 **제안**이다 |
 | 이어받는 교훈 | [erd.md](erd.md) (보류): 모든 GRANT 명시(N-1), 열 단위로 식별자 숨김(N-6), 정의자 함수는 필요한 곳에만 + `search_path` 고정, 정책·뷰가 부르는 헬퍼의 EXECUTE(§6.3), 방어 트리거는 invoker(S-1), 실패해도 남아야 하는 기록은 예외 대신 반환값(S-2), 확인 후 쓰기는 잠금 아래(D-10), 지연 만료 |
 
 > 이 문서의 SQL 은 **설계 설명용 조각**이다. 실제 파일은 §8 순서로 `supabase/migrations/` 에 새로 쓴다.
@@ -29,7 +30,8 @@
 | V-6 | 관리 RPC 는 `admins` 행(허용 목록) + 비익명 + `aal2` + 세션 행 존재·12시간 이내. 하나라도 아니면 **예외로 실패**(fail-closed) `[검토 #3]` | Y-R5, Y-S3 | G-30~G-36 |
 | V-7 | 정의자 함수는 모두 `set search_path = ''` 이고 동적 SQL(`execute`)을 쓰지 않는다 | Y-S5, Y-S1 | §8 `checks` |
 | V-8 | 사람을 식별하는 값은 Y-P1 목록뿐: 익명 계정 id, 관리자 이메일. IP 는 **가명 처리**(일일 솔트 해시, IPv6 는 /64 단위)로만 저장 — `ip_hits` 1시간, `security_events.ip_key` 48시간 뒤 null, 솔트는 이틀 뒤 삭제·백업 제외. 솔트가 같은 DB 에 있는 동안은 익명화가 아니라 가명 처리이며(IPv4 공간 2^32 은 무차별 대입 가능), 방침에도 그렇게 쓴다 `[검토 #8]` | Y-P1, Y-S12 | 스키마 검토, G-56 |
-| V-9 | **`PUBLIC` 을 포함해** `anon` 이 EXECUTE 할 수 있는 함수는 `data_version` 뿐, `authenticated` 는 허용 목록과 정확히 일치 `[검토 #2]`. `[Y-2 구현]` 실제 목록 — `anon`: `data_version`, `app.db_pre_request`. `authenticated`: `data_version`, `my_items`, **`my_place`, `my_event`**, `create_place`, `update_place`, `delete_place`, `create_event`, `update_event`, `delete_event`, `set_occurrence`, `clear_occurrence`, `app.db_pre_request` (Y-2 에는 신고·관리 RPC 마이그레이션이 아직 없어 `submit_report`·`admin_*` 는 목록에 없다 — 추가할 때 `checks` ④ 도 함께 고친다) | Y-S1 | §8 `checks`, G-03 |
+| V-9 | **`PUBLIC` 을 포함해** `anon` 이 EXECUTE 할 수 있는 함수는 `data_version` 뿐, `authenticated` 는 허용 목록과 정확히 일치 `[검토 #2]`. `[Y-2 구현]` 실제 목록 — `anon`: `data_version`, `app.db_pre_request`. `authenticated`: `data_version`, `my_items`, **`my_place`, `my_event`**, `create_place`, `update_place`, `delete_place`, `create_event`, `update_event`, `delete_event`, `set_occurrence`, `clear_occurrence`, `app.db_pre_request` (Y-2 에는 신고·관리 RPC 마이그레이션이 아직 없어 `submit_report`·`admin_*` 는 목록에 없다 — 추가할 때 `checks` ④ 도 함께 고친다). `[ADR-0026]` `service_role` 만 부르는 함수(`anon` 이 못 부르는 것) = {`ops_health`, **`translation_claim`, `translation_apply`**}. `anon`·`authenticated` 목록은 바뀌지 않는다 | Y-S1 | §8 `checks`·24 의 자기 검사, G-03, G-77 |
+| V-10 `[ADR-0026]` | 번역은 원문을 따른다: 공개 번역 뷰는 V-4 를 만족하는 장소의 번역만 내보내고, 원문이 바뀌면 옛 번역은 남지 않는다(트리거 삭제 + 저장 때 해시 비교). 번역 표에 작성자·IP 가 없다 | D32, Y-M9, Y-S12 | G-70, G-72, G-73 |
 
 ---
 
@@ -51,6 +53,8 @@ erDiagram
   admins ||--o{ mod_actions : "actor_admin_id (restrict)"
   accounts ||--o{ write_log : "user_id (cascade)"
   admin_invites ||--o| admins : "email (초대 → 생성 후 연결) [검토 #4]"
+  places ||--o{ place_translations : "place_id (cascade) [ADR-0026]"
+  places ||--o| translation_jobs : "place_id (cascade) [ADR-0026]"
 
   admin_invites {
     citext email PK "가입 훅이 확인"
@@ -193,6 +197,33 @@ erDiagram
     int id PK "항상 1"
     bigint v
   }
+  place_translations {
+    bigint place_id PK "FK places, cascade [ADR-0026]"
+    ui_lang lang PK "작성 언어가 아닌 두 언어"
+    text description "1-2000, 기계 번역"
+    bytea source_hash "sha256(원문)"
+    text provider "azure, google, deepl"
+    timestamptz translated_at
+  }
+  translation_jobs {
+    bigint place_id PK "FK places, cascade"
+    bytea source_hash
+    timestamptz enqueued_at
+    timestamptz next_attempt_at
+    smallint attempts
+    uuid claim_id "임대"
+    timestamptz claimed_at
+    text last_error "코드만"
+  }
+  translation_usage {
+    date day PK "UTC"
+    int chars "가져갈 때 셈"
+  }
+  translation_state {
+    int id PK "항상 1"
+    timestamptz paused_until
+    text paused_reason "quota, rate"
+  }
 ```
 
 모든 테이블은 `app` 스키마. `prefectures` 는 경계 판정용.
@@ -222,7 +253,7 @@ create type app.item_kind      as enum ('place','event');
 | 열 | 타입·제약 | 왜 |
 |---|---|---|
 | `id` | `bigint generated always as identity primary key` | 참조 |
-| `name` | `text not null check (char_length(name) between 1 and 60 and name !~ '[[:cntrl:]]')` | Y-M6 |
+| `name` | `text not null check (char_length(name) between 1 and 60 and name !~ '[[:cntrl:]]')`, `[ADR-0026]` + `places_name_latin` CHECK(라틴 글자 1개 이상 — 아래) | Y-M6, Y-M12 (D31) |
 | `category` | `app.place_category not null` | Y-M6 |
 | `description` | `text not null default '' check (char_length(description) <= 500)` | Y-M6 |
 | `gmaps_url` | `text check (gmaps_url is null or (char_length(gmaps_url) <= 500 and gmaps_url ~ '^https://((www\.)?google\.(com|co\.jp)/maps([/?#]|$)|maps\.app\.goo\.gl/)'))` | Y-M6, Y-S4. 함수가 먼저 같은 규칙으로 검사(상태 코드용), CHECK 는 마지막 방어선. **`goo.gl/maps` 는 뺐다** — 지원 종료된 단축 링크라 새로 받을 이유가 없다 `[검토 nit]`. PRD Y-M6 은 허용 목록에 넣고 있어 RFC-0003 OQ-16 으로 확인 요청 |
@@ -243,6 +274,13 @@ create type app.item_kind      as enum ('place','event');
 - **거절하는 문자:** C1 제어 문자(U+0080–009F), 서식·방향·폭 0 문자 U+00AD, U+061C, U+180E, U+200B–200F, U+2028–202E, U+2060–206F, U+FEFF, U+FFF9–FFFB — 글을 다르게 보이게 꾸미는 데 쓰인다. 한 줄 필드(이름·제목·장소)는 모든 제어 문자, 여러 줄 필드(설명·본문)는 탭(U+0009)·줄 바꿈(U+000A) **외의** 제어 문자(U+0001–0008, 000B–001F, 007F)를 거절한다 — 그래서 **CR 단독(그리고 CRLF)도 거절**된다. 클라이언트는 줄 바꿈을 LF 로 보내야 한다.
 - **보이는 글자:** 최소 길이가 1 이상인 필드는 공백(위 집합)이 아닌 글자가 하나 있어야 한다.
 - **링크:** 위 허용 목록 정규식에 더해, 점 경로 조각(`/./`, `/../`, 끝의 `/.`·`/..`, `%2e`·`%2f` 로 쓴 것 포함, 대소문자 무시)과 역슬래시·공백 문자가 있으면 거절한다(`https://www.google.com/maps/../url?q=…` 같은 우회 — `tests/e2e-backend/security.spec.ts`).
+
+**이름의 라틴 글자 규칙 `[ADR-0026]`** (D31, Y-M12 — 마이그레이션 25):
+- **함수:** `create_place`·`update_place` 가 `check_text` 다음에 `app.has_latin(nm)` 을 검사하고, 아니면 `{status:'invalid', field:'name_latin'}` 을 돌려준다(예외 아님, `security_events('invalid_input')`). 출시 뒤에 넣으면 `update_place` 는 **이름이 바뀔 때만** 검사한다 — 옛 이름을 가진 등록자가 설명만 고칠 수 있게.
+- **`app.has_latin(p text) returns boolean`** — `language sql immutable set search_path = ''`, 본문 `select p ~ '[ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz]'`. 범위식 `[A-Za-z]` 대신 52글자를 나열한다 — Postgres 문서가 정규식의 범위는 정렬 규칙에 따라 달라질 수 있다고 경고하기 때문. 전각 `Ａ` 나 악센트 글자만 있는 이름은 통과하지 못한다(드묾, 수용).
+- **마지막 방어선:** `alter table app.places add constraint places_name_latin check (name ~ '[ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz]')` — CHECK 가 사용자 함수를 부르지 않게 같은 식을 그대로 쓴다. 운영 DB 에 기존 행이 있으면 `not valid` 로 넣고, 정리한 뒤 `validate constraint`.
+- **클라이언트:** `src/domain/validation.ts` 의 `checkPlace` 가 `/[A-Za-z]/`(JS 정규식은 코드 단위 비교라 범위식이 안전)로 같은 판정을 하고 필드 `name_latin` 을 돌려준다. 단위 테스트가 같은 입력 세트(`Mandai`, `枚方市駅`, `만다이`, `Academic Affairs Office (教務課)`, `히라카타 T-SITE`, `ＡＢＣ`)로 두 쪽의 판정이 같은지 본다.
+- **고정 데이터:** `tests/fixtures/places.json` 과 `supabase/seed/fixtures.sql` 의 한국어·일본어만인 이름(`京阪 御殿山駅`, `만다이 히라카타점`, `枚方市駅` 등)을 영어로 바꾼다. 그대로면 seed 가 새 CHECK 에서 실패한다.
 
 ### 4.2 항목 상태 열 (장소·일정 공통)
 
@@ -324,7 +362,60 @@ create type app.item_kind      as enum ('place','event');
 
 **`app.settings`**: `('report_hide_threshold',3)`, `('place_create_per_day',10)`, `('event_create_per_day',10)`, `('edit_per_day',30)`, `('report_per_day',20)`, `('ip_writes_per_5min',60)`, `('ip_writes_per_5min_dorm',600)` `[검토 #6]`, `('xff_trusted_hops', Y-2 실측)`, `('anon_signups_per_hour',200)`, `('accounts_per_hour',200)` `[재검토 #1]`, `('admin_session_hours',12)`, `('deleted_retention_days',30)`. 값 변경은 SQL 로(관리자 콘솔 편집은 범위 밖).
 
-**`app.data_version`**: 한 행. 항목·회차·숨김이 바뀌는 문장 트리거가 `v = v + 1`.
+**`app.data_version`**: 한 행. 항목·회차·숨김이 바뀌는 문장 트리거가 `v = v + 1`. `[ADR-0026]` 번역 표(`place_translations`)의 변경도 올린다.
+
+### 4.8 설명 번역 `[ADR-0026]` (D32 — 마이그레이션 26)
+
+**`app.place_translations`** — 공개되는 번역.
+
+| 열 | 타입·제약 | 왜 |
+|---|---|---|
+| `place_id` | `bigint not null references app.places (id) on delete cascade` | 원문을 따른다 |
+| `lang` | `app.ui_lang not null`, PK `(place_id, lang)` | 화면 언어마다 하나 |
+| `description` | `text not null check (char_length(description) between 1 and 2000)` | 번역문. 언어에 따라 원문(500자)보다 길어진다 — 일본어 → 영어는 2~3배(*추정*, OQ-E12). 넘는 번역은 저장하지 않는다(원문 표시) |
+| `source_hash` | `bytea not null check (octet_length(source_hash) = 32)` | 어떤 원문의 번역인지. `sha256(convert_to(원문, 'UTF8'))` — 내장 함수(pgcrypto 불필요) |
+| `provider` | `text not null check (provider in ('azure','google','deepl'))` | 제공자를 바꿨을 때 다시 번역할 대상 찾기, 방침의 위탁처와 대조 |
+| `translated_at` | `timestamptz not null default now()` | 운영(오래된 번역 찾기). 공개하지 않는다 |
+
+작성자 열이 없다(소유는 `place_owners` 에만 — V-3). 인덱스는 PK 로 충분하다.
+
+**`app.translation_jobs`** — 대기열. 장소당 한 행.
+
+| 열 | 타입·제약 | 왜 |
+|---|---|---|
+| `place_id` | `bigint primary key references app.places (id) on delete cascade` | 장소당 대기 작업 하나(수정하면 덮어씀) |
+| `source_hash` | `bytea not null` | 가져갈 때·돌려줄 때 원문과 대조 |
+| `enqueued_at` | `timestamptz not null default now()` | 오래된 순, 지연 경보 |
+| `next_attempt_at` | `timestamptz not null` | 처음에는 `now() + translation_delay_seconds`, 실패하면 백오프 |
+| `attempts` | `smallint not null default 0` | `translation_max_attempts`(5)에 닿으면 `failed` |
+| `claim_id`, `claimed_at` | `uuid`, `timestamptz` | 임대. `translation_lease_seconds`(300)가 지나면 다시 가져갈 수 있다 |
+| `last_error` | `text check (last_error in ('quota','rate','provider','timeout','too_long','rejected_output','budget'))` | 코드만. 제공자의 오류 문장이나 글을 넣지 않는다 |
+
+인덱스: `translation_jobs_due (next_attempt_at) where claim_id is null`.
+
+**`app.translation_usage`**: `day date primary key`(UTC — 제공자의 달 경계), `chars integer not null default 0`. 가져갈 때 `원문 길이 × 대상 언어 수` 를 더한다. 90일 보관.
+
+**`app.translation_state`**: 한 행(`id integer primary key check (id = 1)`), `paused_until timestamptz`, `paused_reason text check (paused_reason in ('quota','rate'))`.
+
+네 표 모두 RLS 활성·정책 0, 클라이언트 권한 0(V-1, `checks` ①②).
+
+**트리거:**
+- `places_translation_sync` — `after insert or update of description, deleted_at on app.places for each row`, 함수 `app.places_translation_sync()`. **security invoker** 다 — 정의자 함수 안에서 돌아 권한이 이미 있고, 정의자로 만들 이유가 없다. 동작: `deleted_at` 이 채워졌거나 설명이 `''` 이면 번역·작업을 지운다. 아니고 `tg_op = 'INSERT'` 이거나 설명이 바뀌었으면 번역을 지우고 작업을 upsert 한다(새 해시, `attempts = 0`, `claim_id = null`, `next_attempt_at = now() + 지연`). 숨김 열만 바뀌면 아무것도 하지 않는다.
+- `place_translations_version` — `after insert or update or delete on app.place_translations for each statement execute function app.bump_data_version()` (§4.7 과 같은 방식).
+
+**공개 뷰 `public.place_translations_public`** (정의자 뷰, §5.1 4):
+
+```sql
+create view public.place_translations_public with (security_invoker = false) as
+select t.place_id, t.lang::text as lang, t.description
+from app.place_translations t
+join app.places p on p.id = t.place_id
+where p.deleted_at is null and p.auto_hidden_at is null and p.suspension_hidden_at is null;
+```
+
+공개 열은 셋뿐이다. `source_hash`·`provider`·`translated_at` 은 내보내지 않는다. 옛 번역이 남지 않게 하는 것은 트리거의 몫이고, 엇갈림은 `translation_apply` 의 해시 비교가 막는다. 그래서 뷰는 해시를 다시 계산하지 않는다.
+
+**설정 추가(`app.settings`):** `('translation_enabled',0)`, `('translation_chars_per_day',60000)`, `('translation_chars_per_month',1500000)`, `('translation_max_attempts',5)`, `('translation_delay_seconds',60)`, `('translation_lease_seconds',300)`, `('translation_batch_chars',10000)`.
 
 ---
 
@@ -366,6 +457,9 @@ create type app.item_kind      as enum ('place','event');
 | `public.my_place(p_id)`, `public.my_event(p_id)` `[Y-2 구현]` | — | EXECUTE | — | — | **`stable`, GET, 정의자.** 숨겨진 내 항목을 수정 폼에 채우기 위한 읽기(Y-E1) — 공개 뷰에는 숨김 항목이 없다. 소유자(`auth.uid()`)의 **삭제되지 않은** 항목만, 숨김 상태여도 돌려준다. 남의 것·없음·삭제됨은 모두 null(구별 없음, 기록 없음). 계정 행을 만들지 않는다 |
 | 관리 RPC `admin_*` (§7.3) | — | EXECUTE | — | — | 함수 첫 줄 `perform app.require_admin()` — 실패하면 **예외**(V-6) |
 | `public.ops_health()` | — | — | EXECUTE | — | 감시 워크플로 전용 (Y-S10) |
+| `public.place_translations_public` (뷰) `[ADR-0026]` | SELECT | SELECT | — | — | 열: `place_id, lang, description`. 조건 V-4(장소 기준) |
+| `public.translation_claim(integer)`, `public.translation_apply(text, jsonb)` `[ADR-0026]` | — | — | EXECUTE | — | 번역 Edge Function 전용(전용 `sb_secret`). 정의자, `volatile`(POST). 쓰는 곳은 `translation_jobs`·`translation_usage`·`translation_state`·`place_translations` 뿐 |
+| `app.translation_kick()`, `app.places_translation_sync()`, `app.has_latin(text)` `[ADR-0026]` | — | — | — | — | EXECUTE 부여 없음. `translation_kick` 은 `pg_cron`(postgres)이, 트리거 함수는 트리거가, `has_latin` 은 정의자 함수 안에서만 부른다 |
 | `app.require_writer()`, `app.require_admin()`, `app.pref_of()`, `app.ip_key()`, `app.evaluate_item()`, `app.setting()` | — | — | — | — | **헬퍼 EXECUTE 부여 안 함.** 정책·뷰가 부르지 않고 정의자 함수 안에서만 호출되므로(소유자 권한) 필요 없다 — erd.md 와 달리 RLS 정책이 없어서 가능 |
 | `app.db_pre_request()` | EXECUTE | EXECUTE | — | — | `authenticator` 설정 `pgrst.db_pre_request` 로 호출. 요청 역할로 실행되므로 `anon`·`authenticated` EXECUTE 가 필요하다. `[Y-2 구현]` 부여했고 `checks` ③④ 허용 목록에 이 함수만 더했다. 함수는 정의자(`ip_hits` 쓰기). 클라우드 동작 확인은 OQ-E1 |
 | `app.admin_invites`, `app.ip_tiers` | — | — | — | 활성, 정책 0 | `[검토 #4·#6]` SQL 로만 관리 |
@@ -405,6 +499,8 @@ revoke truncate, update, delete on app.mod_actions from public, anon, authentica
 | `app.purge_past_events()` | 매일 | `last_date < 도쿄 오늘 - 1년` 일정 삭제 | Y-P5 |
 | `app.purge_records()` | 매시 | 1년 지난 `reports`(해결된 것), `mod_actions`(`app.purging=on`), 90일 지난 `security_events`, **48시간 지난 `security_events.ip_key` 를 null** `[검토 #8]`, 48시간 지난 `write_log`, 1시간 지난 `ip_hits`, 이틀 지난 솔트 | Y-P5, Y-S12 |
 | `app.purge_inactive_accounts()` | 매일 | `accounts.last_active_at < now() - 1년` 이고 관리자가 아닌 익명 사용자를 `auth.users` 에서 삭제(→ `accounts`·소유 행 cascade, 신고자 null). 쓰기 없이 만들어진 익명 사용자(로그인 직후 실패 등)는 `created_at` 기준 | Y-P5, B-3 |
+| `app.translation_kick()` `[ADR-0026]` | 1분마다 | `translation_enabled = 1`, 멈춤 아님, 기한 된 작업이 있을 때만 `net.http_post`(Vault 의 URL·깨우기 비밀, 본문 없음). `pg_cron`·`pg_net`·`vault` 가 모두 있을 때만 예약(로컬에는 없다) | D32 |
+| `app.purge_records()` 추가분 `[ADR-0026]` | 매시 | 90일 지난 `translation_usage`, 30일 지난 실패 작업(`attempts >= translation_max_attempts`) | Y-S12 |
 
 무료 플랜 일시정지 중에는 작업이 돌지 않는다 — 재개 후 다음 실행이 밀린 것을 처리한다(조건이 시각 기준이라 멱등). 일시정지 위험은 tech-stack-v2 B-4.
 
@@ -519,6 +615,21 @@ end $$;
 | `app.db_pre_request() → void` | anon, authenticated (정의자) | ~~쓰기 RPC 경로일 때만~~ **`[Y-2 구현]` 메서드가 GET·HEAD·OPTIONS 가 아닌 모든 요청**(경로 무관, §7 머리말) `[검토 #1]`: `x-forwarded-for` 를 쉼표로 나눠 **오른쪽에서 `xff_trusted_hops` 번째**(최소 1, 기본 1) 값을 `app.client_ip` 로 해석 `[검토 #7]`. `app.client_ip` 는 `v4:포트`, `[v6]:포트`, IPv4 대응 IPv6(`::ffff:a.b.c.d` → IPv4)를 받아 호스트 주소로 정규화하고, 해석할 수 없으면 null → 키 `sha256('unknown')` 하나에 기본 한도(해석 못 하는 요청끼리 한 통을 공유). `ip_tiers` 의 `dorm` 범위면 `dorm` 한도, 아니면 기본 한도 `[검토 #6]`. 키(`app.ip_key`, IPv6 /64)로 5분 창 `ip_hits` 증가, 초과면 `raise sqlstate 'PT429'`(로컬 PostgREST 13 에서 HTTP 429 확인). 이 증가는 뒤따르는 요청이 예외 없이 끝나야 남는다 — 그래서 쓰기 RPC 는 형식 오류도 상태로 반환한다(§7 머리말). **남는 구멍 `[Y-2 구현]`:** PostgREST 가 인자를 함수 타입으로 바꾸지 못하는 요청(잘못된 enum·uuid 등)은 함수가 돌기 전에 실패해 이 증가가 롤백된다. 그런 요청은 아무것도 바꾸지 않고 아무것도 기록하지 않으므로 비용은 요청 자체뿐이다 — G-55 는 **타입이 맞는 요청에 대해서만** 성립한다 |
 | `app.hook_before_user_created(event jsonb) → jsonb` | supabase_auth_admin | 익명: 최근 1시간 익명 생성 수 < `anon_signups_per_hour` 아니면 거절. **이 훅은 보조다** — 익명 가입에 훅이 도는지 미확인(OQ-E5)이므로 전역 상한의 보장은 `require_writer` 의 계정 생성 상한이 맡는다(계정은 첫 쓰기 때만 생기므로 Auth 와 무관하게 성립) `[재검토 #1]`. 비익명: 이메일이 **`admin_invites`** 에 있어야 함 `[검토 #4]`. 이 훅은 가입 경로만 막는다 — 익명 → 이메일 연결(`updateUser`)은 훅을 거치지 않으므로 **권한 판단에 쓰지 않는다**. 익명 가입에도 훅이 도는지·페이로드 형식은 **미확인**(OQ-E5) — 돌지 않으면 전역 한도는 감시 경보 + CAPTCHA 런북으로만 대응 |
 
+### 7.5 번역 (`service_role`) `[ADR-0026]`
+
+§7 머리말의 공통 규칙을 그대로 따른다: 정의자, `set search_path = ''`, 스키마 한정 이름, 동적 SQL 없음, 모양이 틀린 입력은 `{status:'invalid', field}`(예외 아님). **POST 로 부르므로 `stable` 이 아니다** — PostgREST 는 `stable` 함수를 읽기 전용으로 돌려 쓰기가 실패한다(CLAUDE.md).
+
+| 함수 | 시그니처 → 반환 | 동작 | 근거 |
+|---|---|---|---|
+| `public.translation_claim` | `(p_max_jobs integer) → jsonb` `{status, jobs?}`. `status` ∈ `ok, disabled, paused, budget, invalid`. `jobs: [{claim, place_id, text, src, targets, hash}]` (`hash` 는 hex) | `p_max_jobs` 가 1~100 이 아니면 `invalid`(`field: max_jobs`). `translation_enabled = 0` → `disabled`. `paused_until > now()` → `paused`. 그 밖에는 `next_attempt_at <= now()` 이고 (임대 없음 또는 임대 만료) 이고 `attempts < max` 이며 장소가 **공개 상태**인 작업을 `enqueued_at` 순으로 `for update of j skip locked`. 작업 해시가 지금 원문의 해시와 다르면 고친다(트리거가 놓친 경우의 안전망). 하루·월 사용량 + 이번 묶음 ≤ 한도, 묶음 문자 ≤ `translation_batch_chars` 인 만큼만 담고, 하나도 못 담으면 `budget`. 담은 작업에 `claim_id = gen_random_uuid()`, `claimed_at = now()`, `attempts = attempts + 1`, 사용량에 문자 수를 더한다. `targets` = `{en,ja,ko}` − `places.lang`. **돌려주는 것은 장소 id·설명·작성 언어뿐** — 작성자·좌표·이름 없음 | D32, Y-S12 |
+| `public.translation_apply` | `(p_provider text, p_results jsonb) → jsonb` `{status, stored, stale, rejected, retried}` | `p_provider` 가 허용 목록 밖이면 `invalid`(`provider`). `p_results` 가 배열이 아니거나 100개를 넘으면 `invalid`(`results`). 원소마다: `claim`·`place_id` 가 작업과 맞지 않으면 건너뛴다(임대 만료 뒤 늦게 온 결과). 장소가 삭제됐거나 `hash` 가 **지금 원문의 해시**와 다르면 `stale`(저장 안 함). `out: [{lang, text}]` 에서 `lang` 이 `targets` 밖이거나 `text` 가 `app.check_text(text, 1, 2000, false)` 를 통과하지 못하면 그 언어는 버리고 `rejected_output`. 통과한 것은 `place_translations` 에 upsert(해시·제공자·시각)하고 작업을 지운다. `error` 가 있으면: `quota` → `translation_state.paused_until = 다음 달 1일 00:00 UTC`, `rate` → `now() + 1시간`, 그 밖 → `next_attempt_at = now() + least(2^attempts 분, 6시간)`, `claim_id = null`, `last_error`. 돌려주는 것은 수뿐 | D32, RFC-0003 T-29·T-31·T-32 |
+| `app.translation_kick` | `() → void` | §6. `exists` 검사 뒤 `net.http_post(url, headers => {"x-yunabi-kick": 비밀}, body => '{}')`. 비밀·URL 은 `vault.decrypted_secrets` 에서 읽는다. 클라이언트 EXECUTE 없음 | D32 |
+| `app.places_translation_sync` | 트리거 함수, **invoker** | §4.8 | D32 |
+| `app.has_latin` | `(p text) → boolean`, `immutable`, invoker | §4.1 | D31 |
+| `public.ops_health` 3판 | 같은 시그니처 | 2판에 키 `translation` 을 더한다: `{enabled, paused, pending, due, oldest_due_minutes, failed, chars_today, chars_month, month_limit}` — **수만** | Y-S10 |
+
+**Edge Function 이 할 수 있는 것:** 위 두 함수를 부르는 것뿐이다. `service_role` 은 `app` 표 권한이 없으므로(V-1) 전용 키가 새도 원문·소유·숨김·신고를 바꾸거나 읽을 수 없다. 최악은 공개 장소의 설명 읽기(이미 공개)와, 검사를 통과한 글을 번역 표에 쓰는 것이다(RFC-0003 T-29).
+
 ---
 
 ## 8. 마이그레이션 파일 계획
@@ -550,7 +661,11 @@ end $$;
 | 21 | `ops_health_signals` | `ops_health()` 2판(§7.4) — 같은 시그니처의 `create or replace` 라 소유자·`service_role` 부여·`checks` 허용 목록은 그대로. 운영에서는 `checks` 가 다시 돌지 않으므로 파일 끝 `do` 블록이 자기 효과(③④⑩ 의 `ops_health` 몫, ⑤, ⑥ 동적 SQL 없음, `stable` 정의자)를 검사해 어긋나면 실패. pgTAP `10_ops_health.test.sql` | Y-S10 |
 | 22 | `service_role_pre_request` | `service_role` 에 `app` 스키마 USAGE 와 `app.db_pre_request()` EXECUTE 만 준다. PostgREST 가 요청마다 이 훅을 요청 역할로 실행하는데, 없으면 감시 키(service_role)의 모든 REST 호출이 `permission denied for schema app`(403)로 실패했다 — 2026-10-23 첫 감시 실행에서 발견. 표 권한은 여전히 0(checks ②), ⑩ 의 service 전용 목록은 `ops_health` 그대로 | Y-S10 |
 | 23 | `place_category_sights` | `app.place_category` 에 `sights`(관광 — 신사·절, 공원, 전망, 박물관) 값을 더한다(책임자, 2026-10-25). 클라이언트는 이미 타입 USAGE 가 있고 `create_place`·`update_place` 가 이 타입을 받으므로 권한·`checks` 는 그대로 | Y-M6 |
+| 25 `[ADR-0026]` | `place_name_latin` | `app.has_latin`. `create_place`·`update_place` 를 `create or replace`(같은 시그니처 — 권한·허용 목록 그대로)해 이름 규칙을 더한다. `places_name_latin` CHECK(`not valid` → 기존 행 확인 → `validate`). 파일 끝 `do` 블록이 자기 효과를 확인한다: 두 함수의 EXECUTE 가 `authenticated` 만, 정의자, `search_path`, ⑥ 동적 SQL 없음 | D31, Y-M12 |
+| 26 `[ADR-0026]` | `translations` | §4.8 표 4개 + RLS, 트리거 2개, 뷰, §7.5 함수, 설정 행, `ops_health` 3판. `create extension if not exists pg_net with schema extensions`(쓸 수 있을 때만). `pg_cron`·`pg_net`·`vault` 가 모두 있을 때만 `cron.schedule('yunabi-translate-kick', '* * * * *', 'select app.translation_kick()')`. 출시 뒤라면 기존 장소를 대기열에 넣는 `insert … select`. 권한: 뷰 SELECT → `anon, authenticated`, 두 함수 EXECUTE → `service_role`. **자기 검사(`do` 블록):** `checks` ③④⑩ 을 전체 카탈로그로 다시 한다 — `anon`·`authenticated` 목록은 그대로, `service_role` 전용 목록 = {`ops_health`, `translation_apply`, `translation_claim`}. 그리고 ① ② ⑤ ⑥ ⑧(`place_translations_public` = `place_id,lang,description`) ⑫ | D32 |
 | seed | `supabase/seed/fixtures.sql` | 로컬·CI 전용: 테스트 계정(익명 A·B·C·D, 관리자 1 — TOTP 비밀 고정), `tests/fixtures` 와 같은 장소·일정. **운영에 적용하지 않는다**(초기 데이터 0, Y-M4) | PRD §7 |
+
+**`checks` 허용 목록은 어디에 두나 `[ADR-0026]`.** CLAUDE.md 는 새 함수를 grants 마이그레이션과 `…_checks.sql` 의 허용 목록에 넣으라고 한다. 그런데 `20261013000200_checks.sql` 은 빈 DB 에서 **24 보다 먼저** 돌고(그때는 새 함수가 없어 목록에 넣으면 실패한다), 운영에서는 이미 적용되어 **다시 돌지 않는다**(런북 §7.1 — 21 의 머리말과 같은 사정). 이미 적용된 마이그레이션을 고치면 운영과 저장소가 어긋난다. 그래서 21·22 처럼 **24 가 자기 권한을 주고, 파일 끝에서 전체 허용 목록을 다시 검사한다.** 이후 허용 목록의 원본은 "가장 최근의 자기 검사 블록"이다 — CLAUDE.md 의 해당 문장도 구현 때 그렇게 고친다.
 
 **대시보드 설정(마이그레이션 밖, 점검표):** 익명 로그인 ON, **이메일 공개 가입 OFF**(관리자는 대시보드·Admin API 로만 생성 `[검토 #4]`), TOTP ON, 세션 비활동·최대 수명(Pro 기능으로 보임 — 무료면 §7.3 의 DB 검사만), CAPTCHA 스위치(기본 OFF, Turnstile 키 미리 등록 — 사이트 키는 사용자 앱·콘솔 **빌드에 미리 포함**해야 재배포 없이 켤 수 있다, 켜면 **관리자 비밀번호 로그인에도 적용**된다 `[검토 #5]`), 익명 로그인 IP 한도, Data API 노출 스키마 `public` 만, 레거시 키 비활성화, 훅 등록, 프로젝트 멤버.
 
@@ -604,6 +719,16 @@ end $$;
 | G-55 | 형식 오류로 끝난 쓰기 요청도 `ip_hits` 에 남음. `[Y-2 구현]` **타입이 맞는 요청에 한해서다** — PostgREST 가 인자를 변환하지 못하는 요청(잘못된 enum·uuid)은 함수 실행 전에 실패해 카운트가 롤백된다. 그런 요청은 아무것도 바꾸지 않고 기록도 남기지 않는다(§7.4 `db_pre_request` 의 남는 구멍) | 통과 `[검토 #7]` |
 | G-56 | 정리 후 48시간 지난 `security_events.ip_key` 가 null | 통과 `[검토 #8]` |
 | G-60 | (통합, 병렬 연결 3개) B·C·D 가 동시에 신고 | 숨김 1회, `auto_hide` 기록 1행 `[검토 #14]` |
+| G-70 `[ADR-0026]` | 트리거: 설명 있는 장소 생성 → 작업 1행(해시 = 원문). 설명 없는 장소 → 없음. 설명 수정 → 옛 번역 0행, 작업 해시 새로·`attempts` 0. 이름·좌표만 수정 → 번역 그대로. 숨김(자동·정지) → 번역 그대로(뷰에서는 빠짐). 삭제 → 번역·작업 0행 | 통과 |
+| G-71 `[ADR-0026]` | `translation_claim`: `enabled = 0` → `disabled`. 숨김·삭제 장소의 작업은 주지 않음. 임대 중인 작업은 주지 않고, 임대 만료 뒤에는 줌. 하루·월 한도 경계(남은 한도보다 큰 작업은 담지 않음 → `budget`). 사용량이 가져간 만큼 늚. 응답에 uuid·좌표·이름 없음. `p_max_jobs` 0·101 → `invalid`(예외 아님) | 통과 |
+| G-72 `[ADR-0026]` | `translation_apply`: 다른 `claim` → 건너뜀. 해시 불일치 → `stale`, 저장 없음. 제어 문자·U+202E·2,001자 번역문 → 그 언어 버림 + `rejected_output`. `targets` 밖 언어 → 버림. 정상 → 저장 + 작업 삭제 + `data_version` 증가. `quota` → `paused_until` 다음 달, 그 뒤 claim 이 `paused`. 5번째 실패 뒤 다시 주지 않음. `p_results` 가 객체이거나 101개 → `invalid`(예외 아님) | 통과 |
+| G-73 `[ADR-0026]` | `place_translations_public`: 열 = `place_id, lang, description`. 숨김·삭제 장소의 번역 없음(G-23 을 다섯 뷰로). `anon` SELECT 가능 | 통과 |
+| G-74 `[ADR-0026]` | 정리: 30일 지난 실패 작업, 90일 지난 사용량 삭제. 장소 영구 삭제 → cascade | 통과 |
+| G-75 `[ADR-0026]` | (통합, 병렬 연결 2개) 동시에 `translation_claim` → 같은 작업을 둘이 받지 않음(`skip locked`) | 통과 |
+| G-76 `[ADR-0026]` | 이름 규칙: `create_place`·`update_place` 에 `枚方市駅`, `만다이` → `invalid`·`name_latin` + `security_events('invalid_input')`. `Mandai Hirakata`, `Academic Affairs Office (教務課)`, `히라카타 T-SITE` → 통과. `app.places` 에 `枚方市駅` 를 직접 insert → CHECK 위반 | 통과 |
+| G-77 `[ADR-0026]` | 카탈로그: `service_role` 전용 EXECUTE = {`ops_health`, `translation_apply`, `translation_claim`}. `anon`·`authenticated` 목록은 그대로(두 함수 없음). `translation_kick`·`places_translation_sync`·`has_latin` 은 아무에게도 없음 | 통과 |
+| G-78 `[ADR-0026]` | `ops_health` 3판: `translation` 의 수가 맞고 글·id 가 없음 | 통과 |
+| G-79 `[ADR-0026]` | (HTTP, `security.spec.ts`) `anon`·익명 계정으로 `POST /rpc/translation_claim`·`/rpc/translation_apply` → 401/403. `GET /place_translations_public` 은 200 | 통과 |
 
 HTTP 층 같은 케이스(PostgREST 경유)는 `tests/e2e-backend/security.spec.ts` 의 Playwright `request` 로 G-01, G-02, G-03, G-10, G-12, G-15, G-21, G-23, G-30 ①~③, G-31, G-52, G-55 를 다시 확인한다 — DB 권한과 Data API 노출 설정을 함께 검증하기 위해. 특히 G-03 은 허용 목록의 모든 함수를 타입이 맞는 인자로 불러 `anon` 은 `data_version` 외 모두 401, 비관리자 계정의 `admin_*` 는 403 인지 본다(`stable` 함수는 GET — POST 는 권한 검사 전에 405). 이 스위트는 로컬 스택 전용이다(로컬 게이트웨이는 `Authorization` 을 만들지 않아 계정 없는 거절이 401). 대응표는 §9.1. `[Y-3S 구현, 2026-10-22]`
 
@@ -633,6 +758,7 @@ HTTP 층 같은 케이스(PostgREST 경유)는 `tests/e2e-backend/security.spec.
 | G-53, G-54 | 05 | — (클라우드 확인 PL-6 ②) | — |
 | G-55 | 05 | `G-55 …` | — |
 | G-60 | — | — | reports `G-60 …` |
+| G-70~G-78 `[ADR-0026]` | 새 파일 `NN_translations.test.sql`, 마이그레이션 25·26 의 자기 검사 | G-79 | 번역 e2e·렌더, 단위(`core.ts`, 이름 규칙 일치) |
 | T-19a | 01 | `T-19a …` | — |
 | Y-S4 | — | — | v2 장소·일정 `Y-S4 …`, posting `Y-S4 …`, admin `Y-S4 …`, render `admin.test.tsx` |
 | Y-S8 HSTS | — | — | `scripts/check-admin-headers.mjs` (`build:admin`) |
@@ -654,3 +780,6 @@ HTTP 층 같은 케이스(PostgREST 경유)는 `tests/e2e-backend/security.spec.
 | OQ-E9 | 익명 사용자의 이메일 연결 요청(`updateUser({email})`)도 프로젝트 SMTP 로 확인 메일을 보낸다. 기본 발신은 시간당 몇 통뿐이라 이것으로 **관리자 비밀번호 재설정 메일이 막힐 수 있다** `[재검토 #4]` — 사용자 SMTP 를 둘지, 런북에 위험과 우회(책임자가 대시보드에서 비밀번호 직접 재설정)를 적을지. 제안: 런북에 기록 + 관리자가 2명 이상이 되면 사용자 SMTP. **D25(관리자 1명)·D26(SMTP 는 출시 전 항목)** — 런북 R-6 으로 운영, 사용자 SMTP 여부는 RFC-0003 §17.6a PL-2 에서 결정 | Y-S3 |
 | OQ-E8 | `xff_trusted_hops` 실측값과, 기숙사 공인 IP/CIDR (`ip_tiers` 에 넣을 값). `[Y-2 구현]` 로컬 스택은 게이트웨이 한 단(값 1)이라 실측이 되지 않는다 — 클라우드에서 측정(RFC-0003 §17.6a PL-6). **`[Y-3S 클라우드 확인, 2026-10-22]` `xff_trusted_hops = 1` 유지:** 요청마다 다른 가짜 `X-Forwarded-For` 를 붙인 쓰기 61번이 한 IP 로 세어져 61번째 429(G-54 HTTP 재현). 앞단 프록시 수를 직접 센 것은 아니고 결과로 확인. Auth 로그에는 요청 IP 원문이 남는다(Supabase 보관 기간 동안) — 방침(Y-4)에 적는다 | Y-S7 |
 | OQ-E10 | `[Y-2 구현]` 클라우드에서 `alter default privileges for role supabase_admin …` 가 허용되는지. 안 되면(마이그레이션은 notice 후 계속) `supabase_admin` 이 나중에 만드는 `public` 함수에 `PUBLIC` EXECUTE 가 붙을 수 있고 `checks` ⑨ 는 그 역할의 전역 행을 보지 않는다(§5.1 2a). 첫 적용 로그의 notice 유무와 `pg_default_acl` 을 확인해 기록. **`[Y-3S 클라우드 확인, 2026-10-22, 프로젝트 tsbipaffirkswsgkydav]` 답: 허용되지 않는다.** 클라우드의 `postgres` 는 superuser 도 `supabase_admin` 의 멤버도 아니다. `public` 에는 `supabase_admin` 의 스키마 기본 ACL 이 있어 그 역할이 만드는 함수에 `anon`·`authenticated` EXECUTE 가 붙는다(테이블·시퀀스도 같은 기본값). 첫 `db push` 가 `checks` ⑨ 에서 실패해, ⑨ 를 "바꿀 수 있는 역할만 실패, 나머지는 notice" 로 고쳤다. **수용된 잔여 위험:** 우리 함수는 모두 `postgres` 가 만들어 해당되지 않고, 이미 있는 함수는 ③④⑩ 이 전수 검사한다. 남는 것은 Supabase 가 대시보드 기능 등으로 `public` 에 만드는 객체가 다음 마이그레이션까지 클라이언트 역할에 열릴 수 있다는 점이다 — ⑫(`public` 에 확장 금지)와 출시 전 점검표의 `pg_default_acl`·함수 권한 재확인으로 대응한다 | Y-S1 |
+| OQ-E11 `[ADR-0026]` | `pg_net`·Vault 가 클라우드 프로젝트에서 `extensions`·`vault` 스키마로 켜지는지, `pg_net` 이 `public` 에 객체를 만들지 않는지(`checks` ⑫·③④). 첫 적용 때 확인(RFC-0003 PL-7) | D32, Y-S1 |
+| OQ-E12 `[ADR-0026]` | 번역문 상한 2,000자가 맞는지 — 500자 일본어 설명의 영어 번역 길이를 실측 | D32 |
+| OQ-E13 `[ADR-0026]` | 일정도 번역하면(RFC-0003 OQ-22) `app.event_translations(event_id, lang, title, place_text, body, …)` 와 회차 덮어쓰기(`event_occurrences` 의 `title`·`place_text`·`body`)를 어떻게 둘지 — 제안: 같은 표에 `occurs_on`(null = 시리즈)을 더한다 | D32 |

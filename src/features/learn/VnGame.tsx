@@ -1,7 +1,7 @@
 import { endingFor, nextScene, pickOption, pickRoute, resetVn } from '../../actions/learn';
 import { go } from '../../actions/nav';
 import { endingKey, sceneKey } from '../../content/art';
-import type { Lesson } from '../../content/types';
+import type { VnLesson } from '../../content/types';
 import { VN } from '../../content/vn';
 import { useT } from '../../i18n/useT';
 import { prefs } from '../../state/prefs';
@@ -10,7 +10,7 @@ import { vn } from '../../state/vn';
 import { ArtImage } from '../../ui/ArtImage';
 import { BackBar } from '../../ui/BackBar';
 
-export function VnGame({ lesson }: { lesson: Lesson }) {
+export function VnGame({ lesson }: { lesson: VnLesson }) {
   const m = useT();
   const lang = useStore(prefs, (s) => s.lang);
   const v = useStore(vn, (s) => s);
