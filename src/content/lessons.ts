@@ -537,8 +537,8 @@ export const LESSONS: Lesson[] = [
             s: 'Student holding up three fingers',
           },
           {
-            jp: 'とりあえず生で。',
-            tr: { en: 'A draft beer to start.', ko: '일단 생맥주요.' },
+            jp: 'とりあえず生でお願いします。',
+            tr: { en: 'A draft beer to start, please.', ko: '일단 생맥주로 부탁해요.' },
             s: 'A friend ordering the moment they sit down',
           },
           {
@@ -551,17 +551,18 @@ export const LESSONS: Lesson[] = [
       {
         panels: [
           {
-            jp: 'これ、頼んでないけど……',
-            tr: { en: "We didn't order this…", ko: '이거 안 시켰는데……' },
-            s: 'Student staring at a small dish that arrived unordered',
+            jp: 'すみません、これ、頼んでないんですが……',
+            tr: { en: "Excuse me, we didn't order this…", ko: '저기요, 이거 안 시켰는데요……' },
+            s: 'Student pointing at a small dish that arrived unordered, asking the staff',
           },
           {
-            jp: 'お通しやで。席料みたいなもん。',
+            cap: 'お通しは席料のようなもの',
+            jp: 'こちら、お通しです。',
             tr: {
-              en: "It's otoushi. Kind of like a cover charge.",
-              ko: '오토시야. 자릿세 같은 거.',
+              en: 'This is your otoushi. (Otoushi works like a cover charge.)',
+              ko: '이건 오토시입니다. (오토시는 자릿세 같은 것)',
             },
-            s: 'Friend explaining across the table',
+            s: 'Staff smiling, gesturing at the small dish',
           },
           {
             jp: 'お箸、替えてもらえますか？',
@@ -578,8 +579,8 @@ export const LESSONS: Lesson[] = [
     ],
     ex: [
       {
-        jp: 'とりあえず生',
-        rd: 'toriaezu nama',
+        jp: 'とりあえず生でお願いします',
+        rd: 'toriaezu nama de onegai shimasu',
         g: {
           ja: '「まずは生ビール」。飲まないなら「ウーロン茶で」',
           en: "'A draft beer to start.' If you don't drink, ウーロン茶で works the same way",
@@ -671,10 +672,10 @@ export const LESSONS: Lesson[] = [
             s: 'Staff writing it down',
           },
           {
-            jp: 'パクと申します。よろしくお願いします。',
+            jp: 'ジェームズと申します。よろしくお願いします。',
             tr: {
-              en: 'My name is Park. Thank you very much.',
-              ko: '박이라고 합니다. 잘 부탁드립니다.',
+              en: 'My name is James. Thank you very much.',
+              ko: '제임스라고 합니다. 잘 부탁드립니다.',
             },
             s: 'Student hanging up, visibly relieved',
           },

@@ -131,15 +131,15 @@
 |---|---|---|---|---|---|
 | 1 | Staff greeting a group at an izakaya entrance | — | 何名様ですか？ | 몇 분이세요? | [ ] |
 | 2 | Student holding up three fingers | — | 3人です。 | 세 명이요. | [ ] |
-| 3 | A friend ordering the moment they sit down | — | とりあえず生で。 | 일단 생맥주요. | [ ] |
+| 3 | A friend ordering the moment they sit down | — | とりあえず生でお願いします。 | 일단 생맥주로 부탁해요. | [ ] |
 | 4 | Student asking the staff for water, three fingers up again | — | お冷、3つもらえますか？ | 찬물 세 잔 주시겠어요? | [ ] |
 
 ### 2쪽 — `src/art/lessons/l6/p2`
 
 | 칸 | 장면 메모 | 내레이션 | 말풍선 | 번역(ko) | 대조 |
 |---|---|---|---|---|---|
-| 1 | Student staring at a small dish that arrived unordered | — | これ、頼んでないけど…… | 이거 안 시켰는데…… | [ ] |
-| 2 | Friend explaining across the table | — | お通しやで。席料みたいなもん。 | 오토시야. 자릿세 같은 거. | [ ] |
+| 1 | Student pointing at a small dish that arrived unordered, asking the staff | — | すみません、これ、頼んでないんですが…… | 저기요, 이거 안 시켰는데요…… | [ ] |
+| 2 | Staff smiling, gesturing at the small dish | お通しは席料のようなもの | こちら、お通しです。 | 이건 오토시입니다. (오토시는 자릿세 같은 것) | [ ] |
 | 3 | Chopsticks on the floor, student raising a hand to the staff | — | お箸、替えてもらえますか？ | 젓가락 바꿔 주시겠어요? | [ ] |
 | 4 | At the register, three people with wallets out | — | お会計、別々でお願いします。 | 계산은 따로따로 해 주세요. | [ ] |
 
@@ -163,5 +163,5 @@
 | 1 | Staff scanning the page | — | 申し訳ありません、7時は満席でして。 | 죄송합니다, 7시는 만석이라서요. | [ ] |
 | 2 | Student adjusting, pen in hand | — | では、8時は空いていますか？ | 그럼 8시는 비어 있나요? | [ ] |
 | 3 | Staff writing it down | — | 8時でしたら。お名前をお願いします。 | 8시라면 괜찮습니다. 성함 부탁드립니다. | [ ] |
-| 4 | Student hanging up, visibly relieved | — | パクと申します。よろしくお願いします。 | 박이라고 합니다. 잘 부탁드립니다. | [ ] |
+| 4 | Student hanging up, visibly relieved | — | ジェームズと申します。よろしくお願いします。 | 제임스라고 합니다. 잘 부탁드립니다. | [ ] |
 
