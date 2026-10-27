@@ -7,13 +7,19 @@ import { ART, endingKey, pageKey, sceneKey } from '../../src/content/art';
 import { ENDINGS } from '../../src/content/endings';
 import { LESSONS } from '../../src/content/lessons';
 import { VN } from '../../src/content/vn';
-import { addMonths, monthCells, tokyoToday, weekday } from '../../src/domain/calendar/dates';
+import {
+  addMonths,
+  monthCells,
+  tokyoTime,
+  tokyoToday,
+  weekday,
+} from '../../src/domain/calendar/dates';
 import { makeSchedule, occOn, upcoming } from '../../src/domain/calendar/occurrences';
 import { HOME, mainBounds, regionOf, shownPlaces, walkMin } from '../../src/domain/geo/geo';
 import { PREFS } from '../../src/domain/geo/prefs';
 import { buildIcs, icsEsc, icsFold } from '../../src/domain/ics';
 import { safeMapsUrl } from '../../src/domain/links';
-import { checkEvent, checkPlace } from '../../src/domain/validation';
+import { checkEvent, checkPlace, newEventDay } from '../../src/domain/validation';
 import type { EventSeries, OccurrenceOverride, Place } from '../../src/domain/types';
 import { en } from '../../src/i18n/en';
 import { ja } from '../../src/i18n/ja';
@@ -60,6 +66,8 @@ describe('calendar', () => {
   });
   it('uses Japan time for today', () => {
     expect(tokyoToday(new Date('2026-10-11T15:30:00Z'))).toBe('2026-10-12');
+    expect(tokyoTime(new Date('2026-10-11T15:05:00Z'))).toBe('00:05');
+    expect(tokyoTime(new Date('2026-10-11T10:30:00Z'))).toBe('19:30');
   });
 });
 
@@ -313,6 +321,29 @@ describe('validation mirrors the server', () => {
     };
     expect(checkEvent(e, '2026-10-12')).toBe('start_date');
     expect(checkEvent({ ...e, start_date: '2026-10-20' }, '2026-10-12')).toBe(null);
+  });
+  it('refuses a new event that already ended today, as the server does', () => {
+    const e = {
+      title: 'Study group',
+      start_date: '2026-10-12',
+      start_time: '18:00',
+      end_time: '19:00',
+      weekly_until: null,
+      place_text: '',
+      body: '',
+      lang: 'en',
+    };
+    expect(checkEvent(e, '2026-10-12', false, '18:30')).toBe(null);
+    expect(checkEvent(e, '2026-10-12', false, '19:00')).toBe('time');
+    expect(checkEvent(e, '2026-10-12', false, '19:30')).toBe('time');
+    expect(checkEvent({ ...e, start_date: '2026-10-13' }, '2026-10-12', false, '19:30')).toBe(null);
+    /* an edit is not held to it (the server checks the whole series instead) */
+    expect(checkEvent(e, '2026-10-12', false, null)).toBe(null);
+  });
+  it("starts a new event tomorrow once today's default slot has ended", () => {
+    expect(newEventDay(new Date('2026-10-12T09:59:00Z'))).toBe('2026-10-12'); // 18:59 JST
+    expect(newEventDay(new Date('2026-10-12T10:00:00Z'))).toBe('2026-10-13'); // 19:00 JST
+    expect(newEventDay(new Date('2026-10-12T14:59:00Z'))).toBe('2026-10-13'); // 23:59 JST
   });
 });
 
