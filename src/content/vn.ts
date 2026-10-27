@@ -22,10 +22,10 @@ export const VN: Record<Route, VnRoute> = {
     scenes: [
       {
         s: 'Two friends meeting at a crowded Osaka Station concourse, one waving hard',
-        jp: 'おー、こっちこっち！めっちゃ待ったで〜',
+        jp: 'おー、こっちこっち！めっちゃ{待|ま}ったで〜',
         opts: [
           {
-            jp: 'ごめん、遅れた！',
+            jp: 'ごめん、{遅|おく}れた！',
             ok: true,
             fb: {
               ja: '友達には「すみません」より「ごめん」。敬語は距離になる',
@@ -34,7 +34,7 @@ export const VN: Record<Route, VnRoute> = {
             },
           },
           {
-            jp: '申し訳ありません。',
+            jp: '{申|もう}し{訳|わけ}ありません。',
             ok: false,
             fb: {
               ja: '丁寧すぎる。バイトの面接みたいに聞こえる',
@@ -43,7 +43,7 @@ export const VN: Record<Route, VnRoute> = {
             },
           },
           {
-            jp: 'えー、めっちゃ待った？',
+            jp: 'えー、めっちゃ{待|ま}った？',
             ok: true,
             fb: {
               ja: '相手の言葉を拾って返すと、会話が転がる',
@@ -55,7 +55,7 @@ export const VN: Record<Route, VnRoute> = {
       },
       {
         s: 'A takoyaki stall, steam rising, friend already eating',
-        jp: 'ここのたこ焼き、めっちゃうまいねん。',
+        jp: 'ここのたこ{焼|や}き、めっちゃうまいねん。',
         opts: [
           {
             jp: 'ほんま？',
@@ -67,7 +67,7 @@ export const VN: Record<Route, VnRoute> = {
             },
           },
           {
-            jp: 'ねん、って何？',
+            jp: 'ねん、って{何|なに}？',
             ok: true,
             fb: {
               ja: '聞いていい。「〜ねん」は「〜んだ」。説明を喜ぶ人が多い',
@@ -88,10 +88,10 @@ export const VN: Record<Route, VnRoute> = {
       },
       {
         s: 'A covered shopping arcade, an older shopkeeper leaning out of her stall',
-        jp: 'お姉ちゃん、ええの入ってるで。',
+        jp: 'お{姉|ねえ}ちゃん、ええの{入|はい}ってるで。',
         opts: [
           {
-            jp: 'ちょっと高いなあ。',
+            jp: 'ちょっと{高|たか}いなあ。',
             ok: true,
             fb: {
               ja: '値段の話は失礼じゃない。商店街では会話の一部',
@@ -109,7 +109,7 @@ export const VN: Record<Route, VnRoute> = {
             },
           },
           {
-            jp: '（黙って値札を見る）',
+            jp: '（{黙|だま}って{値札|ねふだ}を{見|み}る）',
             ok: false,
             fb: {
               ja: '聞くだけならタダ、というのが大阪の感覚',
@@ -121,10 +121,10 @@ export const VN: Record<Route, VnRoute> = {
       },
       {
         s: 'Both sitting on a river wall at Dotonbori, neon reflected in the water',
-        jp: '俺な、昨日道で100万円拾ってん。',
+        jp: '{俺|おれ}な、{昨日|きのう}{道|みち}で100{万円|まんえん}{拾|ひろ}ってん。',
         opts: [
           {
-            jp: '嘘つけ！',
+            jp: '{嘘|うそ}つけ！',
             ok: true,
             fb: {
               ja: 'ここは驚くところじゃない。疑うのが正解のツッコミ',
@@ -155,10 +155,10 @@ export const VN: Record<Route, VnRoute> = {
       {
         /* owner, 2026-10-25: the Yoshimoto Shinkigeki door gag */
         s: 'Yuki sliding open the door of a small okonomiyaki shop, grinning back over a shoulder',
-        jp: '邪魔すんでー。',
+        jp: '{邪魔|じゃま}すんでー。',
         opts: [
           {
-            jp: '邪魔すんなら帰ってー。',
+            jp: '{邪魔|じゃま}すんなら{帰|かえ}ってー。',
             ok: true,
             fb: {
               ja: '吉本新喜劇の定番のかけ合い。ユウキ「わかってるやん！」',
@@ -176,7 +176,7 @@ export const VN: Record<Route, VnRoute> = {
             },
           },
           {
-            jp: 'お邪魔します。',
+            jp: 'お{邪魔|じゃま}します。',
             ok: false,
             fb: {
               ja: '丁寧で正しいが、ユウキが待っているのはツッコミ',
@@ -209,7 +209,7 @@ export const VN: Record<Route, VnRoute> = {
             },
           },
           {
-            jp: 'お疲れさまでした。',
+            jp: 'お{疲|つか}れさまでした。',
             ok: false,
             fb: {
               ja: 'バイト先の別れ方。友達には少し他人行儀',
@@ -235,7 +235,7 @@ export const VN: Record<Route, VnRoute> = {
     scenes: [
       {
         s: "Kyoto Station's great staircase, one friend waiting with a small bow",
-        jp: 'わざわざ来てくれはって、おおきに。',
+        jp: 'わざわざ{来|き}てくれはって、おおきに。',
         opts: [
           {
             jp: 'いえいえ、こちらこそ。',
@@ -247,7 +247,7 @@ export const VN: Record<Route, VnRoute> = {
             },
           },
           {
-            jp: '来たかったから。',
+            jp: '{来|き}たかったから。',
             ok: true,
             fb: {
               ja: '素直もいい。ただし京都では少し直球に響く',
@@ -268,7 +268,7 @@ export const VN: Record<Route, VnRoute> = {
       },
       {
         s: 'Nishiki Market, narrow and crowded, a skewer held out',
-        jp: 'これ、食べてみはる？',
+        jp: 'これ、{食|た}べてみはる？',
         opts: [
           {
             jp: 'じゃあ、ちょっとだけ。',
@@ -289,7 +289,7 @@ export const VN: Record<Route, VnRoute> = {
             },
           },
           {
-            jp: '結構です。',
+            jp: '{結構|けっこう}です。',
             ok: false,
             fb: {
               ja: '強い。断るなら「お腹いっぱいで」と理由を添える',
@@ -301,7 +301,7 @@ export const VN: Record<Route, VnRoute> = {
       },
       {
         s: 'A temple garden, gravel path, the friend speaking very quietly',
-        jp: 'ここ、静かにしといた方がええかもしれへんね。',
+        jp: 'ここ、{静|しず}かにしといた{方|ほう}がええかもしれへんね。',
         opts: [
           {
             jp: 'あ、うるさかった？ごめん。',
@@ -313,7 +313,7 @@ export const VN: Record<Route, VnRoute> = {
             },
           },
           {
-            jp: '（声を小さくする）',
+            jp: '（{声|こえ}を{小|ちい}さくする）',
             ok: true,
             fb: {
               ja: '言葉より行動。これがいちばん自然',
@@ -334,10 +334,10 @@ export const VN: Record<Route, VnRoute> = {
       },
       {
         s: 'A traditional living room, late afternoon light, a teapot being lifted',
-        jp: 'そろそろ、お茶漬けでもどうどす？',
+        jp: 'そろそろ、お{茶漬|ちゃづ}けでもどうどす？',
         opts: [
           {
-            jp: 'あ、もうこんな時間。そろそろ失礼します。',
+            jp: 'あ、もうこんな{時間|じかん}。そろそろ{失礼|しつれい}します。',
             ok: true,
             fb: {
               ja: '有名な遠回し。「そろそろ帰っては」の合図とされる',
@@ -346,7 +346,7 @@ export const VN: Record<Route, VnRoute> = {
             },
           },
           {
-            jp: 'お構いなく。',
+            jp: 'お{構|かま}いなく。',
             ok: true,
             fb: {
               ja: '曖昧に受け流す。角が立たない',
@@ -367,7 +367,7 @@ export const VN: Record<Route, VnRoute> = {
       },
       {
         s: 'A narrow lane at dusk, the friend standing in a doorway',
-        jp: 'また寄っとくれやす。',
+        jp: 'また{寄|よ}っとくれやす。',
         opts: [
           {
             jp: 'おおきに、また。',
@@ -388,7 +388,7 @@ export const VN: Record<Route, VnRoute> = {
             },
           },
           {
-            jp: '必ず行きます。',
+            jp: '{必|かなら}ず{行|い}きます。',
             ok: false,
             fb: {
               ja: '社交辞令に真顔で答えた形。約束として重く響く',

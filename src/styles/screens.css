@@ -896,6 +896,22 @@ main {
   color: var(--muted);
   margin-top: 4px;
 }
+/* furigana over every kanji in the Japanese lines (ui/Ruby): the reading sits
+   in the line's own leading, so lines that carry it get room for it */
+rt {
+  font-size: 0.55em;
+  font-weight: 400;
+}
+.panels .jp,
+.panels .cap,
+.vnline p,
+.opts button,
+.expr b,
+.vnend q,
+.card q {
+  line-height: 2;
+}
+
 /* comic pages (Y-J1): portrait art, then the panel list */
 .cpage {
   padding: 12px var(--gutter) 8px;

@@ -26,17 +26,17 @@ export const LESSONS: Lesson[] = [
             s: 'Student walking into a Japanese konbini at night, bento in hand',
           },
           {
-            jp: 'お弁当、温めますか？',
+            jp: 'お{弁当|べんとう}、{温|あたた}めますか？',
             tr: { en: 'Shall I heat up your bento?', ko: '도시락 데워 드릴까요?' },
             s: 'Cashier holding the bento over the microwave',
           },
           {
-            jp: 'お願いします。',
+            jp: 'お{願|ねが}いします。',
             tr: { en: 'Yes, please.', ko: '네, 부탁해요.' },
             s: 'Student nodding',
           },
           {
-            jp: '袋は5円かかりますが、よろしいですか？',
+            jp: '{袋|ふくろ}は5{円|えん}かかりますが、よろしいですか？',
             tr: { en: 'A bag is 5 yen. Is that all right?', ko: '봉투는 5엔인데 괜찮으세요?' },
             s: 'Cashier holding up a plastic bag',
           },
@@ -45,22 +45,22 @@ export const LESSONS: Lesson[] = [
       {
         panels: [
           {
-            jp: 'あ、大丈夫です。持ってます。',
+            jp: 'あ、{大丈夫|だいじょうぶ}です。{持|も}ってます。',
             tr: { en: 'Oh, no thanks. I have one.', ko: '아, 괜찮아요. 가지고 있어요.' },
             s: 'Student pulling out an eco bag',
           },
           {
-            jp: 'ポイントカードはお持ちですか？',
+            jp: 'ポイントカードはお{持|も}ちですか？',
             tr: { en: 'Do you have a point card?', ko: '포인트 카드 있으세요?' },
             s: 'Cashier at the register screen',
           },
           {
-            jp: '持ってないです。',
+            jp: '{持|も}ってないです。',
             tr: { en: "No, I don't.", ko: '없어요.' },
             s: 'Student shaking their head slightly',
           },
           {
-            cap: 'スーパーは夜8時すぎると半額シールが貼られる',
+            cap: 'スーパーは{夜|よる}8{時|じ}すぎると{半額|はんがく}シールが{貼|は}られる',
             tr: {
               en: 'After 8 p.m., supermarkets put half-price stickers on.',
               ko: '슈퍼는 밤 8시가 지나면 반값 스티커가 붙는다.',
@@ -72,7 +72,7 @@ export const LESSONS: Lesson[] = [
     ],
     ex: [
       {
-        jp: '温めますか',
+        jp: '{温|あたた}めますか',
         rd: 'atatamemasu ka',
         g: {
           ja: '弁当を買うたびに聞かれる。「お願いします」か「大丈夫です」で答える',
@@ -81,7 +81,7 @@ export const LESSONS: Lesson[] = [
         },
       },
       {
-        jp: '大丈夫です',
+        jp: '{大丈夫|だいじょうぶ}です',
         rd: 'daijoubu desu',
         g: {
           ja: 'ここでは「いりません」の意味。断りの定番',
@@ -90,7 +90,7 @@ export const LESSONS: Lesson[] = [
         },
       },
       {
-        jp: '半額シール',
+        jp: '{半額|はんがく}シール',
         rd: 'hangaku shiiru',
         g: {
           ja: '閉店前の値引き。スーパーは夜が狙い目',
@@ -117,22 +117,22 @@ export const LESSONS: Lesson[] = [
       {
         panels: [
           {
-            jp: 'すみません、京都に行きたいんですが。',
+            jp: 'すみません、{京都|きょうと}に{行|い}きたいんですが。',
             tr: { en: "Excuse me, I'd like to go to Kyoto.", ko: '저기요, 교토에 가고 싶은데요.' },
             s: 'Student at the small ticket window of Gotenyama Station',
           },
           {
-            jp: 'ここは特急が止まらないんですよ。',
+            jp: 'ここは{特急|とっきゅう}が{止|と}まらないんですよ。',
             tr: { en: "Limited expresses don't stop here.", ko: '여기는 특급이 안 서요.' },
             s: 'Station staff behind the window',
           },
           {
-            jp: 'どこで乗り換えですか？',
+            jp: 'どこで{乗|の}り{換|か}えですか？',
             tr: { en: 'Where do I change?', ko: '어디서 갈아타요?' },
             s: 'Student checking a route app on their phone',
           },
           {
-            jp: '樟葉で特急に乗り換えてください。',
+            jp: '{樟葉|くずは}で{特急|とっきゅう}に{乗|の}り{換|か}えてください。',
             tr: {
               en: 'Change to a limited express at Kuzuha.',
               ko: '구즈하에서 특급으로 갈아타세요.',
@@ -144,8 +144,8 @@ export const LESSONS: Lesson[] = [
       {
         panels: [
           {
-            cap: '樟葉駅',
-            jp: '特急は何番ホームですか？',
+            cap: '{樟葉駅|くずはえき}',
+            jp: '{特急|とっきゅう}は{何番|なんばん}ホームですか？',
             tr: {
               en: '(Kuzuha Station) Which platform is the limited express?',
               ko: '(구즈하역) 특급은 몇 번 승강장이에요?',
@@ -153,7 +153,7 @@ export const LESSONS: Lesson[] = [
             s: 'Student on a busy platform concourse at Kuzuha',
           },
           {
-            jp: '1番か2番、出町柳行きです。',
+            jp: '1{番|ばん}か2{番|ばん}、{出町柳|でまちやなぎ}{行|ゆ}きです。',
             tr: {
               en: 'Platform 1 or 2, bound for Demachiyanagi.',
               ko: '1번이나 2번, 데마치야나기행이에요.',
@@ -161,7 +161,7 @@ export const LESSONS: Lesson[] = [
             s: 'Staff gesturing toward a staircase, departure board overhead',
           },
           {
-            jp: '祇園四条で降りると便利ですよ。',
+            jp: '{祇園四条|ぎおんしじょう}で{降|お}りると{便利|べんり}ですよ。',
             tr: {
               en: "Get off at Gion-Shijo, it's handy.",
               ko: '기온시조에서 내리면 편해요.',
@@ -178,7 +178,7 @@ export const LESSONS: Lesson[] = [
     ],
     ex: [
       {
-        jp: '乗り換え',
+        jp: '{乗|の}り{換|か}え',
         rd: 'norikae',
         g: {
           ja: '関西の私鉄は種別が多い。まずこれを聞く',
@@ -187,7 +187,7 @@ export const LESSONS: Lesson[] = [
         },
       },
       {
-        jp: '何番ホームですか',
+        jp: '{何番|なんばん}ホームですか',
         rd: 'nanban hoomu desu ka',
         g: {
           ja: '時刻より先にホーム。迷ったらこれ',
@@ -196,7 +196,7 @@ export const LESSONS: Lesson[] = [
         },
       },
       {
-        jp: '〜行き',
+        jp: '〜{行|ゆ}き',
         rd: '...yuki',
         g: {
           ja: '行き先表示。「出町柳行き」なら京都方面',
@@ -223,12 +223,12 @@ export const LESSONS: Lesson[] = [
       {
         panels: [
           {
-            jp: '初めてなんですが。',
+            jp: '{初|はじ}めてなんですが。',
             tr: { en: "It's my first time here.", ko: '처음 왔는데요.' },
             s: 'Student at a small clinic reception counter',
           },
           {
-            jp: '保険証と、この問診票をお願いします。',
+            jp: '{保険証|ほけんしょう}と、この{問診票|もんしんひょう}をお{願|ねが}いします。',
             tr: {
               en: 'Your insurance card and this questionnaire, please.',
               ko: '보험증하고 이 문진표 부탁드려요.',
@@ -236,7 +236,7 @@ export const LESSONS: Lesson[] = [
             s: 'Receptionist handing over a clipboard and form',
           },
           {
-            cap: '問診票に記入する',
+            cap: '{問診票|もんしんひょう}に{記入|きにゅう}する',
             jp: 'いつから、どこが……',
             tr: {
               en: '(Filling in the questionnaire) Since when, and where…',
@@ -245,7 +245,7 @@ export const LESSONS: Lesson[] = [
             s: 'Student filling in the form in a waiting room chair, slightly stuck',
           },
           {
-            jp: '3日前から熱が下がらなくて。',
+            jp: '{3日前|みっかまえ}から{熱|ねつ}が{下|さ}がらなくて。',
             tr: {
               en: "My fever hasn't gone down for three days.",
               ko: '사흘 전부터 열이 안 내려가서요.',
@@ -257,12 +257,12 @@ export const LESSONS: Lesson[] = [
       {
         panels: [
           {
-            jp: '喉を見せてください。あーんして。',
+            jp: '{喉|のど}を{見|み}せてください。あーんして。',
             tr: { en: 'Let me see your throat. Say "ah."', ko: '목 좀 볼게요. 아 해 보세요.' },
             s: 'Doctor with a tongue depressor',
           },
           {
-            jp: '風邪ですね。お薬を出しておきます。',
+            jp: '{風邪|かぜ}ですね。お{薬|くすり}を{出|だ}しておきます。',
             tr: {
               en: "It's a cold. I'll prescribe some medicine.",
               ko: '감기네요. 약을 처방해 드릴게요.',
@@ -270,7 +270,7 @@ export const LESSONS: Lesson[] = [
             s: 'Doctor typing at a terminal',
           },
           {
-            jp: '処方箋は向かいの薬局で出してください。',
+            jp: '{処方箋|しょほうせん}は{向|む}かいの{薬局|やっきょく}で{出|だ}してください。',
             tr: {
               en: 'Please take the prescription to the pharmacy across the street.',
               ko: '처방전은 맞은편 약국에 내 주세요.',
@@ -278,7 +278,7 @@ export const LESSONS: Lesson[] = [
             s: 'Receptionist pointing out of the window',
           },
           {
-            jp: 'お大事に。',
+            jp: 'お{大事|だいじ}に。',
             tr: { en: 'Take care of yourself.', ko: '몸조리 잘하세요.' },
             s: 'Student leaving with a prescription slip',
           },
@@ -287,7 +287,7 @@ export const LESSONS: Lesson[] = [
     ],
     ex: [
       {
-        jp: '問診票',
+        jp: '{問診票|もんしんひょう}',
         rd: 'monshinhyou',
         g: {
           ja: '初診で必ず書く用紙。症状・既往歴・アレルギー',
@@ -296,7 +296,7 @@ export const LESSONS: Lesson[] = [
         },
       },
       {
-        jp: '〜が下がらなくて',
+        jp: '〜が{下|さ}がらなくて',
         rd: '...ga sagaranakute',
         g: {
           ja: '熱・痛みが続くときの言い方。「下がりません」より自然',
@@ -305,7 +305,7 @@ export const LESSONS: Lesson[] = [
         },
       },
       {
-        jp: 'お大事に',
+        jp: 'お{大事|だいじ}に',
         rd: 'odaiji ni',
         g: {
           ja: '帰りに必ず言われる。「ありがとうございます」で返す',
@@ -332,7 +332,7 @@ export const LESSONS: Lesson[] = [
       {
         panels: [
           {
-            jp: 'すみません、風邪薬はどこですか？',
+            jp: 'すみません、{風邪薬|かぜぐすり}はどこですか？',
             tr: {
               en: "Excuse me, where's the cold medicine?",
               ko: '저기요, 감기약은 어디 있어요?',
@@ -340,12 +340,12 @@ export const LESSONS: Lesson[] = [
             s: 'Student lost between tall drugstore aisles',
           },
           {
-            jp: '症状はどんな感じですか？',
+            jp: '{症状|しょうじょう}はどんな{感|かん}じですか？',
             tr: { en: 'What are your symptoms like?', ko: '증상이 어떠세요?' },
             s: 'Staff in a uniform turning to help',
           },
           {
-            jp: '喉の痛みと、鼻水です。',
+            jp: '{喉|のど}の{痛|いた}みと、{鼻水|はなみず}です。',
             tr: { en: 'A sore throat and a runny nose.', ko: '목이 아프고 콧물이 나요.' },
             s: 'Student touching their throat',
           },
@@ -359,12 +359,12 @@ export const LESSONS: Lesson[] = [
       {
         panels: [
           {
-            jp: '1日何回飲みますか？',
+            jp: '{1日|いちにち}{何回|なんかい}{飲|の}みますか？',
             tr: { en: 'How many times a day do I take it?', ko: '하루에 몇 번 먹어요?' },
             s: 'Student turning the box over, reading the back',
           },
           {
-            jp: '食後に3回。眠くなる成分が入っています。',
+            jp: '{食後|しょくご}に3{回|かい}。{眠|ねむ}くなる{成分|せいぶん}が{入|はい}っています。',
             tr: {
               en: 'Three times, after meals. It has an ingredient that makes you drowsy.',
               ko: '식후에 세 번이요. 졸음이 오는 성분이 들어 있어요.',
@@ -372,7 +372,7 @@ export const LESSONS: Lesson[] = [
             s: 'Staff pointing at the label',
           },
           {
-            jp: 'もう少し安いのはありますか？',
+            jp: 'もう{少|すこ}し{安|やす}いのはありますか？',
             tr: { en: 'Do you have anything a bit cheaper?', ko: '조금 더 싼 건 있어요?' },
             s: 'Student comparing two boxes',
           },
@@ -386,7 +386,7 @@ export const LESSONS: Lesson[] = [
     ],
     ex: [
       {
-        jp: '症状',
+        jp: '{症状|しょうじょう}',
         rd: 'shoujou',
         g: {
           ja: '薬を探すときの鍵語。商品名より症状を言う',
@@ -395,7 +395,7 @@ export const LESSONS: Lesson[] = [
         },
       },
       {
-        jp: '食後／食前',
+        jp: '{食後|しょくご}／{食前|しょくぜん}',
         rd: 'shokugo / shokuzen',
         g: {
           ja: '飲むタイミング。箱と薬袋に必ず書いてある',
@@ -404,7 +404,7 @@ export const LESSONS: Lesson[] = [
         },
       },
       {
-        jp: '眠くなる',
+        jp: '{眠|ねむ}くなる',
         rd: 'nemuku naru',
         g: {
           ja: '授業前に飲む薬では重要。必ず確認する',
@@ -431,12 +431,12 @@ export const LESSONS: Lesson[] = [
       {
         panels: [
           {
-            jp: '何かお探しですか？',
+            jp: '{何|なに}かお{探|さが}しですか？',
             tr: { en: 'Can I help you find anything?', ko: '뭐 찾으시는 거 있으세요?' },
             s: 'Shop assistant approaching a browsing customer',
           },
           {
-            jp: '冬に着る暖かい服を見に来ました。',
+            jp: '{冬|ふゆ}に{着|き}る{暖|あたた}かい{服|ふく}を{見|み}に{来|き}ました。',
             tr: {
               en: "I'm looking for something warm to wear this winter.",
               ko: '겨울에 입을 따뜻한 옷을 보러 왔어요.',
@@ -444,12 +444,12 @@ export const LESSONS: Lesson[] = [
             s: 'Student describing what they want, hugging themselves as if cold',
           },
           {
-            jp: 'それでしたら、この服はどうですか？',
+            jp: 'それでしたら、この{服|ふく}はどうですか？',
             tr: { en: 'In that case, how about this one?', ko: '그러시면 이 옷은 어떠세요?' },
             s: 'Assistant holding up a thick winter coat',
           },
           {
-            jp: '試着してもいいですか？',
+            jp: '{試着|しちゃく}してもいいですか？',
             tr: { en: 'May I try this on?', ko: '입어 봐도 돼요?' },
             s: 'Student holding the coat on a hanger',
           },
@@ -463,17 +463,17 @@ export const LESSONS: Lesson[] = [
             s: 'Assistant calling through the fitting-room curtain',
           },
           {
-            jp: 'ちょっと大きいです。Mはありますか？',
+            jp: 'ちょっと{大|おお}きいです。Mはありますか？',
             tr: { en: "It's a little big. Do you have a medium?", ko: '좀 커요. M 있어요?' },
             s: 'Student in the coat, sleeves too long',
           },
           {
-            jp: '申し訳ありません、Mは品切れで。',
+            jp: '{申|もう}し{訳|わけ}ありません、Mは{品切|しなぎ}れで。',
             tr: { en: "I'm sorry, the medium is sold out.", ko: '죄송합니다, M은 품절이라서요.' },
             s: 'Assistant checking a tablet, apologetic',
           },
           {
-            jp: 'じゃあ、また来ます。',
+            jp: 'じゃあ、また{来|き}ます。',
             tr: { en: "Then I'll come back another time.", ko: '그럼 다음에 올게요.' },
             s: 'Student handing the coat back, leaving',
           },
@@ -482,7 +482,7 @@ export const LESSONS: Lesson[] = [
     ],
     ex: [
       {
-        jp: '〜を見に来ました',
+        jp: '〜を{見|み}に{来|き}ました',
         rd: '...o mi ni kimashita',
         g: {
           ja: '来た目的を一言で。店員が合うものを探してくれる',
@@ -491,7 +491,7 @@ export const LESSONS: Lesson[] = [
         },
       },
       {
-        jp: '試着してもいいですか',
+        jp: '{試着|しちゃく}してもいいですか',
         rd: 'shichaku shitemo ii desu ka',
         g: {
           ja: '試着は必ず一声かけてから',
@@ -500,7 +500,7 @@ export const LESSONS: Lesson[] = [
         },
       },
       {
-        jp: '品切れ',
+        jp: '{品切|しなぎ}れ',
         rd: 'shinagire',
         g: {
           ja: '在庫なし。「売り切れ」とほぼ同じ',
@@ -527,22 +527,22 @@ export const LESSONS: Lesson[] = [
       {
         panels: [
           {
-            jp: '何名様ですか？',
+            jp: '{何名様|なんめいさま}ですか？',
             tr: { en: 'How many in your party?', ko: '몇 분이세요?' },
             s: 'Staff greeting a group at an izakaya entrance',
           },
           {
-            jp: '3人です。',
+            jp: '3{人|にん}です。',
             tr: { en: 'Three.', ko: '세 명이요.' },
             s: 'Student holding up three fingers',
           },
           {
-            jp: 'とりあえず生でお願いします。',
+            jp: 'とりあえず{生|なま}でお{願|ねが}いします。',
             tr: { en: 'A draft beer to start, please.', ko: '일단 생맥주로 부탁해요.' },
             s: 'A friend ordering the moment they sit down',
           },
           {
-            jp: 'お冷、3つもらえますか？',
+            jp: 'お{冷|ひや}、3つもらえますか？',
             tr: { en: 'Could we get three glasses of water?', ko: '찬물 세 잔 주시겠어요?' },
             s: 'Student asking the staff for water, three fingers up again',
           },
@@ -551,13 +551,13 @@ export const LESSONS: Lesson[] = [
       {
         panels: [
           {
-            jp: 'すみません、これ、頼んでないんですが……',
+            jp: 'すみません、これ、{頼|たの}んでないんですが……',
             tr: { en: "Excuse me, we didn't order this…", ko: '저기요, 이거 안 시켰는데요……' },
             s: 'Student pointing at a small dish that arrived unordered, asking the staff',
           },
           {
-            cap: 'お通しは席料のようなもの',
-            jp: 'こちら、お通しです。',
+            cap: 'お{通|とお}しは{席料|せきりょう}のようなもの',
+            jp: 'こちら、お{通|とお}しです。',
             tr: {
               en: 'This is your otoushi. (Otoushi works like a cover charge.)',
               ko: '이건 오토시입니다. (오토시는 자릿세 같은 것)',
@@ -565,12 +565,12 @@ export const LESSONS: Lesson[] = [
             s: 'Staff smiling, gesturing at the small dish',
           },
           {
-            jp: 'お箸、替えてもらえますか？',
+            jp: 'お{箸|はし}、{替|か}えてもらえますか？',
             tr: { en: 'Could I get a new pair of chopsticks?', ko: '젓가락 바꿔 주시겠어요?' },
             s: 'Chopsticks on the floor, student raising a hand to the staff',
           },
           {
-            jp: 'お会計、別々でお願いします。',
+            jp: 'お{会計|かいけい}、{別々|べつべつ}でお{願|ねが}いします。',
             tr: { en: 'Separate checks, please.', ko: '계산은 따로따로 해 주세요.' },
             s: 'At the register, three people with wallets out',
           },
@@ -579,7 +579,7 @@ export const LESSONS: Lesson[] = [
     ],
     ex: [
       {
-        jp: 'とりあえず生でお願いします',
+        jp: 'とりあえず{生|なま}でお{願|ねが}いします',
         rd: 'toriaezu nama de onegai shimasu',
         g: {
           ja: '「まずは生ビール」。飲まないなら「ウーロン茶で」',
@@ -588,7 +588,7 @@ export const LESSONS: Lesson[] = [
         },
       },
       {
-        jp: 'お通し',
+        jp: 'お{通|とお}し',
         rd: 'otoushi',
         g: {
           ja: '頼んでいないのに出る小皿。実質は席料で、断れない店が多い',
@@ -597,7 +597,7 @@ export const LESSONS: Lesson[] = [
         },
       },
       {
-        jp: '別々でお願いします',
+        jp: '{別々|べつべつ}でお{願|ねが}いします',
         rd: 'betsubetsu de onegai shimasu',
         g: {
           ja: '割り勘。店によっては「まとめて」と言われることも',
@@ -624,7 +624,7 @@ export const LESSONS: Lesson[] = [
       {
         panels: [
           {
-            jp: 'お電話ありがとうございます、〇〇でございます。',
+            jp: 'お{電話|でんわ}ありがとうございます、〇〇でございます。',
             tr: {
               en: 'Thank you for calling, this is 〇〇.',
               ko: '전화 주셔서 감사합니다, 〇〇입니다.',
@@ -632,17 +632,17 @@ export const LESSONS: Lesson[] = [
             s: 'Restaurant staff answering a phone behind a counter',
           },
           {
-            jp: 'あの、予約をお願いしたいんですが。',
+            jp: 'あの、{予約|よやく}をお{願|ねが}いしたいんですが。',
             tr: { en: "Um, I'd like to make a reservation.", ko: '저, 예약을 하고 싶은데요.' },
             s: 'Student sitting on a dorm bed, phone to ear, notes in hand',
           },
           {
-            jp: '何日の何時でしょうか。',
+            jp: '{何日|なんにち}の{何時|なんじ}でしょうか。',
             tr: { en: 'For what day and time?', ko: '며칠 몇 시로 하시겠어요?' },
             s: 'Staff reaching for a reservation book',
           },
           {
-            jp: '土曜の7時、4名です。',
+            jp: '{土曜|どよう}の7{時|じ}、4{名|めい}です。',
             tr: { en: 'Saturday at seven, for four.', ko: '토요일 7시, 4명이요.' },
             s: 'Student reading from their own notes',
           },
@@ -651,7 +651,7 @@ export const LESSONS: Lesson[] = [
       {
         panels: [
           {
-            jp: '申し訳ありません、7時は満席でして。',
+            jp: '{申|もう}し{訳|わけ}ありません、7{時|じ}は{満席|まんせき}でして。',
             tr: {
               en: "I'm very sorry, we're fully booked at seven.",
               ko: '죄송합니다, 7시는 만석이라서요.',
@@ -659,12 +659,12 @@ export const LESSONS: Lesson[] = [
             s: 'Staff scanning the page',
           },
           {
-            jp: 'では、8時は空いていますか？',
+            jp: 'では、8{時|じ}は{空|あ}いていますか？',
             tr: { en: "Then is eight o'clock available?", ko: '그럼 8시는 비어 있나요?' },
             s: 'Student adjusting, pen in hand',
           },
           {
-            jp: '8時でしたら。お名前をお願いします。',
+            jp: '8{時|じ}でしたら。お{名前|なまえ}をお{願|ねが}いします。',
             tr: {
               en: "Eight o'clock is fine. May I have your name?",
               ko: '8시라면 괜찮습니다. 성함 부탁드립니다.',
@@ -672,7 +672,7 @@ export const LESSONS: Lesson[] = [
             s: 'Staff writing it down',
           },
           {
-            jp: 'ジェームズと申します。よろしくお願いします。',
+            jp: 'ジェームズと{申|もう}します。よろしくお{願|ねが}いします。',
             tr: {
               en: 'My name is James. Thank you very much.',
               ko: '제임스라고 합니다. 잘 부탁드립니다.',
@@ -684,7 +684,7 @@ export const LESSONS: Lesson[] = [
     ],
     ex: [
       {
-        jp: '〜をお願いしたいんですが',
+        jp: '〜をお{願|ねが}いしたいんですが',
         rd: '...o onegai shitain desu ga',
         g: {
           ja: '用件の切り出し。電話はこの一文で始まる',
@@ -693,7 +693,7 @@ export const LESSONS: Lesson[] = [
         },
       },
       {
-        jp: '満席',
+        jp: '{満席|まんせき}',
         rd: 'manseki',
         g: {
           ja: '席が埋まっている。「予約がいっぱい」の意味',
@@ -702,7 +702,7 @@ export const LESSONS: Lesson[] = [
         },
       },
       {
-        jp: '〜と申します',
+        jp: '〜と{申|もう}します',
         rd: '...to moushimasu',
         g: {
           ja: '電話での名乗り。「〜です」より丁寧',

@@ -11,6 +11,7 @@ import {
 import { ART, endingKey, pageKey, sceneKey } from '../../src/content/art';
 import { ENDINGS } from '../../src/content/endings';
 import { LESSONS } from '../../src/content/lessons';
+import { plain, segments } from '../../src/content/ruby';
 import { BEST_MISSES, VN } from '../../src/content/vn';
 import {
   addMonths,
@@ -237,6 +238,34 @@ describe('comic pages (Y-J1)', () => {
   it('has a game script that matches the data (node scripts/gen-comic-scripts.mjs)', () => {
     const doc = readFileSync(GAME_OUT, 'utf8').split(String.fromCharCode(13)).join('');
     expect(doc).toBe(renderGameScript(VN, ENDINGS, BEST_MISSES) + String.fromCharCode(10));
+  });
+  it('gives every kanji in a Japanese line a reading in kana ({漢字|かんじ})', () => {
+    const lines = [
+      ...LESSONS.flatMap((l) => [
+        ...l.ex.map((e) => e.jp),
+        ...(l.vn ? [] : l.pages.flatMap((p) => p.panels.flatMap((c) => [c.jp, c.cap]))),
+      ]),
+      ...Object.values(VN).flatMap((r) =>
+        r.scenes.flatMap((s) => [s.jp, ...s.opts.map((o) => o.jp)]),
+      ),
+      ...ENDINGS.map((e) => e.jp),
+    ].filter((s): s is string => !!s);
+    expect(lines.length).toBeGreaterThan(100);
+    for (const s of lines) {
+      for (const seg of segments(s))
+        if (typeof seg !== 'string') expect(seg.rt, s).toMatch(/^[ぁ-ゖー]+$/);
+      const rest = s.replace(/\{[^|{}]+\|[^|{}]+\}/g, '');
+      expect(/[一-鿿々{}|]/.test(rest), `kanji without a reading: ${s}`).toBe(false);
+    }
+  });
+  it('reads the furigana markup into segments and back to plain text', () => {
+    expect(segments('お{願|ねが}いします')).toEqual(['お', { base: '願', rt: 'ねが' }, 'いします']);
+    expect(segments('{3日前|みっかまえ}から')).toEqual([
+      { base: '3日前', rt: 'みっかまえ' },
+      'から',
+    ]);
+    expect(plain('{遅|おく}れた{!|x}')).toBe('遅れた!');
+    expect(plain('ほな')).toBe('ほな');
   });
 });
 

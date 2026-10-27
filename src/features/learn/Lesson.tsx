@@ -3,6 +3,7 @@ import { useT } from '../../i18n/useT';
 import { prefs } from '../../state/prefs';
 import { useStore } from '../../state/useStore';
 import { BackBar } from '../../ui/BackBar';
+import { Ruby } from '../../ui/Ruby';
 import { ComicPage } from './ComicPage';
 import { LearnList } from './LearnList';
 import { VnGame } from './VnGame';
@@ -25,7 +26,9 @@ export function Lesson({ lid }: { lid: string }) {
       <div className="sect">{m.exprT}</div>
       {l.ex.map((e, i) => (
         <div key={i} className="expr">
-          <b lang="ja">{e.jp}</b>
+          <b lang="ja">
+            <Ruby text={e.jp} />
+          </b>
           <span className="rd">{e.rd}</span>
           <p>{e.g[lang]}</p>
         </div>
