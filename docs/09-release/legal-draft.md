@@ -60,7 +60,7 @@
 
 **2-3. 위치.** 현재 위치는 사용자가 허락한 때에만 기기 안에서 지도 중심과 도보 시간 계산에 쓰고, 서버로 보내지 않는다. 서버로 가는 좌표는 **등록한 장소의 좌표**뿐이다. 다만 지도 그림(타일)을 불러올 때 보고 있는 지역의 타일 번호가 OpenStreetMap 의 타일 서버로 가며, 확대할수록 지역이 좁혀진다. (Y-P3, ML-P3)
 
-**2-3-2. 자동 번역.** 장소 설명은 등록·수정한 뒤 Microsoft 의 기계 번역(Azure AI Translator)으로 다른 두 언어로 번역해 보관하고, 보는 사람의 화면 언어로 보여 준다("자동 번역" 표시, 원문 보기). Microsoft 에 보내는 것은 **설명의 글과 언어뿐**이며 장소 이름, 위치, 계정, 등록자 정보는 보내지 않는다. Microsoft 는 이 서비스에서 보낸 글을 번역에만 쓰고 저장하지 않는다고 밝히고 있다. `[확인: Microsoft Translator "No Trace" 문서 링크]` (D32, ADR-0026)
+**2-3-2. 자동 번역.** 장소 설명은 등록·수정한 뒤 Microsoft 의 기계 번역(Azure AI Translator)으로 다른 두 언어로 번역해 보관하고, 보는 사람의 화면 언어로 보여 준다("자동 번역" 표시, 원문 보기). Microsoft 에 보내는 것은 **설명의 글과 언어뿐**이며 장소 이름, 위치, 계정, 등록자 정보는 보내지 않는다. Microsoft 는 텍스트 번역에서 보낸 글을 저장하지 않는다고 밝히고 있다(Microsoft Learn, "Data, privacy, and security for Azure Translator": "Text translation … doesn't store customer data", 2026-10-29 확인 — https://learn.microsoft.com/en-us/legal/cognitive-services/translator/data-privacy-security). (D32, ADR-0026)
 
 **2-3-3. 방문 통계.** 앱 이용 현황을 알기 위해 Cloudflare Web Analytics 를 쓴다. 쿠키를 쓰지 않고, 방문한 화면, 대략의 국가, 브라우저·기기 종류, 로딩 속도만 모으며 개인을 식별하거나 사이트를 넘어 추적하지 않는다. (D37)
 
@@ -89,7 +89,7 @@
 | Supabase, Inc. (미국) | 데이터베이스, 익명 계정 | 도쿄 리전(ap-northeast-1) |
 | Cloudflare, Inc. (미국) | 앱 배포·전송, 방문 통계(Web Analytics), (켤 때만) Turnstile | 세계 각지의 전송망 |
 | GitHub, Inc. (미국) | 소스 코드, 암호화된 백업 보관(비공개 저장소) | 미국 등 |
-| Microsoft Corporation (미국) | 장소 설명의 자동 번역(Azure AI Translator) — 글만 보내고 저장하지 않음 | `[확인: 번역기 리소스 지역, 예: 일본 동부]` |
+| Microsoft Corporation (미국) | 장소 설명의 자동 번역(Azure AI Translator) — 글만 보내고 저장하지 않음 | 일본 동부(도쿄, Azure Japan East) 리소스에서 처리 |
 | OpenStreetMap 재단 (영국) | 지도 그림 — 사용자의 브라우저가 직접 요청 | 영국·유럽 등 |
 
 위 사업자에게 서비스 운영을 맡기는 것 외에, 법령에 따른 경우를 빼고 개인정보를 제3자에게 주지 않는다. 광고는 없다. 분석 도구는 쿠키 없는 Cloudflare Web Analytics(§2-3-3)뿐이다. (2026-10-29 확인: 앱의 CSP 가 외부 연결을 OpenStreetMap 타일·Supabase·Turnstile·Cloudflare Web Analytics 로만 허용한다 — `vite.config.ts`)
@@ -118,7 +118,7 @@
 
 1. ~~운영자 이름 표기~~ — 박주하 / バク・ジュハ / Juha Bak (2026-10-29). 문의 이메일은 yunabi@juha.dev (Cloudflare Email Routing 으로 책임자 메일에 전달)
 2. ~~학교·과목명~~ — 적지 않는다 (2026-10-29)
-3. 번역기 리소스 지역 (§2-8), Microsoft "No Trace" 문서 확인 (§2-3-2)
+3. ~~번역기 리소스 지역, Microsoft 문서~~ — 도쿄(Japan East), 저장하지 않음 문서 확인 (2026-10-29)
 4. 지도 교원 검토 — 특히 §2-8 해외 위탁, §1-7 책임 제한
 5. 일정 번역(TR-Q2)을 넣으면 §2-2·§2-3-2·§2-7 에 "일정의 제목·장소·내용"을 더한다
 
