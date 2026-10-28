@@ -2,11 +2,21 @@ import { describe, expect, it } from 'vitest';
 import { formatRoute, legacyRoute, parseRoute } from '../../src/app/routes';
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
-import { OUT, renderComicScripts } from '../../scripts/gen-comic-scripts.mjs';
+import {
+  GAME_OUT,
+  PROMPTS_OUT,
+  OUT,
+  renderComicScripts,
+  renderGameScript,
+  renderImagePrompts,
+} from '../../scripts/gen-comic-scripts.mjs';
 import { ART, endingKey, pageKey, sceneKey } from '../../src/content/art';
 import { ENDINGS } from '../../src/content/endings';
 import { LESSONS } from '../../src/content/lessons';
-import { VN } from '../../src/content/vn';
+import { plain, segments } from '../../src/content/ruby';
+import { voiceHash, voiceLines } from '../../src/content/voice-lines';
+import { toSsml } from '../../scripts/gen-voice.mjs';
+import { BEST_MISSES, VN } from '../../src/content/vn';
 import {
   addMonths,
   monthCells,
@@ -228,6 +238,73 @@ describe('comic pages (Y-J1)', () => {
   it('has a storyboard script that matches the data (node scripts/gen-comic-scripts.mjs)', () => {
     const doc = readFileSync(OUT, 'utf8').split(String.fromCharCode(13)).join('');
     expect(doc).toBe(renderComicScripts(LESSONS) + String.fromCharCode(10));
+  });
+  it('has image prompts that match the data (node scripts/gen-comic-scripts.mjs)', () => {
+    const doc = readFileSync(PROMPTS_OUT, 'utf8').split(String.fromCharCode(13)).join('');
+    expect(doc).toBe(renderImagePrompts(LESSONS, VN, ENDINGS) + String.fromCharCode(10));
+  });
+  it('has a game script that matches the data (node scripts/gen-comic-scripts.mjs)', () => {
+    const doc = readFileSync(GAME_OUT, 'utf8').split(String.fromCharCode(13)).join('');
+    expect(doc).toBe(renderGameScript(VN, ENDINGS, BEST_MISSES) + String.fromCharCode(10));
+  });
+  it('gives every kanji in a Japanese line a reading in kana ({漢字|かんじ})', () => {
+    const lines = [
+      ...LESSONS.flatMap((l) => [
+        ...l.ex.map((e) => e.jp),
+        ...(l.vn ? [] : l.pages.flatMap((p) => p.panels.flatMap((c) => [c.jp, c.cap]))),
+      ]),
+      ...Object.values(VN).flatMap((r) =>
+        r.scenes.flatMap((s) => [s.jp, ...s.opts.map((o) => o.jp)]),
+      ),
+      ...ENDINGS.map((e) => e.jp),
+    ].filter((s): s is string => !!s);
+    expect(lines.length).toBeGreaterThan(100);
+    for (const s of lines) {
+      for (const seg of segments(s))
+        if (typeof seg !== 'string') expect(seg.rt, s).toMatch(/^[ぁ-ゖー]+$/);
+      const rest = s.replace(/\{[^|{}]+\|[^|{}]+\}/g, '');
+      expect(/[一-鿿々{}|]/.test(rest), `kanji without a reading: ${s}`).toBe(false);
+    }
+  });
+  it('says who speaks every balloon, so each gets a voice (D35)', () => {
+    for (const l of LESSONS)
+      if (!l.vn)
+        for (const p of l.pages.flatMap((pg) => pg.panels))
+          expect(!!p.jp === !!p.who, `${l.id}: ${p.jp ?? p.cap}`).toBe(true);
+  });
+  it('records only lines that exist, and reads furigana in the SSML (D35)', () => {
+    const lines = voiceLines(LESSONS, VN, ENDINGS);
+    const keys = new Set(lines.map((l) => l.key));
+    expect(keys.size).toBe(lines.length);
+    const made = JSON.parse(readFileSync('src/voice/manifest.json', 'utf8')) as Record<
+      string,
+      string
+    >;
+    for (const k of Object.keys(made)) expect(keys.has(k), `manifest: ${k}`).toBe(true);
+    const walk = (d: string): string[] =>
+      readdirSync(d, { withFileTypes: true }).flatMap((e) =>
+        e.isDirectory() ? walk(join(d, e.name)) : e.name.endsWith('.mp3') ? [join(d, e.name)] : [],
+      );
+    for (const f of walk('src/voice')) {
+      const k = f
+        .replace(/\\/g, '/')
+        .replace(/^src\/voice\//, '')
+        .replace(/\.mp3$/, '');
+      expect(keys.has(k), `orphan voice file ${f}`).toBe(true);
+    }
+    const ssml = toSsml({ text: 'お{弁当|べんとう}、5円 & <b>', voice: 'ja-JP-NanamiNeural' });
+    expect(ssml).toContain('お<sub alias="べんとう">弁当</sub>、5円 &amp; &lt;b&gt;');
+    expect(ssml).toContain('<voice name="ja-JP-NanamiNeural">');
+    expect(voiceHash({ text: 'a', voice: 'v' })).not.toBe(voiceHash({ text: 'b', voice: 'v' }));
+  });
+  it('reads the furigana markup into segments and back to plain text', () => {
+    expect(segments('お{願|ねが}いします')).toEqual(['お', { base: '願', rt: 'ねが' }, 'いします']);
+    expect(segments('{3日前|みっかまえ}から')).toEqual([
+      { base: '3日前', rt: 'みっかまえ' },
+      'から',
+    ]);
+    expect(plain('{遅|おく}れた{!|x}')).toBe('遅れた!');
+    expect(plain('ほな')).toBe('ほな');
   });
 });
 

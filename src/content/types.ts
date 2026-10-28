@@ -6,9 +6,14 @@ export type L3 = Record<Lang, string>;
     aside) drawn without brackets; `jp` is the balloon; a panel has at least
     one of them, and the artwork carries them in Japanese. `tr` translates the
     whole panel; the Japanese screen shows no translation line. */
+/** Who says a balloon, for its voice (D35): the level's student, another
+    woman, another man, or a second man in the same scene. */
+export type Who = 'me' | 'f' | 'm' | 'm2';
 export interface Panel {
   cap?: string;
   jp?: string;
+  /** Required with `jp` (a unit test checks). */
+  who?: Who;
   tr: { en: string; ko: string };
   /** Scene note for the artist. Not rendered. */
   s: string;

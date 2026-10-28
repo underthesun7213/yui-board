@@ -61,6 +61,8 @@ export const ko = {
   lvL: '레벨',
   exprT: '이번 편의 표현',
   pageN: '{n}쪽',
+  playLine: '이 대사 듣기',
+  readOrder: '일본 만화는 오른쪽 위부터 읽어요. 오른쪽에서 왼쪽, 위에서 아래로.',
   zoomPage: '{n}쪽 크게 보기',
   close: '닫기',
   colT: '컬렉션',

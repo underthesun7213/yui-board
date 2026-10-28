@@ -46,6 +46,17 @@ registerRoute(
   }),
 );
 
+/* Recorded lines (D35, src/voice, built into assets/voice/): the same, kept
+   the first time each is played. */
+const voice = new URL('assets/voice/', self.registration.scope).pathname;
+registerRoute(
+  ({ url }) => url.origin === self.location.origin && url.pathname.startsWith(voice),
+  new CacheFirst({
+    cacheName: 'yunabi-voice',
+    plugins: [new ExpirationPlugin({ maxEntries: 300, purgeOnQuotaError: true })],
+  }),
+);
+
 /* Upgrading from v1.3 (its caches are named yui-*): take over at once rather
    than asking to reload into the version already on screen. v1.3 was never
    deployed and the app now has its own origin (ADR-0025), so this is a

@@ -896,7 +896,66 @@ main {
   color: var(--muted);
   margin-top: 4px;
 }
+/* furigana over every kanji in the Japanese lines (ui/Ruby): the reading sits
+   in the line's own leading, so lines that carry it get room for it */
+rt {
+  font-size: 0.55em;
+  font-weight: 400;
+}
+/* play a recorded line (ui/Say, D35): a small round button after the text */
+.say {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  margin-left: 6px;
+  vertical-align: middle;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--primary);
+  cursor: pointer;
+}
+.say:active {
+  transform: scale(0.94);
+}
+.panels .jp,
+.panels .cap,
+.vnline p,
+.opts button,
+.expr b,
+.vnend q,
+.card q {
+  line-height: 2;
+}
+
 /* comic pages (Y-J1): portrait art, then the panel list */
+.readorder {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 var(--gutter) 12px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.rogrid {
+  flex: none;
+  display: grid;
+  grid-template-columns: 14px 14px;
+  gap: 2px;
+}
+.rogrid i {
+  font-style: normal;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 14px;
+  text-align: center;
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  color: var(--primary);
+}
 .cpage {
   padding: 12px var(--gutter) 8px;
 }

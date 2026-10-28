@@ -1,6 +1,7 @@
 import { endingFor, nextScene, pickOption, pickRoute, resetVn } from '../../actions/learn';
 import { go } from '../../actions/nav';
 import { endingKey, sceneKey } from '../../content/art';
+import { plain } from '../../content/ruby';
 import type { VnLesson } from '../../content/types';
 import { VN } from '../../content/vn';
 import { useT } from '../../i18n/useT';
@@ -9,6 +10,9 @@ import { useStore } from '../../state/useStore';
 import { vn } from '../../state/vn';
 import { ArtImage } from '../../ui/ArtImage';
 import { BackBar } from '../../ui/BackBar';
+import { endingVoiceKey, optVoiceKey, sceneVoiceKey } from '../../content/voice-lines';
+import { Ruby } from '../../ui/Ruby';
+import { Say } from '../../ui/Say';
 
 export function VnGame({ lesson }: { lesson: VnLesson }) {
   const m = useT();
@@ -42,9 +46,12 @@ export function VnGame({ lesson }: { lesson: VnLesson }) {
       <>
         {bar}
         <div className="vnend">
-          <ArtImage k={endingKey(card.id)} alt={card.jp} className="cgart big" />
+          <ArtImage k={endingKey(card.id)} alt={plain(card.jp)} className="cgart big" />
           <h1>{card.t[lang]}</h1>
-          <q lang="ja">{card.jp}</q>
+          <q lang="ja">
+            <Ruby text={card.jp} />
+            <Say k={endingVoiceKey(card.id)} />
+          </q>
           <p className="endnote">{card.n[lang]}</p>
           <p className="endscore">
             {m.vnScore} {v.score} / {R.scenes.length}
@@ -71,10 +78,13 @@ export function VnGame({ lesson }: { lesson: VnLesson }) {
             <i key={i} className={i < v.i ? 'past' : i === v.i ? 'now' : ''} />
           ))}
         </div>
-        <ArtImage k={sceneKey(v.route, v.i)} alt={sc.jp} className="cgart" />
+        <ArtImage k={sceneKey(v.route, v.i)} alt={plain(sc.jp)} className="cgart" />
         <div className="vnline">
           <b>{R.name[lang]}</b>
-          <p lang="ja">{sc.jp}</p>
+          <p lang="ja">
+            <Ruby text={sc.jp} />
+            <Say k={sceneVoiceKey(v.route, v.i)} />
+          </p>
         </div>
         <div className="opts">
           {sc.opts.map((o, i) => (
@@ -86,7 +96,7 @@ export function VnGame({ lesson }: { lesson: VnLesson }) {
               disabled={!!picked}
               onClick={() => pickOption(i)}
             >
-              {o.jp}
+              <Ruby text={o.jp} />
             </button>
           ))}
         </div>
@@ -95,6 +105,7 @@ export function VnGame({ lesson }: { lesson: VnLesson }) {
             <div className={'fb ' + (picked.ok ? 'ok' : 'hm')} role="status">
               <span aria-hidden="true">{picked.ok ? '○' : '△'}</span>
               <p>{picked.fb[lang]}</p>
+              <Say k={optVoiceKey(v.route, v.i, v.picked ?? 0)} />
             </div>
             <button className="primary wide" onClick={nextScene}>
               {m.vnNext}

@@ -1,0 +1,56 @@
+﻿region,name,category,description,lang,gmaps_url,lat,lng,ja_ref,check,why
+Hirakata,Keihan Gotenyama Station,transit,,,,,,京阪 御殿山駅,✔,가장 가까운 역. 보통 열차만 서서 교토·오사카는 枚方市에서 갈아타는 게 빠름
+Hirakata,Keihan Hirakatashi Station,transit,,,,,,京阪 枚方市駅,✔,특급이 서는 역. 교토(기온시조)·오사카(요도야바시) 직통
+Hirakata,Keihan Hirakata-koen Station,transit,,,,,,京阪 枚方公園駅,,히라카타 파크와 옛 숙장 거리(枚方宿) 쪽
+Hirakata,"Bicycle Parking, Gotenyama East",transit,,,,,,駐輪場（御殿山東）,✔,하루 100엔. 자전거면 枚方市駅까지 5분 정도
+Hirakata,Hirakata City Hall (枚方市役所),admin,,,,,,枚方市役所,✔,"전입 신고, 국민건강보험, 마이넘버. 입국 후 14일 안에"
+Hirakata,Nagisa Post Office,admin,,,,,,渚郵便局,✔,"유초 은행 계좌, 국제 우편"
+Hirakata,7-Eleven Gotenyama Station,daily,,,,,,セブン-イレブン 御殿山駅前,✔,"24시간, ATM, 택배 수령, 서류 인쇄"
+Hirakata,FamilyMart,daily,,,,,,ファミリーマート,✔,결에서 가까운 편의점 (지점명 현장 확인)
+Hirakata,Mandai Hirakata,daily,,,,,,万代 枚方店,✔,가장 가깝고 싼 슈퍼
+Hirakata,LIFE Gotenyama,daily,,,,,,ライフ 御殿山店,✔,역에서 돌아오는 길의 슈퍼
+Hirakata,DAISO Hirakata Mall,daily,,,,,,DAISO 枚方モール,✔,첫 주에 필요한 생활용품 대부분
+Hirakata,,health,,,,,,ドラッグストア（近く）,?,약·생활용품. 가장 가까운 곳을 현장에서 골라 등록
+Hirakata,Nagisatanano Family Clinic,health,,,,,,なぎさ たなの ファミリークリニック,✔,가장 가까운 내과. 외국인 환자 진료 경험 많음 (정식 이름 현장 확인)
+Hirakata,Kansai Medical University Hospital (関西医科大学附属病院),health,,,,,,関西医科大学附属病院,,枚方市駅 근처의 큰 대학병원. 소개장이 필요한 경우가 많음
+Hirakata,Hirakata City Hospital (市立ひらかた病院),health,,,,,,市立ひらかた病院,,시립 종합병원
+Hirakata,Kansai Gaidai Gotenyama Campus,study,,,,,,関西外国語大学 御殿山キャンパス・グローバルタウン,?,결 근처 캠퍼스 (위치·명칭 확인)
+Hirakata,Hirakata T-SITE,study,,,,,,枚方 T-SITE,✔,"아침 7시~밤 10시, 위층이 조용해 시험 기간에 좋음"
+Hirakata,Hirakata Central Library (枚方市立中央図書館),study,,,,,,枚方市立中央図書館,?,시립 도서관. 이용 카드 조건 확인
+Hirakata,Chuka Soba Fumoto,food,,,,,,中華そば ふもと,✔,枚方市駅 근처 라멘. 점심과 저녁 사이 쉼
+Hirakata,Hirakata Park,sights,,,,,,ひらかたパーク,,오래된 놀이공원. 枚方公園駅 바로
+Hirakata,"Yodogawa Riverside Park, Hirakata",sights,,,,,,淀川河川公園 枚方地区,,강변 산책·자전거
+Hirakata,Kagiya Museum (鍵屋資料館),sights,,,,,,鍵屋資料館（枚方宿）,,옛 숙장 마을과 강 배 나루터의 역사
+Osaka,Osaka Immigration Services Bureau (大阪出入国在留管理局),admin,,,,,,大阪出入国在留管理局,,재류 카드 갱신·자격외활동 허가. 유학생에게 가장 실용적 (코스모스퀘어)
+Osaka,Keihan Kyobashi Station,transit,,,,,,京阪 京橋駅,,JR 환상선으로 갈아타는 곳
+Osaka,Keihan Yodoyabashi Station,transit,,,,,,京阪 淀屋橋駅,,"게이한 본선 오사카 쪽 종점, 지하철 미도스지선"
+Osaka,Osaka Station / Umeda,transit,,,,,,大阪駅・梅田,,JR·한큐·한신·지하철이 모이는 중심
+Osaka,Shin-Osaka Station,transit,,,,,,新大阪駅,,신칸센
+Osaka,Kansai International Airport,transit,,,,,,関西国際空港,,귀국·여행
+Osaka,Osaka Castle,sights,,,,,,大阪城,,성과 공원
+Osaka,Dotonbori,sights,,,,,,道頓堀,,"난바의 번화가, 글리코 간판"
+Osaka,Kuromon Market,food,,,,,,黒門市場,,시장 먹거리
+Osaka,Shinsekai / Tsutenkaku,sights,,,,,,新世界・通天閣,,쿠시카쓰와 옛 오사카 분위기
+Osaka,Kaiyukan Aquarium,sights,,,,,,海遊館,,큰 수족관
+Kyoto,Fushimi Inari Taisha,sights,,,,,,伏見稲荷大社,,천 개의 도리이. 게이한 伏見稲荷駅
+Kyoto,Yasaka Shrine / Gion,sights,,,,,,八坂神社・祇園,,게이한 祇園四条駅에서 바로
+Kyoto,Kiyomizu-dera,sights,,,,,,清水寺,,나무 무대의 절
+Kyoto,Nishiki Market,food,,,,,,錦市場,,교토의 부엌
+Kyoto,Nijo Castle,sights,,,,,,二条城,,세계유산 성
+Kyoto,Kinkaku-ji,sights,,,,,,金閣寺,,금각
+Kyoto,Ginkaku-ji / Philosopher's Path,sights,,,,,,銀閣寺・哲学の道,,산책길
+Kyoto,Arashiyama Bamboo Grove,sights,,,,,,嵐山・竹林の小径,,대나무 숲과 강
+Kyoto,"Byodo-in, Uji",sights,,,,,,平等院,,10엔 동전의 그 건물. 게이한 우지선
+Kyoto,Shimogamo Shrine,sights,,,,,,下鴨神社・出町柳,,게이한 본선 교토 쪽 종점 근처
+Kyoto,Kyoto Station,transit,,,,,,京都駅,,신칸센·JR
+Nara,Todai-ji,sights,,,,,,東大寺,,대불
+Nara,Nara Park,sights,,,,,,奈良公園,,사슴
+Nara,Kasuga Taisha,sights,,,,,,春日大社,,등롱이 많은 신사
+Nara,Kofuku-ji,sights,,,,,,興福寺,,오층탑
+Nara,Naramachi,sights,,,,,,ならまち,,옛 상가 거리
+Nara,Nara National Museum,sights,,,,,,奈良国立博物館,,불상 전시
+Nara,Horyu-ji,sights,,,,,,法隆寺,,세계에서 오래된 목조 건축
+Nara,Yakushi-ji,sights,,,,,,薬師寺,,니시노쿄의 절
+Nara,Heijo Palace Site,sights,,,,,,平城宮跡,,"옛 궁터, 넓은 공원"
+Nara,Kintetsu Nara Station,transit,,,,,,近鉄奈良駅,,나라 공원 쪽 관문
+Nara,JR Nara Station,transit,,,,,,JR 奈良駅,,JR 쪽 관문

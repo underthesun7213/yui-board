@@ -565,6 +565,31 @@ update app.settings set int_value = 1 where key = 'translation_enabled';
 
 **끄기 (되돌리기):** `update app.settings set int_value = 0 where key = 'translation_enabled';` — 깨우기가 바로 멈춘다. 이미 들어온 번역은 계속 보인다. 지우려면 R-9 ②.
 
+### 7.5 대사 음성 만들기 (D35) `[아직 해 보지 않음]`
+
+만화·표현·게임의 일본어 대사(현재 129줄)를 Azure AI Speech 신경망 음성으로 미리 만들어 `src/voice/` 에 커밋한다. 앱은 파일이 있고 **대사가 녹음 뒤 바뀌지 않은 줄에만** 재생 버튼을 보인다(`src/voice/manifest.json` 의 해시). 키는 책임자 PC 의 환경 변수로만 쓰고 저장소·채팅에 넣지 않는다.
+
+**처음 한 번 — Speech 리소스 (번역기와 별도):**
+
+1. Azure 포털 → **리소스 만들기** → "Speech" 검색 → **Speech service** → 만들기.
+2. 구독·리소스 그룹은 번역기와 같은 것, 지역 **Japan East**, 가격 책정 **Free F0**(월 50만 자 무료 — 전체 녹음이 약 2만 6천 자).
+3. 만든 리소스 → **키 및 엔드포인트** → 키 1 과 위치(지역, `japaneast`).
+
+**녹음 (저장소 폴더, main 최신):**
+
+```powershell
+$env:AZURE_SPEECH_KEY = Read-Host 'Speech key'
+$env:AZURE_SPEECH_REGION = 'japaneast'
+node scripts/gen-voice.mjs --dry-run   # 녹음할 줄 수와 글자 수만
+node scripts/gen-voice.mjs
+Remove-Item Env:AZURE_SPEECH_KEY
+```
+
+- 이미 녹음했고 바뀌지 않은 줄은 건너뛴다. 대사를 고친 뒤 다시 돌리면 고친 줄만 녹음되고, 없어진 줄의 파일은 지워진다.
+- 결과 `src/voice/**.mp3` 와 `manifest.json` 을 커밋해 PR 로 올린다 → 배포(§7.3).
+- 목소리·말하는 사람: `src/content/voice-lines.ts`(학생은 레벨마다 남녀, 다른 사람은 `who`), 읽기는 후리가나 그대로(`<sub alias>`), 속도 90%.
+- 오사카·교토 사투리 억양은 기계 음성의 한계다(D35). 사람 녹음으로 바꾸려면 같은 이름의 mp3 로 덮고, manifest 의 그 줄 해시는 그대로 둔다.
+
 ## 8. 롤백
 
 | 대상 | 방법 | 주의 |
