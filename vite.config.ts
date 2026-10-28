@@ -64,6 +64,12 @@ const headers = () => `/*
   Cache-Control: public, max-age=31536000, immutable
 `;
 
+/* Cloudflare Web Analytics (D37) for yunabi.juha.dev. The site token is
+   public (it is in every page that loads the beacon). The tag is part of
+   the built page rather than added by the edge, which skips pages fetched
+   through the service worker: that way repeat visits count too. */
+const CF_BEACON_TOKEN = '5eaecb19fdde4b4586168364c5975eef';
+
 /* Production only: the dev server injects inline scripts for Fast Refresh. */
 const security = (): Plugin => ({
   name: 'yunabi-security',
@@ -84,6 +90,20 @@ const security = (): Plugin => ({
       attrs: { 'http-equiv': 'Content-Security-Policy', content: cspRules().join('; ') },
       injectTo: 'head-prepend',
     },
+    /* deployed builds only (the same condition as the CSP's analytics hosts) */
+    ...(ORIGIN.startsWith('https:')
+      ? [
+          {
+            tag: 'script',
+            attrs: {
+              defer: true,
+              src: 'https://static.cloudflareinsights.com/beacon.min.js',
+              'data-cf-beacon': JSON.stringify({ token: CF_BEACON_TOKEN, spa: true }),
+            },
+            injectTo: 'body' as const,
+          },
+        ]
+      : []),
   ],
   generateBundle() {
     this.emitFile({ type: 'asset', fileName: '_headers', source: headers() });
