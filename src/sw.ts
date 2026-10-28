@@ -12,8 +12,12 @@ declare const self: ServiceWorkerGlobalScope & {
   __WB_MANIFEST: (string | { url: string; revision: string | null })[];
 };
 
-/* Built output, the prefecture boundaries and icons, precached by hash. */
-precacheAndRoute(self.__WB_MANIFEST);
+/* Built output, the prefecture boundaries and icons, precached by hash.
+   index.html is precached too, but only as the offline shell below: with
+   directoryIndex off, a navigation to / is not answered from the precache
+   and reaches the network-first route, so the page comes from the server
+   when it can (with what the edge adds, such as the analytics beacon, D37). */
+precacheAndRoute(self.__WB_MANIFEST, { directoryIndex: null });
 cleanupOutdatedCaches();
 
 /* Navigations: network first with a 3 s limit, then the cached shell. Other
