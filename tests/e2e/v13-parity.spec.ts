@@ -23,10 +23,12 @@ test.describe('home, tabs, language, back', () => {
     await tap(page, '.hcard.jp');
     await expect(page.locator('.lesson')).toHaveCount(8);
     await tap(page, '[data-lesson="l1"]');
-    /* two comic pages of four panels (Y-J1); no art yet, so no full-screen button */
+    /* two comic pages of four panels (Y-J1), each with its artwork as a
+       full-screen button, and a play button per recorded line (D35) */
     await expect(page.locator('.cpage')).toHaveCount(2);
     await expect(page.locator('.panels li')).toHaveCount(8);
-    await expect(page.locator('[data-zoom]')).toHaveCount(0);
+    await expect(page.locator('[data-zoom]')).toHaveCount(2);
+    await expect(page.locator('.panels .say')).toHaveCount(8);
     await tap(page, '.bar .back');
     await expect(page.locator('.lesson')).toHaveCount(8);
     await page.goBack();
