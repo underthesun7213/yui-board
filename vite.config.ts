@@ -11,15 +11,23 @@ const SUPABASE = (process.env.VITE_SUPABASE_URL ?? '').replace(/\/$/, '');
 function cspRules(): string[] {
   const self = ORIGIN || "'self'";
   const turnstile = 'https://challenges.cloudflare.com';
+  /* Cloudflare Web Analytics (D37): the zone adds its beacon script to the
+     deployed pages; cookie-less page views, named in the privacy policy */
+  const insights = ORIGIN.startsWith('https:')
+    ? {
+        script: ' https://static.cloudflareinsights.com',
+        connect: ' https://cloudflareinsights.com',
+      }
+    : { script: '', connect: '' };
   const rules = [
     "default-src 'none'",
-    `script-src ${ORIGIN ? ORIGIN + 'assets/' : "'self'"} ${turnstile}`,
+    `script-src ${ORIGIN ? ORIGIN + 'assets/' : "'self'"} ${turnstile}${insights.script}`,
     /* Leaflet sets inline styles on its elements */
     `style-src ${ORIGIN ? ORIGIN + 'assets/' : "'self'"} 'unsafe-inline'`,
     `img-src ${self} data: https://tile.openstreetmap.org`,
     /* recorded lines (D35), from assets/voice/ */
     `media-src ${self}`,
-    `connect-src ${self} ${SUPABASE} ${turnstile}`.replace(/\s+/g, ' ').trim(),
+    `connect-src ${self} ${SUPABASE} ${turnstile}${insights.connect}`.replace(/\s+/g, ' ').trim(),
     `frame-src ${turnstile}`,
     `worker-src ${ORIGIN ? ORIGIN + 'sw.js' : "'self'"}`,
     `manifest-src ${self}`,
