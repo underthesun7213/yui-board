@@ -606,6 +606,7 @@ Remove-Item Env:AZURE_SPEECH_KEY
 3. **Environment variables** (공개값 — 번들에 들어간다):
    - `VITE_SUPABASE_PUBLISHABLE_KEY` — `sb_publishable_…`
    - `VITE_TURNSTILE_SITE_KEY` — Turnstile 사이트 키
+   - `CF_BEACON_TOKEN` — Cloudflare → Web Analytics → `juha.dev` → Manage site 의 JS snippet 안 `"token"` 값(32자, 공개값). 없으면 통계 태그 없이 배포된다(D37)
 4. 첫 실행: Actions → deploy → Run workflow → 승인 → 초록이면 점검 기록 B-13 에 실행 번호를 적는다.
 
 - **보안:** 비밀값은 `production` Environment 에만 있고, 그 Environment 는 `main` 에서만, 승인을 거쳐서만 열린다. CI(`ci.yml`)와 PR 에는 비밀값이 없다. `workflow_run` 은 이 저장소의 `main` push 로 초록이 된 실행만 받고, CI 가 통과한 바로 그 커밋을 체크아웃한다.

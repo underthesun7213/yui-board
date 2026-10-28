@@ -64,6 +64,13 @@ const headers = () => `/*
   Cache-Control: public, max-age=31536000, immutable
 `;
 
+/* Cloudflare Web Analytics (D37). The edge adds its beacon only to pages the
+   browser fetches itself, not to pages fetched through the service worker
+   (every repeat visit), so the deployed page carries the tag itself. The
+   site token is public but kept out of the repository: deploy.yml passes it
+   from the `production` environment (variable CF_BEACON_TOKEN). */
+const CF_BEACON = process.env.YUNABI_CF_BEACON ?? '';
+
 /* Production only: the dev server injects inline scripts for Fast Refresh. */
 const security = (): Plugin => ({
   name: 'yunabi-security',
@@ -84,6 +91,20 @@ const security = (): Plugin => ({
       attrs: { 'http-equiv': 'Content-Security-Policy', content: cspRules().join('; ') },
       injectTo: 'head-prepend',
     },
+    /* a deployed build with the token (the CSP allows these hosts on https) */
+    ...(ORIGIN.startsWith('https:') && /^[a-f0-9]{32}$/.test(CF_BEACON)
+      ? [
+          {
+            tag: 'script',
+            attrs: {
+              defer: true,
+              src: 'https://static.cloudflareinsights.com/beacon.min.js',
+              'data-cf-beacon': JSON.stringify({ token: CF_BEACON, spa: true }),
+            },
+            injectTo: 'body' as const,
+          },
+        ]
+      : []),
   ],
   generateBundle() {
     this.emitFile({ type: 'asset', fileName: '_headers', source: headers() });

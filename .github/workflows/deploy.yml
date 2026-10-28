@@ -35,6 +35,7 @@ jobs:
       # public values (they ship in the bundle), kept as environment variables
       VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY }}
       VITE_TURNSTILE_SITE_KEY: ${{ vars.VITE_TURNSTILE_SITE_KEY }}
+      YUNABI_CF_BEACON: ${{ vars.CF_BEACON_TOKEN }} # Web Analytics site token (D37)
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
