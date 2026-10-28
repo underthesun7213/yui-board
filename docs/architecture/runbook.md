@@ -423,7 +423,7 @@ where j.jobname like 'yunabi-%' group by 1, 2 order by 1, 2;
 
 ### 7.1 DB 마이그레이션 `[해 봄 2026-10-22 — 수동]`
 
-`[Y-4 이후]` 에는 `main` 전용 Environment(필수 검토자)의 승인 단계가 같은 명령을 돌린다. 그 전까지는 책임자 PC 에서:
+**평소에는 §7.6 `deploy.yml` 이 승인 뒤 같은 명령을 돌린다.** 아래는 비상용(또는 §7.6 설정 전) 책임자 PC 절차:
 
 1. 연결 주소: 대시보드 → Connect → **Session pooler** 의 URI(비밀번호 포함). 직접 연결 주소는 IPv6 전용이라 IPv4 회선에서는 Session pooler 를 쓴다(*일반 지식*). Supabase CLI 는 `package.json` 에 없으니 따로 설치한 것을 쓴다.
 2. 주소는 화면에 남기지 않고 받는다:
@@ -444,7 +444,7 @@ where j.jobname like 'yunabi-%' group by 1, 2 order by 1, 2;
 
 ### 7.2 관리자 콘솔 `[해 봄 2026-10-22 — 수동]`
 
-`[Y-4 이후]` 에는 `deploy.yml` 이 `CLOUDFLARE_API_TOKEN`(`production` Environment)으로 배포한다(ADR-0022 T-10 "배포는 CI 에서만"). 2026-10-22 의 첫 배포는 수동이었다. 그 전까지:
+**평소에는 §7.6 `deploy.yml` 이 `CLOUDFLARE_API_TOKEN`(`production` Environment)으로 배포한다**(ADR-0022 T-10 "배포는 CI 에서만"). 2026-10-22 의 첫 배포는 수동이었다. 아래는 비상용 PC 절차:
 
 ```powershell
 cd <저장소 루트>          # wrangler.jsonc 가 있는 곳 — 아래 함정 참고
@@ -589,6 +589,28 @@ Remove-Item Env:AZURE_SPEECH_KEY
 - 결과 `src/voice/**.mp3` 와 `manifest.json` 을 커밋해 PR 로 올린다 → 배포(§7.3).
 - 목소리·말하는 사람: `src/content/voice-lines.ts`(학생은 레벨마다 남녀, 다른 사람은 `who`), 읽기는 후리가나 그대로(`<sub alias>`), 속도 90%.
 - 오사카·교토 사투리 억양은 기계 음성의 한계다(D35). 사람 녹음으로 바꾸려면 같은 이름의 mp3 로 덮고, manifest 의 그 줄 해시는 그대로 둔다.
+
+### 7.6 자동 배포 `deploy.yml` (B-13) `[아직 해 보지 않음]`
+
+`main` 에 merge 되어 CI 가 초록이 되면 `deploy.yml` 이 시작하고, **책임자가 GitHub 에서 승인하면** §7.1 → §7.3 → §7.2 를 차례로 한다: `db push`(대기 중인 마이그레이션이 없으면 아무것도 안 함) → 사용자 앱 → 관리자 콘솔 → 실제 응답 헤더 확인. 승인 알림은 GitHub 메일·앱으로 온다(Actions → 해당 실행 → **Review deployments → Approve and deploy**). 다시 배포만 하려면 Actions → deploy → **Run workflow**(main). 그 뒤로 §7.1~7.3 의 PC 수동 절차는 쓰지 않는다(비상용으로만 남긴다).
+
+**처음 한 번 — GitHub 설정** (저장소 Settings):
+
+1. **Environments → New environment** → 이름 `production`.
+   - **Required reviewers:** 책임자 본인. (혼자 운영이면 "Prevent self-review" 는 끄고 둔다 — 켜면 아무도 승인할 수 없다.)
+   - **Deployment branches and tags:** *Selected branches* → `main` 만.
+2. 같은 화면의 **Environment secrets** (값은 이 화면에만 넣고 채팅·파일에 남기지 않는다):
+   - `CLOUDFLARE_API_TOKEN` — Cloudflare 대시보드 → My Profile → API Tokens → **Create Token → "Edit Cloudflare Workers" 템플릿**. 계정은 이 계정만, 영역(Zone)은 `juha.dev` 만으로 좁힌다.
+   - `CLOUDFLARE_ACCOUNT_ID` — Cloudflare 대시보드 오른쪽의 Account ID.
+   - `SUPABASE_DB_URL` — Supabase → Connect → **Session pooler** URI(비밀번호 포함, §7.1 과 같은 값).
+3. **Environment variables** (공개값 — 번들에 들어간다):
+   - `VITE_SUPABASE_PUBLISHABLE_KEY` — `sb_publishable_…`
+   - `VITE_TURNSTILE_SITE_KEY` — Turnstile 사이트 키
+4. 첫 실행: Actions → deploy → Run workflow → 승인 → 초록이면 점검 기록 B-13 에 실행 번호를 적는다.
+
+- **보안:** 비밀값은 `production` Environment 에만 있고, 그 Environment 는 `main` 에서만, 승인을 거쳐서만 열린다. CI(`ci.yml`)와 PR 에는 비밀값이 없다. `workflow_run` 은 이 저장소의 `main` push 로 초록이 된 실행만 받고, CI 가 통과한 바로 그 커밋을 체크아웃한다.
+- **DB 비밀번호를 바꾸면**(§12) `SUPABASE_DB_URL` 도 바꾼다. 그대로 두면 배포가 마이그레이션 단계에서 멈추고 앱은 나가지 않는다(안전한 쪽).
+- **실패하면:** 실패한 단계 앞까지만 적용된다. 마이그레이션이 실패하면 앱·콘솔은 그대로다. 앱 배포 뒤 실패면 §8 롤백.
 
 ## 8. 롤백
 
