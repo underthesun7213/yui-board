@@ -199,7 +199,7 @@ export function renderImagePrompts(lessons, vn, endings) {
 
 /* Reads a content file with the TypeScript already in devDependencies (these
    files have only type imports), so no new tool is needed and Node 20 works. */
-async function load(path) {
+export async function load(path) {
   const ts = (await import('typescript')).default;
   const src = readFileSync(root(path), 'utf8');
   const js = ts.transpileModule(src, {

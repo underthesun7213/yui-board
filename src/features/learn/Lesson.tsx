@@ -3,7 +3,9 @@ import { useT } from '../../i18n/useT';
 import { prefs } from '../../state/prefs';
 import { useStore } from '../../state/useStore';
 import { BackBar } from '../../ui/BackBar';
+import { exVoiceKey } from '../../content/voice-lines';
 import { Ruby } from '../../ui/Ruby';
+import { Say } from '../../ui/Say';
 import { ComicPage } from './ComicPage';
 import { LearnList } from './LearnList';
 import { VnGame } from './VnGame';
@@ -39,6 +41,7 @@ export function Lesson({ lid }: { lid: string }) {
           <b lang="ja">
             <Ruby text={e.jp} />
           </b>
+          <Say k={exVoiceKey(l.id, i)} />
           <span className="rd">{e.rd}</span>
           <p>{e.g[lang]}</p>
         </div>

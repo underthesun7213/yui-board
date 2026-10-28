@@ -61,6 +61,7 @@ export const ja = {
   lvL: 'レベル',
   exprT: 'この回の表現',
   pageN: '{n}ページ',
+  playLine: 'このせりふを再生',
   readOrder: '日本のマンガは右上から読みます。右から左、上から下へ。',
   zoomPage: '{n}ページを大きく表示',
   close: '閉じる',

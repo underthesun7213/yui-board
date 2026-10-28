@@ -902,6 +902,24 @@ rt {
   font-size: 0.55em;
   font-weight: 400;
 }
+/* play a recorded line (ui/Say, D35): a small round button after the text */
+.say {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  margin-left: 6px;
+  vertical-align: middle;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--primary);
+  cursor: pointer;
+}
+.say:active {
+  transform: scale(0.94);
+}
 .panels .jp,
 .panels .cap,
 .vnline p,

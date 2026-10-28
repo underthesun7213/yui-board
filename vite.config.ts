@@ -17,6 +17,8 @@ function cspRules(): string[] {
     /* Leaflet sets inline styles on its elements */
     `style-src ${ORIGIN ? ORIGIN + 'assets/' : "'self'"} 'unsafe-inline'`,
     `img-src ${self} data: https://tile.openstreetmap.org`,
+    /* recorded lines (D35), from assets/voice/ */
+    `media-src ${self}`,
     `connect-src ${self} ${SUPABASE} ${turnstile}`.replace(/\s+/g, ' ').trim(),
     `frame-src ${turnstile}`,
     `worker-src ${ORIGIN ? ORIGIN + 'sw.js' : "'self'"}`,
@@ -94,12 +96,15 @@ export default defineConfig({
         /* Comic pages get their own folder so the service worker can leave
            them out of the install download and cache each when first seen
            (src/sw.ts); everything else keeps the default name. */
-        assetFileNames: (a) =>
-          (a.originalFileNames ?? []).some((f) =>
-            f.replace(/\\/g, '/').includes('src/art/lessons/'),
-          )
-            ? 'assets/comic/[name]-[hash][extname]'
-            : 'assets/[name]-[hash][extname]',
+        assetFileNames: (a) => {
+          const from = (a.originalFileNames ?? []).map((f) => f.replace(/\\/g, '/'));
+          if (from.some((f) => f.includes('src/art/lessons/')))
+            return 'assets/comic/[name]-[hash][extname]';
+          /* recorded lines (D35): the same, cached when first played */
+          if (from.some((f) => f.includes('src/voice/')))
+            return 'assets/voice/[name]-[hash][extname]';
+          return 'assets/[name]-[hash][extname]';
+        },
       },
     },
   },
@@ -115,7 +120,7 @@ export default defineConfig({
       injectManifest: {
         globPatterns: ['**/*.{js,css,html,png,webp,jpg,svg,webmanifest,geojson}'],
         /* comic pages: cached on first view instead (src/sw.ts) */
-        globIgnores: ['assets/comic/**'],
+        globIgnores: ['assets/comic/**', 'assets/voice/**'],
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
       },
     }),

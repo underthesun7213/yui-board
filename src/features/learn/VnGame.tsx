@@ -10,7 +10,9 @@ import { useStore } from '../../state/useStore';
 import { vn } from '../../state/vn';
 import { ArtImage } from '../../ui/ArtImage';
 import { BackBar } from '../../ui/BackBar';
+import { endingVoiceKey, optVoiceKey, sceneVoiceKey } from '../../content/voice-lines';
 import { Ruby } from '../../ui/Ruby';
+import { Say } from '../../ui/Say';
 
 export function VnGame({ lesson }: { lesson: VnLesson }) {
   const m = useT();
@@ -48,6 +50,7 @@ export function VnGame({ lesson }: { lesson: VnLesson }) {
           <h1>{card.t[lang]}</h1>
           <q lang="ja">
             <Ruby text={card.jp} />
+            <Say k={endingVoiceKey(card.id)} />
           </q>
           <p className="endnote">{card.n[lang]}</p>
           <p className="endscore">
@@ -80,6 +83,7 @@ export function VnGame({ lesson }: { lesson: VnLesson }) {
           <b>{R.name[lang]}</b>
           <p lang="ja">
             <Ruby text={sc.jp} />
+            <Say k={sceneVoiceKey(v.route, v.i)} />
           </p>
         </div>
         <div className="opts">
@@ -101,6 +105,7 @@ export function VnGame({ lesson }: { lesson: VnLesson }) {
             <div className={'fb ' + (picked.ok ? 'ok' : 'hm')} role="status">
               <span aria-hidden="true">{picked.ok ? '○' : '△'}</span>
               <p>{picked.fb[lang]}</p>
+              <Say k={optVoiceKey(v.route, v.i, v.picked ?? 0)} />
             </div>
             <button className="primary wide" onClick={nextScene}>
               {m.vnNext}
