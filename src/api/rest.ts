@@ -1,6 +1,7 @@
 import {
   CATEGORIES,
   type EventSeries,
+  type EventText,
   type Lang,
   type OccurrenceOverride,
   type Place,
@@ -71,21 +72,37 @@ export function withTranslations(places: Place[], rows: Translation[]): Place[] 
   return places.map((p) => (by.has(p.id) ? { ...p, tr: by.get(p.id) } : p));
 }
 
+export interface EventTranslation extends EventText {
+  event_id: number;
+  lang: Lang;
+}
+/** Events with their translations attached (TR-Q2). */
+export function withEventTranslations(
+  events: EventSeries[],
+  rows: EventTranslation[],
+): EventSeries[] {
+  const by = new Map<number, Partial<Record<Lang, EventText>>>();
+  for (const { event_id, lang, title, place_text, body } of rows)
+    by.set(event_id, { ...by.get(event_id), [lang]: { title, place_text, body } });
+  return events.map((e) => (by.has(e.id) ? { ...e, tr: by.get(e.id) } : e));
+}
+
 export async function readAll(): Promise<Snapshot> {
   if (FIXTURE_MODE) {
-    const [p, e, o, t] = await Promise.all([
+    const [p, e, o, t, et] = await Promise.all([
       import('../../tests/fixtures/places.json'),
       import('../../tests/fixtures/events.json'),
       import('../../tests/fixtures/occurrences.json'),
       import('../../tests/fixtures/place_translations.json'),
+      import('../../tests/fixtures/event_translations.json'),
     ]);
     return normalize({
       places: withTranslations(p.default as Place[], t.default as Translation[]),
-      events: e.default as EventSeries[],
+      events: withEventTranslations(e.default as EventSeries[], et.default as EventTranslation[]),
       overrides: o.default as OccurrenceOverride[],
     });
   }
-  const [places, events, overrides, translations] = await Promise.all([
+  const [places, events, overrides, translations, eventTranslations] = await Promise.all([
     getAll<Place>(
       'places_public?select=id,name,category,description,gmaps_url,lat,lng,pref,lang,created_on,edited_on&order=id',
     ),
@@ -99,8 +116,15 @@ export async function readAll(): Promise<Snapshot> {
     getAll<Translation>(
       'place_translations_public?select=place_id,lang,description&order=place_id,lang',
     ).catch(() => []),
+    getAll<EventTranslation>(
+      'event_translations_public?select=event_id,lang,title,place_text,body&order=event_id,lang',
+    ).catch(() => []),
   ]);
-  return normalize({ places: withTranslations(places, translations), events, overrides });
+  return normalize({
+    places: withTranslations(places, translations),
+    events: withEventTranslations(events, eventTranslations),
+    overrides,
+  });
 }
 
 /** A number that changes whenever anything public changes. GET, so it is never counted as a write. */

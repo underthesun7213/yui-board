@@ -417,6 +417,18 @@ where p.deleted_at is null and p.auto_hidden_at is null and p.suspension_hidden_
 
 **설정 추가(`app.settings`):** `('translation_enabled',0)`, `('translation_chars_per_day',60000)`, `('translation_chars_per_month',1500000)`, `('translation_max_attempts',5)`, `('translation_delay_seconds',60)`, `('translation_lease_seconds',300)`, `('translation_batch_chars',10000)`.
 
+### 4.9 일정 번역 (D38 — 마이그레이션 28)
+
+§4.8 과 같은 모양이고 설정·사용량·일시 정지(`translation_usage`·`translation_state`)를 함께 쓴다.
+
+- **`app.event_translations`** `(event_id, lang, title 1~200자, place_text ≤200자, body ≤2,000자, source_hash, provider, translated_at)`, 기본 키 `(event_id, lang)`. 원문의 장소·본문이 비어 있으면 번역도 빈 문자열이다.
+- **`app.event_translation_jobs`** — `translation_jobs` 와 같은 열, `event_id` 가 기본 키.
+- 해시 `app.event_text_hash(title, place_text, body)` = 세 글을 U+001F 로 이은 `sha256`(쓰기 규칙이 세 칸 모두에서 U+001F 를 거절하므로 경계가 겹치지 않는다).
+- 트리거 `events_translation_sync`: 생성, 제목·장소·본문·언어 변경, 삭제 취소 → 옛 번역 삭제 + 작업 넣기. 삭제 → 번역·작업 삭제. 숨김은 그대로. **회차 덮어쓰기(`event_occurrences`)는 번역하지 않는다** — 앱이 그 주에 바뀐 칸은 원문, 나머지 칸은 일정 번역으로 보인다.
+- 뷰 **`public.event_translations_public(event_id, lang, title, place_text, body)`** — `events_public` 과 같은 조건.
+- `translation_claim` 은 일정 작업을 먼저(끝나면 쓸모가 없으므로), 그다음 장소 작업을 한 예산 안에서 준다. 일정 작업 = `{claim, event_id, texts: {title, place_text?, body?}, src, targets, hash}`, 비용 = 세 글 길이 합 × 2. 끝난 일정(`last_date` < 오늘)은 주지 않고 정리 작업이 지운다.
+- `translation_apply` 는 `event_id` 결과의 `out: [{lang, title, place_text?, body?}]` 를 받는다. 원문에 있는 칸은 모두 있어야 하고(제목·장소 한 줄 규칙, 본문 여러 줄 규칙), 원문에 없는 칸은 비어 있어야 한다.
+
 ---
 
 ## 5. 권한 (GRANT · RLS)
@@ -663,6 +675,7 @@ end $$;
 | 23 | `place_category_sights` | `app.place_category` 에 `sights`(관광 — 신사·절, 공원, 전망, 박물관) 값을 더한다(책임자, 2026-10-25). 클라이언트는 이미 타입 USAGE 가 있고 `create_place`·`update_place` 가 이 타입을 받으므로 권한·`checks` 는 그대로 | Y-M6 |
 | 25 `[ADR-0026]` | `place_name_latin` | `app.has_latin`. `create_place`·`update_place` 를 `create or replace`(같은 시그니처 — 권한·허용 목록 그대로)해 이름 규칙을 더한다. `places_name_latin` CHECK(`not valid` → 기존 행 확인 → `validate`). 파일 끝 `do` 블록이 자기 효과를 확인한다: 두 함수의 EXECUTE 가 `authenticated` 만, 정의자, `search_path`, ⑥ 동적 SQL 없음 | D31, Y-M12 |
 | 26 `[ADR-0026]` | `translations` | §4.8 표 4개 + RLS, 트리거 2개, 뷰, §7.5 함수, 설정 행, `ops_health` 3판. `create extension if not exists pg_net with schema extensions`(쓸 수 있을 때만). `pg_cron`·`pg_net`·`vault` 가 모두 있을 때만 `cron.schedule('yunabi-translate-kick', '* * * * *', 'select app.translation_kick()')`. 출시 뒤라면 기존 장소를 대기열에 넣는 `insert … select`. 권한: 뷰 SELECT → `anon, authenticated`, 두 함수 EXECUTE → `service_role`. **자기 검사(`do` 블록):** `checks` ③④⑩ 을 전체 카탈로그로 다시 한다 — `anon`·`authenticated` 목록은 그대로, `service_role` 전용 목록 = {`ops_health`, `translation_apply`, `translation_claim`}. 그리고 ① ② ⑤ ⑥ ⑧(`place_translations_public` = `place_id,lang,description`) ⑫ | D32 |
+| 28 | `event_translations` | §4.9 표 2개 + RLS, 트리거 2개, 뷰, `translation_claim`·`translation_apply`·`translation_kick`·`purge_translation_records` 를 `create or replace`(시그니처 그대로). 끝나지 않은 일정을 대기열에 넣는 `insert … select`. 자기 검사: RLS·표 권한·`service_role` 목록(그대로)·정의자 규칙·`event_translations_public` 열 | D38 |
 | seed | `supabase/seed/fixtures.sql` | 로컬·CI 전용: 테스트 계정(익명 A·B·C·D, 관리자 1 — TOTP 비밀 고정), `tests/fixtures` 와 같은 장소·일정. **운영에 적용하지 않는다**(초기 데이터 0, Y-M4) | PRD §7 |
 
 **`checks` 허용 목록은 어디에 두나 `[ADR-0026]`.** CLAUDE.md 는 새 함수를 grants 마이그레이션과 `…_checks.sql` 의 허용 목록에 넣으라고 한다. 그런데 `20261013000200_checks.sql` 은 빈 DB 에서 **24 보다 먼저** 돌고(그때는 새 함수가 없어 목록에 넣으면 실패한다), 운영에서는 이미 적용되어 **다시 돌지 않는다**(런북 §7.1 — 21 의 머리말과 같은 사정). 이미 적용된 마이그레이션을 고치면 운영과 저장소가 어긋난다. 그래서 21·22 처럼 **24 가 자기 권한을 주고, 파일 끝에서 전체 허용 목록을 다시 검사한다.** 이후 허용 목록의 원본은 "가장 최근의 자기 검사 블록"이다 — CLAUDE.md 의 해당 문장도 구현 때 그렇게 고친다.
@@ -729,6 +742,7 @@ end $$;
 | G-77 `[ADR-0026]` | 카탈로그: `service_role` 전용 EXECUTE = {`ops_health`, `translation_apply`, `translation_claim`}. `anon`·`authenticated` 목록은 그대로(두 함수 없음). `translation_kick`·`places_translation_sync`·`has_latin` 은 아무에게도 없음 | 통과 |
 | G-78 `[ADR-0026]` | `ops_health` 3판: `translation` 의 수가 맞고 글·id 가 없음 | 통과 |
 | G-79 `[ADR-0026]` | (HTTP, `security.spec.ts`) `anon`·익명 계정으로 `POST /rpc/translation_claim`·`/rpc/translation_apply` → 401/403. `GET /place_translations_public` 은 200 | 통과 |
+| G-80~G-89 (D38) | `13_event_translations.test.sql`: 일정 생성 → 작업 1행. claim 은 일정을 먼저, 빈 칸 없이 이름 붙은 `texts` 로. apply 는 원문에 있는 칸이 모두 있어야 저장(빈 칸은 빈 채로), 제어 문자·`targets` 밖 언어 거절, 해시가 다르면 `stale`. 회차 덮어쓰기는 대기열에 넣지 않음. 끝난 일정은 claim 하지 않고 정리가 작업을 지움. 숨김 일정 번역은 뷰에 없음, 삭제하면 번역·작업 0행 | 통과 |
 
 HTTP 층 같은 케이스(PostgREST 경유)는 `tests/e2e-backend/security.spec.ts` 의 Playwright `request` 로 G-01, G-02, G-03, G-10, G-12, G-15, G-21, G-23, G-30 ①~③, G-31, G-52, G-55 를 다시 확인한다 — DB 권한과 Data API 노출 설정을 함께 검증하기 위해. 특히 G-03 은 허용 목록의 모든 함수를 타입이 맞는 인자로 불러 `anon` 은 `data_version` 외 모두 401, 비관리자 계정의 `admin_*` 는 403 인지 본다(`stable` 함수는 GET — POST 는 권한 검사 전에 405). 이 스위트는 로컬 스택 전용이다(로컬 게이트웨이는 `Authorization` 을 만들지 않아 계정 없는 거절이 401). 대응표는 §9.1. `[Y-3S 구현, 2026-10-22]`
 

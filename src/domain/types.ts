@@ -45,6 +45,15 @@ export interface EventSeries {
   lang: Lang;
   created_on: string;
   edited_on: string | null;
+  /** the texts in the other UI languages, once translated (TR-Q2) */
+  tr?: Partial<Record<Lang, EventText>>;
+}
+
+/** An event's translated texts; place_text and body are empty when the original is. */
+export interface EventText {
+  title: string;
+  place_text: string;
+  body: string;
 }
 
 /** One week of a weekly series changed or cancelled (openapi-v2 Occurrence). */
@@ -68,4 +77,6 @@ export interface Occurrence {
   start: string;
   end: string;
   place: string;
+  /** translations of the fields this day did not rewrite (TR-Q2) */
+  tr?: Partial<Record<Lang, { title?: string; place?: string; body?: string }>>;
 }

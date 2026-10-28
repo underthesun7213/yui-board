@@ -1,0 +1,44 @@
+[
+  {
+    "event_id": 2,
+    "lang": "en",
+    "title": "Fire equipment inspection",
+    "place_text": "All rooms",
+    "body": "A contractor will check the fire alarm in each room. They will enter with the master key even if you are out."
+  },
+  {
+    "event_id": 2,
+    "lang": "ko",
+    "title": "소방 설비 점검",
+    "place_text": "모든 방",
+    "body": "업체가 각 방의 화재경보기를 점검합니다. 부재중이어도 마스터키로 들어갑니다."
+  },
+  {
+    "event_id": 3,
+    "lang": "en",
+    "title": "Kyoto day trip (Fushimi Inari, Tofukuji)",
+    "place_text": "Meet at Hirakatashi Station",
+    "body": "A loose schedule, so join or leave partway as you like."
+  },
+  {
+    "event_id": 3,
+    "lang": "ja",
+    "title": "京都日帰り（伏見稲荷・東福寺）",
+    "place_text": "枚方市駅集合",
+    "body": "ゆるい日程なので、途中参加・途中離脱自由です。"
+  },
+  {
+    "event_id": 4,
+    "lang": "ja",
+    "title": "GIP：火曜イベント",
+    "place_text": "CAFÉ COMMONS",
+    "body": "毎週火曜日のGIPイベント。申し込み不要、来るだけでOKです。"
+  },
+  {
+    "event_id": 4,
+    "lang": "ko",
+    "title": "GIP: 화요일 이벤트",
+    "place_text": "CAFÉ COMMONS",
+    "body": "매주 화요일 GIP 이벤트. 신청 없이 오기만 하면 됩니다."
+  }
+]

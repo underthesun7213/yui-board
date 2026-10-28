@@ -12,8 +12,9 @@ import {
   type Rpc,
   type Translator,
 } from '../../supabase/functions/translate/worker';
-import { withTranslations } from '../../src/api/rest';
-import type { Place } from '../../src/domain/types';
+import { withEventTranslations, withTranslations } from '../../src/api/rest';
+import { inLang, makeSchedule, occOn } from '../../src/domain/calendar/occurrences';
+import type { EventSeries, OccurrenceOverride, Place } from '../../src/domain/types';
 
 const job = (id: number, src: Lang, text = `text ${id}`): Job => ({
   claim: `c${id}`,
@@ -38,7 +39,8 @@ function fakeRpc(status: string, jobs: Job[]) {
 
 const echo: Translator = {
   name: 'azure',
-  translate: async (text, _from, to) => Object.fromEntries(to.map((l) => [l, `${l}:${text}`])),
+  translate: async (texts, _from, to) =>
+    texts.map((text) => Object.fromEntries(to.map((l) => [l, `${l}:${text}`]))),
 };
 
 describe('translate worker', () => {
@@ -98,11 +100,64 @@ describe('translate worker', () => {
   });
 
   it('leaves out a language the provider did not return', async () => {
-    const partial: Translator = { name: 'azure', translate: async () => ({ en: 'only English' }) };
+    const partial: Translator = { name: 'azure', translate: async () => [{ en: 'only English' }] };
     const { rpc, applied } = fakeRpc('ok', [job(1, 'ja')]);
     await runOnce(rpc, partial);
     expect((applied[0]!.results[0] as { out: unknown }).out).toEqual([
       { lang: 'en', text: 'only English' },
+    ]);
+  });
+
+  it('sends an event’s non-empty texts in one request and returns them by name (TR-Q2)', async () => {
+    const sent: string[][] = [];
+    const tr: Translator = {
+      name: 'azure',
+      translate: async (texts, from, to) => {
+        sent.push(texts);
+        return echo.translate(texts, from, to);
+      },
+    };
+    const ev: Job = {
+      claim: 'e1',
+      event_id: 7,
+      texts: { title: '花火', body: '雨天中止' },
+      src: 'ja',
+      targets: ['en', 'ko'],
+      hash: 'he',
+    };
+    const { rpc, applied } = fakeRpc('ok', [ev]);
+    await runOnce(rpc, tr);
+    expect(sent).toEqual([['花火', '雨天中止']]);
+    expect(applied[0]!.results).toEqual([
+      {
+        claim: 'e1',
+        event_id: 7,
+        hash: 'he',
+        out: [
+          { lang: 'en', title: 'en:花火', body: 'en:雨天中止' },
+          { lang: 'ko', title: 'ko:花火', body: 'ko:雨天中止' },
+        ],
+      },
+    ]);
+  });
+
+  it('leaves out an event language that came back without every field', async () => {
+    const tr: Translator = {
+      name: 'azure',
+      translate: async () => [{ en: 'Fireworks', ko: '불꽃놀이' }, { en: 'Cancelled if rain' }],
+    };
+    const ev: Job = {
+      claim: 'e2',
+      event_id: 8,
+      texts: { title: '花火', place_text: '中庭' },
+      src: 'ja',
+      targets: ['en', 'ko'],
+      hash: 'h',
+    };
+    const { rpc, applied } = fakeRpc('ok', [ev]);
+    await runOnce(rpc, tr);
+    expect((applied[0]!.results[0] as { out: unknown }).out).toEqual([
+      { lang: 'en', title: 'Fireworks', place_text: 'Cancelled if rain' },
     ]);
   });
 });
@@ -136,11 +191,15 @@ describe('Azure adapter', () => {
               { text: 'unexpected', to: 'fr' },
             ],
           },
+          { translations: [{ text: 'Near', to: 'en' }] },
         ]),
       );
     }) as unknown as typeof fetch;
-    const out = await azure('k', 'japaneast', fetchFn).translate('駅', 'ja', ['en', 'ko']);
-    expect(out).toEqual({ en: 'Station', ko: '역' });
+    const out = await azure('k', 'japaneast', fetchFn).translate(['駅', '近い'], 'ja', [
+      'en',
+      'ko',
+    ]);
+    expect(out).toEqual([{ en: 'Station', ko: '역' }, { en: 'Near' }]);
     expect(url).toContain('api-version=3.0');
     expect(url).toContain('from=ja');
     expect(url).toContain('textType=plain');
@@ -148,13 +207,13 @@ describe('Azure adapter', () => {
     const h = init!.headers as Record<string, string>;
     expect(h['Ocp-Apim-Subscription-Key']).toBe('k');
     expect(h['Ocp-Apim-Subscription-Region']).toBe('japaneast');
-    expect(JSON.parse(String(init!.body))).toEqual([{ Text: '駅' }]);
+    expect(JSON.parse(String(init!.body))).toEqual([{ Text: '駅' }, { Text: '近い' }]);
   });
 
   it('turns HTTP failures into codes', async () => {
     const code = async (f: typeof fetch) => {
       try {
-        await azure('k', 'r', f).translate('x', 'en', ['ja']);
+        await azure('k', 'r', f).translate(['x'], 'en', ['ja']);
         return 'none';
       } catch (e) {
         return (e as TranslateFailure).code;
@@ -197,5 +256,60 @@ describe('translations reach the places', () => {
     );
     expect(out[0]!.tr).toEqual({ en: 'one', ko: '하나' });
     expect(out[1]!.tr).toBeUndefined();
+  });
+});
+
+describe('translations reach the events (TR-Q2)', () => {
+  const series: EventSeries = {
+    id: 4,
+    title: 'Tuesday event',
+    start_date: '2026-09-15',
+    start_time: '18:00',
+    end_time: '20:00',
+    weekly_until: '2026-09-29',
+    place_text: 'Cafe',
+    body: 'Weekly.',
+    lang: 'en',
+    created_on: '2026-09-01',
+    edited_on: null,
+  };
+  const [e] = withEventTranslations(
+    [series],
+    [{ event_id: 4, lang: 'ja', title: '火曜イベント', place_text: 'カフェ', body: '毎週。' }],
+  );
+  const week: OccurrenceOverride = {
+    event_id: 4,
+    occurs_on: '2026-09-22',
+    cancelled: false,
+    title: 'Karaoke',
+    start_time: null,
+    end_time: null,
+    place_text: null,
+    body: 'This week: karaoke.',
+  };
+  const s = makeSchedule([e!], [week]);
+
+  it('shows every field translated on a week left as it was', () => {
+    const t = inLang(occOn(s, '2026-09-15')[0]!, 'ja');
+    expect(t.title).toEqual({ text: '火曜イベント', lang: 'ja' });
+    expect(t.place).toEqual({ text: 'カフェ', lang: 'ja' });
+    expect(t.body).toEqual({ text: '毎週。', lang: 'ja' });
+    expect(t.translated).toBe(true);
+  });
+
+  it('keeps the fields a week rewrote as written', () => {
+    const t = inLang(occOn(s, '2026-09-22')[0]!, 'ja');
+    expect(t.title).toEqual({ text: 'Karaoke', lang: 'en' });
+    expect(t.body).toEqual({ text: 'This week: karaoke.', lang: 'en' });
+    expect(t.place).toEqual({ text: 'カフェ', lang: 'ja' });
+  });
+
+  it('shows the original in its own language and where no translation exists', () => {
+    const o = occOn(s, '2026-09-15')[0]!;
+    expect(inLang(o, 'en').translated).toBe(false);
+    expect(inLang(o, 'ko')).toMatchObject({
+      title: { text: 'Tuesday event', lang: 'en' },
+      translated: false,
+    });
   });
 });

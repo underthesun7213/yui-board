@@ -276,3 +276,24 @@ test.describe('D32 description translation', () => {
     await expect(page.locator('.pcard .trnote')).toHaveCount(0);
   });
 });
+
+test('TR-Q2 an event shows translated, with the original one tap away and rewritten weeks as written', async ({
+  page,
+  errors,
+}) => {
+  void errors;
+  await page.addInitScript(() => localStorage.setItem('yui.v1.lang', JSON.stringify('ko')));
+  await page.goto('./#/cal/event/2/2026-09-11');
+  const ev = page.locator('.evwrap');
+  await expect(ev.locator('h1')).toHaveText('소방 설비 점검');
+  await expect(ev.locator('h1')).toHaveAttribute('lang', 'ko');
+  await expect(ev.locator('.trnote')).toContainText('자동 번역');
+  await ev.getByRole('button', { name: '원문 보기' }).click();
+  await expect(ev.locator('h1')).toHaveText('消防設備点検');
+  await expect(ev.locator('.body')).toHaveAttribute('lang', 'ja');
+  /* this week rewrote the title and body: they stay as written, the place is the series' */
+  await page.goto('./#/cal/event/4/2026-09-15');
+  await expect(ev.locator('h1')).toHaveText('GIP: Board Game Day');
+  await expect(ev.locator('h1')).toHaveAttribute('lang', 'en');
+  await expect(ev.locator('.trnote')).toHaveCount(1);
+});
