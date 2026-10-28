@@ -1,4 +1,4 @@
-import type { EventSeries, Occurrence, OccurrenceOverride } from '../types';
+import type { EventSeries, Lang, Occurrence, OccurrenceOverride } from '../types';
 import { addDays, dayDiff } from './dates';
 
 export interface Schedule {
@@ -21,6 +21,19 @@ export function occOn(s: Schedule, k: string): Occurrence[] {
     } else if (e.start_date !== k) continue;
     const o = s.overrides.get(e.id + '|' + k);
     if (o?.cancelled) continue;
+    /* a field that week rewrote stays as written: the series translation is of other text */
+    const tr =
+      e.tr &&
+      Object.fromEntries(
+        Object.entries(e.tr).map(([l, t]) => [
+          l,
+          {
+            title: o?.title ? undefined : t.title,
+            place: o?.place_text != null ? undefined : t.place_text || undefined,
+            body: o?.body != null ? undefined : t.body || undefined,
+          },
+        ]),
+      );
     out.push({
       event: e,
       date: k,
@@ -29,6 +42,7 @@ export function occOn(s: Schedule, k: string): Occurrence[] {
       start: o?.start_time || e.start_time,
       end: o?.end_time || e.end_time,
       place: o?.place_text ?? e.place_text,
+      ...(tr && { tr }),
     });
   }
   return out.sort((a, b) =>
@@ -44,6 +58,25 @@ export function upcoming(s: Schedule, from: string, n: number): Occurrence[] {
     k = addDays(k, 1);
   }
   return out.slice(0, n);
+}
+
+export interface Shown {
+  text: string;
+  lang: Lang;
+}
+
+/** An occurrence's title, place and body in `ui` where translated (TR-Q2),
+    each field otherwise as written. `translated` is true when any field is. */
+export function inLang(o: Occurrence, ui: Lang) {
+  const t = o.event.lang === ui ? undefined : o.tr?.[ui];
+  const f = (text: string, tr?: string): Shown =>
+    tr ? { text: tr, lang: ui } : { text, lang: o.event.lang };
+  return {
+    title: f(o.title, t?.title),
+    place: f(o.place, t?.place),
+    body: f(o.body, t?.body),
+    translated: !!(t?.title || t?.place || t?.body),
+  };
 }
 
 export const findOcc = (s: Schedule, id: number, k: string) =>

@@ -34,7 +34,13 @@ import events from '../fixtures/events.json';
 import occurrences from '../fixtures/occurrences.json';
 import places from '../fixtures/places.json';
 import placeTranslations from '../fixtures/place_translations.json';
-import { withTranslations, type Translation } from '../../src/api/rest';
+import eventTranslations from '../fixtures/event_translations.json';
+import {
+  withEventTranslations,
+  withTranslations,
+  type EventTranslation,
+  type Translation,
+} from '../../src/api/rest';
 
 /* the fixtures are dated around this day */
 vi.useFakeTimers({ toFake: ['Date'] });
@@ -56,6 +62,16 @@ const loadFixtures = () =>
     '2026-10-12T00:00:00Z',
   );
 loadFixtures();
+const loadTranslatedEvents = () =>
+  setData(
+    places as Place[],
+    withEventTranslations(
+      (events as EventSeries[]).map(hm),
+      eventTranslations as EventTranslation[],
+    ),
+    occurrences as OccurrenceOverride[],
+    '2026-10-12T00:00:00Z',
+  );
 const GIP = (events as EventSeries[]).find((e) => e.weekly_until)!.id;
 
 async function html(): Promise<string> {
@@ -136,6 +152,15 @@ const cases: Case[] = [
   ['event-weekly', { name: 'event', id: GIP, date: '2026-10-13' }],
   ['event-missing', { name: 'event', id: GIP, date: '2026-10-14' }, undefined, /class="empty"/],
   ['event-cancelled', { name: 'event', id: GIP, date: '2026-10-20' }, undefined, /class="empty"/],
+  /* TR-Q2: an event's texts translated where the screen language has them,
+     the fields one week rewrote as written */
+  ['event-translated', { name: 'event', id: GIP, date: '2026-10-13' }, loadTranslatedEvents],
+  ['event-translated-week', { name: 'event', id: GIP, date: '2026-09-22' }, loadTranslatedEvents],
+  [
+    'cal-translated',
+    { name: 'cal' },
+    () => (loadTranslatedEvents(), calendarUi.set({ day: '2026-09-22', month: '2026-09' })),
+  ],
   [
     'home-loading',
     { name: 'home' },

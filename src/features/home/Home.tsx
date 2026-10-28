@@ -1,7 +1,7 @@
 import { go } from '../../actions/nav';
 import { ENDINGS } from '../../content/endings';
 import { formatDay, tokyoToday, weekday } from '../../domain/calendar/dates';
-import { upcoming } from '../../domain/calendar/occurrences';
+import { inLang, upcoming } from '../../domain/calendar/occurrences';
 import { fill, LOCALE } from '../../i18n';
 import { useT } from '../../i18n/useT';
 import { collection } from '../../state/collection';
@@ -17,6 +17,7 @@ export function Home() {
   const schedule = useStore(data, (s) => s.schedule);
   const got = ENDINGS.filter((e) => cg[e.id]).length;
   const nx = upcoming(schedule, tokyoToday(), 1)[0];
+  const nxTitle = nx && inLang(nx, lang).title;
   return (
     <>
       <div className="hhead">
@@ -49,7 +50,7 @@ export function Home() {
                 <>
                   {m.homeNext} ·{' '}
                   {formatDay(nx.date, LOCALE[lang], { month: 'short', day: 'numeric' })} ·{' '}
-                  {m.wd[weekday(nx.date)]} <span lang={nx.event.lang}>{nx.title}</span>
+                  {m.wd[weekday(nx.date)]} <span lang={nxTitle!.lang}>{nxTitle!.text}</span>
                 </>
               ) : (
                 m.homeNone

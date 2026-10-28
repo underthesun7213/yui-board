@@ -1,20 +1,30 @@
 /* The translate Edge Function's logic (ADR-0026, D32), without Deno or
    network specifics so Vitest can run it: take queued work through
-   translation_claim, translate each description with a machine-translation
+   translation_claim, translate each place description or event's texts with a machine-translation
    API (never an LLM: user text could carry instructions), hand the results
    back through translation_apply. index.ts wires it to the real services. */
 
 export type Lang = 'en' | 'ja' | 'ko';
 export type FailureCode = 'quota' | 'rate' | 'provider' | 'timeout' | 'too_long';
 
-export interface Job {
+interface JobBase {
   claim: string;
-  place_id: number;
-  text: string;
   src: Lang;
   targets: Lang[];
   hash: string;
 }
+/** A place's description. */
+export interface PlaceJob extends JobBase {
+  place_id: number;
+  text: string;
+}
+export type EventField = 'title' | 'place_text' | 'body';
+/** An event's texts (TR-Q2); an empty place or body is left out. */
+export interface EventJob extends JobBase {
+  event_id: number;
+  texts: Partial<Record<EventField, string>>;
+}
+export type Job = PlaceJob | EventJob;
 
 export interface Claimed {
   status: string;
@@ -35,7 +45,31 @@ export class TranslateFailure extends Error {
 
 export interface Translator {
   name: 'azure' | 'google' | 'deepl';
-  translate(text: string, from: Lang, to: Lang[]): Promise<Partial<Record<Lang, string>>>;
+  /** One result per text, in order: the text in every target language it came back in. */
+  translate(texts: string[], from: Lang, to: Lang[]): Promise<Partial<Record<Lang, string>>[]>;
+}
+
+const FIELDS: EventField[] = ['title', 'place_text', 'body'];
+
+/* A job's texts in one request, and the output in the shape translation_apply
+   takes. An event's language counts only with every field it sent: one
+   missing a field is left out rather than stored half translated. */
+async function translateJob(tr: Translator, j: Job): Promise<unknown[]> {
+  if ('place_id' in j) {
+    const [out = {}] = await tr.translate([j.text], j.src, j.targets);
+    return j.targets.flatMap((lang) => (out[lang] ? [{ lang, text: out[lang] }] : []));
+  }
+  const fields = FIELDS.filter((f) => j.texts[f]);
+  const outs = await tr.translate(
+    fields.map((f) => j.texts[f]!),
+    j.src,
+    j.targets,
+  );
+  return j.targets.flatMap((lang) =>
+    fields.every((_, i) => outs[i]?.[lang])
+      ? [{ lang, ...Object.fromEntries(fields.map((f, i) => [f, outs[i]![lang]])) }]
+      : [],
+  );
 }
 
 /** One run: claim, translate, apply. Returns counts only. After a quota or
@@ -49,18 +83,17 @@ export async function runOnce(rpc: Rpc, tr: Translator, maxJobs = 20) {
   let stop: FailureCode | null = null;
   let failed = 0;
   for (const j of jobs) {
-    const base = { claim: j.claim, place_id: j.place_id, hash: j.hash };
+    const base =
+      'place_id' in j
+        ? { claim: j.claim, place_id: j.place_id, hash: j.hash }
+        : { claim: j.claim, event_id: j.event_id, hash: j.hash };
     if (stop) {
       results.push({ ...base, error: stop });
       failed++;
       continue;
     }
     try {
-      const out = await tr.translate(j.text, j.src, j.targets);
-      results.push({
-        ...base,
-        out: j.targets.flatMap((lang) => (out[lang] ? [{ lang, text: out[lang] }] : [])),
-      });
+      results.push({ ...base, out: await translateJob(tr, j) });
     } catch (e) {
       const code = e instanceof TranslateFailure ? e.code : 'provider';
       if (code === 'quota' || code === 'rate') stop = code;
@@ -84,7 +117,7 @@ export function sameSecret(given: string | null, expected: string): boolean {
 const AZURE = 'https://api.cognitive.microsofttranslator.com/translate';
 
 /** Azure AI Translator v3 (the recommended provider, TR-Q1). Plain text, one
-    request per description, all target languages at once. 429 is a rate
+    request per job (an event's texts together), all target languages at once. 429 is a rate
     limit, 403 a spent quota on the free tier; anything else is the provider. */
 export function azure(
   key: string,
@@ -94,7 +127,7 @@ export function azure(
 ): Translator {
   return {
     name: 'azure',
-    async translate(text, from, to) {
+    async translate(texts, from, to) {
       const q = new URLSearchParams({ 'api-version': '3.0', from, textType: 'plain' });
       for (const t of to) q.append('to', t);
       const ctl = new AbortController();
@@ -108,7 +141,7 @@ export function azure(
             'Ocp-Apim-Subscription-Region': region,
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify([{ Text: text }]),
+          body: JSON.stringify(texts.map((t) => ({ Text: t }))),
           signal: ctl.signal,
         });
       } catch {
@@ -120,11 +153,13 @@ export function azure(
       if (r.status === 403) throw new TranslateFailure('quota');
       if (!r.ok) throw new TranslateFailure('provider');
       const body = (await r.json()) as { translations?: { text?: unknown; to?: unknown }[] }[];
-      const out: Partial<Record<Lang, string>> = {};
-      for (const t of body?.[0]?.translations ?? []) {
-        if (typeof t.text === 'string' && to.includes(t.to as Lang)) out[t.to as Lang] = t.text;
-      }
-      return out;
+      return texts.map((_, i) => {
+        const out: Partial<Record<Lang, string>> = {};
+        for (const t of (Array.isArray(body) && body[i]?.translations) || []) {
+          if (typeof t.text === 'string' && to.includes(t.to as Lang)) out[t.to as Lang] = t.text;
+        }
+        return out;
+      });
     },
   };
 }

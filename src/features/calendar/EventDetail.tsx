@@ -3,7 +3,8 @@ import { go } from '../../actions/nav';
 import { openReport } from '../../actions/report';
 import { session } from '../../state/session';
 import { formatDay, tokyoToday, weekday } from '../../domain/calendar/dates';
-import { findOcc } from '../../domain/calendar/occurrences';
+import { useState } from 'react';
+import { findOcc, inLang } from '../../domain/calendar/occurrences';
 import { fill, LOCALE } from '../../i18n';
 import { useT } from '../../i18n/useT';
 import { data } from '../../state/data';
@@ -17,6 +18,7 @@ export function EventDetail({ id, date }: { id: number; date: string }) {
   const lang = useStore(prefs, (s) => s.lang);
   const schedule = useStore(data, (s) => s.schedule);
   const mine = useStore(session, (s) => !!s.mineEvents[id]);
+  const [orig, setOrig] = useState(false);
   const o = findOcc(schedule, id, date);
   if (!o) {
     return (
@@ -27,6 +29,9 @@ export function EventDetail({ id, date }: { id: number; date: string }) {
     );
   }
   const e = o.event;
+  /* translated where it can be (TR-Q2), the original one tap away */
+  const tr = inLang(o, lang);
+  const t = orig ? inLang(o, e.lang) : tr;
   const today = tokyoToday();
   const over = (e.weekly_until ?? e.start_date) < today;
   const day = (d: string) =>
@@ -37,19 +42,27 @@ export function EventDetail({ id, date }: { id: number; date: string }) {
       <BackBar title={m.evT} />
       <div className="evwrap">
         <div className="when">{when}</div>
-        <h1 lang={e.lang}>{o.title}</h1>
+        <h1 lang={t.title.lang}>{t.title.text}</h1>
         <LangBadge lang={e.lang} />
+        {tr.translated && (
+          <p className="trnote">
+            {!orig && m.autoTranslated}
+            <button onClick={() => setOrig(!orig)}>
+              {orig ? m.showTranslation : m.showOriginal}
+            </button>
+          </p>
+        )}
         {o.place && (
           <dl className="facts">
             <div>
               <dt>{m.where}</dt>
-              <dd lang={e.lang}>{o.place}</dd>
+              <dd lang={t.place.lang}>{t.place.text}</dd>
             </div>
           </dl>
         )}
         {o.body && (
-          <div className="body" lang={e.lang}>
-            {o.body}
+          <div className="body" lang={t.body.lang}>
+            {t.body.text}
           </div>
         )}
         <p className="dates">
