@@ -1,6 +1,6 @@
 import { ENDINGS } from '../content/endings';
-import { BEST_MISSES, VN } from '../content/vn';
-import type { Route } from '../content/types';
+import { ENDING_RULE, VN } from '../content/vn';
+import type { Route, Tier } from '../content/types';
 import { navigate } from '../app/router';
 import { t } from '../i18n';
 import { store } from '../platform/storage';
@@ -27,9 +27,15 @@ export function pickOption(i: number) {
 /** scenes that ask for a reply: the only ones scored */
 export const scoredScenes = (route: Route) => VN[route].scenes.filter((s) => s.opts.length).length;
 
+export function endingTier(route: Route, score: number): Tier {
+  const rule = ENDING_RULE[route];
+  if (score >= scoredScenes(route) - rule.goodMisses) return 'good';
+  if (rule.badMax !== null && score <= rule.badMax) return 'bad';
+  return 'normal';
+}
 export function endingFor(route: Route, score: number) {
-  const best = score >= scoredScenes(route) - BEST_MISSES;
-  return ENDINGS.find((e) => e.route === route && e.best === best)!;
+  const tier = endingTier(route, score);
+  return ENDINGS.find((e) => e.route === route && e.tier === tier)!;
 }
 
 export function nextScene() {

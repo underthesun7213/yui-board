@@ -1957,6 +1957,10 @@ rt {
   gap: 6px;
 }
 .yk-qty button {
+  /* drawn icons, so + and − sit dead centre whatever the font */
+  display: grid;
+  place-items: center;
+  padding: 0;
   width: 40px;
   height: 40px;
   border-radius: 50%;
@@ -2420,6 +2424,33 @@ rt {
 @media (prefers-reduced-motion: reduce) {
   .sb-tip,
   .arc.gold.pulse::before {
+    animation: none;
+  }
+}
+
+/* 유우키 미니게임: what to do now while eating, over the table */
+.yk-tip {
+  position: absolute;
+  left: 50%;
+  top: 6%;
+  transform: translateX(-50%);
+  max-width: 92%;
+  padding: 7px 14px;
+  border-radius: 999px;
+  background: #15202bdd;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 800;
+  text-align: center;
+  white-space: nowrap;
+  pointer-events: none;
+  animation: sb-bob 1.1s ease-in-out infinite;
+}
+.yk-tip.bite {
+  background: #c2372fee;
+}
+@media (prefers-reduced-motion: reduce) {
+  .yk-tip {
     animation: none;
   }
 }

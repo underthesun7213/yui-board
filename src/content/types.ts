@@ -44,10 +44,12 @@ export interface VnLesson extends LessonBase {
 }
 export type Lesson = ComicLesson | VnLesson;
 export type Route = 'osaka' | 'kyoto';
+/** which ending a run gets: all right, some right, or almost none */
+export type Tier = 'good' | 'normal' | 'bad';
 export interface Ending {
   id: string;
   route: Route | 'both';
-  best: boolean;
+  tier: Tier;
   t: L3;
   jp: string;
   s: string;

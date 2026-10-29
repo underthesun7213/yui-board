@@ -8,7 +8,7 @@ export function renderComicScripts(lessons: readonly Lesson[]): string;
 export function renderGameScript(
   vn: Record<Route, VnRoute>,
   endings: readonly Ending[],
-  bestMisses: number,
+  rule: Record<Route, { goodMisses: number; badMax: number | null }>,
 ): string;
 export function renderImagePrompts(
   lessons: readonly Lesson[],

@@ -8,7 +8,9 @@
 - 그림에는 글자를 넣지 않는다. 대사와 선택지는 앱이 그림 아래에 보여 준다.
 - ○ = 자연스러운 답(점수), × = 어색한 답. 피드백은 고른 뒤에 보인다.
 - 한자 뒤 괄호 = 앱이 다는 후리가나.
-- 엔딩: 놓친 선택이 1개 이하면 좋은 엔딩, 그보다 많으면 보통 엔딩. 두 친구의 엔딩을 하나씩 모으면 `e_both`.
+- osaka 엔딩: 놓친 선택 0개 이하면 좋은 엔딩, 맞힌 선택 1개 이하면 나쁜 엔딩, 그 사이는 보통 엔딩.
+- kyoto 엔딩: 놓친 선택 1개 이하면 좋은 엔딩, 그 밖은 보통 엔딩.
+- 두 친구의 엔딩을 하나씩 모으면 `e_both`.
 
 ## 유우키 (오사카) — `osaka`
 
@@ -158,6 +160,7 @@
 |---|---|---|---|---|---|---|
 | `e_osaka_best` | osaka | 좋음 | 내일 또 보자 | ほな、明日(あした)も空(あ)いてる？ | Dotonbori at night, two friends laughing on the river wall, neon reflections | 농담을 되돌려준 회차. 템포가 맞으면 다음 약속은 그 자리에서 정해진다 |
 | `e_osaka_norm` | osaka | 보통 | 그럼 다음에 | ほな、また今度(こんど)な。 | Station ticket gates at night, one friend waving from the far side | 나쁘지 않은 하루. 다만 경어가 남으면 거리도 조금 남는다 |
+| `e_osaka_bad` | osaka | 나쁨 | 갈 수 있으면 갈게 | 次(つぎ)？……行(い)けたら行(い)くわ。 | Station ticket gates at dusk, the friend half-turned away with a vague wave | 오사카의 「行けたら行くわ(갈 수 있으면 갈게)」는 대개 안 온다는 뜻. 경어만 쓰고 농담도 못 받으면 다음 약속은 생기지 않는다 |
 | `e_kyoto_best` | kyoto | 좋음 | 말하지 않은 것들 | あんた、よう気(き)づかはるね。 | A narrow Kyoto lane at dusk, two friends walking slowly, lanterns lit | 돌려 말한 걸 전부 알아챈 회차. 교토에선 알아채는 것이 예의가 된다 |
 | `e_kyoto_norm` | kyoto | 보통 | 오차즈케 이야기 | ……まあ、ゆっくりしていっておくれやす。 | A traditional room, teapot on the table, afternoon light going amber | 몇 개를 놓친 회차. 못 알아챘다고 미움받은 건 아니다 |
 | `e_both` | both | 수집 | 두 개의 간사이 | 大阪(おおさか)と京都(きょうと)、電車(でんしゃ)で40分(ぷん)。 | A split scene: Osaka neon on one side, a quiet Kyoto lane on the other, the same student in both | 양쪽을 모두 걸은 사람만의 카드. 40분 거리인데 말하는 방식이 이만큼 다르다 |

@@ -6,7 +6,7 @@ export const ENDINGS: Ending[] = [
   {
     id: 'e_osaka_best',
     route: 'osaka',
-    best: true,
+    tier: 'good',
     t: {
       ja: 'また明日も会おう',
       en: 'See you again tomorrow',
@@ -23,7 +23,7 @@ export const ENDINGS: Ending[] = [
   {
     id: 'e_osaka_norm',
     route: 'osaka',
-    best: false,
+    tier: 'normal',
     t: {
       ja: 'ほな、また今度',
       en: 'Next time, then',
@@ -38,9 +38,26 @@ export const ENDINGS: Ending[] = [
     },
   },
   {
+    id: 'e_osaka_bad',
+    route: 'osaka',
+    tier: 'bad',
+    t: {
+      ja: '行けたら行くわ',
+      en: "I'll go if I can",
+      ko: '갈 수 있으면 갈게',
+    },
+    jp: '{次|つぎ}？……{行|い}けたら{行|い}くわ。',
+    s: 'Station ticket gates at dusk, the friend half-turned away with a vague wave',
+    n: {
+      ja: '大阪の「行けたら行くわ」は、たいてい来ないという意味。敬語のままで冗談も返せないと、次の約束は生まれない',
+      en: 'In Osaka, 行けたら行くわ ("I\'ll go if I can") usually means no. Stay in keigo and leave the jokes unanswered, and no next plan gets made',
+      ko: '오사카의 「行けたら行くわ(갈 수 있으면 갈게)」는 대개 안 온다는 뜻. 경어만 쓰고 농담도 못 받으면 다음 약속은 생기지 않는다',
+    },
+  },
+  {
     id: 'e_kyoto_best',
     route: 'kyoto',
-    best: true,
+    tier: 'good',
     t: {
       ja: '言わはらへんこと',
       en: 'The things left unsaid',
@@ -57,7 +74,7 @@ export const ENDINGS: Ending[] = [
   {
     id: 'e_kyoto_norm',
     route: 'kyoto',
-    best: false,
+    tier: 'normal',
     t: {
       ja: 'お茶漬けの話',
       en: 'The ochazuke story',
@@ -74,7 +91,7 @@ export const ENDINGS: Ending[] = [
   {
     id: 'e_both',
     route: 'both',
-    best: true,
+    tier: 'good',
     t: {
       ja: '二つの関西',
       en: 'Two Kansais',
