@@ -1,4 +1,5 @@
-import { achievementKey, endingKey } from '../../content/art';
+import { openArt } from '../../actions/comic';
+import { ART, achievementKey, endingKey } from '../../content/art';
 import { ACHIEVEMENTS } from '../../content/achievements';
 import { ENDINGS } from '../../content/endings';
 import { plain } from '../../content/ruby';
@@ -31,7 +32,20 @@ export function Collection() {
       {cards.map((e) =>
         cg[e.id] ? (
           <div key={e.id} className="card">
-            <ArtImage k={key(e.id)} alt={plain(e.jp)} className="cgart" />
+            {/* a drawn picture opens full screen; a placeholder stays as it is */}
+            {ART[key(e.id)] ? (
+              <button
+                type="button"
+                className="cgzoom"
+                data-zoom={e.id}
+                aria-label={m.zoomArt}
+                onClick={() => openArt(key(e.id), e.t[lang])}
+              >
+                <ArtImage k={key(e.id)} alt={plain(e.jp)} className="cgart" />
+              </button>
+            ) : (
+              <ArtImage k={key(e.id)} alt={plain(e.jp)} className="cgart" />
+            )}
             <b>{e.t[lang]}</b>
             <q lang="ja">
               <Ruby text={e.jp} />

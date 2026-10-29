@@ -63,6 +63,7 @@ export const en = {
   pageN: 'Page {n}',
   playLine: 'Play this line',
   readOrder: 'Japanese comics read from the top right: right to left, then down.',
+  zoomArt: 'Show the picture full screen',
   zoomPage: 'Open page {n} full screen',
   close: 'Close',
   colT: 'Collection',

@@ -2454,3 +2454,18 @@ rt {
     animation: none;
   }
 }
+
+/* collection: a drawn card picture opens full screen */
+.cgzoom {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: zoom-in;
+}
+.cgzoom:focus-visible {
+  outline: 3px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: var(--r-s);
+}

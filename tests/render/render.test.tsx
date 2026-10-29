@@ -158,6 +158,16 @@ const cases: Case[] = [
   ],
   ['lesson-unknown', { name: 'lesson', lid: 'zz' }, undefined, /class="lesson"/],
   ['collection-empty', { name: 'collection' }],
+  /* a drawn achievement picture opens full screen */
+  [
+    'collection-zoom',
+    { name: 'collection' },
+    () => {
+      collection.set({ cg: { a_osaka_juice: true } });
+      ui.set({ zoom: { art: 'achievements/a_osaka_juice', alt: 'The juice bet' } });
+    },
+    /role="dialog"[^>]*aria-label="The juice bet"|aria-label="The juice bet"[^>]*role="dialog"/,
+  ],
   [
     'collection-full',
     { name: 'collection' },

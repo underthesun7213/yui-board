@@ -6,7 +6,7 @@ import { useT } from '../../i18n/useT';
 import { ui } from '../../state/ui';
 import { useStore } from '../../state/useStore';
 
-/* A comic page full screen (Y-J1), over everything including the tab bar.
+/* A comic page or a collection picture full screen (Y-J1), over everything including the tab bar.
    Pinch zoom is the browser's own; the page also scrolls when it is taller
    than the screen. Closed by its button, Escape, or system back (it is a
    history step). Focus goes back to what opened it — or, if that button is
@@ -25,13 +25,15 @@ export function ComicZoom() {
     return () => {
       document.removeEventListener('keydown', esc);
       if (opener?.isConnected) opener.focus();
-      else if (zoom) document.querySelector<HTMLElement>(`[data-page="${zoom.n}"]`)?.focus();
+      else if (zoom && 'n' in zoom)
+        document.querySelector<HTMLElement>(`[data-page="${zoom.n}"]`)?.focus();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- once per opening
   }, []);
-  const src = zoom && ART[pageKey(zoom.lid, zoom.n)];
-  if (!zoom || !src) return null;
-  const label = fill(m.zoomPage, { n: zoom.n });
+  if (!zoom) return null;
+  const src = 'art' in zoom ? ART[zoom.art] : ART[pageKey(zoom.lid, zoom.n)];
+  if (!src) return null;
+  const label = 'art' in zoom ? zoom.alt : fill(m.zoomPage, { n: zoom.n });
   return (
     <div className="zoom" role="dialog" aria-modal="true" aria-label={label}>
       <button ref={close} className="zoomx" aria-label={m.close} onClick={closeZoom}>
