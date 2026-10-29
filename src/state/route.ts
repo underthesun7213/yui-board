@@ -5,7 +5,6 @@ export type Route =
   | { name: 'learn' }
   | { name: 'lesson'; lid: string }
   | { name: 'collection' }
-  | { name: 'yuki' }
   | { name: 'map' }
   | { name: 'cal' }
   | { name: 'event'; id: number; date: string }

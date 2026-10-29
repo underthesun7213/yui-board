@@ -825,7 +825,6 @@ main {
 
 /* ---------- Japanese ---------- */
 .lesson,
-.minigame,
 .colrow {
   display: flex;
   align-items: center;
@@ -2095,4 +2094,20 @@ rt {
 .yk-said p[lang='ja'] {
   font-size: 17px;
   line-height: 1.9;
+}
+
+/* level 8: what happens in a scene without a choice, and the match result */
+.vnnote {
+  margin-top: 12px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+.vnresult {
+  font-size: 15px;
+  font-weight: 700;
+}
+.vnwrap .yk {
+  padding: 0;
+  margin-top: 12px;
 }

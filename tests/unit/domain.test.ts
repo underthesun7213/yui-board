@@ -175,7 +175,6 @@ describe('routes', () => {
       { name: 'learn' },
       { name: 'lesson', lid: 'l3' },
       { name: 'collection' },
-      { name: 'yuki' },
       { name: 'map' },
       { name: 'cal' },
       { name: 'event', id: 4, date: '2026-09-22' },

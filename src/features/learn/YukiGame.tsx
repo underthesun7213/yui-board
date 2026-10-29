@@ -1,5 +1,4 @@
 import { useRef, useState, type RefObject } from 'react';
-import { go } from '../../actions/nav';
 import {
   addItem,
   biteSkewer,
@@ -12,7 +11,6 @@ import {
   pickTalk,
   pickUnit,
   placeOrder,
-  restartYuki,
   tapSkewer,
 } from '../../actions/yuki';
 import { ART } from '../../content/art';
@@ -42,66 +40,61 @@ import { useT } from '../../i18n/useT';
 import { prefs } from '../../state/prefs';
 import { useStore } from '../../state/useStore';
 import { yuki, type Skewer } from '../../state/yuki';
-import { BackBar } from '../../ui/BackBar';
 import { Ruby } from '../../ui/Ruby';
 
 const yen = (n: number) => n.toLocaleString('ja-JP') + '円';
 
-/* 유우키 미니게임 (docs/06-design/minigames/yuki-minigame): one picture on
-   top, the step's lines and controls below it. No score: answers get feedback,
-   a wrong one is tried again. */
-export function YukiGame() {
+/* 유우키 미니게임 (docs/06-design/minigames/yuki-minigame), scene 4 of
+   level 8's Osaka route: one picture on top, the step's lines and controls
+   below it. No score: answers get feedback, a wrong one is tried again.
+   onDone carries the story on. */
+export function YukiGame({ onDone }: { onDone: () => void }) {
   const m = useT();
   const step = useStore(yuki, (s) => s.step);
   const drink = useStore(yuki, (s) => s.drink);
   const order = useStore(yuki, (s) => s.order);
   const tease = useStore(yuki, (s) => s.tease);
   const sauce = useRef<HTMLButtonElement>(null);
-  const pic =
-    step === 'start' || step === 'end' ? YUKI_ART.street : tease ? YUKI_ART.tease : YUKI_ART.table;
-  const label = step !== 'start' && step !== 'end' ? m.yukiSteps[step] : null;
+  const pic = step === 'end' ? YUKI_ART.street : tease ? YUKI_ART.tease : YUKI_ART.table;
+  const label = step !== 'end' ? m.yukiSteps[step] : null;
   return (
-    <>
-      <BackBar title={m.yukiT} />
-      <div className="yk">
-        <div className="yk-stage">
-          <div className="cgart">
-            {/* the street picture is portrait: keep Yuki's face in the 4:3 frame */}
-            {ART[pic] ? (
-              <img
-                src={ART[pic]}
-                alt=""
-                style={pic === YUKI_ART.street ? { objectPosition: '50% 22%' } : undefined}
-              />
-            ) : null}
-          </div>
-          {step === 'eat' && !tease && (
-            <button
-              ref={sauce}
-              type="button"
-              className="yk-sauce"
-              onClick={() => dipSkewer(yuki.get().sel)}
-            >
-              <span>{m.yukiSauce}</span>
-            </button>
-          )}
-          <Pops />
+    <div className="yk">
+      <div className="yk-stage">
+        <div className="cgart">
+          {/* the street picture is portrait: keep Yuki's face in the 4:3 frame */}
+          {ART[pic] ? (
+            <img
+              src={ART[pic]}
+              alt=""
+              style={pic === YUKI_ART.street ? { objectPosition: '50% 22%' } : undefined}
+            />
+          ) : null}
         </div>
-        {label && (
-          <p className="yk-bar">
-            <span>{label}</span>
-            <span>¥{orderTotal(order, drink).toLocaleString('ja-JP')}</span>
-          </p>
+        {step === 'eat' && !tease && (
+          <button
+            ref={sauce}
+            type="button"
+            className="yk-sauce"
+            onClick={() => dipSkewer(yuki.get().sel)}
+          >
+            <span>{m.yukiSauce}</span>
+          </button>
         )}
-        {step === 'start' && <Start />}
-        {(step === 'drink' || step === 'bill' || step === 'leave') && <TalkStep k={step} />}
-        {step === 'order' && <Order />}
-        {step === 'count' && <Count />}
-        {step === 'eat' && <Eat sauce={sauce} />}
-        {step === 'pay' && <Pay />}
-        {step === 'end' && <End />}
+        <Pops />
       </div>
-    </>
+      {label && (
+        <p className="yk-bar">
+          <span>{label}</span>
+          <span>¥{orderTotal(order, drink).toLocaleString('ja-JP')}</span>
+        </p>
+      )}
+      {(step === 'drink' || step === 'bill' || step === 'leave') && <TalkStep k={step} />}
+      {step === 'order' && <Order />}
+      {step === 'count' && <Count />}
+      {step === 'eat' && <Eat sauce={sauce} />}
+      {step === 'pay' && <Pay />}
+      {step === 'end' && <End onDone={onDone} />}
+    </div>
   );
 }
 
@@ -146,20 +139,6 @@ function Feedback({ ok, text }: { ok: boolean; text: L3 }) {
         {text[lang]}
         {!ok && <> {m.yukiRetry}</>}
       </p>
-    </div>
-  );
-}
-
-function Start() {
-  const m = useT();
-  return (
-    <div className="yk-panel">
-      <p className="yk-mission">
-        {fill(m.yukiMission, { k: KINDS, b: BUDGET.toLocaleString('ja-JP') })}
-      </p>
-      <button className="primary wide" data-yk="start" onClick={nextYuki}>
-        {m.yukiGo}
-      </button>
     </div>
   );
 }
@@ -222,6 +201,9 @@ function Order() {
   return (
     <div className="yk-panel">
       <Said who="yuki" line={LINES.order} />
+      <p className="yk-mission">
+        {fill(m.yukiMission, { k: KINDS, b: BUDGET.toLocaleString('ja-JP') })}
+      </p>
       <div className="yk-phone">
         <div className="yk-screen">
           <div className="yk-phbar" lang="ja">
@@ -513,7 +495,7 @@ function Pay() {
   );
 }
 
-function End() {
+function End({ onDone }: { onDone: () => void }) {
   const m = useT();
   const lang = useStore(prefs, (s) => s.lang);
   const said = useStore(yuki, (s) => s.said);
@@ -538,14 +520,9 @@ function End() {
           </div>
         ))}
       </div>
-      <div className="btns">
-        <button className="primary" data-yk="again" onClick={restartYuki}>
-          {m.yukiAgain}
-        </button>
-        <button className="secondary" onClick={() => go({ name: 'learn' })}>
-          {m.yukiList}
-        </button>
-      </div>
+      <button className="primary wide" data-yk="done" onClick={onDone}>
+        {m.vnNext}
+      </button>
     </div>
   );
 }

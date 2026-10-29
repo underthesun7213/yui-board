@@ -328,10 +328,15 @@ test('유우키 미니게임: order on the phone, dip once, Yuki teases a second
   errors,
 }) => {
   void errors;
-  await page.goto('./#/learn');
-  await tap(page, '[data-lesson="yuki"]');
-  await expect(page).toHaveURL(/#\/learn\/yuki$/);
-  await tap(page, '[data-yk="start"]');
+  /* level 8 with Yuki: the game is scene 4, after three scenes of talk */
+  await page.goto('./#/learn/l8');
+  await tap(page, '[data-route="osaka"]');
+  for (let i = 0; i < 3; i++) {
+    await tap(page, '[data-opt="0"]');
+    await tap(page, '[data-next]');
+  }
+  await expect(page.locator('.vnwrap .yk')).toHaveCount(1);
+  await expect(page).toHaveURL(/#\/learn\/l8$/);
   /* far too polite for a friend: marked, and another answer can be tried */
   await tap(page, '.yk [data-opt="2"]');
   await expect(page.locator('.yk .fb.hm')).toBeVisible();

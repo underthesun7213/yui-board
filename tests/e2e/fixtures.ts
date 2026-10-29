@@ -44,6 +44,7 @@ type Handle = {
   route: { get(): { route: { name: string; lid?: string } } };
   prefs: { get(): { lang: string } };
   collection: { get(): { cg: Record<string, true> } };
+  yuki: { set(p: { step: 'end' }): void };
   location: { get(): { state: string; refreshing: boolean } };
   mapUi: { get(): { mode: string; pref: string | null; tileFail: boolean } };
   data: {

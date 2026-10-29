@@ -2,10 +2,8 @@ import type { Drink, Line } from '../content/yuki-minigame';
 import { createStore } from './store';
 
 /* 유우키 미니게임: where the player is and what is on the table */
-export type YukiStep =
-  'start' | 'drink' | 'order' | 'count' | 'eat' | 'bill' | 'pay' | 'leave' | 'end';
+export type YukiStep = 'drink' | 'order' | 'count' | 'eat' | 'bill' | 'pay' | 'leave' | 'end';
 export const YUKI_STEPS: YukiStep[] = [
-  'start',
   'drink',
   'order',
   'count',
@@ -46,7 +44,7 @@ export interface Yuki {
   pops: Pop[];
 }
 export const YUKI_START: Yuki = {
-  step: 'start',
+  step: 'drink',
   picked: null,
   wrong: [],
   drink: null,
