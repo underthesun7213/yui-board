@@ -9,16 +9,27 @@ import { sb, SB_START, sbLimit, sbTotal, type Sb } from '../state/smartball';
 const W = 300;
 const H = 470;
 const R = 7; // marble radius
-const G = 520; // gravity along the tilted table, px/s²
+const G = 420; // gravity along the tilted table, px/s² (a slow, gentle table)
 const ARC = { x: 150, y: 160, r: 142 };
 const LANE_X = 276;
 const RIGHT_X = 292;
 const LANE_TOP = 178;
 const PLUNGER_Y = H - 24;
 const DRAIN_Y = H - 12;
-const BALL_TIME = 40; // seconds a ball may stay up before the flippers go dark
+/* the clock on each ball: it starts short and every hole adds to it; when it
+   runs out the flippers go dark and the ball drains */
+const BALL_TIME = 20;
+const BONUS = 5;
+const BONUS_TEN = 8; // the 10-point hole
+/* Yuki's turn plays faster than real time, so watching it does not drag */
+const YUKI_SPEED = 1.7;
 const STEP = 1 / 900; // physics step: the marble moves under 1.5 px per step
-const FLIP_LEN = 58;
+const FLIP_LEN = 63;
+/* flipper pivots: their tips leave a narrow gap to drain through */
+const FL_X = 66;
+const FR_X = 218;
+/* a ball that drains this soon after launch comes back once (a ball save) */
+const SAVE_TIME = 5;
 
 interface Hole {
   x: number;
@@ -61,6 +72,10 @@ interface Ball {
   t: number;
   cool: number;
   hold: number;
+  /** seconds this ball may stay up: BALL_TIME plus what its holes added */
+  limit: number;
+  /** the ball save has been used */
+  saved: boolean;
   state: 'ready' | 'flying' | 'held' | 'done';
 }
 type Side = 'left' | 'right';
@@ -96,8 +111,8 @@ seg(RIGHT_X, ARC.y, RIGHT_X, H);
 seg(LANE_X, LANE_TOP, LANE_X, H);
 seg(LANE_X, PLUNGER_Y + R, RIGHT_X, PLUNGER_Y + R);
 /* the slopes that feed the flippers */
-seg(8, H - 132, 62, H - 70);
-seg(LANE_X, H - 132, 222, H - 70);
+seg(8, H - 132, FL_X, H - 70);
+seg(LANE_X, H - 132, FR_X, H - 70);
 
 /* a few rows of brass pins, as on a smart-ball table */
 const pins: Pin[] = [];
@@ -111,9 +126,9 @@ for (let row = 0, y = 92; y < 340; row++, y += 34) {
 }
 /* flippers: angle 0 points right, y grows downwards */
 const flips: Record<Side, Flipper> = {
-  left: { px: 62, py: H - 70, rest: 0.5, up: -0.45, ang: 0.5, w: 0, held: false },
+  left: { px: FL_X, py: H - 70, rest: 0.5, up: -0.45, ang: 0.5, w: 0, held: false },
   right: {
-    px: 222,
+    px: FR_X,
     py: H - 70,
     rest: Math.PI - 0.5,
     up: Math.PI + 0.45,
@@ -216,6 +231,8 @@ function nextBall() {
     t: 0,
     cool: 0,
     hold: 0,
+    limit: BALL_TIME,
+    saved: false,
     state: 'ready',
   };
   power = 0;
@@ -227,9 +244,12 @@ function release() {
   if (!charging || !ball) return;
   charging = false;
   ball.state = 'flying';
-  ball.vy = -(380 + power * 520);
+  ball.vy = -(340 + power * 470);
   sfx.shoot();
-  set({ ready: false });
+  const s = sb.get();
+  /* the first ball of the match: show what the paddles are for */
+  set({ ready: false, flipTip: s.turn === 'me' && !s.me.length });
+  if (s.turn === 'me' && !s.me.length) later(5000, () => set({ flipTip: false }));
 }
 function rollBack() {
   if (!ball) return;
@@ -239,6 +259,26 @@ function rollBack() {
   if (sb.get().turn === 'me') say('weak');
   else yukiLaunches();
 }
+/* drained right after launch: back on the plunger, once per ball */
+function saveBall() {
+  if (!ball) return;
+  Object.assign(ball, {
+    vx: 0,
+    vy: 0,
+    x: (LANE_X + RIGHT_X) / 2,
+    y: PLUNGER_Y,
+    state: 'ready',
+    t: 0,
+    left: false,
+    saved: true,
+  });
+  power = 0;
+  flips.left.held = flips.right.held = false;
+  pops.push({ x: (FL_X + FR_X) / 2, y: H - 40, text: 'SAVE!', t: 0 });
+  sfx.hole(5);
+  set({ ready: true });
+  if (sb.get().turn === 'yuki') yukiLaunches();
+}
 function drain() {
   if (!ball) return;
   ball.state = 'done';
@@ -246,7 +286,7 @@ function drain() {
   const s = sb.get();
   const me = s.turn === 'me';
   const pts = s.cur;
-  sb.set({ [s.turn]: [...s[s.turn], pts], cur: 0 } as Partial<Sb>);
+  sb.set({ [s.turn]: [...s[s.turn], pts], cur: 0, flipTip: false } as Partial<Sb>);
   sfx.out();
   say(
     pts >= 15
@@ -261,7 +301,7 @@ function drain() {
           ? 'meOut'
           : 'yukiOut',
   );
-  later(1300, () => {
+  later(me ? 1300 : 800, () => {
     const turn = sb.get().turn === 'me' ? 'yuki' : 'me';
     set({ turn });
     if (turn === 'yuki' && played('yuki') < sbLimit(sb.get())) say('yukiTurn');
@@ -285,7 +325,7 @@ function endMatch() {
 /* Yuki pulls to a strength of his own and plays by the same physics */
 function yukiLaunches() {
   const target = 0.35 + Math.random() * 0.6;
-  later(900, () => {
+  later(500, () => {
     if (!ball || ball.state !== 'ready') return;
     charging = true;
     chargeT = 0;
@@ -315,7 +355,7 @@ function yukiFlips(dt: number) {
       f.py + FLIP_LEN * Math.sin(f.rest),
     );
     const near = Math.hypot(ball.x - cx, ball.y - cy) < 26 && ball.vy > 0;
-    if (near && a.plan === null) a.plan = Math.random() < 0.82;
+    if (near && a.plan === null) a.plan = Math.random() < 0.72;
     if (!near && !f.held) a.plan = null;
     if (near && a.plan && !f.held) {
       f.held = true;
@@ -356,7 +396,7 @@ function closest(b: Ball, x1: number, y1: number, x2: number, y2: number): [numb
   return [x1 + t * dx, y1 + t * dy];
 }
 function moveFlippers(dt: number) {
-  const dark = !!ball && ball.t > BALL_TIME;
+  const dark = !!ball && ball.t > ball.limit;
   for (const f of Object.values(flips)) {
     const target = f.held && !dark ? f.up : f.rest;
     const before = f.ang;
@@ -378,9 +418,9 @@ function step(dt: number) {
   b.cool = Math.max(0, b.cool - dt);
   b.vy += G * dt;
   const sp = Math.hypot(b.vx, b.vy);
-  if (sp > 1200) {
-    b.vx *= 1200 / sp;
-    b.vy *= 1200 / sp;
+  if (sp > 1000) {
+    b.vx *= 1000 / sp;
+    b.vy *= 1000 / sp;
   }
   b.x += b.vx * dt;
   b.y += b.vy * dt;
@@ -395,8 +435,8 @@ function step(dt: number) {
   for (const k of BUMPERS) {
     const hit = pushOut(b, k.x, k.y, k.r, 0.6);
     if (hit && hit.vn < -40) {
-      b.vx += hit.nx * 260;
-      b.vy += hit.ny * 260;
+      b.vx += hit.nx * 220;
+      b.vy += hit.ny * 220;
       k.lit = 0.25;
       score(1, k.x, k.y - 20);
       sfx.bump();
@@ -410,6 +450,9 @@ function step(dt: number) {
       f.px + FLIP_LEN * Math.cos(f.ang),
       f.py + FLIP_LEN * Math.sin(f.ang),
     );
+    /* a paddle only ever pushes a marble that is above it: one coming back down
+       passes over a marble under it instead of pressing it through the floor */
+    if (b.y > cy) continue;
     /* the flipper's own speed where the marble touches it */
     const hit = pushOut(b, cx, cy, 5, 0.35, -f.w * (cy - f.py), f.w * (cx - f.px));
     if (hit && Math.abs(f.w) > 1 && hit.vn < -200) sfx.flip();
@@ -422,16 +465,20 @@ function step(dt: number) {
   }
   if (!b.cool) {
     for (const h of HOLES) {
-      if (Math.hypot(b.x - h.x, b.y - h.y) < 11 && Math.hypot(b.vx, b.vy) < 700) {
+      if (Math.hypot(b.x - h.x, b.y - h.y) < 13 && Math.hypot(b.vx, b.vy) < 700) {
         Object.assign(b, { state: 'held', hold: 0.7, x: h.x, y: h.y, vx: 0, vy: 0 });
         score(h.v, h.x, h.y - 18);
+        /* scoring buys time */
+        const more = h.v >= 10 ? BONUS_TEN : BONUS;
+        b.limit += more;
+        pops.push({ x: (FL_X + FR_X) / 2, y: H - 22, text: `+${more}s`, t: 0 });
         sfx.hole(h.v);
         if (h.v >= 5) say(sb.get().turn === 'me' ? 'meBig' : 'yukiBig');
         return;
       }
     }
   }
-  if (b.x < LANE_X && b.y > DRAIN_Y) return drain();
+  if (b.x < LANE_X && b.y > DRAIN_Y) return b.t < SAVE_TIME && !b.saved ? saveBall() : drain();
   /* not strong enough to clear the arc: it rolls back onto the plunger */
   if (b.x > LANE_X && b.y >= PLUNGER_Y - 1 && b.t > 0.3) return b.left ? drain() : rollBack();
   /* resting on a pin top: a nudge, as you would knock the glass */
@@ -490,18 +537,18 @@ function draw(c: CanvasRenderingContext2D, dt: number) {
   c.fillStyle = '#5a3a22';
   c.beginPath();
   c.moveTo(8, H - 132);
-  c.lineTo(62, H - 70);
-  c.lineTo(62, H);
+  c.lineTo(FL_X, H - 70);
+  c.lineTo(FL_X, H);
   c.lineTo(8, H);
   c.fill();
   c.beginPath();
   c.moveTo(LANE_X, H - 132);
-  c.lineTo(222, H - 70);
-  c.lineTo(222, H);
+  c.lineTo(FR_X, H - 70);
+  c.lineTo(FR_X, H);
   c.lineTo(LANE_X, H);
   c.fill();
   c.fillStyle = '#2a1a0f';
-  c.fillRect(62, DRAIN_Y, 160, H);
+  c.fillRect(FL_X, DRAIN_Y, FR_X - FL_X, H);
   for (const h of HOLES) {
     c.beginPath();
     c.arc(h.x, h.y, 10, 0, Math.PI * 2);
@@ -563,7 +610,7 @@ function draw(c: CanvasRenderingContext2D, dt: number) {
     c.lineTo(s.x2, s.y2);
     c.stroke();
   }
-  const dark = !!ball && ball.t > BALL_TIME;
+  const dark = !!ball && ball.t > ball.limit;
   for (const f of Object.values(flips)) {
     const tx = f.px + FLIP_LEN * Math.cos(f.ang);
     const ty = f.py + FLIP_LEN * Math.sin(f.ang);
@@ -595,10 +642,10 @@ function draw(c: CanvasRenderingContext2D, dt: number) {
   }
   /* time left on this ball */
   if (ball && ball.state !== 'ready' && sb.get().phase === 'play') {
-    const left = Math.max(0, BALL_TIME - ball.t);
+    const left = Math.max(0, ball.limit - ball.t);
     c.fillStyle = left < 6 ? '#c2372f' : '#f0dcb4';
     c.font = '700 11px system-ui, sans-serif';
-    c.fillText(left > 0 ? Math.ceil(left) + 's' : 'TIME', (62 + 222) / 2, H - 2);
+    c.fillText(left > 0 ? Math.ceil(left) + 's' : 'TIME', (FL_X + FR_X) / 2, H - 2);
   }
   if (ball && ball.state !== 'done') {
     const x = ball.x;
@@ -644,7 +691,7 @@ function frame(now: number) {
     power = ph <= 1 ? ph : 2 - ph;
   }
   if (ball && (ball.state === 'flying' || ball.state === 'held')) {
-    simLeft += dt;
+    simLeft += sb.get().turn === 'yuki' ? dt * YUKI_SPEED : dt;
     while (simLeft >= STEP && ball && (ball.state === 'flying' || ball.state === 'held')) {
       step(STEP);
       simLeft -= STEP;
@@ -755,6 +802,7 @@ export function start() {
 export function flip(side: Side, down: boolean) {
   if (down && !mine()) return;
   flips[side].held = down;
+  if (down && sb.get().flipTip) set({ flipTip: false });
 }
 export function charge(down: boolean) {
   if (down) {

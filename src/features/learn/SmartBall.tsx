@@ -9,7 +9,7 @@ import {
   startMatch,
   toggleSound,
 } from '../../actions/smartball';
-import { SB_LINES } from '../../content/smartball';
+import { SB_LINES, SB_TEXT, type SbText } from '../../content/smartball';
 import { fill } from '../../i18n';
 import { useT } from '../../i18n/useT';
 import { prefs } from '../../state/prefs';
@@ -36,6 +36,10 @@ export function SmartBall({
 }) {
   const m = useT();
   const lang = useStore(prefs, (s) => s.lang);
+  const tx = Object.fromEntries(Object.entries(SB_TEXT).map(([k, v]) => [k, v[lang]])) as Record<
+    SbText,
+    string
+  >;
   const s = useStore(sb, (x) => x);
   const canvas = useRef<HTMLCanvasElement>(null);
   const [held, setHeld] = useState<Btn | null>(null);
@@ -73,7 +77,7 @@ export function SmartBall({
   });
   const side = (who: 'me' | 'yuki') => (
     <div className={'sb-side' + (s.phase === 'play' && s.turn === who ? ' now' : '')}>
-      <b>{who === 'me' ? m.sbYou : name}</b>
+      <b>{who === 'me' ? tx.sbYou : name}</b>
       <span className="sb-pts">{who === 'me' ? me : yu}</span>
       <span className="sb-pips" aria-hidden="true">
         {Array.from({ length: sbLimit(s) }, (_, i) => (
@@ -88,7 +92,7 @@ export function SmartBall({
         type="button"
         className={'arc' + (held === b ? ' held' : '')}
         disabled={!mine || s.ready}
-        aria-label={b === 'left' ? m.sbLeftA : m.sbRightA}
+        aria-label={b === 'left' ? tx.sbLeftA : tx.sbRightA}
         data-flip={b}
         {...hold(
           b,
@@ -96,7 +100,7 @@ export function SmartBall({
           () => flip(b, false),
         )}
       />
-      <span>{b === 'left' ? m.sbLeft : m.sbRight}</span>
+      <span>{b === 'left' ? tx.sbLeft : tx.sbRight}</span>
     </div>
   );
 
@@ -105,16 +109,16 @@ export function SmartBall({
       <div className="sb-hud">
         <span>
           {s.phase === 'play'
-            ? fill(m.sbBall, {
+            ? fill(tx.sbBall, {
                 n: Math.min(s[s.turn].length + 1, sbLimit(s)),
                 k: sbLimit(s),
               }) +
               ' · ' +
-              (mine ? m.sbYourTurn : fill(m.sbTheirTurn, { name }))
-            : m.sbTitle}
+              (mine ? tx.sbYourTurn : fill(tx.sbTheirTurn, { name }))
+            : tx.sbTitle}
         </span>
         <button type="button" onClick={toggleSound} aria-pressed={s.muted}>
-          {s.muted ? m.sbSoundOff : m.sbSoundOn}
+          {s.muted ? tx.sbSoundOff : tx.sbSoundOn}
         </button>
       </div>
       <div className="sb-score">
@@ -122,14 +126,41 @@ export function SmartBall({
         {side('yuki')}
       </div>
       <div className="sb-stage">
-        <canvas ref={canvas} width={300} height={470} aria-label={m.sbTable} />
+        <canvas ref={canvas} width={300} height={470} aria-label={tx.sbTable} />
+        {/* what to do right now, over the table, while it is your ball */}
+        {mine && (s.ready || s.flipTip) && (
+          <p className={'sb-tip' + (s.ready ? ' launch' : ' flip')} role="status">
+            {s.ready ? tx.sbTipLaunch : tx.sbTipFlip}
+          </p>
+        )}
       </div>
 
       {s.phase === 'intro' && (
         <>
-          <p className="sb-how">{m.sbHow}</p>
+          {/* how to play, before the first ball */}
+          <ol className="sb-guide">
+            <li>
+              <i className="dot gold" aria-hidden="true" />
+              <span>
+                <b>{tx.sbG1}</b> {tx.sbG1d}
+              </span>
+            </li>
+            <li>
+              <i className="dot red" aria-hidden="true" />
+              <span>
+                <b>{tx.sbG2}</b> {tx.sbG2d}
+              </span>
+            </li>
+            <li>
+              <i className="dot hole" aria-hidden="true" />
+              <span>
+                <b>{tx.sbG3}</b> {tx.sbG3d}
+              </span>
+            </li>
+          </ol>
+          <p className="sb-how">{tx.sbHow}</p>
           <button type="button" className="primary wide" data-sb="start" onClick={startMatch}>
-            {s.rematch ? m.sbStartRe : m.sbStart}
+            {s.rematch ? tx.sbStartRe : tx.sbStart}
           </button>
         </>
       )}
@@ -140,9 +171,11 @@ export function SmartBall({
             <div className="sb-slot">
               <button
                 type="button"
-                className={'arc gold' + (held === 'launch' ? ' held' : '')}
+                className={
+                  'arc gold' + (held === 'launch' ? ' held' : mine && s.ready ? ' pulse' : '')
+                }
                 disabled={!mine || !s.ready}
-                aria-label={m.sbLaunchA}
+                aria-label={tx.sbLaunchA}
                 data-sb="launch"
                 {...hold(
                   'launch',
@@ -150,12 +183,12 @@ export function SmartBall({
                   () => charge(false),
                 )}
               />
-              <span>{m.sbLaunch}</span>
+              <span>{tx.sbLaunch}</span>
             </div>
             {flipper('right')}
           </div>
           <p className="sb-how">
-            {!mine ? fill(m.sbTheyPlay, { name }) : s.ready ? m.sbHintLaunch : m.sbHintFlip}
+            {!mine ? fill(tx.sbTheyPlay, { name }) : s.ready ? tx.sbHintLaunch : tx.sbHintFlip}
           </p>
         </>
       )}
@@ -173,7 +206,8 @@ export function SmartBall({
           <p className={'fb ' + (won ? 'ok' : 'hm')} role="status">
             <span aria-hidden="true">{won ? '○' : '△'}</span>
             <span className="vnresult">
-              {won ? m.vnBallWin : fill(m.sbTheyWon, { name })} {fill(m.sbScore, { a: me, b: yu })}
+              {won ? m.vnBallWin : fill(tx.sbTheyWon, { name })}{' '}
+              {fill(tx.sbScore, { a: me, b: yu })}
             </span>
           </p>
           <div className="vnline">
@@ -185,14 +219,14 @@ export function SmartBall({
           <div className="btns">
             {!s.rematch && (
               <button type="button" className="secondary" data-sb="again" onClick={rematch}>
-                {m.sbAgain}
+                {tx.sbAgain}
               </button>
             )}
             <button type="button" className="primary" data-next onClick={onDone}>
               {m.vnNext}
             </button>
           </div>
-          {s.rematch && <p className="sb-how">{m.sbFinal}</p>}
+          {s.rematch && <p className="sb-how">{tx.sbFinal}</p>}
         </>
       )}
     </div>

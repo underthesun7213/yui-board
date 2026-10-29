@@ -22,6 +22,8 @@ export interface Sb {
   line: SbLine;
   seq: number;
   muted: boolean;
+  /** the first ball is up: the paddle tip shows until a flip or a few seconds */
+  flipTip: boolean;
 }
 export const SB_START: Sb = {
   phase: 'intro',
@@ -35,6 +37,7 @@ export const SB_START: Sb = {
   line: 'intro',
   seq: 0,
   muted: false,
+  flipTip: false,
 };
 export const sb = createStore<Sb>(SB_START);
 
