@@ -1,4 +1,4 @@
-import type { Ending, Lesson, Route, VnRoute, Who } from './types';
+import type { Achievement, Ending, L3, Lesson, Route, VnRoute, VnSay, Who } from './types';
 
 /* Every Japanese line that has a voice (D35), with the Azure neural voice that
    reads it. scripts/gen-voice.mjs makes one file per line from this list, and
@@ -32,6 +32,8 @@ const VOICES = {
   osaka: 'ja-JP-NaokiNeural',
   kyoto: 'ja-JP-MayuNeural',
   player: 'ja-JP-ShioriNeural',
+  /* shop staff in the game (the kushikatsu shop) */
+  staff: 'ja-JP-KeitaNeural',
 };
 const panelVoice = (lid: string, who: Who) =>
   who === 'me' ? (STUDENT[lid] === 'm' ? VOICES.meM : VOICES.meF) : VOICES[who];
@@ -45,11 +47,24 @@ export const exVoiceKey = (lid: string, i: number) => `lessons/${lid}/ex${i + 1}
 export const sceneVoiceKey = (route: string, i: number) => `vn/${route}/${nn(i)}`;
 export const optVoiceKey = (route: string, i: number, k: number) => `vn/${route}/${nn(i)}-${k + 1}`;
 export const endingVoiceKey = (id: string) => `endings/${id}`;
+/** what someone says back to reply k of scene i, line j */
+export const replyVoiceKey = (route: string, i: number, k: number, j: number) =>
+  `vn/${route}/${nn(i)}-${k + 1}r${j + 1}`;
+/** further lines of scene i before its choice */
+export const moreVoiceKey = (route: string, i: number, j: number) =>
+  `vn/${route}/${nn(i)}m${j + 1}`;
+/** the friend's line after the smart-ball match */
+export const ballVoiceKey = (route: string, i: number, result: 'win' | 'lose') =>
+  `vn/${route}/${nn(i)}${result}`;
+export const achievementVoiceKey = (id: string) => `achievements/${id}`;
+export const yukiVoiceKey = (name: string) => `minigames/yuki/${name}`;
+export const sbVoiceKey = (name: string) => `minigames/smartball/${name}`;
 
 export function voiceLines(
   lessons: readonly Lesson[],
   vn: Record<Route, VnRoute>,
   endings: readonly Ending[],
+  achievements: readonly Achievement[] = [],
 ): VoiceLine[] {
   const out: VoiceLine[] = [];
   for (const l of lessons) {
@@ -74,10 +89,23 @@ export function voiceLines(
     r.scenes.forEach((sc, i) => {
       /* scenes without a line (the mini-games) have nothing to record */
       if (sc.jp) out.push({ key: sceneVoiceKey(route, i), text: sc.jp, voice: VOICES[route] });
-      sc.opts.forEach((o, k) =>
-        out.push({ key: optVoiceKey(route, i, k), text: o.jp, voice: VOICES.player }),
+      const by = (l: VnSay) => (l.who === 'staff' ? VOICES.staff : VOICES[route]);
+      sc.more?.forEach((l, j) =>
+        out.push({ key: moreVoiceKey(route, i, j), text: l.jp, voice: by(l) }),
       );
+      sc.opts.forEach((o, k) => {
+        out.push({ key: optVoiceKey(route, i, k), text: o.jp, voice: VOICES.player });
+        o.reply?.forEach((l, j) =>
+          out.push({ key: replyVoiceKey(route, i, k, j), text: l.jp, voice: by(l) }),
+        );
+      });
+      for (const result of ['win', 'lose'] as const) {
+        const text = sc[result];
+        if (text) out.push({ key: ballVoiceKey(route, i, result), text, voice: VOICES[route] });
+      }
     });
+  for (const a of achievements)
+    out.push({ key: achievementVoiceKey(a.id), text: a.jp, voice: VOICES[a.route] });
   for (const e of endings)
     out.push({
       key: endingVoiceKey(e.id),
@@ -85,6 +113,47 @@ export function voiceLines(
       voice: e.route === 'both' ? VOICES.narrator : VOICES[e.route],
     });
   return out;
+}
+
+/* The two mini-games' lines. They are listed here for the generator; the
+   app adds them to its voice map from the games' own chunks (addVoices). */
+interface GameLine {
+  jp: string;
+  mean: L3;
+}
+interface GameTalk {
+  who: 'yuki' | 'staff' | 'me' | null;
+  line: GameLine | null;
+  opts: { jp: string }[];
+}
+export function yukiVoiceLines(
+  talk: Record<string, GameTalk>,
+  lines: Record<string, GameLine>,
+): VoiceLine[] {
+  const out: VoiceLine[] = [];
+  const speaker = { yuki: VOICES.osaka, staff: VOICES.staff, me: VOICES.player };
+  for (const [name, t] of Object.entries(talk)) {
+    if (t.who && t.line)
+      out.push({ key: yukiVoiceKey(name), text: t.line.jp, voice: speaker[t.who] });
+    t.opts.forEach((o, k) =>
+      out.push({ key: yukiVoiceKey(`${name}-${k + 1}`), text: o.jp, voice: VOICES.player }),
+    );
+  }
+  /* the shop's goodbye is the staff's; the rest are Yuki's */
+  for (const [name, l] of Object.entries(lines))
+    out.push({
+      key: yukiVoiceKey(name),
+      text: l.jp,
+      voice: name === 'end' ? VOICES.staff : VOICES.osaka,
+    });
+  return out;
+}
+export function sbVoiceLines(lines: Record<string, { jp: string }>): VoiceLine[] {
+  return Object.entries(lines).map(([name, l]) => ({
+    key: sbVoiceKey(name),
+    text: l.jp,
+    voice: VOICES.osaka,
+  }));
 }
 
 /** FNV-1a over voice and text: a recorded file is played only while this

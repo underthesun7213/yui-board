@@ -1,5 +1,5 @@
 import { sayLine } from '../actions/voice';
-import { VOICE } from '../content/voice';
+import { VOICE } from '../content/voice-files';
 import { useT } from '../i18n/useT';
 
 /* A play button for one recorded line (D35); nothing for a line not recorded

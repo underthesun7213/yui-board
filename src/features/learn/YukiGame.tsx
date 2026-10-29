@@ -14,6 +14,8 @@ import {
   tapSkewer,
 } from '../../actions/yuki';
 import { ART } from '../../content/art';
+import { addVoices } from '../../content/voice-files';
+import { yukiVoiceKey, yukiVoiceLines } from '../../content/voice-lines';
 import type { L3 } from '../../content/types';
 import type { Lang } from '../../domain/types';
 import {
@@ -41,6 +43,11 @@ import { prefs } from '../../state/prefs';
 import { useStore } from '../../state/useStore';
 import { yuki, type Skewer } from '../../state/yuki';
 import { Ruby } from '../../ui/Ruby';
+import { Say } from '../../ui/Say';
+
+/* the game's fixed lines have recordings too, once made (gen-voice); the
+   price, which changes with the order, has none */
+addVoices(yukiVoiceLines(TALK, LINES));
 
 const yen = (n: number) => n.toLocaleString('ja-JP') + '円';
 
@@ -116,20 +123,21 @@ function Pops() {
   );
 }
 
-function Said({ who, line }: { who: keyof typeof WHO; line: Line }) {
+function Said({ who, line, k }: { who: keyof typeof WHO; line: Line; k?: string }) {
   const lang = useStore(prefs, (s) => s.lang);
   return (
     <div className="vnline yk-line">
       <b>{WHO[who][lang]}</b>
       <p lang="ja">
         <Ruby text={line.jp} />
+        {k && <Say k={yukiVoiceKey(k)} />}
       </p>
       <p className="yk-mean">{line.mean[lang]}</p>
     </div>
   );
 }
 
-function Feedback({ ok, text }: { ok: boolean; text: L3 }) {
+function Feedback({ ok, text, k }: { ok: boolean; text: L3; k?: string }) {
   const m = useT();
   const lang = useStore(prefs, (s) => s.lang);
   return (
@@ -139,6 +147,7 @@ function Feedback({ ok, text }: { ok: boolean; text: L3 }) {
         {text[lang]}
         {!ok && <> {m.yukiRetry}</>}
       </p>
+      {k && <Say k={yukiVoiceKey(k)} />}
     </div>
   );
 }
@@ -154,7 +163,7 @@ function TalkStep({ k }: { k: keyof typeof TALK }) {
   return (
     <div className="yk-panel">
       {t.who && t.line ? (
-        <Said who={t.who} line={t.line} />
+        <Said who={t.who} line={t.line} k={k} />
       ) : (
         t.lead && <p className="yk-lead">{t.lead[lang]}</p>
       )}
@@ -180,7 +189,9 @@ function TalkStep({ k }: { k: keyof typeof TALK }) {
           </button>
         ))}
       </div>
-      {shown && <Feedback ok={shown.ok} text={shown.fb} />}
+      {shown && last !== undefined && (
+        <Feedback ok={shown.ok} text={shown.fb} k={`${k}-${last + 1}`} />
+      )}
       {picked !== null && (
         <button className="primary wide" data-yk="next" onClick={nextYuki}>
           {m.vnNext}
@@ -200,7 +211,7 @@ function Order() {
   const rows = MENU.filter((x) => (order[x.id] ?? 0) > 0);
   return (
     <div className="yk-panel">
-      <Said who="yuki" line={LINES.order} />
+      <Said who="yuki" line={LINES.order} k="order" />
       <p className="yk-mission">
         {fill(m.yukiMission, { k: KINDS, b: BUDGET.toLocaleString('ja-JP') })}
       </p>
@@ -353,7 +364,7 @@ function Count() {
       {shown && <Feedback ok={shown.ok} text={shown.fb} />}
       {picked !== null && (
         <>
-          <Said who="yuki" line={LINES.reply} />
+          <Said who="yuki" line={LINES.reply} k="reply" />
           <button className="primary wide" data-yk="next" onClick={nextYuki}>
             {m.yukiArrived}
           </button>
@@ -455,7 +466,11 @@ function Eat({ sauce }: { sauce: RefObject<HTMLButtonElement | null> }) {
           )
         )}
       </div>
-      {tease ? <Said who="yuki" line={LINES.tease} /> : <Said who="yuki" line={LINES.rule} />}
+      {tease ? (
+        <Said who="yuki" line={LINES.tease} k="tease" />
+      ) : (
+        <Said who="yuki" line={LINES.rule} k="rule" />
+      )}
       {tease ? (
         <p className="fb hm" role="status">
           <span aria-hidden="true">×</span>
@@ -503,7 +518,7 @@ function End({ onDone }: { onDone: () => void }) {
   const drink = useStore(yuki, (s) => s.drink);
   return (
     <div className="yk-panel">
-      <Said who="staff" line={LINES.end} />
+      <Said who="staff" line={LINES.end} k="end" />
       <div className="fb ok">
         <span aria-hidden="true">○</span>
         <p>{END_NOTE[lang]}</p>
