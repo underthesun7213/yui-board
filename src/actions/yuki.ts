@@ -8,12 +8,17 @@ import {
   orderOk,
   type Line,
 } from '../content/yuki-minigame';
+import { ACH_NO_DOUBLE_DIP } from '../content/achievements';
 import { yuki, YUKI_STEPS } from '../state/yuki';
+import { unlock } from './achievements';
 
 export function nextYuki() {
   const s = yuki.get();
   const i = YUKI_STEPS.indexOf(s.step);
-  yuki.set({ step: YUKI_STEPS[Math.min(i + 1, YUKI_STEPS.length - 1)]!, picked: null, wrong: [] });
+  const step = YUKI_STEPS[Math.min(i + 1, YUKI_STEPS.length - 1)]!;
+  yuki.set({ step, picked: null, wrong: [] });
+  /* out of the shop without a second dip: the kushikatsu picture */
+  if (step === 'end' && !s.warned) unlock(ACH_NO_DOUBLE_DIP);
 }
 
 let popId = 0;

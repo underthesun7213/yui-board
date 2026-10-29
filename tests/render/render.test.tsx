@@ -19,6 +19,7 @@ import {
 } from '../../src/domain/types';
 import { calendarUi } from '../../src/state/calendarUi';
 import { collection } from '../../src/state/collection';
+import { sb, SB_START, type Sb } from '../../src/state/smartball';
 import { data, setData } from '../../src/state/data';
 import { location, type LocState } from '../../src/state/location';
 import { mapUi } from '../../src/state/mapUi';
@@ -82,6 +83,11 @@ const atYuki = (st: Partial<Yuki>) => () => (
   yuki.set({ ...YUKI_START, ...st })
 );
 const YK = /class="yk"/;
+const atBall = (st: Partial<Sb>) => () => (
+  vn.set({ ...VN_START, route: 'osaka', i: OSAKA_BALL, bet: 'takoyaki' }),
+  sb.set({ ...SB_START, ...st })
+);
+const SB = /class="sb"/;
 const GIP = (events as EventSeries[]).find((e) => e.weekly_until)!.id;
 
 async function html(): Promise<string> {
@@ -116,6 +122,7 @@ function reset() {
   collection.set({ cg: {} });
   vn.set(VN_START);
   yuki.set(YUKI_START);
+  sb.set(SB_START);
   ui.set({ report: null, zoom: null });
   delete ART[FAKE_PAGE];
   prefIntro.set({ texts: null });
@@ -154,7 +161,10 @@ const cases: Case[] = [
   [
     'collection-full',
     { name: 'collection' },
-    () => collection.set({ cg: { e_osaka_best: true, e_kyoto_norm: true, e_both: true } }),
+    () =>
+      collection.set({
+        cg: { a_osaka_juice: true, e_osaka_best: true, e_kyoto_norm: true, e_both: true },
+      }),
   ],
   ['cal', { name: 'cal' }],
   ['cal-day', { name: 'cal' }, () => calendarUi.set({ day: '2026-09-22', month: '2026-09' })],
@@ -298,9 +308,31 @@ const cases: Case[] = [
     () => session.set({ mineEvents: { [GIP]: true } }),
   ],
   /* SYS-04: the published terms and privacy policy, every table and the contact */
-  /* level 8, Osaka: the smart-ball result, both ways */
-  ['vn-ball-win', L8, () => vn.set({ ...VN_START, route: 'osaka', i: OSAKA_BALL, ball: 'win' })],
-  ['vn-ball-lose', L8, () => vn.set({ ...VN_START, route: 'osaka', i: OSAKA_BALL, ball: 'lose' })],
+  /* level 8, Osaka: the smart-ball match, from the start to the rematch, and an
+     achievement unlocked in the scene */
+  ['sb-intro', L8, atBall({}), SB],
+  ['sb-launch', L8, atBall({ phase: 'play', ready: true }), SB],
+  ['sb-flip', L8, atBall({ phase: 'play', me: [4], yuki: [6], cur: 3 }), SB],
+  ['sb-yuki', L8, atBall({ phase: 'play', turn: 'yuki', me: [4], line: 'yukiTurn' }), SB],
+  [
+    'sb-tie',
+    L8,
+    atBall({ phase: 'play', extra: 1, me: [3, 3, 3], yuki: [5, 2, 2], line: 'tie' }),
+    SB,
+  ],
+  ['sb-win', L8, atBall({ phase: 'end', me: [10, 3, 0], yuki: [1, 5, 2] }), SB],
+  ['sb-lose', L8, atBall({ phase: 'end', me: [1], yuki: [9] }), SB],
+  ['sb-rematch', L8, atBall({ rematch: true, line: 'practice' }), SB],
+  ['sb-final', L8, atBall({ phase: 'end', rematch: true, me: [2], yuki: [8] }), SB],
+  [
+    'vn-achievement',
+    L8,
+    () => (
+      vn.set({ ...VN_START, route: 'osaka', i: OSAKA_BALL, bet: 'juice', got: 'a_osaka_juice' }),
+      sb.set({ ...SB_START, phase: 'end', me: [5], yuki: [3] })
+    ),
+    /class="achcard"/,
+  ],
   /* the 유우키 미니게임 at Osaka scene 4: every step, a wrong answer, the double-dip tease */
   ['yuki-drink', L8, atYuki({ step: 'drink' }), YK],
   ['yuki-drink-wrong', L8, atYuki({ step: 'drink', wrong: [2] }), YK],

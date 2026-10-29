@@ -2111,3 +2111,228 @@ rt {
   padding: 0;
   margin-top: 12px;
 }
+
+/* level 8: an achievement illustration unlocked in this scene */
+.achcard {
+  margin-top: 14px;
+  padding: 8px 8px 12px;
+  border: 2px solid var(--warning-fg);
+  border-radius: var(--r-m);
+  background: var(--warning-bg);
+}
+.achcard .cgart {
+  aspect-ratio: 3 / 2;
+  border-radius: var(--r-s);
+}
+.achcard small {
+  display: block;
+  margin: 8px 4px 0;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--warning-fg);
+}
+.achcard b {
+  display: block;
+  margin: 2px 4px 0;
+  font-size: 16px;
+  color: var(--ink);
+}
+.achcard q {
+  display: block;
+  margin: 4px 4px 0;
+  font-size: 14px;
+  color: var(--primary);
+  quotes: none;
+}
+.colh {
+  padding: 18px var(--gutter) 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.colh + .cgrid {
+  padding-top: 10px;
+}
+
+/* level 8: the smart-ball match (minigames/smartball.ts draws the table) */
+.sb {
+  display: grid;
+  gap: 12px;
+  margin-top: 12px;
+}
+.sb-hud {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: var(--r-l);
+  background: var(--navy);
+}
+.sb-hud span {
+  margin-right: auto;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--on-navy-muted);
+}
+.sb-hud button {
+  flex: none;
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid #ffffff44;
+  border-radius: 999px;
+  background: transparent;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+}
+.sb-score {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.sb-side {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 2px 8px;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-m);
+  background: var(--canvas);
+}
+.sb-side.now {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px var(--primary-tint);
+}
+.sb-side b {
+  min-width: 0;
+  font-size: 14px;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+.sb-pts {
+  grid-row: span 2;
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--navy);
+  font-variant-numeric: tabular-nums;
+}
+.sb-pips {
+  display: flex;
+  gap: 4px;
+}
+.sb-pips i {
+  width: 10px;
+  height: 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #fff, #cfd8e0 70%);
+}
+.sb-pips i.used {
+  border-color: var(--line);
+  background: var(--line);
+}
+.sb-stage {
+  padding: 6px 0;
+  border-radius: var(--r-l);
+  background: #3a2416;
+  overflow: hidden;
+  touch-action: none;
+}
+.sb-stage canvas {
+  display: block;
+  margin: 0 auto;
+  height: min(58vh, 560px);
+  width: auto;
+  max-width: 100%;
+  aspect-ratio: 300 / 470;
+}
+.sb-how {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--muted);
+  text-align: center;
+}
+.sb-tr {
+  font-size: 14px;
+  color: var(--muted);
+}
+/* the control deck: an arcade cabinet's panel with domed push buttons */
+.sb-deck {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: end;
+  gap: 8px;
+  padding: 16px 12px 10px;
+  border-radius: var(--r-l);
+  background: linear-gradient(180deg, #24435f, #16304a);
+  box-shadow:
+    inset 0 2px 0 #ffffff1a,
+    0 6px 0 #0d2133;
+}
+.sb-slot {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+}
+.sb-slot > span {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  color: var(--on-navy-muted);
+}
+.arc {
+  --cap: #e2463c;
+  --cap-dark: #8f1f18;
+  position: relative;
+  width: 84px;
+  height: 84px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle closest-side,
+    #10181f 0 72%,
+    #eef1f4 75%,
+    #9aa5af 87%,
+    #2a333c 100%
+  );
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.arc::before {
+  content: '';
+  position: absolute;
+  inset: 13px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 36% 28%, #ffffffb0 0 9%, transparent 24%),
+    radial-gradient(circle at 50% 62%, var(--cap) 0 52%, var(--cap-dark) 100%);
+  box-shadow:
+    0 6px 0 var(--cap-dark),
+    0 9px 10px #00000066;
+  transform: translateY(-6px);
+  transition:
+    transform 0.05s,
+    box-shadow 0.05s;
+}
+.arc.held::before {
+  transform: translateY(0);
+  box-shadow:
+    0 1px 0 var(--cap-dark),
+    0 2px 4px #00000066;
+}
+.arc.gold {
+  --cap: #f2b440;
+  --cap-dark: #a66a0e;
+  width: 70px;
+  height: 70px;
+}
+.arc.gold::before {
+  inset: 11px;
+}
+.arc:disabled::before {
+  filter: grayscale(0.8) brightness(0.65);
+}

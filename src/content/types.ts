@@ -58,12 +58,27 @@ export interface VnSay {
   who: 'friend' | 'staff';
   jp: string;
 }
+/** what the smart-ball match is played for, as agreed in the reply before it */
+export type Bet = 'juice' | 'takoyaki';
 export interface VnOption {
   jp: string;
   ok: boolean;
   fb: L3;
   /** what they say back to this reply */
   reply?: VnSay[];
+  /** this reply takes the smart-ball bet, for this */
+  bet?: Bet;
+}
+/** An achievement illustration: unlocked once, the moment its condition is met. */
+export interface Achievement {
+  id: string;
+  route: Route;
+  t: L3;
+  /** the friend's line under the picture */
+  jp: string;
+  /** what the picture shows (the image prompt's scene) */
+  s: string;
+  n: L3;
 }
 /** talk: a line and replies to pick (scored). move: walking on, no choice.
     yuki: the 유우키 미니게임. smartball: the smart-ball match. */

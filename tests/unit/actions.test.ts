@@ -12,9 +12,12 @@ vi.mock('../../src/map/runtime', () => ({
 }));
 
 const { locate, setMode } = await import('../../src/actions/map');
-const { endingFor, nextScene, pickOption, pickRoute, playBall, scoredScenes } =
+const { endingFor, nextScene, pickOption, pickRoute, scoredScenes } =
   await import('../../src/actions/learn');
-const { yuki } = await import('../../src/state/yuki');
+const { endBall } = await import('../../src/actions/achievements');
+const { nextYuki } = await import('../../src/actions/yuki');
+const { yuki, YUKI_START } = await import('../../src/state/yuki');
+const { ACH_BET, ACH_NO_DOUBLE_DIP } = await import('../../src/content/achievements');
 const { location } = await import('../../src/state/location');
 const { mapUi } = await import('../../src/state/mapUi');
 const { collection } = await import('../../src/state/collection');
@@ -118,16 +121,49 @@ describe('episode 8', () => {
     expect(yuki.get().step).toBe('drink');
   });
 
-  it('plays the smart-ball match once per scene', () => {
+  /* walk the Osaka route up to the scene that asks for the bet */
+  const toBet = () => {
     pickRoute('osaka');
-    playBall(0.1);
-    expect(vn.get().ball).toBe('win');
-    playBall(0.9);
-    expect(vn.get().ball).toBe('win');
+    const at = VN.osaka.scenes.findIndex((s) => s.opts.some((o) => o.bet));
+    for (let i = 0; i < at; i++) nextScene();
+    return VN.osaka.scenes[at]!.opts;
+  };
+
+  it('unlocks the picture of the bet taken, win or lose, and only once', () => {
+    const opts = toBet();
+    pickOption(opts.findIndex((o) => o.bet === 'takoyaki'));
+    expect(vn.get().bet).toBe('takoyaki');
     nextScene();
-    expect(vn.get().ball).toBe(null);
-    playBall(0.9);
+    endBall('lose');
     expect(vn.get().ball).toBe('lose');
+    expect(collection.get().cg[ACH_BET.takoyaki]).toBe(true);
+    expect(vn.get().got).toBe(ACH_BET.takoyaki);
+    expect(collection.get().cg[ACH_BET.juice]).toBeUndefined();
+    /* the rematch changes the result, not what is owned or shown again */
+    vn.set({ got: null });
+    endBall('win');
+    expect(vn.get().ball).toBe('win');
+    expect(vn.get().got).toBe(null);
+    nextScene();
+    expect(vn.get().got).toBe(null);
+  });
+
+  it('unlocks nothing when the bet was turned down', () => {
+    const opts = toBet();
+    pickOption(opts.findIndex((o) => !o.bet));
+    nextScene();
+    endBall('win');
+    expect(Object.keys(collection.get().cg).filter((k) => k.startsWith('a_'))).toEqual([]);
+  });
+
+  it('gives the kushikatsu picture for leaving the shop without a second dip', () => {
+    yuki.set({ ...YUKI_START, step: 'leave', warned: 1 });
+    nextYuki();
+    expect(yuki.get().step).toBe('end');
+    expect(collection.get().cg[ACH_NO_DOUBLE_DIP]).toBeUndefined();
+    yuki.set({ ...YUKI_START, step: 'leave', warned: 0 });
+    nextYuki();
+    expect(collection.get().cg[ACH_NO_DOUBLE_DIP]).toBe(true);
   });
 
   it('gives the both-routes card only after both routes', () => {

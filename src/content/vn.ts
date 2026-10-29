@@ -196,6 +196,7 @@ export const VN: Record<Route, VnRoute> = {
               ko: '내기를 노리(ノリ)로 받아치면 분위기가 산다.',
             },
             reply: [{ who: 'friend', jp: 'おっ、ええやん！ほな{手加減|てかげん}せえへんで〜' }],
+            bet: 'juice',
           },
           {
             jp: 'え、お{金|かね}{賭|か}けるのはちょっと……',
@@ -221,20 +222,21 @@ export const VN: Record<Route, VnRoute> = {
               ko: '판을 키워서 되받는 오사카식 노리.',
             },
             reply: [{ who: 'friend', jp: 'おっ、{上|あ}げてきたな！ええで、{乗|の}った！' }],
+            bet: 'takoyaki',
           },
         ],
       },
       {
-        /* the smart-ball mini-game is not built yet: a coin toss stands in */
+        /* the smart-ball mini-game (SmartBall): win or lose, the bet's achievement unlocks */
         kind: 'smartball',
         s: 'The smart-ball machines, the two playing side by side',
         jp: '',
         win: 'えーっ！！もう{一回|いっかい}！……いや、わかったわかった、{俺|おれ}の{負|ま}けや。しゃあないな、おごったるわ',
         lose: 'よっしゃー！{俺|おれ}の{勝|か}ちや！ごちそうさまで〜す',
         note: {
-          ja: 'スマートボールで勝負！（ミニゲームは準備中。今はコイントスで勝ち負けが決まる）',
-          en: 'A smart-ball match! (The mini-game is still being made; for now a coin toss decides.)',
-          ko: '스마트볼 승부! (미니게임은 준비 중. 지금은 동전 던지기로 승패가 정해진다)',
+          ja: 'スマートボールで勝負！フリッパーで玉を落とさずに、穴の数字を稼ごう。',
+          en: 'A smart-ball match! Keep the marble up with the flippers and score the numbers on the holes.',
+          ko: '스마트볼 승부! 플리퍼로 구슬을 떨어뜨리지 말고 구멍의 숫자를 모으자.',
         },
         opts: [],
       },

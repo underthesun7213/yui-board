@@ -1,14 +1,8 @@
-import {
-  endingFor,
-  nextScene,
-  pickOption,
-  pickRoute,
-  playBall,
-  resetVn,
-} from '../../actions/learn';
+import { endingFor, nextScene, pickOption, pickRoute, resetVn } from '../../actions/learn';
 import { go } from '../../actions/nav';
-import { YukiGame } from '../../app/screens';
-import { endingKey, sceneKey } from '../../content/art';
+import { SmartBall, YukiGame } from '../../app/screens';
+import { ACHIEVEMENTS } from '../../content/achievements';
+import { achievementKey, endingKey, sceneKey } from '../../content/art';
 import { plain } from '../../content/ruby';
 import type { VnLesson, VnSay } from '../../content/types';
 import { VN } from '../../content/vn';
@@ -77,6 +71,7 @@ export function VnGame({ lesson }: { lesson: VnLesson }) {
     );
   }
   const kind = sc.kind ?? 'talk';
+  const got = v.got ? ACHIEVEMENTS.find((a) => a.id === v.got) : undefined;
   const picked = v.picked === null ? null : sc.opts[v.picked];
   /* a line, by the route's friend or by the shop staff */
   const say = (l: VnSay, key: string, voice?: string) => (
@@ -108,7 +103,7 @@ export function VnGame({ lesson }: { lesson: VnLesson }) {
             {/* the 유우키 미니게임 brings its own pictures; Next ends it */}
             <YukiGame onDone={nextScene} />
           </>
-        ) : (
+        ) : kind === 'smartball' ? null : (
           <>
             <ArtImage k={sceneKey(v.route, v.i)} alt={plain(sc.jp || sc.s)} className="cgart" />
             {sc.note && <p className="vnnote">{sc.note[lang]}</p>}
@@ -144,24 +139,29 @@ export function VnGame({ lesson }: { lesson: VnLesson }) {
               </>
             )}
             {kind === 'move' && next}
-            {kind === 'smartball' &&
-              (v.ball ? (
-                <>
-                  <p className={'fb ' + (v.ball === 'win' ? 'ok' : 'hm')} role="status">
-                    <span aria-hidden="true">{v.ball === 'win' ? '○' : '△'}</span>
-                    <span className="vnresult">
-                      {v.ball === 'win' ? m.vnBallWin : m.vnBallLose}
-                    </span>
-                  </p>
-                  {say({ who: 'friend', jp: (v.ball === 'win' ? sc.win : sc.lose) ?? '' }, 'ball')}
-                  {next}
-                </>
-              ) : (
-                <button className="primary wide" data-ball onClick={() => playBall()}>
-                  {m.vnBallPlay}
-                </button>
-              ))}
           </>
+        )}
+        {kind === 'smartball' && (
+          <>
+            {sc.note && <p className="vnnote">{sc.note[lang]}</p>}
+            {/* the smart-ball table; its end shows Yuki's win or lose line and Next */}
+            <SmartBall
+              name={R.name[lang]}
+              win={sc.win ?? ''}
+              lose={sc.lose ?? ''}
+              onDone={nextScene}
+            />
+          </>
+        )}
+        {got && (
+          <div className="achcard" role="status" data-ach={got.id}>
+            <ArtImage k={achievementKey(got.id)} alt={plain(got.jp)} className="cgart" />
+            <small>{m.achGot}</small>
+            <b>{got.t[lang]}</b>
+            <q lang="ja">
+              <Ruby text={got.jp} />
+            </q>
+          </div>
         )}
       </div>
     </>
