@@ -76,7 +76,12 @@ const GIP = (events as EventSeries[]).find((e) => e.weekly_until)!.id;
 
 async function html(): Promise<string> {
   const errors: unknown[] = [];
-  const { prelude } = await prerender(<App />, { onError: (e) => void errors.push(e) });
+  /* no size limit per chunk: a long screen (the terms) would otherwise come
+     out as its loading fallback with the content moved after it */
+  const { prelude } = await prerender(<App />, {
+    onError: (e) => void errors.push(e),
+    progressiveChunkSize: Infinity,
+  });
   const out = await new Response(prelude).text();
   if (errors.length) throw errors[0];
   return out;
@@ -281,6 +286,8 @@ const cases: Case[] = [
     { name: 'weekEdit', id: GIP, date: '2026-10-20' },
     () => session.set({ mineEvents: { [GIP]: true } }),
   ],
+  /* SYS-04: the published terms and privacy policy, every table and the contact */
+  ['legal', { name: 'legal' }, undefined, /class="legal"[\s\S]*<table>[\s\S]*yunabi@juha\.dev/],
   ['me-empty', { name: 'me' }, undefined, /class="empty"/],
   [
     'me-items',
@@ -345,6 +352,7 @@ const MARK: Record<Route['name'], RegExp> = {
   eventEdit: /class="form"/,
   weekEdit: /class="form"/,
   me: /class="mylist"/,
+  legal: /class="legal"/,
 };
 const BAD = /undefined|NaN|\[object Object\]/;
 function check(out: string, mark?: RegExp) {

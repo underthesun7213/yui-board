@@ -14,6 +14,7 @@ export const loaders = {
   eventForm: () => import('../features/write/EventForm'),
   weekForm: () => import('../features/write/WeekForm'),
   me: () => import('../features/me/MyItems'),
+  legal: () => import('../features/legal/Legal'),
   report: () => import('../features/report/ReportSheet'),
   zoom: () => import('../features/learn/ComicZoom'),
 };
@@ -28,6 +29,7 @@ export const PlaceForm = lazy(() => loaders.placeForm().then((m) => ({ default: 
 export const EventForm = lazy(() => loaders.eventForm().then((m) => ({ default: m.EventForm })));
 export const WeekForm = lazy(() => loaders.weekForm().then((m) => ({ default: m.WeekForm })));
 export const MyItems = lazy(() => loaders.me().then((m) => ({ default: m.MyItems })));
+export const Legal = lazy(() => loaders.legal().then((m) => ({ default: m.Legal })));
 export const ReportSheet = lazy(() => loaders.report().then((m) => ({ default: m.ReportSheet })));
 export const ComicZoom = lazy(() => loaders.zoom().then((m) => ({ default: m.ComicZoom })));
 

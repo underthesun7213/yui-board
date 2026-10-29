@@ -23,6 +23,7 @@ import { net } from '../../state/net';
 import { prefs } from '../../state/prefs';
 import { session } from '../../state/session';
 import { useStore } from '../../state/useStore';
+import { FirstPostNote } from '../../ui/FirstPostNote';
 import { BackBar } from '../../ui/BackBar';
 import { Captcha } from '../../ui/Captcha';
 import { describedBy, Field, WriteBlocked } from '../../ui/Field';
@@ -254,7 +255,7 @@ function PlaceFormBody({ id, editing, mine }: { id?: number; editing?: Place; mi
           </select>
         </Field>
 
-        {!hasAccount && !id && <p className="note">{m.accountNote}</p>}
+        {!hasAccount && !id && <FirstPostNote />}
         <WriteBlocked online={online} framed={framed} />
         <Captcha />
         {err && !err.field && (

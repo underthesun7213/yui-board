@@ -198,6 +198,10 @@ export const ko = {
   myT: '내가 올린 것',
   myOpen: '내가 올린 것',
   myEmpty: '이 브라우저에서 올린 것이 아직 없습니다.',
+  legalT: '이용약관과 개인정보',
+  legalLink: '이용약관·개인정보처리방침·문의',
+  legalAgree: '등록하면 이용약관과 개인정보처리방침에 동의한 것으로 봅니다.',
+  legalMail: '운영자에게 메일 보내기',
   st: {
     visible: '보이는 중',
     hidden_review: '신고로 숨겨짐 — 검토 중',

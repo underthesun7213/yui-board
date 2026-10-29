@@ -199,6 +199,10 @@ export const en = {
   myT: 'My posts',
   myOpen: 'Things I posted',
   myEmpty: 'Nothing posted from this browser yet.',
+  legalT: 'Terms and privacy',
+  legalLink: 'Terms, privacy and contact',
+  legalAgree: 'Posting means you agree to the terms and privacy policy.',
+  legalMail: 'Email the operator',
   st: {
     visible: 'Shown',
     hidden_review: 'Hidden after reports — under review',

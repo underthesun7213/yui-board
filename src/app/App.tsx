@@ -15,6 +15,7 @@ import {
   EventDetail,
   EventForm,
   LearnList,
+  Legal,
   Lesson,
   MapScreen,
   MyItems,
@@ -53,6 +54,8 @@ function Screen({ r }: { r: Route }) {
       return <WeekForm id={r.id} date={r.date} />;
     case 'me':
       return <MyItems />;
+    case 'legal':
+      return <Legal />;
   }
 }
 

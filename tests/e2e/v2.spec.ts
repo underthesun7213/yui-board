@@ -297,3 +297,28 @@ test('TR-Q2 an event shows translated, with the original one tap away and rewrit
   await expect(ev.locator('h1')).toHaveAttribute('lang', 'en');
   await expect(ev.locator('.trnote')).toHaveCount(1);
 });
+
+test('SYS-04 the terms, privacy policy and contact open from home and from a first post', async ({
+  page,
+  errors,
+}) => {
+  void errors;
+  await page.goto('./');
+  await page.getByRole('button', { name: /Terms, privacy and contact/ }).click();
+  await expect(page).toHaveURL(/#\/legal$/);
+  const doc = page.locator('article.legal');
+  await expect(doc.locator('h2')).toHaveText(['Terms of Use', 'Privacy Policy', 'Contact']);
+  await expect(doc.locator('table')).toHaveCount(3);
+  await expect(doc.getByRole('link', { name: 'Email the operator' })).toHaveAttribute(
+    'href',
+    'mailto:yunabi@juha.dev',
+  );
+  /* in the screen's language */
+  await page.evaluate(() => localStorage.setItem('yui.v1.lang', JSON.stringify('ja')));
+  await page.reload();
+  await expect(doc.locator('h2').first()).toHaveText('利用規約');
+  /* before the first post, the form links here too */
+  await page.goto('./#/cal/new');
+  await page.getByRole('button', { name: /利用規約・プライバシー・お問い合わせ/ }).click();
+  await expect(page).toHaveURL(/#\/legal$/);
+});
