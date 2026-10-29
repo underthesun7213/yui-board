@@ -11,6 +11,7 @@ import {
   renderImagePrompts,
 } from '../../scripts/gen-comic-scripts.mjs';
 import { ART, endingKey, pageKey, sceneKey } from '../../src/content/art';
+import { YUKI_ART } from '../../src/content/yuki-minigame';
 import { ENDINGS } from '../../src/content/endings';
 import { LESSONS } from '../../src/content/lessons';
 import { plain, segments } from '../../src/content/ruby';
@@ -174,6 +175,7 @@ describe('routes', () => {
       { name: 'learn' },
       { name: 'lesson', lid: 'l3' },
       { name: 'collection' },
+      { name: 'yuki' },
       { name: 'map' },
       { name: 'cal' },
       { name: 'event', id: 4, date: '2026-09-22' },
@@ -369,6 +371,7 @@ describe('art', () => {
     for (const r of ['osaka', 'kyoto'] as const)
       VN[r].scenes.forEach((_, i) => slots.add(sceneKey(r, i)));
     for (const e of ENDINGS) slots.add(endingKey(e.id));
+    for (const k of Object.values(YUKI_ART)) slots.add(k);
     for (const k of Object.keys(ART))
       expect(slots.has(k), `src/art/${k} matches no slot`).toBe(true);
   });
