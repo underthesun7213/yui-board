@@ -10,12 +10,18 @@ import {
   toggleSound,
 } from '../../actions/smartball';
 import { SB_LINES, SB_TEXT, type SbText } from '../../content/smartball';
+import { addVoices } from '../../content/voice-files';
+import { sbVoiceKey, sbVoiceLines } from '../../content/voice-lines';
 import { fill } from '../../i18n';
 import { useT } from '../../i18n/useT';
 import { prefs } from '../../state/prefs';
 import { sb, sbLimit, sbTotal } from '../../state/smartball';
 import { useStore } from '../../state/useStore';
 import { Ruby } from '../../ui/Ruby';
+import { Say } from '../../ui/Say';
+
+/* Yuki's match lines have their recordings too, once made (gen-voice) */
+addVoices(sbVoiceLines(SB_LINES));
 
 type Btn = 'left' | 'launch' | 'right';
 
@@ -27,11 +33,15 @@ export function SmartBall({
   name,
   win,
   lose,
+  winVoice,
+  loseVoice,
   onDone,
 }: {
   name: string;
   win: string;
   lose: string;
+  winVoice: string;
+  loseVoice: string;
   onDone: () => void;
 }) {
   const m = useT();
@@ -198,6 +208,7 @@ export function SmartBall({
           <b>{name}</b>
           <p lang="ja">
             <Ruby text={line.jp} />
+            <Say k={sbVoiceKey(s.line)} />
           </p>
           <p className="sb-tr">{line.t[lang]}</p>
         </div>
@@ -214,6 +225,7 @@ export function SmartBall({
             <b>{name}</b>
             <p lang="ja">
               <Ruby text={won ? win : lose} />
+              <Say k={won ? winVoice : loseVoice} />
             </p>
           </div>
           <div className="btns">

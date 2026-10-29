@@ -12,7 +12,15 @@ import { useStore } from '../../state/useStore';
 import { vn } from '../../state/vn';
 import { ArtImage } from '../../ui/ArtImage';
 import { BackBar } from '../../ui/BackBar';
-import { endingVoiceKey, optVoiceKey, sceneVoiceKey } from '../../content/voice-lines';
+import {
+  achievementVoiceKey,
+  ballVoiceKey,
+  endingVoiceKey,
+  moreVoiceKey,
+  optVoiceKey,
+  replyVoiceKey,
+  sceneVoiceKey,
+} from '../../content/voice-lines';
 import { Ruby } from '../../ui/Ruby';
 import { Say } from '../../ui/Say';
 
@@ -40,7 +48,8 @@ export function VnGame({ lesson }: { lesson: VnLesson }) {
       </>
     );
   }
-  const R = VN[v.route];
+  const route = v.route;
+  const R = VN[route];
   const sc = R.scenes[v.i];
   if (!sc) {
     const card = endingFor(v.route, v.score);
@@ -108,7 +117,7 @@ export function VnGame({ lesson }: { lesson: VnLesson }) {
             <ArtImage k={sceneKey(v.route, v.i)} alt={plain(sc.jp || sc.s)} className="cgart" />
             {sc.note && <p className="vnnote">{sc.note[lang]}</p>}
             {sc.jp && say({ who: 'friend', jp: sc.jp }, 'jp', sceneVoiceKey(v.route, v.i))}
-            {sc.more?.map((l, i) => say(l, 'more' + i))}
+            {sc.more?.map((l, i) => say(l, 'more' + i, moreVoiceKey(route, v.i, i)))}
             {kind === 'talk' && (
               <>
                 <div className="opts">
@@ -127,7 +136,9 @@ export function VnGame({ lesson }: { lesson: VnLesson }) {
                 </div>
                 {picked && (
                   <>
-                    {picked.reply?.map((l, i) => say(l, 'reply' + i))}
+                    {picked.reply?.map((l, i) =>
+                      say(l, 'reply' + i, replyVoiceKey(route, v.i, v.picked ?? 0, i)),
+                    )}
                     <div className={'fb ' + (picked.ok ? 'ok' : 'hm')} role="status">
                       <span aria-hidden="true">{picked.ok ? '○' : '△'}</span>
                       <p>{picked.fb[lang]}</p>
@@ -149,6 +160,8 @@ export function VnGame({ lesson }: { lesson: VnLesson }) {
               name={R.name[lang]}
               win={sc.win ?? ''}
               lose={sc.lose ?? ''}
+              winVoice={ballVoiceKey(v.route, v.i, 'win')}
+              loseVoice={ballVoiceKey(v.route, v.i, 'lose')}
               onDone={nextScene}
             />
           </>
@@ -160,6 +173,7 @@ export function VnGame({ lesson }: { lesson: VnLesson }) {
             <b>{got.t[lang]}</b>
             <q lang="ja">
               <Ruby text={got.jp} />
+              <Say k={achievementVoiceKey(got.id)} />
             </q>
           </div>
         )}

@@ -1,4 +1,4 @@
-import { VOICE } from '../content/voice';
+import { VOICE } from '../content/voice-files';
 import { playAudio } from '../platform/audio';
 
 /** Plays a recorded line (D35) if it has one. */

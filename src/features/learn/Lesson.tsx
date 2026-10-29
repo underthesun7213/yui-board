@@ -1,3 +1,5 @@
+/* registers the lessons' and episode 8's recorded lines with the voice map */
+import '../../content/voice';
 import { LESSONS } from '../../content/lessons';
 import { useT } from '../../i18n/useT';
 import { prefs } from '../../state/prefs';

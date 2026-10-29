@@ -11,12 +11,13 @@ import {
   renderImagePrompts,
 } from '../../scripts/gen-comic-scripts.mjs';
 import { ART, achievementKey, endingKey, pageKey, sceneKey } from '../../src/content/art';
-import { YUKI_ART } from '../../src/content/yuki-minigame';
+import { LINES as YUKI_LINES, TALK, YUKI_ART } from '../../src/content/yuki-minigame';
+import { SB_LINES } from '../../src/content/smartball';
 import { ENDINGS } from '../../src/content/endings';
 import { ACHIEVEMENTS } from '../../src/content/achievements';
 import { LESSONS } from '../../src/content/lessons';
 import { plain, segments } from '../../src/content/ruby';
-import { voiceHash, voiceLines } from '../../src/content/voice-lines';
+import { sbVoiceLines, voiceHash, voiceLines, yukiVoiceLines } from '../../src/content/voice-lines';
 import { toSsml } from '../../scripts/gen-voice.mjs';
 import { BEST_MISSES, VN } from '../../src/content/vn';
 import {
@@ -275,7 +276,11 @@ describe('comic pages (Y-J1)', () => {
           expect(!!p.jp === !!p.who, `${l.id}: ${p.jp ?? p.cap}`).toBe(true);
   });
   it('records only lines that exist, and reads furigana in the SSML (D35)', () => {
-    const lines = voiceLines(LESSONS, VN, ENDINGS);
+    const lines = [
+      ...voiceLines(LESSONS, VN, ENDINGS, ACHIEVEMENTS),
+      ...yukiVoiceLines(TALK, YUKI_LINES),
+      ...sbVoiceLines(SB_LINES),
+    ];
     const keys = new Set(lines.map((l) => l.key));
     expect(keys.size).toBe(lines.length);
     const made = JSON.parse(readFileSync('src/voice/manifest.json', 'utf8')) as Record<

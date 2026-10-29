@@ -41,12 +41,15 @@ const BUDGETS = [
     name: 'yuki mini-game',
     kb: 12,
     roots: ['src/features/learn/YukiGame.tsx'],
+    /* it opens only from inside level 8, so the lesson screen is already loaded */
+    after: 'lessons and game',
   },
   {
     /* the smart-ball match: its own lazy screen and the table runtime */
     name: 'smart-ball mini-game',
     kb: 12,
     roots: ['src/features/learn/SmartBall.tsx'],
+    after: 'lessons and game',
   },
 ];
 
@@ -83,6 +86,11 @@ for (const b of BUDGETS) {
   let set = files(closure(b.roots));
   /* a lazy group only pays for what the first screen has not already loaded */
   if (b.roots[0] !== 'index.html') set = new Set([...set].filter((f) => !home.has(f)));
+  /* nor for what the screen it opens from has loaded */
+  if (b.after) {
+    const before = files(closure(BUDGETS.find((x) => x.name === b.after).roots));
+    set = new Set([...set].filter((f) => !before.has(f)));
+  }
   const total = [...set].reduce((n, f) => n + gz(f), 0);
   const ok = total <= b.kb * KB;
   if (!ok) failed = true;

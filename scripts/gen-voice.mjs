@@ -76,8 +76,17 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   const { LESSONS } = await load('src/content/lessons.ts');
   const { VN } = await load('src/content/vn.ts');
   const { ENDINGS } = await load('src/content/endings.ts');
-  const { voiceLines, voiceHash } = await load('src/content/voice-lines.ts');
-  const lines = voiceLines(LESSONS, VN, ENDINGS);
+  const { ACHIEVEMENTS } = await load('src/content/achievements.ts');
+  const { TALK, LINES } = await load('src/content/yuki-minigame.ts');
+  const { SB_LINES } = await load('src/content/smartball.ts');
+  const { voiceLines, voiceHash, yukiVoiceLines, sbVoiceLines } = await load(
+    'src/content/voice-lines.ts',
+  );
+  const lines = [
+    ...voiceLines(LESSONS, VN, ENDINGS, ACHIEVEMENTS),
+    ...yukiVoiceLines(TALK, LINES),
+    ...sbVoiceLines(SB_LINES),
+  ];
   const made = existsSync(MANIFEST) ? JSON.parse(readFileSync(MANIFEST, 'utf8')) : {};
   const file = (k) => join(DIR, `${k}.mp3`);
   const todo = lines.filter((l) => made[l.key] !== voiceHash(l) || !existsSync(file(l.key)));
