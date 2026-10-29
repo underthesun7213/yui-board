@@ -102,7 +102,7 @@ test.describe('home, tabs, language, back', () => {
   test('Y-C hash links open their screen', async ({ page, errors }) => {
     void errors;
     await page.goto('./#/learn/collection');
-    await expect(page.locator('.cgrid')).toBeVisible();
+    await expect(page.locator('.cgrid').first()).toBeVisible();
     await tap(page, '.bar .back');
     await expect(page.locator('.lesson')).toHaveCount(8);
   });
