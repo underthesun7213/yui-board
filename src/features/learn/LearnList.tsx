@@ -29,8 +29,9 @@ export function LearnList() {
           </span>
         </button>
       ))}
-      {/* 유우키 미니게임, in test: reached from here until the level 8 scenario places it */}
-      <button className="lesson" data-lesson="yuki" onClick={openYuki}>
+      {/* 유우키 미니게임, in test: reached from here until the level 8 scenario places it.
+          Its own class, so the eight lessons are still the .lesson rows. */}
+      <button className="minigame" data-lesson="yuki" onClick={openYuki}>
         <span className="lvbadge vn" aria-hidden="true">
           串
         </span>

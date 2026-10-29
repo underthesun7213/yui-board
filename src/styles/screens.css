@@ -825,6 +825,7 @@ main {
 
 /* ---------- Japanese ---------- */
 .lesson,
+.minigame,
 .colrow {
   display: flex;
   align-items: center;
