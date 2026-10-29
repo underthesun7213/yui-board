@@ -1,8 +1,16 @@
-import { endingFor, nextScene, pickOption, pickRoute, resetVn } from '../../actions/learn';
+import {
+  endingFor,
+  nextScene,
+  pickOption,
+  pickRoute,
+  playBall,
+  resetVn,
+} from '../../actions/learn';
 import { go } from '../../actions/nav';
+import { YukiGame } from '../../app/screens';
 import { endingKey, sceneKey } from '../../content/art';
 import { plain } from '../../content/ruby';
-import type { VnLesson } from '../../content/types';
+import type { VnLesson, VnSay } from '../../content/types';
 import { VN } from '../../content/vn';
 import { useT } from '../../i18n/useT';
 import { prefs } from '../../state/prefs';
@@ -54,7 +62,7 @@ export function VnGame({ lesson }: { lesson: VnLesson }) {
           </q>
           <p className="endnote">{card.n[lang]}</p>
           <p className="endscore">
-            {m.vnScore} {v.score} / {R.scenes.length}
+            {m.vnScore} {v.score} / {R.scenes.filter((s) => s.opts.length).length}
           </p>
           <div className="btns">
             <button className="primary" onClick={resetVn}>
@@ -68,7 +76,23 @@ export function VnGame({ lesson }: { lesson: VnLesson }) {
       </>
     );
   }
+  const kind = sc.kind ?? 'talk';
   const picked = v.picked === null ? null : sc.opts[v.picked];
+  /* a line, by the route's friend or by the shop staff */
+  const say = (l: VnSay, key: string, voice?: string) => (
+    <div className="vnline" key={key}>
+      <b>{l.who === 'staff' ? m.vnStaff : R.name[lang]}</b>
+      <p lang="ja">
+        <Ruby text={l.jp} />
+        {voice && <Say k={voice} />}
+      </p>
+    </div>
+  );
+  const next = (
+    <button className="primary wide" data-next onClick={nextScene}>
+      {m.vnNext}
+    </button>
+  );
   return (
     <>
       {bar}
@@ -78,38 +102,65 @@ export function VnGame({ lesson }: { lesson: VnLesson }) {
             <i key={i} className={i < v.i ? 'past' : i === v.i ? 'now' : ''} />
           ))}
         </div>
-        <ArtImage k={sceneKey(v.route, v.i)} alt={plain(sc.jp)} className="cgart" />
-        <div className="vnline">
-          <b>{R.name[lang]}</b>
-          <p lang="ja">
-            <Ruby text={sc.jp} />
-            <Say k={sceneVoiceKey(v.route, v.i)} />
-          </p>
-        </div>
-        <div className="opts">
-          {sc.opts.map((o, i) => (
-            <button
-              key={i}
-              lang="ja"
-              data-opt={i}
-              className={picked ? 'chosen' + (i === v.picked ? ' me' : '') : ''}
-              disabled={!!picked}
-              onClick={() => pickOption(i)}
-            >
-              <Ruby text={o.jp} />
-            </button>
-          ))}
-        </div>
-        {picked && (
+        {kind === 'yuki' ? (
           <>
-            <div className={'fb ' + (picked.ok ? 'ok' : 'hm')} role="status">
-              <span aria-hidden="true">{picked.ok ? '○' : '△'}</span>
-              <p>{picked.fb[lang]}</p>
-              <Say k={optVoiceKey(v.route, v.i, v.picked ?? 0)} />
-            </div>
-            <button className="primary wide" onClick={nextScene}>
-              {m.vnNext}
-            </button>
+            {sc.note && <p className="vnnote">{sc.note[lang]}</p>}
+            {/* the 유우키 미니게임 brings its own pictures; Next ends it */}
+            <YukiGame onDone={nextScene} />
+          </>
+        ) : (
+          <>
+            <ArtImage k={sceneKey(v.route, v.i)} alt={plain(sc.jp || sc.s)} className="cgart" />
+            {sc.note && <p className="vnnote">{sc.note[lang]}</p>}
+            {sc.jp && say({ who: 'friend', jp: sc.jp }, 'jp', sceneVoiceKey(v.route, v.i))}
+            {sc.more?.map((l, i) => say(l, 'more' + i))}
+            {kind === 'talk' && (
+              <>
+                <div className="opts">
+                  {sc.opts.map((o, i) => (
+                    <button
+                      key={i}
+                      lang="ja"
+                      data-opt={i}
+                      className={picked ? 'chosen' + (i === v.picked ? ' me' : '') : ''}
+                      disabled={!!picked}
+                      onClick={() => pickOption(i)}
+                    >
+                      <Ruby text={o.jp} />
+                    </button>
+                  ))}
+                </div>
+                {picked && (
+                  <>
+                    {picked.reply?.map((l, i) => say(l, 'reply' + i))}
+                    <div className={'fb ' + (picked.ok ? 'ok' : 'hm')} role="status">
+                      <span aria-hidden="true">{picked.ok ? '○' : '△'}</span>
+                      <p>{picked.fb[lang]}</p>
+                      <Say k={optVoiceKey(v.route, v.i, v.picked ?? 0)} />
+                    </div>
+                    {next}
+                  </>
+                )}
+              </>
+            )}
+            {kind === 'move' && next}
+            {kind === 'smartball' &&
+              (v.ball ? (
+                <>
+                  <p className={'fb ' + (v.ball === 'win' ? 'ok' : 'hm')} role="status">
+                    <span aria-hidden="true">{v.ball === 'win' ? '○' : '△'}</span>
+                    <span className="vnresult">
+                      {v.ball === 'win' ? m.vnBallWin : m.vnBallLose}
+                    </span>
+                  </p>
+                  {say({ who: 'friend', jp: (v.ball === 'win' ? sc.win : sc.lose) ?? '' }, 'ball')}
+                  {next}
+                </>
+              ) : (
+                <button className="primary wide" data-ball onClick={() => playBall()}>
+                  {m.vnBallPlay}
+                </button>
+              ))}
           </>
         )}
       </div>

@@ -12,7 +12,6 @@ export const TAB_OF: Record<RouteName, number> = {
   learn: 1,
   lesson: 1,
   collection: 1,
-  yuki: 1,
   map: 2,
   cal: 3,
   event: 3,
@@ -31,7 +30,6 @@ export const PARENT: Partial<Record<RouteName, Route>> = {
   cal: { name: 'home' },
   lesson: { name: 'learn' },
   collection: { name: 'learn' },
-  yuki: { name: 'learn' },
   event: { name: 'cal' },
   placeNew: { name: 'map' },
   placeEdit: { name: 'map' },
@@ -52,8 +50,6 @@ export function formatRoute(r: Route): string {
       return '#/learn/' + encodeURIComponent(r.lid);
     case 'collection':
       return '#/learn/collection';
-    case 'yuki':
-      return '#/learn/yuki';
     case 'map':
       return '#/map';
     case 'cal':
@@ -85,9 +81,7 @@ export function parseRoute(hash: string): Route | null {
     if (p.length === 2)
       return p[1] === 'collection'
         ? { name: 'collection' }
-        : p[1] === 'yuki'
-          ? { name: 'yuki' }
-          : { name: 'lesson', lid: decodeURIComponent(p[1]!) };
+        : { name: 'lesson', lid: decodeURIComponent(p[1]!) };
   }
   const num = (s: string | undefined) => (s && /^\d+$/.test(s) ? +s : null);
   const day = (s: string | undefined) => (s && /^\d{4}-\d\d-\d\d$/.test(s) ? s : null);

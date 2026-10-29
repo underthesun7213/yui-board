@@ -200,7 +200,7 @@ Write the Japanese exactly as given, horizontally or vertically, nothing else: n
 
 ```text
 Style: Korean-webtoon anime illustration, clean dark line art, soft painterly cel shading, muted natural colours, natural proportions (not chibi). Everyday places in Kansai, Japan, drawn as they really look, with detailed backgrounds.
-One horizontal background illustration, aspect ratio 4:3, of the place where this happens, seen at eye level: Two friends meeting at a crowded Osaka Station concourse, one waving hard.
+One horizontal background illustration, aspect ratio 4:3, of the place where this happens, seen at eye level: Shinsekai street by day, crowded, Yuki waving hard.
 Draw the place only: no people in the foreground, at most a few small distant passers-by with no visible faces. No text, signs left blank or unreadable, no speech balloons.
 ```
 
@@ -208,7 +208,7 @@ Draw the place only: no people in the foreground, at most a few small distant pa
 
 ```text
 Style: Korean-webtoon anime illustration, clean dark line art, soft painterly cel shading, muted natural colours, natural proportions (not chibi). Everyday places in Kansai, Japan, drawn as they really look, with detailed backgrounds.
-One horizontal background illustration, aspect ratio 4:3, of the place where this happens, seen at eye level: A takoyaki stall, steam rising, friend already eating.
+One horizontal background illustration, aspect ratio 4:3, of the place where this happens, seen at eye level: Shinsekai street by day, Yuki relaxed with his hands in his pockets.
 Draw the place only: no people in the foreground, at most a few small distant passers-by with no visible faces. No text, signs left blank or unreadable, no speech balloons.
 ```
 
@@ -216,7 +216,7 @@ Draw the place only: no people in the foreground, at most a few small distant pa
 
 ```text
 Style: Korean-webtoon anime illustration, clean dark line art, soft painterly cel shading, muted natural colours, natural proportions (not chibi). Everyday places in Kansai, Japan, drawn as they really look, with detailed backgrounds.
-One horizontal background illustration, aspect ratio 4:3, of the place where this happens, seen at eye level: A covered shopping arcade, an older shopkeeper leaning out of her stall.
+One horizontal background illustration, aspect ratio 4:3, of the place where this happens, seen at eye level: The doorway of a kushikatsu shop at lunchtime, Yuki pushing the noren aside.
 Draw the place only: no people in the foreground, at most a few small distant passers-by with no visible faces. No text, signs left blank or unreadable, no speech balloons.
 ```
 
@@ -224,7 +224,7 @@ Draw the place only: no people in the foreground, at most a few small distant pa
 
 ```text
 Style: Korean-webtoon anime illustration, clean dark line art, soft painterly cel shading, muted natural colours, natural proportions (not chibi). Everyday places in Kansai, Japan, drawn as they really look, with detailed backgrounds.
-One horizontal background illustration, aspect ratio 4:3, of the place where this happens, seen at eye level: Both sitting on a river wall at Dotonbori, neon reflected in the water.
+One horizontal background illustration, aspect ratio 4:3, of the place where this happens, seen at eye level: At a table inside the kushikatsu shop, Yuki across, the shared sauce tray between.
 Draw the place only: no people in the foreground, at most a few small distant passers-by with no visible faces. No text, signs left blank or unreadable, no speech balloons.
 ```
 
@@ -232,7 +232,7 @@ Draw the place only: no people in the foreground, at most a few small distant pa
 
 ```text
 Style: Korean-webtoon anime illustration, clean dark line art, soft painterly cel shading, muted natural colours, natural proportions (not chibi). Everyday places in Kansai, Japan, drawn as they really look, with detailed backgrounds.
-One horizontal background illustration, aspect ratio 4:3, of the place where this happens, seen at eye level: Yuki sliding open the door of a small okonomiyaki shop, grinning back over a shoulder.
+One horizontal background illustration, aspect ratio 4:3, of the place where this happens, seen at eye level: Shinsekai street around 3 pm, still daytime, the two walking.
 Draw the place only: no people in the foreground, at most a few small distant passers-by with no visible faces. No text, signs left blank or unreadable, no speech balloons.
 ```
 
@@ -240,7 +240,23 @@ Draw the place only: no people in the foreground, at most a few small distant pa
 
 ```text
 Style: Korean-webtoon anime illustration, clean dark line art, soft painterly cel shading, muted natural colours, natural proportions (not chibi). Everyday places in Kansai, Japan, drawn as they really look, with detailed backgrounds.
-One horizontal background illustration, aspect ratio 4:3, of the place where this happens, seen at eye level: Ticket gates at night, the friend already walking backwards, waving.
+One horizontal background illustration, aspect ratio 4:3, of the place where this happens, seen at eye level: Inside the Shinsekai smart-ball arcade, retro, Yuki grinning.
+Draw the place only: no people in the foreground, at most a few small distant passers-by with no visible faces. No text, signs left blank or unreadable, no speech balloons.
+```
+
+### 유우키 (오사카) 장면 7 → `src/art/vn/osaka/07`
+
+```text
+Style: Korean-webtoon anime illustration, clean dark line art, soft painterly cel shading, muted natural colours, natural proportions (not chibi). Everyday places in Kansai, Japan, drawn as they really look, with detailed backgrounds.
+One horizontal background illustration, aspect ratio 4:3, of the place where this happens, seen at eye level: The smart-ball machines, the two playing side by side.
+Draw the place only: no people in the foreground, at most a few small distant passers-by with no visible faces. No text, signs left blank or unreadable, no speech balloons.
+```
+
+### 유우키 (오사카) 장면 8 → `src/art/vn/osaka/08`
+
+```text
+Style: Korean-webtoon anime illustration, clean dark line art, soft painterly cel shading, muted natural colours, natural proportions (not chibi). Everyday places in Kansai, Japan, drawn as they really look, with detailed backgrounds.
+One horizontal background illustration, aspect ratio 4:3, of the place where this happens, seen at eye level: Back where they met in Shinsekai, the sky just turning to sunset.
 Draw the place only: no people in the foreground, at most a few small distant passers-by with no visible faces. No text, signs left blank or unreadable, no speech balloons.
 ```
 

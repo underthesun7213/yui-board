@@ -113,10 +113,24 @@ test.describe('game and collection', () => {
     void errors;
     await page.goto('./#/learn/l8');
     await tap(page, '[data-route="osaka"]');
-    /* play to the end however many scenes the route has (they grow with new lines) */
+    /* play to the end however many scenes the route has: a reply, a walk, the
+       smart-ball match, and the 유우키 미니게임 (its own test plays it; here it skips
+       to the bill) */
     for (let i = 0; i < 20 && !(await page.locator('.vnend').count()); i++) {
-      await tap(page, '[data-opt="0"]');
-      await tap(page, '.vnwrap .primary');
+      /* the game's chunk loads on first use: wait for the scene to show */
+      await page
+        .locator('.yk, .vnwrap > .opts, [data-ball], [data-next], .vnend')
+        .first()
+        .waitFor();
+      if (await page.locator('.vnend').count()) break;
+      if (await page.locator('.yk').count()) {
+        await y(page, (a) => a.yuki.set({ step: 'end' }));
+        await tap(page, '[data-yk="done"]');
+        continue;
+      }
+      if (await page.locator('.vnwrap > .opts').count()) await tap(page, '[data-opt="0"]');
+      if (await page.locator('[data-ball]').count()) await tap(page, '[data-ball]');
+      await tap(page, '[data-next]');
     }
     await expect(page.locator('.vnend')).toHaveCount(1);
     await expect(page.locator('.toast.on')).toHaveCount(1);

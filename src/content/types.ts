@@ -53,14 +53,33 @@ export interface Ending {
   s: string;
   n: L3;
 }
+/** a line someone says: the friend of the route, or the shop staff */
+export interface VnSay {
+  who: 'friend' | 'staff';
+  jp: string;
+}
 export interface VnOption {
   jp: string;
   ok: boolean;
   fb: L3;
+  /** what they say back to this reply */
+  reply?: VnSay[];
 }
+/** talk: a line and replies to pick (scored). move: walking on, no choice.
+    yuki: the 유우키 미니게임. smartball: the smart-ball match. */
+export type VnKind = 'talk' | 'move' | 'yuki' | 'smartball';
 export interface VnScene {
+  kind?: VnKind;
   s: string;
+  /** the friend's line; empty when the scene has none */
   jp: string;
+  /** further lines before the choice */
+  more?: VnSay[];
+  /** what happens, for scenes without a choice */
+  note?: L3;
+  /** smartball: the friend's line when you win and when you lose */
+  win?: string;
+  lose?: string;
   opts: VnOption[];
 }
 export interface VnRoute {

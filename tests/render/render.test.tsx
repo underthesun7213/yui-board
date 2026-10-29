@@ -27,7 +27,7 @@ import { PREF_INTRO } from '../../src/content/prefIntro';
 import { prefs } from '../../src/state/prefs';
 import { route, type Route } from '../../src/state/route';
 import { vn, VN_START } from '../../src/state/vn';
-import { yuki, YUKI_START } from '../../src/state/yuki';
+import { yuki, YUKI_START, type Yuki } from '../../src/state/yuki';
 import { session } from '../../src/state/session';
 import { net } from '../../src/state/net';
 import { ui } from '../../src/state/ui';
@@ -73,6 +73,15 @@ const loadTranslatedEvents = () =>
     occurrences as OccurrenceOverride[],
     '2026-10-12T00:00:00Z',
   );
+/* level 8: the route a case plays on, and where its special scenes are */
+const L8 = { name: 'lesson', lid: 'l8' } as const;
+const OSAKA_YUKI = VN.osaka.scenes.findIndex((sc) => sc.kind === 'yuki');
+const OSAKA_BALL = VN.osaka.scenes.findIndex((sc) => sc.kind === 'smartball');
+const atYuki = (st: Partial<Yuki>) => () => (
+  vn.set({ ...VN_START, route: 'osaka', i: OSAKA_YUKI }),
+  yuki.set({ ...YUKI_START, ...st })
+);
+const YK = /class="yk"/;
 const GIP = (events as EventSeries[]).find((e) => e.weekly_until)!.id;
 
 async function html(): Promise<string> {
@@ -289,26 +298,29 @@ const cases: Case[] = [
     () => session.set({ mineEvents: { [GIP]: true } }),
   ],
   /* SYS-04: the published terms and privacy policy, every table and the contact */
-  /* 유우키 미니게임: every step, a wrong answer, the double-dip tease */
-  ['yuki-start', { name: 'yuki' }],
-  ['yuki-drink', { name: 'yuki' }, () => yuki.set({ step: 'drink' })],
-  ['yuki-drink-wrong', { name: 'yuki' }, () => yuki.set({ step: 'drink', wrong: [2] })],
-  ['yuki-drink-ok', { name: 'yuki' }, () => yuki.set({ step: 'drink', picked: 0, drink: 'beer' })],
-  ['yuki-order-empty', { name: 'yuki' }, () => yuki.set({ step: 'order', drink: 'beer' })],
+  /* level 8, Osaka: the smart-ball result, both ways */
+  ['vn-ball-win', L8, () => vn.set({ ...VN_START, route: 'osaka', i: OSAKA_BALL, ball: 'win' })],
+  ['vn-ball-lose', L8, () => vn.set({ ...VN_START, route: 'osaka', i: OSAKA_BALL, ball: 'lose' })],
+  /* the 유우키 미니게임 at Osaka scene 4: every step, a wrong answer, the double-dip tease */
+  ['yuki-drink', L8, atYuki({ step: 'drink' }), YK],
+  ['yuki-drink-wrong', L8, atYuki({ step: 'drink', wrong: [2] }), YK],
+  ['yuki-drink-ok', L8, atYuki({ step: 'drink', picked: 0, drink: 'beer' }), YK],
+  ['yuki-order-empty', L8, atYuki({ step: 'order', drink: 'beer' }), YK],
   [
     'yuki-order',
-    { name: 'yuki' },
+    L8,
     () =>
       yuki.set({ step: 'order', drink: 'oolong', order: { gyu: 2, uzura: 1, tama: 1, ebi: 1 } }),
   ],
   [
     'yuki-count',
-    { name: 'yuki' },
-    () => yuki.set({ step: 'count', drink: 'beer', order: { gyu: 2, uzura: 1, tama: 1, ebi: 1 } }),
+    L8,
+    atYuki({ step: 'count', drink: 'beer', order: { gyu: 2, uzura: 1, tama: 1, ebi: 1 } }),
+    YK,
   ],
   [
     'yuki-count-wrong',
-    { name: 'yuki' },
+    L8,
     () =>
       yuki.set({
         step: 'count',
@@ -319,7 +331,7 @@ const cases: Case[] = [
   ],
   [
     'yuki-count-ok',
-    { name: 'yuki' },
+    L8,
     () =>
       yuki.set({
         step: 'count',
@@ -330,7 +342,7 @@ const cases: Case[] = [
   ],
   [
     'yuki-eat',
-    { name: 'yuki' },
+    L8,
     () =>
       yuki.set({
         step: 'eat',
@@ -347,7 +359,7 @@ const cases: Case[] = [
   ],
   [
     'yuki-eat-tease',
-    { name: 'yuki' },
+    L8,
     () =>
       yuki.set({
         step: 'eat',
@@ -365,7 +377,7 @@ const cases: Case[] = [
   ],
   [
     'yuki-eat-done',
-    { name: 'yuki' },
+    L8,
     () =>
       yuki.set({
         step: 'eat',
@@ -376,17 +388,19 @@ const cases: Case[] = [
   ],
   [
     'yuki-bill',
-    { name: 'yuki' },
-    () => yuki.set({ step: 'bill', drink: 'beer', order: { gyu: 2, uzura: 1, tama: 1, ebi: 1 } }),
+    L8,
+    atYuki({ step: 'bill', drink: 'beer', order: { gyu: 2, uzura: 1, tama: 1, ebi: 1 } }),
+    YK,
   ],
   [
     'yuki-pay',
-    { name: 'yuki' },
-    () => yuki.set({ step: 'pay', drink: 'beer', order: { gyu: 2, uzura: 1, tama: 1, ebi: 1 } }),
+    L8,
+    atYuki({ step: 'pay', drink: 'beer', order: { gyu: 2, uzura: 1, tama: 1, ebi: 1 } }),
+    YK,
   ],
   [
     'yuki-leave',
-    { name: 'yuki' },
+    L8,
     () =>
       yuki.set({
         step: 'leave',
@@ -397,7 +411,7 @@ const cases: Case[] = [
   ],
   [
     'yuki-end',
-    { name: 'yuki' },
+    L8,
     () =>
       yuki.set({
         step: 'end',
@@ -477,7 +491,6 @@ const MARK: Record<Route['name'], RegExp> = {
   weekEdit: /class="form"/,
   me: /class="mylist"/,
   legal: /class="legal"/,
-  yuki: /class="yk"/,
 };
 const BAD = /undefined|NaN|\[object Object\]/;
 function check(out: string, mark?: RegExp) {

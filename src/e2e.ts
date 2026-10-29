@@ -7,6 +7,7 @@ import { location } from './state/location';
 import { mapUi } from './state/mapUi';
 import { prefs } from './state/prefs';
 import { route } from './state/route';
+import { yuki } from './state/yuki';
 
 (window as unknown as { __yunabi: unknown }).__yunabi = {
   route,
@@ -16,5 +17,6 @@ import { route } from './state/route';
   mapUi,
   data,
   setData,
+  yuki,
   map: inspect,
 };

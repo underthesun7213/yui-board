@@ -3,11 +3,15 @@ import type { Route, VnRoute } from './types';
 /* Episode 8. Two routes, drawn with a broad brush on purpose: the Osaka friend
    is loud and direct, the Kyoto friend says things sideways. Real people are
    not their prefecture, and the notes say so where it matters. */
-/* The best ending allows one miss on any route, so a route with more scenes
-   (Osaka has six since 2026-10-25, Kyoto five) is no easier or harder. */
+/* The best ending allows one miss on any route, counted over the scenes that
+   ask for a reply (Osaka five since 2026-10-29, Kyoto five): the mini-game
+   and walking scenes are not scored. */
 export const BEST_MISSES = 1;
 
 export const VN: Record<Route, VnRoute> = {
+  /* The day with Yuki, from the owner's storyboard
+     (docs/06-design/game-storyboard-template.md, 2026-10-29): Shinsekai,
+     kushikatsu (the 유우키 미니게임), smart ball, goodbye at sunset. */
   osaka: {
     name: {
       ja: 'ユウキ（大阪）',
@@ -21,201 +25,252 @@ export const VN: Record<Route, VnRoute> = {
     },
     scenes: [
       {
-        s: 'Two friends meeting at a crowded Osaka Station concourse, one waving hard',
-        jp: 'おー、こっちこっち！めっちゃ{待|ま}ったで〜',
+        s: 'Shinsekai street by day, crowded, Yuki waving hard',
+        jp: 'おー、こっちこっち！めっちゃ{待|ま}ったで〜。{何|なに}しとってん！',
         opts: [
           {
-            jp: 'ごめん、{遅|おく}れた！',
+            jp: 'ちゃうねん、ちゃうねん！{聞|き}いて、{踏切|ふみきり}にひっかかってん！',
             ok: true,
             fb: {
-              ja: '友達には「すみません」より「ごめん」。敬語は距離になる',
-              en: 'With friends ごめん beats すみません. Keigo puts a wall up',
-              ko: '친구에겐 すみません보다 ごめん. 경어는 거리를 만든다',
+              ja: '大阪では言い訳もネタにして笑いに変える。',
+              en: 'Osaka style: turn the excuse into a joke and the mood lifts.',
+              ko: '오사카에서는 변명도 개그로 넘긴다. 웃기면 분위기가 산다.',
             },
+            reply: [{ who: 'friend', jp: '{自分|じぶん}、{地下鉄|ちかてつ}で{来|き}たやろ！' }],
           },
           {
-            jp: '{申|もう}し{訳|わけ}ありません。',
+            jp: '{大変|たいへん}{申|もう}し{訳|わけ}ございません。',
             ok: false,
             fb: {
-              ja: '丁寧すぎる。バイトの面接みたいに聞こえる',
-              en: 'Too formal — this is job-interview register',
-              ko: '지나치게 정중하다. 알바 면접처럼 들린다',
+              ja: '丁寧すぎて、面接のように聞こえる。',
+              en: 'Far too polite: it sounds like a job interview.',
+              ko: '너무 정중하다. 면접처럼 들린다.',
             },
+            reply: [{ who: 'friend', jp: 'まあまあ、そんな{謝|あやま}らんでもええって' }],
           },
           {
-            jp: 'えー、めっちゃ{待|ま}った？',
+            jp: 'わるいわるい！めっちゃ{待|ま}った？',
             ok: true,
             fb: {
-              ja: '相手の言葉を拾って返すと、会話が転がる',
-              en: 'Picking up their own word keeps the conversation rolling',
-              ko: '상대의 말을 받아 되돌리면 대화가 굴러간다',
+              ja: '相手の言葉(めっちゃ待った)を拾って返すと、会話が転がる。',
+              en: 'Picking up his own words (めっちゃ待った) keeps the conversation rolling.',
+              ko: '상대의 말(めっちゃ待った)을 받아 되돌리면 대화가 굴러간다.',
             },
+            reply: [{ who: 'friend', jp: '{次|つぎ}は{許|ゆる}さへんで〜' }],
           },
         ],
       },
       {
-        s: 'A takoyaki stall, steam rising, friend already eating',
-        jp: 'ここのたこ{焼|や}き、めっちゃうまいねん。',
+        s: 'Shinsekai street by day, Yuki relaxed with his hands in his pockets',
+        jp: '{腹|はら}{減|へ}ったなぁ、{何|なに}{食|た}べる？',
         opts: [
           {
-            jp: 'ほんま？',
-            ok: true,
-            fb: {
-              ja: '相づちはこれで足りる。関西では「本当？」よりこちら',
-              en: 'This is a complete reply. In Kansai it lands better than 本当？',
-              ko: '맞장구는 이걸로 충분. 간사이에선 本当？보다 이쪽',
-            },
-          },
-          {
-            jp: 'ねん、って{何|なに}？',
-            ok: true,
-            fb: {
-              ja: '聞いていい。「〜ねん」は「〜んだ」。説明を喜ぶ人が多い',
-              en: 'Fine to ask. 〜ねん is the Kansai 〜んだ, and most people enjoy explaining',
-              ko: '물어봐도 된다. 〜ねん은 〜んだ에 해당. 설명을 반기는 사람이 많다',
-            },
-          },
-          {
-            jp: 'そうですか。',
+            jp: 'うーん、もんじゃ{焼|や}き{食|た}べよっか？',
             ok: false,
             fb: {
-              ja: '敬語に戻ると会話が止まる。友達の前では崩していい',
-              en: 'Sliding back into keigo stops the conversation dead',
-              ko: '경어로 돌아가면 대화가 멈춘다. 친구 앞에선 풀어도 된다',
+              ja: 'もんじゃは東京の名物。大阪ならお好み焼きや串カツ。',
+              en: 'Monjayaki is a Tokyo dish; in Osaka it would be okonomiyaki or kushikatsu.',
+              ko: '몬자야키는 도쿄 명물. 오사카라면 오코노미야키나 쿠시카츠.',
             },
+            reply: [
+              {
+                who: 'friend',
+                jp: 'もんじゃ？それ{東京|とうきょう}やん！せっかく{新世界|しんせかい}やし、{串|くし}カツいこうや',
+              },
+            ],
+          },
+          {
+            jp: '{串|くし}カツ{食|た}べてみたい！',
+            ok: true,
+            fb: {
+              ja: '新世界の名物、串カツ。いい選択！',
+              en: "Shinsekai's famous kushikatsu: good choice!",
+              ko: '신세카이 명물 쿠시카츠, 좋은 선택!',
+            },
+            reply: [
+              {
+                who: 'friend',
+                jp: 'せやな、{新世界|しんせかい}なら{串|くし}カツやんな。{串|くし}カツのソースは{二度漬|にどづ}け{禁止|きんし}やで',
+              },
+            ],
+          },
+          {
+            jp: 'マックはどう？',
+            ok: false,
+            fb: {
+              ja: '大阪ではマックではなく「マクド」。',
+              en: "In Osaka, McDonald's is マクド, not マック.",
+              ko: '오사카에서는 マック가 아니라 マクド라고 부른다.',
+            },
+            reply: [
+              {
+                who: 'friend',
+                jp: 'マック？{大阪|おおさか}ではマクドやで！{昨日|きのう}マクド{食|た}べたから、{今日|きょう}はちょっとなぁ。{串|くし}カツにせぇへん？{新世界|しんせかい}やし',
+              },
+            ],
           },
         ],
       },
       {
-        s: 'A covered shopping arcade, an older shopkeeper leaning out of her stall',
-        jp: 'お{姉|ねえ}ちゃん、ええの{入|はい}ってるで。',
+        s: 'The doorway of a kushikatsu shop at lunchtime, Yuki pushing the noren aside',
+        jp: '{邪魔|じゃま}するで〜',
+        more: [{ who: 'staff', jp: '{邪魔|じゃま}すんなら{帰|かえ}って〜' }],
         opts: [
           {
-            jp: 'ちょっと{高|たか}いなあ。',
-            ok: true,
-            fb: {
-              ja: '値段の話は失礼じゃない。商店街では会話の一部',
-              en: 'Talking price is not rude here. In an arcade it is part of the chat',
-              ko: '가격 얘기는 실례가 아니다. 상점가에선 대화의 일부',
-            },
-          },
-          {
-            jp: 'まけてくれます？',
-            ok: true,
-            fb: {
-              ja: '商店街なら通じることも。スーパーやチェーン店では言わない',
-              en: 'Works in an arcade. Never try it in a supermarket or a chain',
-              ko: '상점가에선 통하기도. 슈퍼나 체인점에선 쓰지 않는다',
-            },
-          },
-          {
-            jp: '（{黙|だま}って{値札|ねふだ}を{見|み}る）',
+            jp: 'え、どういう{意味|いみ}？',
             ok: false,
             fb: {
-              ja: '聞くだけならタダ、というのが大阪の感覚',
-              en: 'Asking costs nothing — that is the local instinct',
-              ko: '물어보는 건 공짜, 가 오사카의 감각',
+              ja: '吉本新喜劇の定番ギャグ。本気で「帰れ」と言っているのではない。',
+              en: "A stock gag from Yoshimoto Shinkigeki, not a real 'go away'.",
+              ko: '요시모토 신희극의 정석 개그. 진심으로 "돌아가"라는 게 아니다.',
             },
+            reply: [
+              {
+                who: 'friend',
+                jp: '{急|きゅう}に{新喜劇|しんきげき}かい！……あー、これただのギャグやから',
+              },
+            ],
+          },
+          {
+            jp: 'はいよ〜（{店|みせ}を{出|で}る）',
+            ok: true,
+            fb: {
+              ja: '完璧！乗っかって帰るふりをするのがお約束。',
+              en: 'Perfect: play along and pretend to leave.',
+              ko: '퍼펙트! 받아서 나가는 척하는 게 정석.',
+            },
+            reply: [
+              { who: 'staff', jp: 'ほんまに{帰|かえ}るんかい！いらっしゃい、いらっしゃい〜' },
+              { who: 'friend', jp: '{新喜劇|しんきげき}{知|し}ってるやん！やるやん！' },
+            ],
+          },
+          {
+            jp: 'ほな、お{邪魔|じゃま}しました〜（{店|みせ}を{出|で}る）',
+            ok: true,
+            fb: {
+              ja: 'いいボケ。ギャグを続けて返している。',
+              en: 'A good boke: you keep the gag going.',
+              ko: '좋은 보케(ボケ). 개그를 이어서 받아쳤다.',
+            },
+            reply: [
+              { who: 'staff', jp: 'ほんまに{帰|かえ}るんかい！いらっしゃい、いらっしゃい〜' },
+              { who: 'friend', jp: '{自分|じぶん}、なかなかやるやん！' },
+            ],
           },
         ],
       },
       {
-        s: 'Both sitting on a river wall at Dotonbori, neon reflected in the water',
-        jp: '{俺|おれ}な、{昨日|きのう}{道|みち}で100{万円|まんえん}{拾|ひろ}ってん。',
+        /* the 유우키 미니게임 (src/features/learn/YukiGame.tsx) */
+        kind: 'yuki',
+        s: 'At a table inside the kushikatsu shop, Yuki across, the shared sauce tray between',
+        jp: '',
+        note: {
+          ja: 'テーブルに座った。この店はスマホで注文する。',
+          en: 'You sit down at a table. This shop takes orders on your phone.',
+          ko: '테이블에 앉았다. 이 가게는 스마트폰으로 주문한다.',
+        },
+        opts: [],
+      },
+      {
+        kind: 'move',
+        s: 'Shinsekai street around 3 pm, still daytime, the two walking',
+        /* draft: the storyboard has no line here */
+        jp: 'ほな、{次|つぎ}はスマートボール{行|い}こか！',
+        note: {
+          ja: '店を出て、一緒にレトロなゲームセンターへ向かう。',
+          en: 'You leave the shop and head to a retro game arcade together.',
+          ko: '가게를 나와 함께 레트로 게임센터로 간다.',
+        },
+        opts: [],
+      },
+      {
+        s: 'Inside the Shinsekai smart-ball arcade, retro, Yuki grinning',
+        jp: 'よっしゃ、{勝負|しょうぶ}しよか。{負|ま}けた{方|ほう}がジュースおごりな！',
         opts: [
           {
-            jp: '{嘘|うそ}つけ！',
+            jp: 'よっしゃ、{受|う}けて{立|た}つで！',
             ok: true,
             fb: {
-              ja: 'ここは驚くところじゃない。疑うのが正解のツッコミ',
-              en: 'Not a moment to be impressed. Doubting them is the correct move',
-              ko: '놀랄 자리가 아니다. 의심하는 게 정답인 츳코미',
+              ja: '賭けにノリよく乗ると盛り上がる。',
+              en: 'Taking the bet with the same energy (ノリ) lifts the mood.',
+              ko: '내기를 노리(ノリ)로 받아치면 분위기가 산다.',
             },
+            reply: [{ who: 'friend', jp: 'おっ、ええやん！ほな{手加減|てかげん}せえへんで〜' }],
           },
           {
-            jp: 'えー、すごい！',
+            jp: 'え、お{金|かね}{賭|か}けるのはちょっと……',
             ok: false,
             fb: {
-              ja: '信じると話が終わる。冗談は受け止めるより返す',
-              en: 'Believing it ends the joke. Return the serve instead of catching it',
-              ko: '믿으면 얘기가 끝난다. 농담은 받기보다 되돌린다',
+              ja: 'ジュース一本の冗談を、真面目に受け取りすぎ。',
+              en: 'Taking a joke bet over one juice far too seriously.',
+              ko: '주스 한 병짜리 장난을 너무 진지하게 받았다.',
             },
+            reply: [
+              {
+                who: 'friend',
+                jp: 'いやいや、ジュースやで！？そんな{大|おお}げさな{話|はなし}ちゃうって',
+              },
+            ],
           },
           {
-            jp: 'ほんまに？',
+            jp: 'ほな、ジュースやなくてたこ{焼|や}きにしよ！',
             ok: true,
             fb: {
-              ja: '半信半疑。弱いが、使える返し',
-              en: 'Half-believing. Weaker, but it works',
-              ko: '반신반의. 약하지만 쓸 만한 반응',
+              ja: '賭けを大きくして返す、大阪らしいノリ。',
+              en: 'Raising the stakes back at him: Osaka-style ノリ.',
+              ko: '판을 키워서 되받는 오사카식 노리.',
             },
+            reply: [{ who: 'friend', jp: 'おっ、{上|あ}げてきたな！ええで、{乗|の}った！' }],
           },
         ],
       },
       {
-        /* owner, 2026-10-25: the Yoshimoto Shinkigeki door gag */
-        s: 'Yuki sliding open the door of a small okonomiyaki shop, grinning back over a shoulder',
-        jp: '{邪魔|じゃま}すんでー。',
-        opts: [
-          {
-            jp: '{邪魔|じゃま}すんなら{帰|かえ}ってー。',
-            ok: true,
-            fb: {
-              ja: '吉本新喜劇の定番のかけ合い。ユウキ「わかってるやん！」',
-              en: "The classic Yoshimoto Shinkigeki comeback. Yuki: 'You get it!'",
-              ko: '요시모토 신희극의 단골 주고받기. 유우키 "알고 있네!"',
-            },
-          },
-          {
-            jp: 'どうぞ、どうぞ。',
-            ok: false,
-            fb: {
-              ja: '普通に通すとボケが宙に浮く。ここは返すところ',
-              en: 'Letting it pass leaves the joke hanging. This is your cue to hit back',
-              ko: '그냥 들여보내면 보케가 허공에 뜬다. 여기선 받아칠 차례',
-            },
-          },
-          {
-            jp: 'お{邪魔|じゃま}します。',
-            ok: false,
-            fb: {
-              ja: '丁寧で正しいが、ユウキが待っているのはツッコミ',
-              en: 'Polite and correct, but Yuki is waiting for the comeback',
-              ko: '정중하고 맞는 말이지만, 유우키가 기다리는 건 츳코미',
-            },
-          },
-        ],
+        /* the smart-ball mini-game is not built yet: a coin toss stands in */
+        kind: 'smartball',
+        s: 'The smart-ball machines, the two playing side by side',
+        jp: '',
+        win: 'えーっ！！もう{一回|いっかい}！……いや、わかったわかった、{俺|おれ}の{負|ま}けや。しゃあないな、おごったるわ',
+        lose: 'よっしゃー！{俺|おれ}の{勝|か}ちや！ごちそうさまで〜す',
+        note: {
+          ja: 'スマートボールで勝負！（ミニゲームは準備中。今はコイントスで勝ち負けが決まる）',
+          en: 'A smart-ball match! (The mini-game is still being made; for now a coin toss decides.)',
+          ko: '스마트볼 승부! (미니게임은 준비 중. 지금은 동전 던지기로 승패가 정해진다)',
+        },
+        opts: [],
       },
       {
-        s: 'Ticket gates at night, the friend already walking backwards, waving',
-        jp: 'ほな、またな！',
+        s: 'Back where they met in Shinsekai, the sky just turning to sunset',
+        jp: '{今日|きょう}{楽|たの}しかったわ！また{遊|あそ}ぼな！',
         opts: [
           {
-            jp: 'ほな、また。',
+            jp: 'うん、また{遊|あそ}ぼな！',
             ok: true,
             fb: {
-              ja: '「ほな」は「じゃあ」。真似して返すと一気に近くなる',
-              en: 'ほな is じゃあ. Echoing it back closes the distance fast',
-              ko: 'ほな는 じゃあ. 따라서 돌려주면 단숨에 가까워진다',
+              ja: '大阪弁で返すと、一日でなじんだのが伝わる。',
+              en: 'Answering in Osaka speech shows the day rubbed off on you.',
+              ko: '오사카 말투로 받아치면 하루 동안 익숙해진 게 드러난다.',
             },
+            reply: [{ who: 'friend', jp: 'おっ、もう{大阪弁|おおさかべん}うつってるやん！' }],
           },
           {
-            jp: 'さようなら。',
+            jp: '{本日|ほんじつ}はありがとうございました。',
             ok: false,
             fb: {
-              ja: '重い。もう会わない人に言う言葉に聞こえる',
-              en: 'Heavy — it sounds like you are not planning to meet again',
-              ko: '무겁다. 다시 안 볼 사람에게 하는 말처럼 들린다',
+              ja: '一日遊んだ友達に、堅すぎる。',
+              en: 'Too formal for a friend you spent the whole day with.',
+              ko: '하루 종일 같이 논 친구에게 너무 격식 차렸다.',
             },
+            reply: [{ who: 'friend', jp: '{急|きゅう}にかしこまるやん！{友達|ともだち}やろ〜' }],
           },
           {
-            jp: 'お{疲|つか}れさまでした。',
-            ok: false,
+            jp: '{次|つぎ}も{勝負|しょうぶ}しよな！',
+            ok: true,
             fb: {
-              ja: 'バイト先の別れ方。友達には少し他人行儀',
-              en: 'How you leave a shift, not a friend',
-              ko: '알바 끝나고 하는 인사. 친구에겐 조금 남 같다',
+              ja: 'スマートボールの勝負を持ち出して、次の約束につなげる。',
+              en: 'Bringing back the smart-ball bet turns it into the next plan.',
+              ko: '스마트볼 내기를 다시 꺼내 다음 약속으로 이어진다.',
             },
+            reply: [{ who: 'friend', jp: '{望|のぞ}むところや！ほな、またな〜' }],
           },
         ],
       },

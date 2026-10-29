@@ -1,4 +1,4 @@
-import { openLesson, openYuki } from '../../actions/learn';
+import { openLesson } from '../../actions/learn';
 import { go } from '../../actions/nav';
 import { ENDINGS } from '../../content/endings';
 import { LESSONS } from '../../content/lessons';
@@ -29,17 +29,6 @@ export function LearnList() {
           </span>
         </button>
       ))}
-      {/* 유우키 미니게임, in test: reached from here until the level 8 scenario places it.
-          Its own class, so the eight lessons are still the .lesson rows. */}
-      <button className="minigame" data-lesson="yuki" onClick={openYuki}>
-        <span className="lvbadge vn" aria-hidden="true">
-          串
-        </span>
-        <span className="lmain">
-          <b>{m.yukiT}</b>
-          <em>{m.yukiD}</em>
-        </span>
-      </button>
       <div className="sect">{m.colT}</div>
       <button className="colrow" onClick={() => go({ name: 'collection' })}>
         <span className="colthumbs" aria-hidden="true">

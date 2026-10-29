@@ -8,9 +8,7 @@ import {
   orderOk,
   type Line,
 } from '../content/yuki-minigame';
-import { yuki, YUKI_START, YUKI_STEPS } from '../state/yuki';
-
-export const restartYuki = () => yuki.set(YUKI_START);
+import { yuki, YUKI_STEPS } from '../state/yuki';
 
 export function nextYuki() {
   const s = yuki.get();

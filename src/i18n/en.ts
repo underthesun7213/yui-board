@@ -72,17 +72,15 @@ export const en = {
   vnStart: 'Go out',
   vnNext: 'Next',
   vnBack: 'Choose a route',
-  yukiT: 'Yuki mini-game',
-  yukiD: 'Kushikatsu in Shinsekai: order on your phone, no double-dipping',
-  yukiGo: 'Go in',
-  yukiMission:
-    'Yuki is taking you to a kushikatsu shop in Shinsekai, where you order on your phone. Order at least {k} kinds of skewers for ¥{b} or less, drink included, and eat by the one rule of the house.',
+  vnStaff: 'Staff',
+  vnBallPlay: 'Play the match',
+  vnBallWin: 'You won!',
+  vnBallLose: 'Yuki won',
+  yukiMission: 'Order at least {k} kinds of skewers for ¥{b} or less, drink included.',
   yukiPlace: 'Place order',
   yukiArrived: 'Here it comes',
   yukiAte: 'All eaten',
   yukiPay: 'Pay {n}',
-  yukiAgain: 'Play again',
-  yukiList: 'Back to the lessons',
   yukiRule:
     'Drag a skewer into the sauce to dip it, then tap it twice quickly to take a bite. The sauce is shared: once a skewer has been bitten, it never goes back in.',
   yukiReading:

@@ -72,7 +72,8 @@ export function voiceLines(
   }
   for (const [route, r] of Object.entries(vn) as [Route, VnRoute][])
     r.scenes.forEach((sc, i) => {
-      out.push({ key: sceneVoiceKey(route, i), text: sc.jp, voice: VOICES[route] });
+      /* scenes without a line (the mini-games) have nothing to record */
+      if (sc.jp) out.push({ key: sceneVoiceKey(route, i), text: sc.jp, voice: VOICES[route] });
       sc.opts.forEach((o, k) =>
         out.push({ key: optVoiceKey(route, i, k), text: o.jp, voice: VOICES.player }),
       );
