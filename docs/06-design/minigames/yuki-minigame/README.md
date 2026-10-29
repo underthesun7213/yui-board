@@ -3,7 +3,7 @@
 | 항목 | 내용 |
 |---|---|
 | 이름 | **유우키 미니게임** — 시나리오 문서에 이 이름이 나오면 그 자리에 이 게임을 넣는다 |
-| 상태 | 프로토타입, 보존 (2026-10-29). 앱에는 아직 넣지 않았다 |
+| 상태 | 프로토타입, 보존 (2026-10-29). **앱에 시험으로 들어감**: 레슨 목록 → 유우키 미니게임 (`#/learn/yuki`, `src/features/learn/YukiGame.tsx`, 글은 `src/content/yuki-minigame.ts` 에 ja·en·ko). 아직 음성 없음, 시나리오의 자리(레벨 8 오사카 #4)에 넣는 것과 업적 일러스트는 그다음 |
 | 미리보기 | [`index.html`](index.html) (그림은 `art/`), 같은 것을 비공개 아티팩트로도 올려 두었다: https://claude.ai/artifact/W344fCoe33W4wagTKRQjbc |
 
 ## 무엇인가

@@ -7,6 +7,7 @@
                                (docs/06-design/comic-scripts.md)
      vn/<route>/<nn>           scene nn of episode 8's route, 4:3
      endings/<id>              ending card, 3:2
+     minigames/yuki/<name>     유우키 미니게임: street, table, tease (src/content/yuki-minigame.ts), 4:3
    Each as .webp, .png or .jpg (one file per slot; tests/unit/domain.test.ts
    checks the names, sizes and shapes). Comic pages are built into
    assets/comic/ and cached by the service worker the first time they are

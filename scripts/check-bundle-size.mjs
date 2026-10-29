@@ -36,6 +36,12 @@ const BUDGETS = [
       'src/features/learn/Collection.tsx',
     ],
   },
+  {
+    /* 유우키 미니게임: its own lazy screen, with its text in three languages */
+    name: 'yuki mini-game',
+    kb: 12,
+    roots: ['src/features/learn/YukiGame.tsx'],
+  },
 ];
 
 function closure(keys) {

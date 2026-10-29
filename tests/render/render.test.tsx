@@ -27,6 +27,7 @@ import { PREF_INTRO } from '../../src/content/prefIntro';
 import { prefs } from '../../src/state/prefs';
 import { route, type Route } from '../../src/state/route';
 import { vn, VN_START } from '../../src/state/vn';
+import { yuki, YUKI_START } from '../../src/state/yuki';
 import { session } from '../../src/state/session';
 import { net } from '../../src/state/net';
 import { ui } from '../../src/state/ui';
@@ -105,6 +106,7 @@ function reset() {
   calendarUi.set({ day: null, month: null });
   collection.set({ cg: {} });
   vn.set(VN_START);
+  yuki.set(YUKI_START);
   ui.set({ report: null, zoom: null });
   delete ART[FAKE_PAGE];
   prefIntro.set({ texts: null });
@@ -287,6 +289,128 @@ const cases: Case[] = [
     () => session.set({ mineEvents: { [GIP]: true } }),
   ],
   /* SYS-04: the published terms and privacy policy, every table and the contact */
+  /* 유우키 미니게임: every step, a wrong answer, the double-dip tease */
+  ['yuki-start', { name: 'yuki' }],
+  ['yuki-drink', { name: 'yuki' }, () => yuki.set({ step: 'drink' })],
+  ['yuki-drink-wrong', { name: 'yuki' }, () => yuki.set({ step: 'drink', wrong: [2] })],
+  ['yuki-drink-ok', { name: 'yuki' }, () => yuki.set({ step: 'drink', picked: 0, drink: 'beer' })],
+  ['yuki-order-empty', { name: 'yuki' }, () => yuki.set({ step: 'order', drink: 'beer' })],
+  [
+    'yuki-order',
+    { name: 'yuki' },
+    () =>
+      yuki.set({ step: 'order', drink: 'oolong', order: { gyu: 2, uzura: 1, tama: 1, ebi: 1 } }),
+  ],
+  [
+    'yuki-count',
+    { name: 'yuki' },
+    () => yuki.set({ step: 'count', drink: 'beer', order: { gyu: 2, uzura: 1, tama: 1, ebi: 1 } }),
+  ],
+  [
+    'yuki-count-wrong',
+    { name: 'yuki' },
+    () =>
+      yuki.set({
+        step: 'count',
+        drink: 'beer',
+        order: { gyu: 2, uzura: 1, tama: 1, ebi: 1 },
+        wrong: [1],
+      }),
+  ],
+  [
+    'yuki-count-ok',
+    { name: 'yuki' },
+    () =>
+      yuki.set({
+        step: 'count',
+        drink: 'beer',
+        order: { gyu: 2, uzura: 1, tama: 1, ebi: 1 },
+        picked: 0,
+      }),
+  ],
+  [
+    'yuki-eat',
+    { name: 'yuki' },
+    () =>
+      yuki.set({
+        step: 'eat',
+        drink: 'beer',
+        order: { gyu: 2, uzura: 1, tama: 1, ebi: 1 },
+        plate: [
+          { id: 'gyu', bites: 2, dip: true },
+          { id: 'gyu', bites: 1, dip: false },
+          { id: 'uzura', bites: 0, dip: false },
+          { id: 'tama', bites: 2, dip: false },
+          { id: 'ebi', bites: 2, dip: false },
+        ],
+      }),
+  ],
+  [
+    'yuki-eat-tease',
+    { name: 'yuki' },
+    () =>
+      yuki.set({
+        step: 'eat',
+        drink: 'beer',
+        order: { gyu: 2, uzura: 1, tama: 1, ebi: 1 },
+        plate: [
+          { id: 'gyu', bites: 2, dip: true },
+          { id: 'gyu', bites: 1, dip: false },
+          { id: 'uzura', bites: 0, dip: false },
+          { id: 'tama', bites: 2, dip: false },
+          { id: 'ebi', bites: 2, dip: false },
+        ],
+        tease: true,
+      }),
+  ],
+  [
+    'yuki-eat-done',
+    { name: 'yuki' },
+    () =>
+      yuki.set({
+        step: 'eat',
+        drink: 'beer',
+        order: { gyu: 2, uzura: 1, tama: 1, ebi: 1 },
+        plate: [{ id: 'gyu', bites: 0, dip: false }],
+      }),
+  ],
+  [
+    'yuki-bill',
+    { name: 'yuki' },
+    () => yuki.set({ step: 'bill', drink: 'beer', order: { gyu: 2, uzura: 1, tama: 1, ebi: 1 } }),
+  ],
+  [
+    'yuki-pay',
+    { name: 'yuki' },
+    () => yuki.set({ step: 'pay', drink: 'beer', order: { gyu: 2, uzura: 1, tama: 1, ebi: 1 } }),
+  ],
+  [
+    'yuki-leave',
+    { name: 'yuki' },
+    () =>
+      yuki.set({
+        step: 'leave',
+        drink: 'beer',
+        order: { gyu: 2, uzura: 1, tama: 1, ebi: 1 },
+        picked: 0,
+      }),
+  ],
+  [
+    'yuki-end',
+    { name: 'yuki' },
+    () =>
+      yuki.set({
+        step: 'end',
+        drink: 'beer',
+        order: { gyu: 2, uzura: 1, tama: 1, ebi: 1 },
+        said: [
+          {
+            jp: 'とりあえず{生|なま}で！',
+            mean: { ja: 'とりあえず生ビール！', en: 'Draft beer to start!', ko: '일단 생맥주!' },
+          },
+        ],
+      }),
+  ],
   ['legal', { name: 'legal' }, undefined, /class="legal"[\s\S]*<table>[\s\S]*yunabi@juha\.dev/],
   ['me-empty', { name: 'me' }, undefined, /class="empty"/],
   [
@@ -353,6 +477,7 @@ const MARK: Record<Route['name'], RegExp> = {
   weekEdit: /class="form"/,
   me: /class="mylist"/,
   legal: /class="legal"/,
+  yuki: /class="yk"/,
 };
 const BAD = /undefined|NaN|\[object Object\]/;
 function check(out: string, mark?: RegExp) {

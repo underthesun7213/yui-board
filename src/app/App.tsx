@@ -23,6 +23,7 @@ import {
   ReportSheet,
   ComicZoom,
   WeekForm,
+  YukiGame,
 } from './screens';
 import { ui } from '../state/ui';
 
@@ -36,6 +37,8 @@ function Screen({ r }: { r: Route }) {
       return <Lesson lid={r.lid} />;
     case 'collection':
       return <Collection />;
+    case 'yuki':
+      return <YukiGame />;
     case 'map':
       return <MapScreen />;
     case 'cal':

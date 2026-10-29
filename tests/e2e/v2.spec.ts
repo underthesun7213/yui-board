@@ -322,3 +322,33 @@ test('SYS-04 the terms, privacy policy and contact open from home and from a fir
   await page.getByRole('button', { name: /利用規約・プライバシー・お問い合わせ/ }).click();
   await expect(page).toHaveURL(/#\/legal$/);
 });
+
+test('유우키 미니게임: order on the phone, dip once, Yuki teases a second dip', async ({
+  page,
+  errors,
+}) => {
+  void errors;
+  await page.goto('./#/learn');
+  await tap(page, '[data-lesson="yuki"]');
+  await expect(page).toHaveURL(/#\/learn\/yuki$/);
+  await tap(page, '[data-yk="start"]');
+  /* far too polite for a friend: marked, and another answer can be tried */
+  await tap(page, '.yk [data-opt="2"]');
+  await expect(page.locator('.yk .fb.hm')).toBeVisible();
+  await tap(page, '.yk [data-opt="0"]');
+  await expect(page.locator('.yk .fb.ok')).toBeVisible();
+  await tap(page, '[data-yk="next"]');
+  /* the mobile order: four kinds, then the order button opens */
+  await expect(page.locator('[data-yk="order"]')).toBeDisabled();
+  for (const id of ['gyu', 'uzura', 'tama', 'ebi']) await tap(page, `[data-add="${id}"]`);
+  await tap(page, '[data-yk="order"]');
+  await tap(page, '[data-unit="0"]');
+  await tap(page, '[data-yk="next"]');
+  /* dip the chosen skewer, bite it, dip it again: Yuki's teasing picture */
+  await expect(page.locator('.yk-stage img')).toHaveAttribute('src', /table/);
+  await tap(page, '.yk-sauce');
+  await page.locator('.yk-kushi[data-k="0"]').press('Enter');
+  await tap(page, '.yk-sauce');
+  await expect(page.locator('.yk-stage img')).toHaveAttribute('src', /tease/);
+  await expect(page.locator('.yk .fb.hm')).toBeVisible();
+});

@@ -7,11 +7,17 @@ import { store } from '../platform/storage';
 import { collection } from '../state/collection';
 import { prefs } from '../state/prefs';
 import { vn, VN_START } from '../state/vn';
+import { yuki, YUKI_START } from '../state/yuki';
 import { toast } from './ui';
 
 export function openLesson(lid: string) {
   vn.set(VN_START);
   navigate({ name: 'lesson', lid });
+}
+/* here, not in actions/yuki, so the lesson list does not load the game's text */
+export function openYuki() {
+  yuki.set(YUKI_START);
+  navigate({ name: 'yuki' });
 }
 export const pickRoute = (route: Route) => vn.set({ ...VN_START, route });
 export const resetVn = () => vn.set(VN_START);
