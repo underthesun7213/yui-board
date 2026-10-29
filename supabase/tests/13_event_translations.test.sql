@@ -106,12 +106,13 @@ select is((select v->'jobs'->1->>'text' from r where k = 'c4'), 'いいカフェ
 
 -- a week's override does not queue anything; an event that is over is not claimed
 select tests.as_user(tests.id('a'));
-insert into r select 'w', public.create_event(gen_random_uuid(), 'Weekly tea', tests.today(), '17:00', '18:00',
-  tests.today() + 14, 'Lounge', '', 'en');
+-- starts tomorrow: one that started today is refused once its time has passed
+insert into r select 'w', public.create_event(gen_random_uuid(), 'Weekly tea', tests.today() + 1, '17:00', '18:00',
+  tests.today() + 15, 'Lounge', '', 'en');
 select tests.as_owner();
 delete from app.event_translation_jobs where event_id = tests.eid('w');
 select tests.as_user(tests.id('a'));
-select is((public.set_occurrence(tests.eid('w'), tests.today() + 7, false, 'Karaoke', null, null, null, null))->>'status',
+select is((public.set_occurrence(tests.eid('w'), tests.today() + 8, false, 'Karaoke', null, null, null, null))->>'status',
   'ok', 'the owner rewrites one week');
 select tests.as_owner();
 select is((select count(*)::int from app.event_translation_jobs where event_id = tests.eid('w')), 0,

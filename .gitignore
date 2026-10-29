@@ -30,3 +30,6 @@ playwright-report/
 dist-e2e-backend/
 dist-admin/
 dist-admin-e2e/
+
+# Claude Code: personal settings stay local (the shared rules are .claude/settings.json)
+.claude/settings.local.json
