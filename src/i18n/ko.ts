@@ -63,6 +63,7 @@ export const ko = {
   pageN: '{n}쪽',
   playLine: '이 대사 듣기',
   readOrder: '일본 만화는 오른쪽 위부터 읽어요. 오른쪽에서 왼쪽, 위에서 아래로.',
+  zoomArt: '그림 크게 보기',
   zoomPage: '{n}쪽 크게 보기',
   close: '닫기',
   colT: '컬렉션',

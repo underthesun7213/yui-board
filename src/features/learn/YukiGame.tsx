@@ -21,6 +21,7 @@ import type { Lang } from '../../domain/types';
 import {
   BUDGET,
   DRINKS,
+  EAT_TIP,
   END_NOTE,
   KINDS,
   LINES,
@@ -61,6 +62,12 @@ export function YukiGame({ onDone }: { onDone: () => void }) {
   const drink = useStore(yuki, (s) => s.drink);
   const order = useStore(yuki, (s) => s.order);
   const tease = useStore(yuki, (s) => s.tease);
+  const lang = useStore(prefs, (s) => s.lang);
+  /* the skewer in hand: dipped and not finished means it is time to bite */
+  const ready = useStore(yuki, (s) => {
+    const k = s.plate[s.sel];
+    return !!k && k.dip && k.bites > 0;
+  });
   const sauce = useRef<HTMLButtonElement>(null);
   const pic = step === 'end' ? YUKI_ART.street : tease ? YUKI_ART.tease : YUKI_ART.table;
   const label = step !== 'end' ? m.yukiSteps[step] : null;
@@ -86,6 +93,11 @@ export function YukiGame({ onDone }: { onDone: () => void }) {
           >
             <span>{m.yukiSauce}</span>
           </button>
+        )}
+        {step === 'eat' && !tease && (
+          <p className={'yk-tip' + (ready ? ' bite' : '')} role="status">
+            {EAT_TIP[ready ? 'bite' : 'dip'][lang]}
+          </p>
         )}
         <Pops />
       </div>
@@ -246,7 +258,14 @@ function Order() {
                       disabled={!n}
                       onClick={() => addItem(x.id, -1)}
                     >
-                      −
+                      <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">
+                        <path
+                          d="M2.5 8h11"
+                          stroke="currentColor"
+                          strokeWidth="2.4"
+                          strokeLinecap="round"
+                        />
+                      </svg>
                     </button>
                     <span>{n}</span>
                     <button
@@ -257,7 +276,14 @@ function Order() {
                       disabled={n >= MAX_EACH}
                       onClick={() => addItem(x.id, 1)}
                     >
-                      ＋
+                      <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">
+                        <path
+                          d="M8 2.5v11M2.5 8h11"
+                          stroke="currentColor"
+                          strokeWidth="2.4"
+                          strokeLinecap="round"
+                        />
+                      </svg>
                     </button>
                   </div>
                 </div>

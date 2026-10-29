@@ -1,5 +1,5 @@
 import { go } from '../../actions/nav';
-import { ENDINGS } from '../../content/endings';
+import { CARD_IDS } from '../../content/card-ids';
 import { formatDay, tokyoToday, weekday } from '../../domain/calendar/dates';
 import { inLang, upcoming } from '../../domain/calendar/occurrences';
 import { fill, LOCALE } from '../../i18n';
@@ -15,7 +15,7 @@ export function Home() {
   const lang = useStore(prefs, (s) => s.lang);
   const cg = useStore(collection, (s) => s.cg);
   const schedule = useStore(data, (s) => s.schedule);
-  const got = ENDINGS.filter((e) => cg[e.id]).length;
+  const got = CARD_IDS.filter((id) => cg[id]).length;
   const nx = upcoming(schedule, tokyoToday(), 1)[0];
   const nxTitle = nx && inLang(nx, lang).title;
   return (
@@ -30,7 +30,7 @@ export function Home() {
           <span>
             <b>{m.homeJp}</b>
             <em>{m.homeJpS}</em>
-            <small>{fill(m.homeCol, { n: got, m: ENDINGS.length })}</small>
+            <small>{fill(m.homeCol, { n: got, m: CARD_IDS.length })}</small>
           </span>
         </button>
         <button className="hcard map" onClick={() => go({ name: 'map' })}>

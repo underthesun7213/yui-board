@@ -3,10 +3,16 @@ import type { Route, VnRoute } from './types';
 /* Episode 8. Two routes, drawn with a broad brush on purpose: the Osaka friend
    is loud and direct, the Kyoto friend says things sideways. Real people are
    not their prefecture, and the notes say so where it matters. */
-/* The best ending allows one miss on any route, counted over the scenes that
-   ask for a reply (Osaka five since 2026-10-29, Kyoto five): the mini-game
-   and walking scenes are not scored. */
-export const BEST_MISSES = 1;
+/* How the score picks the ending, counted over the scenes that ask for a
+   reply (Osaka five since 2026-10-29, Kyoto five; the mini-games and walks are
+   not scored). Good: at most goodMisses missed. Bad: at most badMax right, on
+   a route that has a bad card. Normal: anything between. Osaka (owner,
+   2026-10-30): all five good, two to four normal, one or none bad. Kyoto keeps
+   its two cards and one miss for good until its scenario is rewritten. */
+export const ENDING_RULE: Record<Route, { goodMisses: number; badMax: number | null }> = {
+  osaka: { goodMisses: 0, badMax: 1 },
+  kyoto: { goodMisses: 1, badMax: null },
+};
 
 export const VN: Record<Route, VnRoute> = {
   /* The day with Yuki, from the owner's storyboard

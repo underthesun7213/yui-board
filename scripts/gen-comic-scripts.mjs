@@ -62,7 +62,7 @@ export function renderComicScripts(lessons) {
 
 /** The document for episode 8: every scene with its line and choices (and the
     feedback each choice gets), then the ending cards. */
-export function renderGameScript(vn, endings, bestMisses) {
+export function renderGameScript(vn, endings, rule) {
   const out = [
     '# 대화 게임 대본 (레벨 8)',
     '',
@@ -74,7 +74,14 @@ export function renderGameScript(vn, endings, bestMisses) {
     '- 그림에는 글자를 넣지 않는다. 대사와 선택지는 앱이 그림 아래에 보여 준다.',
     '- ○ = 자연스러운 답(점수), × = 어색한 답. 피드백은 고른 뒤에 보인다.',
     '- 한자 뒤 괄호 = 앱이 다는 후리가나.',
-    `- 엔딩: 놓친 선택이 ${bestMisses}개 이하면 좋은 엔딩, 그보다 많으면 보통 엔딩. 두 친구의 엔딩을 하나씩 모으면 \`e_both\`.`,
+    ...Object.entries(rule).map(
+      ([r, x]) =>
+        `- ${r} 엔딩: 놓친 선택 ${x.goodMisses}개 이하면 좋은 엔딩` +
+        (x.badMax === null
+          ? ', 그 밖은 보통 엔딩.'
+          : `, 맞힌 선택 ${x.badMax}개 이하면 나쁜 엔딩, 그 사이는 보통 엔딩.`),
+    ),
+    '- 두 친구의 엔딩을 하나씩 모으면 `e_both`.',
     '',
   ];
   for (const [route, r] of Object.entries(vn)) {
@@ -101,7 +108,8 @@ export function renderGameScript(vn, endings, bestMisses) {
     '|---|---|---|---|---|---|---|',
   );
   for (const e of endings) {
-    const kind = e.route === 'both' ? '수집' : e.best ? '좋음' : '보통';
+    const kind =
+      e.route === 'both' ? '수집' : { good: '좋음', normal: '보통', bad: '나쁨' }[e.tier];
     out.push(
       `| \`${e.id}\` | ${e.route} | ${kind} | ${cell(e.t.ko)} | ${cell(read(e.jp))} | ${cell(e.s)} | ${cell(e.n.ko)} |`,
     );
@@ -219,9 +227,9 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   const { LESSONS } = await load('src/content/lessons.ts');
   writeFileSync(root(OUT), renderComicScripts(LESSONS) + '\n');
   console.log(`wrote ${OUT}`);
-  const { VN, BEST_MISSES } = await load('src/content/vn.ts');
+  const { VN, ENDING_RULE } = await load('src/content/vn.ts');
   const { ENDINGS } = await load('src/content/endings.ts');
-  writeFileSync(root(GAME_OUT), renderGameScript(VN, ENDINGS, BEST_MISSES) + '\n');
+  writeFileSync(root(GAME_OUT), renderGameScript(VN, ENDINGS, ENDING_RULE) + '\n');
   console.log(`wrote ${GAME_OUT}`);
   writeFileSync(root(PROMPTS_OUT), renderImagePrompts(LESSONS, VN, ENDINGS) + '\n');
   console.log(`wrote ${PROMPTS_OUT}`);

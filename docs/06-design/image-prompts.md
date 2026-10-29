@@ -320,6 +320,15 @@ Draw the place only: no people in the foreground, at most a few small distant pa
 Make it feel like the last shot of a good day.
 ```
 
+### 갈 수 있으면 갈게 → `src/art/endings/e_osaka_bad`
+
+```text
+Style: Korean-webtoon anime illustration, clean dark line art, soft painterly cel shading, muted natural colours, natural proportions (not chibi). Everyday places in Kansai, Japan, drawn as they really look, with detailed backgrounds.
+One horizontal background illustration, aspect ratio 3:2, of the place where this happens, seen at eye level: Station ticket gates at dusk, the friend half-turned away with a vague wave.
+Draw the place only: no people in the foreground, at most a few small distant passers-by with no visible faces. No text, signs left blank or unreadable, no speech balloons.
+Make it feel like the last shot of a good day.
+```
+
 ### 말하지 않은 것들 → `src/art/endings/e_kyoto_best`
 
 ```text

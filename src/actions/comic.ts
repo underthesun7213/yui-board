@@ -8,6 +8,13 @@ export function openZoom(lid: string, n: 1 | 2) {
   pushSheetState();
 }
 
+/** Opens a collection picture full screen, the same way. */
+export function openArt(art: string, alt: string) {
+  if (ui.get().zoom || ui.get().report) return;
+  ui.set({ zoom: { art, alt } });
+  pushSheetState();
+}
+
 /** Closes it, taking back the history step it made when there is one. */
 export function closeZoom() {
   if (!ui.get().zoom) return;

@@ -15,11 +15,12 @@ import { LINES as YUKI_LINES, TALK, YUKI_ART } from '../../src/content/yuki-mini
 import { SB_LINES } from '../../src/content/smartball';
 import { ENDINGS } from '../../src/content/endings';
 import { ACHIEVEMENTS } from '../../src/content/achievements';
+import { CARD_IDS } from '../../src/content/card-ids';
 import { LESSONS } from '../../src/content/lessons';
 import { plain, segments } from '../../src/content/ruby';
 import { sbVoiceLines, voiceHash, voiceLines, yukiVoiceLines } from '../../src/content/voice-lines';
 import { toSsml } from '../../scripts/gen-voice.mjs';
-import { BEST_MISSES, VN } from '../../src/content/vn';
+import { ENDING_RULE, VN } from '../../src/content/vn';
 import {
   addMonths,
   monthCells,
@@ -248,7 +249,7 @@ describe('comic pages (Y-J1)', () => {
   });
   it('has a game script that matches the data (node scripts/gen-comic-scripts.mjs)', () => {
     const doc = readFileSync(GAME_OUT, 'utf8').split(String.fromCharCode(13)).join('');
-    expect(doc).toBe(renderGameScript(VN, ENDINGS, BEST_MISSES) + String.fromCharCode(10));
+    expect(doc).toBe(renderGameScript(VN, ENDINGS, ENDING_RULE) + String.fromCharCode(10));
   });
   it('gives every kanji in a Japanese line a reading in kana ({漢字|かんじ})', () => {
     const lines = [
@@ -368,6 +369,9 @@ describe('art', () => {
       expect(Math.min(w, h) >= 1000, `${f}: ${w}x${h}, short side under 1000 px`).toBe(true);
       expect(Math.abs(w / h - 2 / 3) <= (2 / 3) * 0.01, `${f}: ${w}x${h} is not 2:3`).toBe(true);
     }
+  });
+  it('counts on the home screen every card the collection holds', () => {
+    expect([...CARD_IDS].sort()).toEqual([...ACHIEVEMENTS, ...ENDINGS].map((c) => c.id).sort());
   });
   it('only has files for slots that exist', () => {
     const slots = new Set<string>();

@@ -324,6 +324,21 @@ export const SFX_TEXT = {
   paid: 'チャリーン',
 };
 
+/* What to do now while eating, over the table (play tests: players did not find
+   the double tap) */
+export const EAT_TIP: Record<'dip' | 'bite', L3> = {
+  dip: {
+    ja: '串をソースまでドラッグ！',
+    en: 'Drag a skewer into the sauce!',
+    ko: '꼬치를 소스까지 끌어다 놓기!',
+  },
+  bite: {
+    ja: '串をダブルタップで一口！',
+    en: 'Double-tap the skewer to take a bite!',
+    ko: '꼬치를 두 번 톡톡 눌러 한 입!',
+  },
+};
+
 export const END_NOTE: L3 = {
   ja: '「おおきに」は関西の「ありがとう」。店の人からよく聞く。',
   en: 'おおきに is Kansai for "thank you". You hear it a lot from shop staff.',

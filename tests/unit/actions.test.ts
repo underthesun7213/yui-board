@@ -95,16 +95,23 @@ describe('episode 8', () => {
     expect(collection.get().cg).toEqual({ [endingFor('osaka', 5).id]: true });
     play('osaka', false);
     expect(collection.get().cg[endingFor('osaka', 0).id]).toBe(true);
-    expect(endingFor('osaka', 0).best).toBe(false);
+    expect(endingFor('osaka', 0).tier).toBe('bad');
   });
 
-  it('gives the best ending with at most one miss on either route', () => {
-    for (const r of ['osaka', 'kyoto'] as const) {
-      const n = scoredScenes(r);
-      expect(endingFor(r, n).best).toBe(true);
-      expect(endingFor(r, n - 1).best).toBe(true);
-      expect(endingFor(r, n - 2).best).toBe(false);
-    }
+  it('Osaka: all right is good, two to four normal, one or none bad', () => {
+    const n = scoredScenes('osaka');
+    expect(n).toBe(5);
+    expect(endingFor('osaka', 5).tier).toBe('good');
+    for (const s of [2, 3, 4]) expect(endingFor('osaka', s).tier).toBe('normal');
+    for (const s of [0, 1]) expect(endingFor('osaka', s).tier).toBe('bad');
+    expect(endingFor('osaka', 1).id).toBe('e_osaka_bad');
+  });
+
+  it('Kyoto keeps one miss for good and has no bad card yet', () => {
+    const n = scoredScenes('kyoto');
+    expect(endingFor('kyoto', n).tier).toBe('good');
+    expect(endingFor('kyoto', n - 1).tier).toBe('good');
+    expect(endingFor('kyoto', 0).tier).toBe('normal');
   });
 
   it('scores only the scenes that ask for a reply', () => {
