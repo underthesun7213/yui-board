@@ -10,9 +10,10 @@ import {
   renderGameScript,
   renderImagePrompts,
 } from '../../scripts/gen-comic-scripts.mjs';
-import { ART, endingKey, pageKey, sceneKey } from '../../src/content/art';
+import { ART, achievementKey, endingKey, pageKey, sceneKey } from '../../src/content/art';
 import { YUKI_ART } from '../../src/content/yuki-minigame';
 import { ENDINGS } from '../../src/content/endings';
+import { ACHIEVEMENTS } from '../../src/content/achievements';
 import { LESSONS } from '../../src/content/lessons';
 import { plain, segments } from '../../src/content/ruby';
 import { voiceHash, voiceLines } from '../../src/content/voice-lines';
@@ -370,9 +371,21 @@ describe('art', () => {
     for (const r of ['osaka', 'kyoto'] as const)
       VN[r].scenes.forEach((_, i) => slots.add(sceneKey(r, i)));
     for (const e of ENDINGS) slots.add(endingKey(e.id));
+    for (const a of ACHIEVEMENTS) slots.add(achievementKey(a.id));
     for (const k of Object.values(YUKI_ART)) slots.add(k);
     for (const k of Object.keys(ART))
       expect(slots.has(k), `src/art/${k} matches no slot`).toBe(true);
+  });
+  it('has achievement pictures at 3:2, at most 400 KB', () => {
+    const root = 'src/art/achievements';
+    if (!existsSync(root)) return;
+    for (const name of readdirSync(root)) {
+      const f = join(root, name);
+      const buf = readFileSync(f);
+      expect(buf.length <= 400 * 1024, `${f}: over 400 KB (try .webp)`).toBe(true);
+      const [w, h] = imageSize(buf) ?? [0, 1];
+      expect(Math.abs(w / h - 3 / 2) <= (3 / 2) * 0.01, `${f}: ${w}x${h} is not 3:2`).toBe(true);
+    }
   });
 });
 

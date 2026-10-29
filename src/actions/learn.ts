@@ -20,8 +20,8 @@ export const resetVn = () => vn.set(VN_START);
 export function pickOption(i: number) {
   const v = vn.get();
   if (!v.route || v.picked !== null) return;
-  const ok = VN[v.route].scenes[v.i]?.opts[i]?.ok;
-  vn.set({ picked: i, score: v.score + (ok ? 1 : 0) });
+  const opt = VN[v.route].scenes[v.i]?.opts[i];
+  vn.set({ picked: i, score: v.score + (opt?.ok ? 1 : 0), ...(opt?.bet ? { bet: opt.bet } : {}) });
 }
 
 /** scenes that ask for a reply: the only ones scored */
@@ -32,18 +32,11 @@ export function endingFor(route: Route, score: number) {
   return ENDINGS.find((e) => e.route === route && e.best === best)!;
 }
 
-/* The smart-ball match. Its mini-game is not built yet, so a coin toss
-   stands in; the friend's line follows the result. */
-export function playBall(roll = Math.random()) {
-  if (vn.get().ball) return;
-  vn.set({ ball: roll < 0.5 ? 'win' : 'lose' });
-}
-
 export function nextScene() {
   const v = vn.get();
   if (!v.route) return;
   const i = v.i + 1;
-  vn.set({ i, picked: null, ball: null });
+  vn.set({ i, picked: null, ball: null, got: null });
   /* the 유우키 미니게임 starts at the drink: the scene before was the doorway */
   if (VN[v.route].scenes[i]?.kind === 'yuki') yuki.set({ ...YUKI_START, step: 'drink' });
   if (i < VN[v.route].scenes.length) return;

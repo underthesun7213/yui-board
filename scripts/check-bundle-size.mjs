@@ -42,6 +42,12 @@ const BUDGETS = [
     kb: 12,
     roots: ['src/features/learn/YukiGame.tsx'],
   },
+  {
+    /* the smart-ball match: its own lazy screen and the table runtime */
+    name: 'smart-ball mini-game',
+    kb: 12,
+    roots: ['src/features/learn/SmartBall.tsx'],
+  },
 ];
 
 function closure(keys) {

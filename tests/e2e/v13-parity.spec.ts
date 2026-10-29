@@ -102,7 +102,7 @@ test.describe('home, tabs, language, back', () => {
   test('Y-C hash links open their screen', async ({ page, errors }) => {
     void errors;
     await page.goto('./#/learn/collection');
-    await expect(page.locator('.cgrid')).toBeVisible();
+    await expect(page.locator('.cgrid').first()).toBeVisible();
     await tap(page, '.bar .back');
     await expect(page.locator('.lesson')).toHaveCount(8);
   });
@@ -114,22 +114,33 @@ test.describe('game and collection', () => {
     await page.goto('./#/learn/l8');
     await tap(page, '[data-route="osaka"]');
     /* play to the end however many scenes the route has: a reply, a walk, the
-       smart-ball match, and the 유우키 미니게임 (its own test plays it; here it skips
-       to the bill) */
+       유우키 미니게임 (its own test plays it; here it skips to the bill) and the
+       smart-ball match (one ball launched, then settled) */
     for (let i = 0; i < 20 && !(await page.locator('.vnend').count()); i++) {
       /* the game's chunk loads on first use: wait for the scene to show */
-      await page
-        .locator('.yk, .vnwrap > .opts, [data-ball], [data-next], .vnend')
-        .first()
-        .waitFor();
+      await page.locator('.yk, .sb, .vnwrap > .opts, [data-next], .vnend').first().waitFor();
       if (await page.locator('.vnend').count()) break;
       if (await page.locator('.yk').count()) {
         await y(page, (a) => a.yuki.set({ step: 'end' }));
         await tap(page, '[data-yk="done"]');
         continue;
       }
+      if (await page.locator('.sb').count()) {
+        await tap(page, '[data-sb="start"]');
+        const launch = page.locator('[data-sb="launch"]');
+        await expect(launch).toBeEnabled();
+        await launch.hover();
+        await page.mouse.down();
+        await page.waitForTimeout(700);
+        await page.mouse.up();
+        await expect(page.locator('[data-flip="left"]')).toBeEnabled();
+        await y(page, (a) => a.sbSettle(true));
+        /* the bet taken in the scene before (juice) unlocks its picture */
+        await expect(page.locator('.achcard[data-ach="a_osaka_juice"]')).toBeVisible();
+        await tap(page, '[data-next]');
+        continue;
+      }
       if (await page.locator('.vnwrap > .opts').count()) await tap(page, '[data-opt="0"]');
-      if (await page.locator('[data-ball]').count()) await tap(page, '[data-ball]');
       await tap(page, '[data-next]');
     }
     await expect(page.locator('.vnend')).toHaveCount(1);
@@ -139,7 +150,8 @@ test.describe('game and collection', () => {
       1,
     );
     await page.goto('./#/learn/collection');
-    await expect(page.locator('.card:not(.lock)')).toHaveCount(1);
+    /* the juice picture and the ending card */
+    await expect(page.locator('.card:not(.lock)')).toHaveCount(2);
   });
 });
 

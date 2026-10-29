@@ -1,6 +1,7 @@
 /* Loaded only in builds made with VITE_E2E=1 (the Playwright tests): a handle
    on the stores and the map so the tests can check state, not just pixels. */
 import { inspect } from './map/runtime';
+import { settle } from './minigames/smartball';
 import { collection } from './state/collection';
 import { data, setData } from './state/data';
 import { location } from './state/location';
@@ -18,5 +19,6 @@ import { yuki } from './state/yuki';
   data,
   setData,
   yuki,
+  sbSettle: settle,
   map: inspect,
 };
