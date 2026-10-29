@@ -2336,3 +2336,90 @@ rt {
 .arc:disabled::before {
   filter: grayscale(0.8) brightness(0.65);
 }
+
+/* smart-ball: how to play, and what to do now over the table */
+.sb-guide {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 12px 14px;
+  list-style: none;
+  border: 1px solid var(--line);
+  border-radius: var(--r-m);
+  background: var(--canvas);
+}
+.sb-guide li {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--body);
+}
+.sb-guide b {
+  color: var(--ink);
+}
+.sb-guide .dot {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  box-shadow: 0 3px 0 #00000033;
+}
+.sb-guide .dot.gold {
+  background: radial-gradient(circle at 36% 30%, #fff8 0 12%, #f2b440 30%, #a66a0e 100%);
+}
+.sb-guide .dot.red {
+  background: radial-gradient(circle at 36% 30%, #fff8 0 12%, #e2463c 30%, #8f1f18 100%);
+}
+.sb-guide .dot.hole {
+  background: radial-gradient(circle, #1a0f08 0 45%, #c2372f 48% 70%, #f0dcb4 72%);
+}
+.sb-stage {
+  position: relative;
+}
+.sb-tip {
+  position: absolute;
+  left: 50%;
+  bottom: 14%;
+  transform: translateX(-50%);
+  max-width: 86%;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: #15202bdd;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 800;
+  text-align: center;
+  white-space: nowrap;
+  pointer-events: none;
+  animation: sb-bob 1.1s ease-in-out infinite;
+}
+.sb-tip.launch {
+  left: auto;
+  right: 4%;
+  transform: none;
+  bottom: 6%;
+  background: #a66a0eee;
+}
+@keyframes sb-bob {
+  50% {
+    translate: 0 -5px;
+  }
+}
+.arc.gold.pulse::before {
+  animation: sb-pulse 1s ease-in-out infinite;
+}
+@keyframes sb-pulse {
+  50% {
+    box-shadow:
+      0 6px 0 var(--cap-dark),
+      0 0 0 8px #f2b44055;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sb-tip,
+  .arc.gold.pulse::before {
+    animation: none;
+  }
+}
