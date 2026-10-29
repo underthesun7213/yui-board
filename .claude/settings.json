@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "deny": [
+      "Read(**/.env)",
+      "Read(**/.env.*)",
+      "Edit(**/.env)",
+      "Edit(**/.env.*)",
+
+      "Bash(supabase db push*)",
+      "Bash(npx supabase db push*)",
+      "Bash(npx --yes supabase* db push*)",
+      "Bash(supabase db reset --linked*)",
+      "Bash(supabase functions deploy*)",
+      "Bash(npx supabase functions deploy*)",
+      "Bash(supabase secrets *)",
+      "Bash(npx supabase secrets *)",
+      "PowerShell(supabase db push*)",
+      "PowerShell(npx supabase db push*)",
+      "PowerShell(supabase functions deploy*)",
+      "PowerShell(npx supabase functions deploy*)",
+
+      "Bash(wrangler deploy*)",
+      "Bash(npx wrangler deploy*)",
+      "Bash(npx --yes wrangler* deploy*)",
+      "Bash(wrangler secret *)",
+      "Bash(npx wrangler secret *)",
+      "PowerShell(wrangler deploy*)",
+      "PowerShell(npx wrangler deploy*)",
+
+      "Bash(git push --force*)",
+      "Bash(git push -f*)",
+      "Bash(git push * --force*)",
+      "Bash(git push * -f*)",
+      "PowerShell(git push --force*)",
+      "PowerShell(git push * --force*)",
+
+      "Bash(gh secret *)",
+      "Bash(gh variable set *)",
+      "Bash(gh variable delete *)"
+    ],
+    "ask": [
+      "Bash(gh pr merge *)",
+      "Bash(gh workflow run *)",
+      "Bash(git push origin main*)",
+      "PowerShell(gh pr merge *)",
+      "PowerShell(git push origin main*)"
+    ]
+  }
+}
