@@ -1440,6 +1440,73 @@ rt {
   font-size: 15px;
   font-weight: 600;
 }
+.mylink.legallink {
+  margin-top: -16px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 400;
+}
+.textlink {
+  min-height: 44px;
+  padding: 0;
+  color: var(--primary);
+  font: inherit;
+  font-weight: 600;
+}
+
+/* terms and privacy (SYS-04): long text, tables that scroll sideways */
+.legal {
+  padding: 8px var(--gutter) 32px;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+.legal h2 {
+  margin: 24px 0 8px;
+  font-size: 20px;
+}
+.legal h3 {
+  margin: 20px 0 6px;
+  font-size: 16px;
+}
+.legal p,
+.legal ul {
+  margin: 8px 0;
+}
+.legal ul {
+  padding-left: 20px;
+}
+.legal hr {
+  margin: 24px 0;
+  border: 0;
+  border-top: 1px solid var(--line);
+}
+.legal .tablewrap {
+  margin: 8px 0;
+  overflow-x: auto;
+}
+.legal table {
+  min-width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.legal th,
+.legal td {
+  min-width: 96px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+}
+.legal th {
+  background: var(--mist);
+}
+.legal .btns a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  text-decoration: none;
+}
 .form {
   padding: 8px var(--gutter) 24px;
 }

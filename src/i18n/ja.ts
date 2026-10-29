@@ -198,6 +198,10 @@ export const ja = {
   myT: '自分の投稿',
   myOpen: '自分の投稿',
   myEmpty: 'このブラウザーからの投稿はまだありません。',
+  legalT: '利用規約とプライバシー',
+  legalLink: '利用規約・プライバシー・お問い合わせ',
+  legalAgree: '登録すると、利用規約とプライバシーポリシーに同意したことになります。',
+  legalMail: '運営者にメールする',
   st: {
     visible: '表示中',
     hidden_review: '通報により非表示 — 確認中',

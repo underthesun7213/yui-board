@@ -1,6 +1,6 @@
 # YUNABI Terms of Use and Privacy Policy
 
-Effective: [publication date]　/　Operator: Juha Bak (individual)　/　Contact: yunabi@juha.dev
+Effective: October 29, 2026　/　Operator: Juha Bak (individual)　/　Contact: yunabi@juha.dev
 
 The Japanese version is authoritative; this English version is a translation.
 

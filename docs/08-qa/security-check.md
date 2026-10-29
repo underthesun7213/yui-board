@@ -161,7 +161,7 @@
 | B-13 | `production` Environment(`main` 전용, 필수 검토자) + `deploy.yml` 자동 배포(T-10) | Y-4 | 책임자 | Environment 설정, `deploy.yml` 첫 성공 실행 번호 | |
 | B-14 | C-4 비밀 키 등록 + CAPTCHA 스위치 ON 시험 ① 사용자 첫 쓰기 ② 관리자 로그인 (C-1·C-2 사이트 키 배포 뒤) | Y-4 | 책임자 | 런북 §3.3 실행 기록(날짜·결과), §3.4 로 끈 뒤 재확인 | |
 | B-15 | 사용자 앱 HTTPS 강제 — Cloudflare "Always Use HTTPS" + HSTS (`yunabi.juha.dev`). 옛 항목 Pages "Enforce HTTPS" 를 대체(ADR-0025) | Y-4 | 책임자 | 배포 뒤 실측 날짜: `curl -sI http://yunabi.juha.dev/` 가 https 로 리디렉션, `https://yunabi.juha.dev/` 에 `Strict-Transport-Security: max-age=31536000; includeSubDomains`(런북 §7.3 확인 1·3) | 닫힘 2026-10-25 — 첫 배포 뒤 실측(301 리디렉션, HSTS 1년·includeSubDomains). 옛 Pages 항목은 2026-10-23 닫혔다가 호스트 변경으로 2026-10-24 다시 열림 |
-| B-16 | 방침·약관 게시 — IP 가명 처리, 접속 로그 IP 원문(Y-P1), Turnstile 문구(C-5) | Y-4 | 책임자·기획 | 페이지 주소, 첫 등록 화면 링크(Y-P4) | |
+| B-16 | 방침·약관 게시 — IP 가명 처리, 접속 로그 IP 원문(Y-P1), Turnstile 문구(C-5) | Y-4 | 책임자·기획 | 페이지 주소, 첫 등록 화면 링크(Y-P4) | 구현 (2026-10-29): `https://yunabi.juha.dev/#/legal`, 홈 하단 링크, 첫 등록 전 양식 안내의 링크. 배포 뒤 종결 |
 | B-17 | ZAP 운영 URL 수동 스캔 — 사용자 앱 `https://yunabi.juha.dev/` | Y-4 | 책임자 | 날짜·버전·높음 0 | |
 
 ## 7. 다시 점검할 때

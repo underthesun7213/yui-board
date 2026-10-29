@@ -21,6 +21,7 @@ export const TAB_OF: Record<RouteName, number> = {
   eventEdit: 3,
   weekEdit: 3,
   me: 0,
+  legal: 0,
 };
 /** Where ‹ goes. */
 export const PARENT: Partial<Record<RouteName, Route>> = {
@@ -36,6 +37,7 @@ export const PARENT: Partial<Record<RouteName, Route>> = {
   eventEdit: { name: 'cal' },
   weekEdit: { name: 'cal' },
   me: { name: 'home' },
+  legal: { name: 'home' },
 };
 
 export function formatRoute(r: Route): string {
@@ -66,6 +68,8 @@ export function formatRoute(r: Route): string {
       return `#/cal/edit/${r.id}/${r.date}`;
     case 'me':
       return '#/me';
+    case 'legal':
+      return '#/legal';
   }
 }
 
@@ -88,6 +92,7 @@ export function parseRoute(hash: string): Route | null {
       return { name: 'placeEdit', id: num(p[2])! };
   }
   if (p[0] === 'me' && p.length === 1) return { name: 'me' };
+  if (p[0] === 'legal' && p.length === 1) return { name: 'legal' };
   if (p[0] === 'cal') {
     if (p.length === 1) return { name: 'cal' };
     if (p.length === 2 && p[1] === 'new') return { name: 'eventNew' };

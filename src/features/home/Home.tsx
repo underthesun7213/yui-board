@@ -62,6 +62,9 @@ export function Home() {
       <button className="mylink" onClick={() => go({ name: 'me' })}>
         {m.myOpen} ›
       </button>
+      <button className="mylink legallink" onClick={() => go({ name: 'legal' })}>
+        {m.legalLink} ›
+      </button>
     </>
   );
 }

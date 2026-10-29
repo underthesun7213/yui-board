@@ -13,7 +13,8 @@ export type Route =
   | { name: 'eventNew' }
   | { name: 'eventEdit'; id: number }
   | { name: 'weekEdit'; id: number; date: string }
-  | { name: 'me' };
+  | { name: 'me' }
+  | { name: 'legal' };
 export type RouteName = Route['name'];
 
 /** prev: the screen this history entry was opened from (for ‹).
