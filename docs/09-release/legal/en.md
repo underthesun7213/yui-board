@@ -52,7 +52,7 @@ Juha Bak (individual). The operator's address is provided without delay on reque
 |---|---|---|
 | Anonymous account ID (a random value) | When you first post or report | Editing and deleting your own items, limits, handling reports |
 | Places and events you post, their language, posting and edit dates | When you post or edit | Providing the Service (public to all users) |
-| Automatic translations of place descriptions (into the other two of English, Japanese, Korean) | After a description is posted or edited | Showing it to users of other languages (public; the original is one tap away) |
+| Automatic translations of place descriptions and of event titles, places and details (into the other two of English, Japanese, Korean) | After they are posted or edited | Showing it to users of other languages (public; the original is one tap away) |
 | Reports (item, reason) | When you report | Automatic hiding and the operator's review |
 | A record of posts (when, what) | When you post | Daily limits |
 | A pseudonymised value of your IP address (a hash mixed with a secret that changes daily) | With each post | Preventing abuse |
@@ -64,7 +64,7 @@ Juha Bak (individual). The operator's address is provided without delay on reque
 Your current location is used only on your device, only after you allow it, to centre the map and estimate walking times. It is never sent to our server; the only coordinates the server receives are those of places you post. When the map loads its images (tiles), the tile numbers of the area on screen go to OpenStreetMap's tile servers, narrowing the area as you zoom in.
 
 ### 4. Automatic translation
-After a place description is posted or edited, it is translated into the other two languages by Microsoft's machine translation (Azure AI Translator), stored, and shown in each viewer's screen language (marked "Translated automatically", with the original available). Only the description's text and language are sent to Microsoft — not the place name, location, account or anything about who posted it. Microsoft states that it does not store text sent for text translation.
+After a place description, or an event's title, place or details, is posted or edited, it is translated into the other two languages by Microsoft's machine translation (Azure AI Translator), stored, and shown in each viewer's screen language (marked "Translated automatically", with the original available). Only this text and its language are sent to Microsoft — not the place name, location, event date and time, account or anything about who posted it. Microsoft states that it does not store text sent for text translation.
 
 ### 5. Analytics
 To understand how the app is used, we use Cloudflare Web Analytics. It uses no cookies and counts only the screens viewed, approximate country, browser and device type, and loading speed; it does not identify individuals or track them across sites.
@@ -87,7 +87,7 @@ If there is an automated attack, the operator may switch on a Cloudflare Turnsti
 | Reports and records of the operator's actions | One year |
 | Record of posts | 48 hours |
 | Pseudonymised IP values | One hour for counting posts; erased from security records after 48 hours (the security records themselves are kept 90 days) |
-| Automatic translations | Like the original: deleted and redone when the description changes, deleted when the place is deleted |
+| Automatic translations | Like the original: deleted and redone when the text changes, deleted when the place or event is deleted |
 | Backups | Weekly, encrypted, kept 90 days. Backups do not contain the daily secret, so pseudonymised IP values cannot be reversed |
 
 ### 10. Service providers and transfers abroad
@@ -98,7 +98,7 @@ To run the Service, we entrust the handling of personal data to the following co
 | Supabase, Inc. (USA) | Database, anonymous accounts | Tokyo region |
 | Cloudflare, Inc. (USA) | Delivering the app, analytics, Turnstile (only when on) | Global network |
 | GitHub, Inc. (USA) | Source code, storage of encrypted backups (private) | USA and elsewhere |
-| Microsoft Corporation (USA) | Automatic translation of place descriptions (text only; not stored) | Processed in a Japan East (Tokyo) resource |
+| Microsoft Corporation (USA) | Automatic translation of place descriptions and event texts (text only; not stored) | Processed in a Japan East (Tokyo) resource |
 | OpenStreetMap Foundation (UK) | Map images (requested directly by your browser) | UK, Europe and elsewhere |
 
 The operator entrusts this handling after confirming that these companies have systems meeting the standards set by Japan's Act on the Protection of Personal Information. For the personal information protection systems of each country, see the information provided by Japan's Personal Information Protection Commission.
