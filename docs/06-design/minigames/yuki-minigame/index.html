@@ -1,0 +1,740 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>유우키 미니게임</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" integrity="sha512-7eHRwcbYkK4d9g/6tD/mhkf++eoTHwpNM9woBxtPUBWm67zeAfFC+HrdoE2GanKeocly/VxeLvIqwvCdk7qScg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<style>
+/* Layout: YUNABI's own look ("Clear Sky", src/styles/tokens.css) around
+   illustrated scenes in the comics' soft webtoon style — a navy bar, a 4:3
+   picture, then a white dialogue card and plain choice buttons, as in the
+   app's lessons. One light look, as the app has. */
+:root {
+  --canvas: #ffffff;
+  --surface: #f4f7fa;
+  --line: #dce3ea;
+  --line-strong: #7d8995;
+  --ink: #15202b;
+  --body: #3b4855;
+  --muted: #5b6875;
+  --navy: #1d3e5c;
+  --on-navy-muted: #b9d9ee;
+  --primary: #1769aa;
+  --primary-pressed: #105688;
+  --primary-tint: #e6f3fc;
+  --sky: #8ecdf2;
+  --mist: #c9e9fb;
+  --lantern: #c2372f;
+  --ok-bg: #e3f4e1;
+  --ok-fg: #1e5b22;
+  --hm-bg: #fde8e6;
+  --hm-fg: #a3241b;
+  --gold: #e9a23b;
+  --r-s: 8px;
+  --r-m: 12px;
+  --r-l: 16px;
+  --f-en: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --f-ja: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic UI", "Noto Sans JP", system-ui, sans-serif;
+  color-scheme: light;
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+body {
+  background: linear-gradient(180deg, var(--mist) 0, var(--surface) 280px);
+  color: var(--body); font: 16px/1.55 var(--f-en);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 12px 32px;
+}
+:lang(ja) { font-family: var(--f-ja); }
+.game { max-width: 480px; margin: 0 auto; display: grid; gap: 12px; }
+
+/* top bar, like the app header */
+.hud { display: flex; align-items: center; gap: 8px; background: var(--navy); color: #fff; border-radius: var(--r-l); padding: 8px 10px; }
+.chip { margin-right: auto; font: 600 14px/1 var(--f-en); color: var(--on-navy-muted); background: #ffffff14; border-radius: 999px; padding: 7px 10px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.mute { min-width: 44px; height: 36px; border-radius: 999px; border: 1px solid #ffffff44; background: transparent; color: #fff; cursor: pointer; font: 600 13px/1 var(--f-en); flex: none; }
+
+/* stage: the picture */
+.stage { position: relative; aspect-ratio: 4 / 3; max-width: 100%; border-radius: var(--r-l); overflow: hidden; background: var(--mist); box-shadow: 0 1px 0 var(--line), 0 8px 24px #1d3e5c22; touch-action: none; }
+#scene, #board, #fx { position: absolute; inset: 0; }
+#board, #fx { pointer-events: none; }
+#board > * { pointer-events: auto; }
+.bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transform-origin: 50% 40%; }
+.bg.next { opacity: 0; }
+.pop { position: absolute; font: 800 20px/1 var(--f-en); color: var(--navy); -webkit-text-stroke: 4px #fff; paint-order: stroke fill; white-space: nowrap; transform: translate(-50%, -50%); }
+.pop:lang(ja), .pop .ja { font-family: var(--f-ja); }
+.pop.bad { color: var(--hm-fg); }
+/* Yuki's teasing line: a speech balloon, not an alarm */
+.banner { position: absolute; left: 36%; top: 30%; transform: translate(-50%, -50%) rotate(-4deg); font: 800 22px/1.2 var(--f-ja); color: var(--navy); background: var(--canvas); border: 2px solid var(--navy); border-radius: 20px; padding: 8px 16px; white-space: nowrap; box-shadow: 0 6px 18px #1d3e5c33; }
+.banner::after { content: ""; position: absolute; right: 18px; bottom: -10px; width: 16px; height: 16px; background: var(--canvas); border-right: 2px solid var(--navy); border-bottom: 2px solid var(--navy); transform: rotate(45deg); }
+.curtain { position: absolute; inset: 0; display: flex; pointer-events: none; }
+.curtain i { flex: 1; background: linear-gradient(180deg, #2a5378, var(--navy)); border-left: 1px solid #ffffff22; transform: translateY(-101%); }
+.curtain i:nth-child(2) { background: linear-gradient(180deg, #d34a3f, var(--lantern)); }
+.curtain i:nth-child(3) { background: linear-gradient(180deg, #2a5378, var(--navy)); }
+
+/* dialogue card and controls */
+.panel { display: grid; gap: 10px; }
+.lead { font: 600 13px/1.4 var(--f-en); color: var(--muted); letter-spacing: .06em; text-transform: uppercase; text-align: center; }
+.lead :lang(ja), .lead [lang="ja"] { text-transform: none; }
+.dlg { position: relative; background: var(--canvas); color: var(--ink); border: 1px solid var(--line); border-radius: var(--r-l); padding: 18px 16px 12px; cursor: pointer; min-height: 104px; box-shadow: 0 2px 8px #1d3e5c14; }
+.dlg .name { position: absolute; top: -12px; left: 14px; background: var(--navy); color: #fff; border-radius: 999px; padding: 2px 12px; font: 700 13px/1.6 var(--f-ja); }
+.dlg .jp { font: 700 20px/2 var(--f-ja); min-height: 40px; color: var(--ink); }
+.dlg .jp rt { font: 500 10px/1 var(--f-ja); color: var(--muted); }
+.dlg .en { font-size: 15px; color: var(--muted); }
+.dlg .more { position: absolute; right: 14px; bottom: 6px; font-size: 12px; color: var(--primary); }
+.dlg .say { position: absolute; right: 10px; top: 10px; width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--line); background: var(--primary-tint); color: var(--primary); cursor: pointer; font: 12px/1 var(--f-en); }
+
+.choices { display: grid; gap: 8px; }
+.gbtn {
+  position: relative; min-height: 52px; padding: 8px 44px 8px 16px; border: 1px solid var(--line-strong); border-radius: var(--r-m); cursor: pointer;
+  background: var(--canvas); color: var(--ink); font: 700 18px/1.7 var(--f-ja); text-align: left;
+  transition: background var(--t, .15s), border-color var(--t, .15s);
+}
+.gbtn rt { font: 500 10px/1 var(--f-ja); color: var(--muted); }
+.gbtn:hover { background: var(--primary-tint); border-color: var(--primary); }
+.gbtn:active { transform: translateY(1px); }
+.gbtn[disabled] { cursor: default; opacity: .5; background: var(--surface); }
+.gbtn.right { background: var(--ok-bg); border-color: var(--ok-fg); color: var(--ok-fg); opacity: 1; }
+.gbtn.wrong { background: var(--hm-bg); border-color: var(--hm-fg); color: var(--hm-fg); opacity: 1; }
+.gbtn .mark { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); font: 800 22px/1 var(--f-en); }
+.go { justify-self: center; min-height: 48px; padding: 0 26px; border: 0; border-radius: 999px; cursor: pointer; font: 700 16px/1 var(--f-en); color: #fff; background: var(--primary); box-shadow: 0 3px 10px #1769aa44; }
+.go:hover { background: var(--primary-pressed); }
+.go:active { transform: translateY(1px); }
+.go[disabled] { background: var(--line-strong); box-shadow: none; cursor: default; }
+.go.red { background: var(--lantern); box-shadow: 0 3px 10px #c2372f44; }
+.go.ghost { background: var(--canvas); color: var(--primary); border: 1px solid var(--primary); box-shadow: none; }
+.fb { background: var(--ok-bg); color: var(--ok-fg); border-radius: var(--r-m); padding: 10px 14px; font-size: 15px; }
+.fb.no { background: var(--hm-bg); color: var(--hm-fg); }
+.fb.info { background: var(--primary-tint); color: #0f4c7a; }
+.fb b { font: 700 14px/1.5 var(--f-en); display: block; letter-spacing: .02em; }
+.fb b:lang(ja), .fb b[lang="ja"] { font-family: var(--f-ja); }
+
+/* the mobile order screen: a phone in your hand */
+.phone { background: var(--ink); border-radius: 30px; padding: 10px; box-shadow: 0 10px 28px #15202b33; }
+.ph-screen { background: var(--canvas); border-radius: 22px; overflow: hidden; }
+.ph-bar { display: flex; justify-content: space-between; align-items: center; gap: 8px; background: var(--lantern); color: #fff; padding: 12px 16px; font: 700 15px/1.3 var(--f-ja); }
+.ph-bar small { font: 600 12px/1 var(--f-en); opacity: .85; }
+.ph-tabs { display: flex; gap: 6px; padding: 8px 12px; border-bottom: 1px solid var(--line); }
+.ph-tabs span { padding: 4px 12px; border-radius: 999px; font: 700 13px/1.6 var(--f-ja); color: var(--muted); background: var(--surface); }
+.ph-tabs .on { background: var(--hm-bg); color: var(--hm-fg); }
+.ph-item { display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 4px 12px; border-bottom: 1px solid var(--line); }
+.ph-item.has { background: #fff8f6; }
+.ph-item > svg { width: 26px; height: 46px; }
+.ph-item .nm b { display: block; font: 700 16px/1.9 var(--f-ja); color: var(--ink); }
+.ph-item .nm b rt { font-size: 9px; color: var(--muted); }
+.ph-item .nm small { color: var(--muted); font-size: 13px; }
+.qty { display: flex; align-items: center; gap: 6px; }
+.qty button { width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--line-strong); background: var(--canvas); color: var(--ink); cursor: pointer; font: 700 18px/1 var(--f-en); }
+.qty button[disabled] { opacity: .35; cursor: default; }
+.qty button.plus { background: var(--lantern); border-color: var(--lantern); color: #fff; }
+.qty span { min-width: 18px; text-align: center; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; }
+.ph-foot { display: grid; gap: 8px; padding: 10px 12px 12px; background: var(--surface); }
+.go.wide { width: 100%; justify-self: stretch; }
+.go small { font-weight: 600; opacity: .8; margin-left: 4px; }
+.ticket { background: var(--canvas); color: var(--ink); border: 1px solid var(--line); border-radius: var(--r-m); padding: 8px 14px; display: grid; gap: 4px; font-variant-numeric: tabular-nums; }
+.ticket .row { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 15px; }
+.ticket .row button { min-width: 36px; min-height: 36px; border-radius: var(--r-s); border: 1px solid var(--line-strong); background: var(--canvas); color: var(--ink); cursor: pointer; font: 700 16px/1 var(--f-en); }
+.ticket .sum { font-weight: 700; border-top: 1px dashed var(--line-strong); padding-top: 6px; display: flex; justify-content: space-between; }
+.meters { display: flex; gap: 8px; flex-wrap: wrap; }
+.meter { flex: 1; min-width: 140px; background: var(--canvas); border: 1px solid var(--line); border-radius: 999px; height: 30px; position: relative; overflow: hidden; }
+.meter b { position: absolute; inset: 0 auto 0 0; background: var(--mist); }
+.meter.full b { background: var(--ok-bg); }
+.meter.over b { background: var(--hm-bg); }
+.meter span { position: relative; display: block; text-align: center; font: 700 13px/28px var(--f-en); color: var(--ink); font-variant-numeric: tabular-nums; }
+
+/* eating: the sauce tray in the picture is the drop target */
+.sauce { position: absolute; left: 38%; top: 66.5%; width: 26%; height: 15%; border: 2px dashed #ffffffcc; border-radius: var(--r-m); display: grid; align-items: end; justify-items: center; }
+.sauce > span { transform: translateY(70%); background: #fffffff0; color: var(--ink); border-radius: 999px; padding: 2px 10px; font: 700 12px/1.6 var(--f-en); white-space: nowrap; box-shadow: 0 2px 6px #0002; }
+.hot { border-color: var(--gold); background: #e9a23b33; }
+.plate { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; background: radial-gradient(ellipse at 50% 35%, #fff, #f1f3f5 70%, #dde2e7); border: 1px solid var(--line); border-radius: 48px; padding: 12px; min-height: 96px; }
+.plate, .kushi, #board { user-select: none; -webkit-user-select: none; }
+.kushi { width: 44px; display: grid; justify-items: center; padding: 2px; border: 2px solid transparent; border-radius: var(--r-m); background: transparent; cursor: grab; touch-action: none; color: var(--ink); }
+.kushi.sel { border-color: var(--primary); background: var(--primary-tint); }
+.kushi.done { opacity: .25; cursor: default; }
+.kushi small { font: 700 11px/1.1 var(--f-ja); }
+.drag { position: fixed; pointer-events: none; z-index: 50; transform: translate(-50%, -60%) rotate(-12deg) scale(1.2); }
+.acts { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+
+/* results */
+.phr { display: grid; gap: 6px; }
+.phr > b { color: var(--ink); }
+.phr div { background: var(--canvas); color: var(--ink); border: 1px solid var(--line); border-radius: var(--r-m); padding: 6px 12px; }
+.phr .j { font: 700 17px/1.9 var(--f-ja); }
+.phr .j rt { font-size: 9px; color: var(--muted); }
+.phr .k { font-size: 14px; color: var(--muted); }
+.title { text-align: center; font: 800 26px/1.2 var(--f-ja); color: var(--navy); }
+:focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; }
+@media (max-width: 380px) { .menu { grid-template-columns: repeat(3, minmax(0, 1fr)); } .dlg .jp { font-size: 18px; } }
+</style>
+
+<svg style="position:absolute;width:0;height:0" aria-hidden="true" focusable="false"><defs>
+  <radialGradient id="bt" cx="40%" cy="35%" r="70%"><stop offset="0" stop-color="#f7d58e"/><stop offset=".65" stop-color="#e0a548"/><stop offset="1" stop-color="#b07428"/></radialGradient>
+  <radialGradient id="btS" cx="40%" cy="35%" r="70%"><stop offset="0" stop-color="#a8683a"/><stop offset=".65" stop-color="#734020"/><stop offset="1" stop-color="#52290f"/></radialGradient>
+</defs></svg>
+<div class="game" lang="en">
+  <div class="hud">
+    <span class="chip" id="money">¥0</span>
+    <button class="mute" id="mute" aria-label="Sound on or off">ON</button>
+  </div>
+  <div class="stage" id="stage">
+    <div id="scene"></div>
+    <div id="board"></div>
+    <div id="fx"></div>
+    <div class="curtain" id="curtain" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+  </div>
+  <div class="panel" id="panel" aria-live="polite"></div>
+</div>
+
+<script>
+/* ===================== content (same as v1) ===================== */
+const MENU = [
+  { id: 'gyu',   ja: '{牛|ぎゅう}かつ', en: 'Beef',   yen: 150, look: 'meat' },
+  { id: 'buta',  ja: '{豚|ぶた}かつ',   en: 'Pork', yen: 130, look: 'meat' },
+  { id: 'uzura', ja: 'うずら',          en: 'Quail egg', yen: 120, look: 'egg' },
+  { id: 'tama',  ja: '{玉|たま}ねぎ',   en: 'Onion',     yen: 110, look: 'ring' },
+  { id: 'renk',  ja: 'れんこん',        en: 'Lotus root',     yen: 110, look: 'ring' },
+  { id: 'ebi',   ja: 'えび',            en: 'Shrimp',     yen: 220, look: 'long' },
+  { id: 'chz',   ja: 'チーズ',          en: 'Cheese',     yen: 160, look: 'block' },
+  { id: 'mochi', ja: 'もち',            en: 'Rice cake',       yen: 140, look: 'block' },
+];
+const DRINKS = { beer: { ja: '{生|なま}ビール', yen: 550 }, oolong: { ja: 'ウーロン{茶|ちゃ}', yen: 300 } };
+const BUDGET = 2000, KINDS = 4;
+const HON = ['', 'いっぽん', 'にほん', 'さんぼん', 'よんほん', 'ごほん'];
+function yenKana(n) {
+  const d = ['', 'いち', 'に', 'さん', 'よん', 'ご', 'ろく', 'なな', 'はち', 'きゅう'];
+  const sen = ['', 'せん', 'にせん', 'さんぜん', 'よんせん', 'ごせん', 'ろくせん', 'ななせん', 'はっせん', 'きゅうせん'];
+  const hyaku = ['', 'ひゃく', 'にひゃく', 'さんびゃく', 'よんひゃく', 'ごひゃく', 'ろっぴゃく', 'ななひゃく', 'はっぴゃく', 'きゅうひゃく'];
+  const a = Math.floor(n / 1000), b = Math.floor(n / 100) % 10, c = Math.floor(n / 10) % 10, e = n % 10;
+  return sen[a] + hyaku[b] + (c === 0 ? '' : (c === 1 ? '' : d[c]) + 'じゅう') + d[e] + 'えん';
+}
+const TALK = {
+  drink: { sub: 'STAGE 1 · 飲み物', who: 'ユウキ',
+    staff: ['とりあえず{飲|の}み{物|もの}{決|き}めよか。{何|なに}にする？', 'Let\'s pick drinks first. What are you having?'],
+    opts: [
+      { jp: 'とりあえず{生|なま}で！', en: 'Draft beer to start!', ok: true, drink: 'beer', fb: '"Draft for now." Friends say it too. 生 (なま) is draft beer, the classic first drink with kushikatsu.' },
+      { jp: 'ウーロン{茶|ちゃ}にしようかな。', en: 'I think I\'ll have oolong tea.', ok: true, drink: 'oolong', fb: '〜にしようかな ("I think I\'ll go with…") is a casual way to choose. Oolong tea goes well with fried food.' },
+      { jp: '{生|なま}ビールをいただけますでしょうか。', en: 'Might I possibly have a draft beer?', ok: false, fb: 'Far too polite for a friend: this is how a customer might speak to staff. With Yuki, keep it casual.' },
+    ] },
+  bill: { sub: 'STAGE 5 · お会計', lead: 'Time to go. You pay at the register on the way out. You say:',
+    opts: [
+      { jp: 'すみません、お{会計|かいけい}お{願|ねが}いします。', en: 'Excuse me, the bill please.', ok: true, fb: 'お会計お願いします is all you need at the register; starting with すみません makes it polite.' },
+      { jp: 'おあいそ！', en: '(Check!)', ok: false, fb: 'おあいそ started as shop-side slang, so some people find it odd from a customer. お会計 is the safe choice.' },
+      { jp: 'お{金|かね}を{払|はら}いたいです。', en: 'I would like to pay money.', ok: false, fb: 'Not wrong, but stiff, like a textbook. In a shop, say お会計お願いします.' },
+    ] },
+  leave: { sub: 'STAGE 6 · 退店', lead: 'Paid. As you step out, you say to the staff:',
+    opts: [
+      { jp: 'ごちそうさまでした！', en: 'Thank you for the meal!', ok: true, fb: 'Said after eating. You can say it to the staff as you leave.' },
+      { jp: 'いただきます！', en: 'Let\'s eat!', ok: false, fb: 'いただきます comes before eating. After, it is ごちそうさまでした.' },
+      { jp: 'お{疲|つか}れさまでした。', en: 'Thanks for your hard work.', ok: false, fb: 'Said to people you worked with. From a customer to the staff it sounds odd.' },
+    ] },
+};
+const FLOW = ['intro', 'drink', 'order', 'count', 'eat', 'bill', 'pay', 'leave', 'end'];
+
+/* ===================== state ===================== */
+const fresh = () => ({ step: 0, miss: 0, warned: 0, drink: null, order: {}, plate: [], sel: 0, eatenOk: 0, said: [] });
+let S = fresh();
+let pick = null;
+
+/* ===================== helpers ===================== */
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+const rb = (s) => esc(s).replace(/\{([^|}]+)\|([^}]+)\}/g, '<ruby>$1<rt>$2</rt></ruby>');
+const plain = (s) => s.replace(/\{([^|}]+)\|([^}]+)\}/g, '$2');
+const base = (s) => s.replace(/\{([^|}]+)\|([^}]+)\}/g, '$1');
+const yen = (n) => n.toLocaleString('ja-JP') + '円';
+const total = () => Object.entries(S.order).reduce((t, [id, n]) => t + MENU.find((m) => m.id === id).yen * n, 0) + (S.drink ? DRINKS[S.drink].yen : 0);
+const kinds = () => Object.values(S.order).filter((n) => n > 0).length;
+function remember(jp, en) { if (!S.said.some((p) => p.jp === jp)) S.said.push({ jp, en }); }
+/* markup → tokens for the typewriter: a ruby unit counts as one */
+function tokens(s) {
+  const out = []; const re = /\{([^|}]+)\|([^}]+)\}/g; let i = 0, m;
+  while ((m = re.exec(s))) { for (const ch of s.slice(i, m.index)) out.push(esc(ch)); out.push(`<ruby>${esc(m[1])}<rt>${esc(m[2])}</rt></ruby>`); i = re.lastIndex; }
+  for (const ch of s.slice(i)) out.push(esc(ch));
+  return out;
+}
+
+/* ===================== animation (GSAP, or nothing) ===================== */
+const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const G = (!calm && window.gsap) ? window.gsap : {
+  to: (_t, v) => { v && v.onComplete && v.onComplete(); return { kill() {} }; },
+  from: (_t, v) => { v && v.onComplete && v.onComplete(); return { kill() {} }; },
+  fromTo: (_t, _a, v) => { v && v.onComplete && v.onComplete(); return { kill() {} }; },
+  set: () => {}, killTweensOf: () => {},
+};
+function popText(text, x, y, bad) {
+  const el = document.createElement('div');
+  el.className = 'pop' + (bad ? ' bad' : ''); el.textContent = text;
+  el.style.left = x + '%'; el.style.top = y + '%';
+  $('fx').appendChild(el);
+  G.fromTo(el, { scale: .4, opacity: 0 }, { scale: 1, opacity: 1, duration: .25, ease: 'back.out(3)' });
+  G.to(el, { y: -40, opacity: 0, delay: .6, duration: .5, onComplete: () => el.remove() });
+  if (!window.gsap || calm) setTimeout(() => el.remove(), 900);
+}
+function banner(text) {
+  const el = document.createElement('div'); el.className = 'banner'; el.textContent = text; $('fx').appendChild(el);
+  G.fromTo(el, { scale: 2.4, opacity: 0 }, { scale: 1, opacity: 1, duration: .3, ease: 'back.out(2)' });
+  G.to(el, { opacity: 0, delay: 1.8, duration: .3, onComplete: () => el.remove() });
+  if (!window.gsap || calm) setTimeout(() => el.remove(), 1400);
+}
+function shake() { G.fromTo($('stage'), { x: -8 }, { x: 0, duration: .4, ease: 'elastic.out(1, .25)' }); }
+/* gsap owns the curtain's transform from here on (CSS keeps it up without gsap) */
+if (G === window.gsap) G.set('#curtain i', { y: 0, yPercent: -101 });
+function curtain(then) {
+  const bars = [...$('curtain').children];
+  if (G === window.gsap) {
+    G.to(bars, { yPercent: 0, duration: .3, stagger: .05, ease: 'power2.in', onComplete: () => {
+      then(); G.to(bars, { yPercent: -101, duration: .35, stagger: .05, ease: 'power2.out', delay: .1 });
+    } });
+  } else then();
+}
+
+/* ===================== sound (synthesised, no files) ===================== */
+const SFX = (() => {
+  let ac = null, on = true;
+  const ctx = () => { if (!ac) { try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { ac = null; } } if (ac && ac.state === 'suspended') ac.resume(); return ac; };
+  function tone(f, t, dur, type = 'square', vol = .06, f2) {
+    const a = on && ctx(); if (!a) return;
+    const o = a.createOscillator(), g = a.createGain(), t0 = a.currentTime + t;
+    o.type = type; o.frequency.setValueAtTime(f, t0); if (f2) o.frequency.exponentialRampToValueAtTime(f2, t0 + dur);
+    g.gain.setValueAtTime(vol, t0); g.gain.exponentialRampToValueAtTime(.0001, t0 + dur);
+    o.connect(g).connect(a.destination); o.start(t0); o.stop(t0 + dur + .02);
+  }
+  function noise(t, dur, vol, freq, kind = 'bandpass') {
+    const a = on && ctx(); if (!a) return;
+    const n = Math.floor(a.sampleRate * dur), buf = a.createBuffer(1, n, a.sampleRate), d = buf.getChannelData(0);
+    for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
+    const s = a.createBufferSource(), f = a.createBiquadFilter(), g = a.createGain(), t0 = a.currentTime + t;
+    s.buffer = buf; f.type = kind; f.frequency.value = freq; g.gain.setValueAtTime(vol, t0); g.gain.exponentialRampToValueAtTime(.0001, t0 + dur);
+    s.connect(f).connect(g).connect(a.destination); s.start(t0);
+  }
+  return {
+    blip: () => tone(1100 + Math.random() * 200, 0, .025, 'square', .02),
+    ok: () => { tone(660, 0, .08); tone(880, .08, .08); tone(1320, .16, .18); },
+    ng: () => { tone(180, 0, .18, 'sawtooth', .07, 120); tone(120, .16, .25, 'sawtooth', .07, 80); },
+    coin: () => { tone(1320, 0, .05, 'square', .05); tone(1980, .05, .16, 'square', .05); },
+    pop: () => tone(420, 0, .08, 'triangle', .09, 900),
+    click: () => tone(300, 0, .03, 'square', .04),
+    sizzle: () => noise(0, .9, .05, 4000, 'highpass'),
+    dip: () => { noise(0, .25, .07, 900); tone(300, 0, .12, 'sine', .05, 140); },
+    chomp: () => { noise(0, .06, .14, 1200); noise(.09, .07, .12, 900); },
+    door: () => { for (let i = 0; i < 6; i++) noise(i * .05, .05, .06, 500 + i * 60); },
+    buzzer: () => { tone(90, 0, .5, 'sawtooth', .09); tone(95, 0, .5, 'square', .05); },
+    fanfare: () => { [523, 659, 784, 1047].forEach((f, i) => tone(f, i * .12, .16, 'square', .05)); tone(1047, .5, .5, 'square', .05); tone(784, .5, .5, 'triangle', .05); },
+    unlock: () => ctx(),
+    toggle: () => (on = !on),
+    get on() { return on; },
+  };
+})();
+let voiceOk = false;
+try { voiceOk = 'speechSynthesis' in window && typeof SpeechSynthesisUtterance === 'function'; } catch (e) { voiceOk = false; }
+function speak(text) {
+  if (!voiceOk || !SFX.on) return;
+  try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(plain(text)); u.lang = 'ja-JP'; u.rate = .95; speechSynthesis.speak(u); } catch (e) { /* no voice */ }
+}
+
+/* ===================== art (illustrations in the comics' style) ===================== */
+/* Pictures made for this game in the style of the comics (Gemini, same
+   references as Yuki and the Shinsekai street), shipped next to the page. */
+const ART = {
+  front: 'art/street-yuki.webp',
+  end: 'art/street.webp',
+  table: 'art/table.jpg',
+  tease: 'art/tease.jpg',
+};
+const pic = (key, pos = '50% 40%') => `<img class="bg" src="${ART[key]}" alt="" draggable="false" style="object-position:${pos}">`;
+function sceneFront(end) { return pic(end ? 'end' : 'front', end ? '50% 45%' : '50% 30%'); }
+/* everything inside happens at the table with Yuki: you order on your phone,
+   so no one else needs to be drawn */
+function sceneInside() { return pic('table', '50% 60%'); }
+function sceneCounter(mood) { return pic(mood === 'tease' ? 'tease' : 'table', '50% 60%'); }
+/* load every picture up front, so a scene change never shows an empty frame */
+Object.values(ART).forEach((src) => { const i = new Image(); i.src = src; });
+
+function skewer(look, bites, sauced) {
+  const fill = sauced ? 'url(#btS)' : 'url(#bt)';
+  const OL = 'stroke="#5a3a28" stroke-width="2" stroke-linejoin="round"';
+  const piece = (i) => {
+    const y = 8 + i * 24;
+    if (look === 'egg') return `<circle cx="20" cy="${y + 10}" r="10" fill="${fill}" ${OL}/>`;
+    if (look === 'ring') return `<ellipse cx="20" cy="${y + 10}" rx="15" ry="10" fill="${fill}" ${OL}/><ellipse cx="20" cy="${y + 10}" rx="5" ry="3.5" fill="#8a5a2c" stroke="#5a3a28" stroke-width="1.5"/>`;
+    if (look === 'long') return `<rect x="9" y="${y}" width="22" height="22" rx="10" fill="${fill}" ${OL}/>`;
+    if (look === 'block') return `<rect x="8" y="${y + 1}" width="24" height="19" rx="5" fill="${fill}" ${OL}/>`;
+    return `<rect x="6" y="${y}" width="28" height="21" rx="8" fill="${fill}" ${OL}/>`;
+  };
+  const parts = bites >= 2 ? [0, 1] : bites === 1 ? [1] : [];
+  return `<svg width="40" height="70" viewBox="0 0 40 70" aria-hidden="true"><rect x="18.5" y="2" width="3" height="66" rx="1.5" fill="#e6caa0" stroke="#5a3a28" stroke-width="1.2"/>${parts.map(piece).join('')}</svg>`;
+}
+
+/* ===================== HUD ===================== */
+/* no score or lives: it becomes one of YUNABI's simulation games, which
+   teach by feedback alone; the bar shows only what the order costs */
+function hud() {
+  $('money').textContent = '¥' + total().toLocaleString('ja-JP');
+  $('mute').textContent = SFX.on ? 'ON' : 'OFF';
+}
+
+/* ===================== dialogue box ===================== */
+let typing = null;
+function typewriter(el, markup, done) {
+  if (typing) clearTimeout(typing.t);
+  const toks = tokens(markup); let i = 0;
+  const finish = () => { if (typing) clearTimeout(typing.t); el.innerHTML = toks.join(''); typing = null; done && done(); };
+  if (calm) return finish();
+  typing = { finish };
+  const step = () => {
+    i++; el.innerHTML = toks.slice(0, i).join('');
+    if (i % 2) SFX.blip();
+    if (i >= toks.length) { typing = null; done && done(); return; }
+    typing.t = setTimeout(step, 38);
+  };
+  step();
+}
+function dialog(name, jp, en, after) {
+  const box = document.createElement('div');
+  box.className = 'dlg';
+  box.innerHTML = `<span class="name">${esc(name)}</span>${voiceOk ? '<button class="say" data-say aria-label="Listen in Japanese">▶</button>' : ''}<div class="jp" lang="ja"></div><div class="en" hidden>${esc(en)}</div><span class="more" hidden>▼</span>`;
+  box.querySelector('[data-say]')?.addEventListener('click', (e) => { e.stopPropagation(); speak(jp); });
+  const talk = startTalking();
+  const end = () => { stopTalking(talk); box.querySelector('.en').hidden = false; box.querySelector('.more').hidden = false; G.fromTo(box.querySelector('.more'), { y: -3 }, { y: 3, repeat: -1, yoyo: true, duration: .4 }); after && after(); };
+  box.addEventListener('click', () => typing && typing.finish());
+  setTimeout(() => typewriter(box.querySelector('.jp'), jp, end), 0);
+  return box;
+}
+function startTalking() { return null; }
+function stopTalking() {}
+
+/* ===================== screens ===================== */
+const panel = () => $('panel');
+const scene = (svg) => { $('scene').innerHTML = svg; $('board').innerHTML = ''; ambient(); };
+function ambient() {
+  const bg = document.querySelector('#scene .bg');
+  if (bg && G === window.gsap) G.fromTo(bg, { scale: 1.06 }, { scale: 1, duration: 6, ease: 'sine.out' });
+}
+function enterChoices(el) { G.from(el.children, { scale: .6, opacity: 0, duration: .3, stagger: .07, ease: 'back.out(2.5)' }); }
+const next = () => { SFX.click(); S.step++; pick = null; curtainIf(); };
+function curtainIf() {
+  const prevScene = sceneOf(FLOW[S.step - 1]), nowScene = sceneOf(FLOW[S.step]);
+  if (prevScene !== nowScene) { SFX.door(); curtain(render); } else render();
+}
+const sceneOf = (k) => ({ intro: 'front', end: 'front' })[k] || 'inside';
+
+function render() {
+  hud(); snapshot();
+  const k = FLOW[S.step];
+  (VIEW[k] || VIEW.intro)();
+}
+
+function talkScreen(key) {
+  const t = TALK[key];
+  scene(sceneInside());
+  const p = panel(); p.innerHTML = `<div class="lead">${esc(t.sub)}</div>`;
+  const showChoices = () => {
+    const c = document.createElement('div'); c.className = 'choices';
+    c.innerHTML = t.opts.map((o, i) => `<button class="gbtn" lang="ja" data-i="${i}">${rb(o.jp)}</button>`).join('');
+    p.appendChild(c); enterChoices(c);
+    c.addEventListener('click', (e) => {
+      const b = e.target.closest('.gbtn'); if (!b || b.disabled) return;
+      const o = t.opts[+b.dataset.i];
+      p.querySelector('.fb')?.remove(); p.querySelector('.go')?.remove();
+      c.querySelectorAll('.gbtn').forEach((x) => x.classList.remove('wrong'));
+      speak(o.jp);
+      const fb = document.createElement('div');
+      if (o.ok) {
+        b.classList.add('right'); b.insertAdjacentHTML('beforeend', '<span class="mark">○</span>');
+        c.querySelectorAll('.gbtn').forEach((x) => { x.disabled = true; });
+        SFX.ok();
+        if (o.drink) { S.drink = o.drink; hud(); setTimeout(serveDrink, 250); }
+        remember(o.jp, o.en);
+        fb.className = 'fb'; fb.innerHTML = `<b>○ ナイス!</b>${esc(o.fb)}`;
+        p.appendChild(fb);
+        const go = document.createElement('button'); go.className = 'go'; go.textContent = '次へ ▶'; go.onclick = next; p.appendChild(go);
+        G.from(go, { scale: 0, duration: .35, ease: 'back.out(3)' });
+      } else {
+        b.classList.add('wrong'); b.disabled = true; S.miss++;
+        SFX.ng(); shake();
+        fb.className = 'fb no'; fb.innerHTML = `<b>× もう一回!</b>${esc(o.fb)}`;
+        p.appendChild(fb);
+        G.fromTo(b, { x: -10 }, { x: 0, duration: .5, ease: 'elastic.out(1,.2)' });
+      }
+      G.from(fb, { y: 10, opacity: 0, duration: .25 });
+    });
+  };
+  if (t.staff) p.appendChild(dialog(t.who || '店員', t.staff[0], t.staff[1], showChoices));
+  else showChoices();
+}
+/* the drink goes into the phone's cart, ordered with the skewers */
+function serveDrink() {
+  SFX.pop();
+  popText('カートに入れた！', 50, 82);
+}
+
+const VIEW = {
+  intro() {
+    scene(sceneFront());
+    panel().innerHTML = `
+      <div class="title" lang="ja">串かつ 結屋</div>
+      <div class="fb info"><b>MISSION</b>Yuki is taking you to a kushikatsu shop in Shinsekai, where you order on your phone. Order at least ${KINDS} kinds of skewers for ${yen(BUDGET)} or less, drink included, and eat by the one rule of the house.</div>
+      <button class="go" id="start">START ▶</button>`;
+    $('start').onclick = () => { SFX.unlock(); SFX.door(); S.step = 1; curtain(render); };
+    G.from('#start', { scale: .8, repeat: -1, yoyo: true, duration: .6, ease: 'sine.inOut' });
+  },
+  drink: () => talkScreen('drink'),
+
+  /* a mobile order screen, as many kushikatsu shops have now: the learner
+     reads a real-looking Japanese ordering UI instead of talking to staff */
+  order() {
+    scene(sceneInside());
+    const p = panel();
+    p.innerHTML = `<div class="lead">STAGE 2 · モバイルオーダー</div>`;
+    p.appendChild(dialog('ユウキ', 'ここはスマホで{注文|ちゅうもん}するんやで。{好|す}きなん{頼|たの}み！', 'Here you order on your phone. Get whatever you like!', () => {
+      const wrap = document.createElement('div'); wrap.style.display = 'grid'; wrap.style.gap = '10px';
+      wrap.innerHTML = `<div class="phone"><div class="ph-screen">
+          <div class="ph-bar"><span lang="ja">結屋 モバイルオーダー</span><small>Table 3</small></div>
+          <div class="ph-tabs"><span class="on" lang="ja">串かつ</span><span lang="ja">ドリンク ✓</span></div>
+          <div class="ph-list" id="menu"></div>
+          <div class="ph-foot"><div class="meters" id="meters"></div><div class="ticket" id="ticket"></div>
+            <button class="go wide" id="orderGo"><span lang="ja">注文を確定する</span> <small>Place order</small></button></div>
+        </div></div>
+        <div class="fb info"><b>READING THE SCREEN</b><span lang="ja">数量</span> quantity · <span lang="ja">カート</span> cart · <span lang="ja">合計</span> total · <span lang="ja">注文を確定する</span> place the order</div>`;
+      p.appendChild(wrap);
+      paintOrder();
+      G.from('#menu .ph-item', { x: 30, opacity: 0, stagger: .04, duration: .3, ease: 'power2.out' });
+      $('menu').addEventListener('click', (e) => {
+        const b = e.target.closest('[data-add], [data-minus]'); if (!b) return;
+        const row = b.closest('.ph-item');
+        if (b.dataset.minus) { S.order[b.dataset.minus] = Math.max(0, (S.order[b.dataset.minus] || 0) - 1); SFX.click(); paintOrder(); hud(); return; }
+        const id = b.dataset.add; const before = S.order[id] || 0;
+        if (before >= 5) { SFX.ng(); G.fromTo(row, { x: -6 }, { x: 0, duration: .4, ease: 'elastic.out(1,.2)' }); return; }
+        S.order[id] = before + 1; SFX.coin();
+        flyToTicket(row); paintOrder(); hud();
+      });
+      $('orderGo').onclick = () => { if (kinds() >= KINDS && total() <= BUDGET) { SFX.ok(); popText('注文を送信しました', 50, 82); next(); } };
+    }));
+  },
+
+  count() {
+    scene(sceneInside());
+    const first = MENU.find((m) => S.order[m.id] > 0); const n = S.order[first.id];
+    const units = [{ u: '本', ok: true, fb: 'Long, thin things like skewers are counted with 〜本, and its sound changes: 1本 (いっぽん), 2本 (にほん), 3本 (さんぼん).' },
+      { u: '個', ok: false, fb: '〜個 counts round things such as apples and eggs. Skewers take 〜本.' },
+      { u: '枚', ok: false, fb: '〜枚 counts thin, flat things such as paper and plates. Skewers take 〜本.' }];
+    const p = panel();
+    p.innerHTML = `<div class="lead">STAGE 3 · 数え方 — tell Yuki what you ordered</div>
+      <div class="dlg"><span class="name">あなた</span><div class="jp" lang="ja">${rb(first.ja)}を ${n} <span style="color:var(--lantern)">？？</span> ${rb('{頼|たの}んだよ。')}</div><div class="en">I ordered ${n} ${esc(first.en)}. Which word fills the blank?</div></div>
+      <div class="choices" id="units">${units.map((x, i) => `<button class="gbtn" lang="ja" data-i="${i}" style="text-align:center;font-size:26px">${x.u}</button>`).join('')}</div>`;
+    enterChoices($('units'));
+    $('units').addEventListener('click', (e) => {
+      const b = e.target.closest('.gbtn'); if (!b || b.disabled) return;
+      const x = units[+b.dataset.i];
+      p.querySelector('.fb')?.remove();
+      const fb = document.createElement('div');
+      if (x.ok) {
+        b.classList.add('right'); $('units').querySelectorAll('.gbtn').forEach((y) => { y.disabled = true; });
+        SFX.ok();
+        remember(`${first.ja}を${n}{本|${HON[n]}}{頼|たの}んだよ。`, `I ordered ${n} ${first.en}.`);
+        fb.className = 'fb'; fb.innerHTML = `<b>○ 正解!</b>${esc(x.fb)}`; p.appendChild(fb);
+        const list = MENU.filter((m) => S.order[m.id] > 0).map((m) => `${m.ja}${S.order[m.id]}{本|${HON[S.order[m.id]]}}`).join('、');
+        p.appendChild(dialog('ユウキ', `ええやん！${list}な。`, 'Nice picks! Let\'s see what we got.', () => {
+          S.plate = MENU.flatMap((m) => Array.from({ length: S.order[m.id] || 0 }, () => ({ id: m.id, ja: m.ja, en: m.en, look: m.look, bites: 2, dip: false })));
+          S.sel = 0;
+          SFX.sizzle(); setTimeout(SFX.pop, 600);
+          popText('お待たせしました〜！', 50, 30);
+          const go = document.createElement('button'); go.className = 'go'; go.textContent = '届いた! ▶'; go.onclick = next; p.appendChild(go);
+          G.from(go, { scale: 0, delay: .9, duration: .35, ease: 'back.out(3)' });
+        }));
+      } else {
+        b.classList.add('wrong'); b.disabled = true; S.miss++; SFX.ng(); shake();
+        fb.className = 'fb no'; fb.innerHTML = `<b>× もう一回!</b>${esc(x.fb)}`; p.appendChild(fb);
+      }
+    });
+  },
+
+  eat() {
+    scene(sceneCounter('smile'));
+    rebuildBoard();
+    /* the plate sits right under the stage, so a skewer reaches the sauce
+       without scrolling on a phone */
+    const p = panel();
+    p.innerHTML = `<div class="plate" id="plate"></div><div class="acts" id="acts"></div>`;
+    paintPlate();
+    G.from('#plate .kushi', { y: -30, opacity: 0, stagger: .04, duration: .35, ease: 'back.out(2)' });
+    p.appendChild(dialog('ユウキ', 'ソースの{二度漬|にどづ}けは{禁止|きんし}やで！', 'No double-dipping in the sauce!', () => {
+      const r = document.createElement('div'); r.className = 'fb';
+      r.innerHTML = `<b>RULE · STAGE 4</b>Drag a skewer into the sauce to dip it, then tap it twice quickly to take a bite. The sauce is shared: once a skewer has been bitten, it never goes back in.`;
+      p.appendChild(r); G.from(r, { y: 10, opacity: 0, duration: .25 });
+    }));
+    setupDrag();
+  },
+
+  bill: () => talkScreen('bill'),
+
+  pay() {
+    scene(sceneInside());
+    const t = total();
+    const p = panel(); p.innerHTML = `<div class="lead">STAGE 5 · お会計</div>`;
+    p.appendChild(dialog('店員', `{全部|ぜんぶ}で ${t.toLocaleString('ja-JP')}{円|えん}です。`, `That will be ${t.toLocaleString('en-US')} yen altogether.`, () => {
+      const w = document.createElement('div'); w.style.display = 'grid'; w.style.gap = '10px';
+      w.innerHTML = `<div class="ticket"><div class="sum"><span>お会計</span><span id="count">0円</span></div><div class="row" lang="ja">${esc(yenKana(t))}</div></div>
+        <div class="fb"><b>TIP</b>300 is さんびゃく, 600 is ろっぴゃく, 800 is はっぴゃく. Watch the numbers whose sound changes.</div>
+        <button class="go" id="payGo">${yen(t)} 払う ▶</button>`;
+      p.appendChild(w);
+      const box = { v: 0 }; let last = 0;
+      G.to(box, { v: t, duration: 1.2, ease: 'power2.out', onUpdate: () => { const v = Math.round(box.v / 10) * 10; $('count').textContent = v.toLocaleString('ja-JP') + '円'; if (v - last >= 150) { last = v; SFX.coin(); } }, onComplete: () => { $('count').textContent = yen(t); } });
+      if (G !== window.gsap) $('count').textContent = yen(t);
+      $('payGo').onclick = () => { SFX.coin(); setTimeout(SFX.coin, 120); popText('チャリーン', 50, 60); next(); };
+    }));
+  },
+
+  leave: () => talkScreen('leave'),
+
+  end() {
+    scene(sceneFront(true));
+    const p = panel(); p.innerHTML = '';
+    p.appendChild(dialog('店員', 'おおきに！またどうぞ〜', 'Thank you! Come again~', () => {
+      const w = document.createElement('div'); w.style.display = 'grid'; w.style.gap = '12px';
+      w.innerHTML = `<div class="fb"><b>おおきに</b>Kansai for "thank you". You hear it a lot from shop staff.</div>
+        <div class="lead" style="text-transform:none">Today's bill: ${yen(total())}</div>
+        <div class="phr"><b>Phrases you used today</b>${S.said.map((x) => `<div><div class="j" lang="ja">${rb(x.jp)}</div><div class="k">${esc(x.en)}</div></div>`).join('')}</div>
+        <button class="go" id="again">もう一回 ▶</button>`;
+      p.appendChild(w);
+      SFX.fanfare();
+      $('again').onclick = () => { SFX.click(); S = fresh(); pick = null; curtain(render); };
+    }));
+  },
+};
+
+/* ---------- order helpers ---------- */
+function paintOrder() {
+  const sum = total(), k = kinds();
+  $('menu').innerHTML = MENU.map((m) => {
+    const n = S.order[m.id] || 0;
+    return `<div class="ph-item ${n ? 'has' : ''}">${skewer(m.look, 2, false)}
+      <div class="nm"><b lang="ja">${rb(m.ja)}</b><small>${esc(m.en)} · ¥${m.yen}</small></div>
+      <div class="qty" role="group" aria-label="${esc(m.en)}, ${n} in the cart"><button data-minus="${m.id}" aria-label="One less ${esc(m.en)}" ${n ? '' : 'disabled'}>−</button><span>${n}</span><button class="plus" data-add="${m.id}" aria-label="One more ${esc(m.en)}">＋</button></div></div>`;
+  }).join('');
+  const pct = Math.min(100, Math.round(sum / BUDGET * 100));
+  $('meters').innerHTML = `<div class="meter ${k >= KINDS ? 'full' : ''}"><b style="width:${Math.min(100, k / KINDS * 100)}%"></b><span><span lang="ja">種類</span> ${k}/${KINDS}</span></div>
+    <div class="meter ${sum > BUDGET ? 'over' : ''}"><b style="width:${pct}%"></b><span>¥${sum.toLocaleString('ja-JP')} / ${BUDGET.toLocaleString('ja-JP')}</span></div>`;
+  const rows = MENU.filter((m) => S.order[m.id] > 0).map((m) => `<div class="row"><span lang="ja">${rb(m.ja)} × ${S.order[m.id]}</span><span>¥${(m.yen * S.order[m.id]).toLocaleString('ja-JP')}</span></div>`).join('');
+  $('ticket').innerHTML = `<div class="row"><b lang="ja">カート</b><small>cart</small></div>${rows || '<div class="row">Tap ＋ to add skewers (up to 5 of each)</div>'}<div class="row"><span lang="ja">${rb(DRINKS[S.drink].ja)} × 1</span><span>¥${DRINKS[S.drink].yen}</span></div><div class="sum"><span lang="ja">合計</span><span>¥${sum.toLocaleString('ja-JP')}</span></div>`;
+  $('orderGo').disabled = !(k >= KINDS && sum <= BUDGET);
+}
+function flyToTicket(from) {
+  if (G !== window.gsap) return;
+  const a = from.getBoundingClientRect(), b = $('ticket').getBoundingClientRect();
+  const el = document.createElement('div'); el.className = 'drag'; el.innerHTML = skewer('meat', 2, false);
+  el.style.left = a.left + a.width / 2 + 'px'; el.style.top = a.top + a.height / 2 + 'px';
+  document.body.appendChild(el);
+  G.to(el, { left: b.left + b.width / 2, top: b.top + 20, scale: .5, duration: .45, ease: 'power2.in', onComplete: () => el.remove() });
+}
+
+/* ---------- eating ---------- */
+const stateText = (k) => k.bites === 0 ? 'eaten' : k.bites === 2 ? (k.dip ? 'dipped' : 'plain') : 'bitten';
+function paintPlate() {
+  const left = S.plate.filter((k) => k.bites > 0).length;
+  if (S.plate[S.sel] && S.plate[S.sel].bites === 0) S.sel = S.plate.findIndex((x) => x.bites > 0);
+  $('plate').innerHTML = S.plate.map((k, i) => `<button class="kushi ${i === S.sel ? 'sel' : ''} ${k.bites === 0 ? 'done' : ''}" data-k="${i}" ${k.bites === 0 ? 'disabled' : ''} aria-label="${esc(k.en)} skewer, ${stateText(k)}">${skewer(k.look, k.bites, k.dip)}<small lang="ja">${esc(base(k.ja))}</small></button>`).join('');
+  const sel = S.plate[S.sel];
+  $('acts').innerHTML = left === 0
+    ? `<button class="go" id="eatDone">ごちそうさま ▶</button>`
+    : `${S.eatenOk >= 3 ? `<button class="go" data-act="auto">Eat the other ${left} by the rule</button>` : ''}`;
+  if (left === 0) { $('eatDone').onclick = next; G.from('#eatDone', { scale: 0, duration: .35, ease: 'back.out(3)' }); }
+}
+function act(kind, i = S.sel) {
+  const k = S.plate[i]; if (!k || k.bites === 0) return;
+  S.sel = i;
+  if (kind === 'dip') {
+    if (k.bites === 1) { doubleDip(); return; }
+    if (k.dip) { popText('もう付いてるよ', 30, 50); return; }
+    k.dip = true; SFX.dip(); popText('ジュッ', 26, 50);
+  } else if (kind === 'bite') {
+    k.bites--; SFX.chomp();
+    popText(k.dip ? 'うまっ!' : 'もぐもぐ', 50, 22);
+    if (k.bites === 1) k.dip = false;
+    else { S.eatenOk++; }
+  } else if (kind === 'auto') {
+    let d = 0; S.plate.forEach((x) => { if (x.bites > 0) { setTimeout(SFX.chomp, d); d += 90; x.bites = 0; } });
+    S.eatenOk = S.plate.length;
+  }
+  paintPlate();
+}
+/* Yuki catches you, with a grin rather than a scolding */
+function doubleDip() {
+  /* no pop or balloon over the picture: it would cover Yuki's face */
+  S.warned++; SFX.ng(); shake();
+  scene(sceneCounter('tease'));
+  speak('{二度漬|にどづ}けはアカンで〜');
+  setTimeout(() => { if (FLOW[S.step] === 'eat') { scene(sceneCounter('smile')); rebuildBoard(); } }, 2200);
+  popText('No double-dipping~ Just eat the rest as it is.', 50, 86, true);
+}
+function rebuildBoard() {
+  $('board').innerHTML = `<div class="sauce" id="sauceZ" role="button" tabindex="0" aria-label="Dip the chosen skewer in the sauce"><span>Drag a skewer here · <span lang="ja">ソース</span></span></div>`;
+}
+
+/* drag a skewer to the sauce to dip it; tap a skewer twice quickly to take a bite */
+let dragReady = false;
+function setupDrag() {
+  if (dragReady) return;
+  dragReady = true;
+  let drag = null;
+  let lastTap = { k: -1, t: 0 };
+  const overSauce = (x, y) => {
+    const el = $('sauceZ'); if (!el) return false; const r = el.getBoundingClientRect();
+    return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
+  };
+  const mark = (on) => $('sauceZ') && $('sauceZ').classList.toggle('hot', on);
+  document.addEventListener('pointerdown', (e) => {
+    if (FLOW[S.step] !== 'eat') return;
+    const k = e.target.closest('.kushi');
+    if (!k || k.disabled) return;
+    S.sel = +k.dataset.k; paintPlate();
+    const ghost = document.createElement('div'); ghost.className = 'drag';
+    ghost.innerHTML = skewer(S.plate[S.sel].look, S.plate[S.sel].bites, S.plate[S.sel].dip);
+    ghost.style.left = e.clientX + 'px'; ghost.style.top = e.clientY + 'px';
+    document.body.appendChild(ghost);
+    drag = { ghost, x0: e.clientX, y0: e.clientY, moved: false };
+    e.preventDefault();
+  });
+  document.addEventListener('pointermove', (e) => {
+    if (!drag) return;
+    drag.ghost.style.left = e.clientX + 'px'; drag.ghost.style.top = e.clientY + 'px';
+    if (Math.abs(e.clientX - drag.x0) + Math.abs(e.clientY - drag.y0) > 8) drag.moved = true;
+    mark(overSauce(e.clientX, e.clientY));
+  });
+  const end = (e) => {
+    if (!drag) return;
+    const sauce = overSauce(e.clientX, e.clientY); drag.ghost.remove(); mark(false);
+    if (drag.moved) {
+      if (sauce) act('dip');
+      lastTap = { k: -1, t: 0 };
+    } else {
+      const now = Date.now();
+      if (lastTap.k === S.sel && now - lastTap.t < 400) { lastTap = { k: -1, t: 0 }; act('bite'); }
+      else { lastTap = { k: S.sel, t: now }; SFX.click(); }
+    }
+    drag = null;
+  };
+  document.addEventListener('pointerup', end);
+  document.addEventListener('pointercancel', () => { if (drag) { drag.ghost.remove(); mark(false); drag = null; } });
+}
+
+/* ---------- global clicks ---------- */
+document.addEventListener('click', (e) => {
+  const b = e.target.closest('[data-act]');
+  if (b && FLOW[S.step] === 'eat') { SFX.unlock(); act(b.dataset.act); }
+});
+document.addEventListener('keydown', (e) => {
+  /* keyboard: Enter on a skewer takes a bite; on the sauce, dips the chosen skewer */
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  const k = e.target.closest && e.target.closest('.kushi');
+  if (k && !k.disabled) { e.preventDefault(); act('bite', +k.dataset.k); }
+  else if (e.target.id === 'sauceZ') { e.preventDefault(); act('dip'); }
+});
+$('mute').onclick = () => { SFX.toggle(); if (!SFX.on) { try { speechSynthesis.cancel(); } catch (e) { /* none */ } } else SFX.click(); hud(); };
+
+/* keep a game in progress across a republish of this page */
+function snapshot() { try { window.claude?.hot?.snapshot?.(() => ({ S })); } catch (e) { /* not in a viewer */ } }
+function start(saved) { if (saved && saved.S) S = saved.S; render(); }
+window.claude?.hot?.ready ? window.claude.hot.ready(start) : start(window.claude?.hot?.data ?? {});
+</script>
