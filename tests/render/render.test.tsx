@@ -30,6 +30,7 @@ import { route, type Route } from '../../src/state/route';
 import { vn, VN_START } from '../../src/state/vn';
 import { yuki, YUKI_START, type Yuki } from '../../src/state/yuki';
 import { mt, MT_START, type Mt } from '../../src/state/matcha';
+import { ph, PH_START, type Ph } from '../../src/state/photo';
 import { session } from '../../src/state/session';
 import { net } from '../../src/state/net';
 import { ui } from '../../src/state/ui';
@@ -95,6 +96,12 @@ const atTea = (st: Partial<Mt>) => () => (
   mt.set({ ...MT_START, ...st })
 );
 const MT = /class="mt"/;
+const KYOTO_PHOTO = VN.kyoto.scenes.findIndex((sc) => sc.kind === 'photo');
+const atPhoto = (st: Partial<Ph>) => () => (
+  vn.set({ ...VN_START, route: 'kyoto', i: KYOTO_PHOTO }),
+  ph.set({ ...PH_START, ...st })
+);
+const PH = /class="mt ph"/;
 const GIP = (events as EventSeries[]).find((e) => e.weekly_until)!.id;
 
 async function html(): Promise<string> {
@@ -475,7 +482,7 @@ const cases: Case[] = [
         ],
       }),
   ],
-  /* the 아야노 미니게임 at Kyoto scene 5: every step, wrong answers, a miss, the end */
+  /* the 아야노 미니게임 at Kyoto scene 4: every step, wrong answers, a miss, the end */
   ['mt-intro', L8, atTea({}), MT],
   ['mt-intro-wrong', L8, atTea({ wrong: [1] }), MT],
   ['mt-intro-ok', L8, atTea({ picked: 0, done: true }), MT],
@@ -558,6 +565,24 @@ const cases: Case[] = [
     MT,
   ],
   ['mt-end-none', L8, atTea({ step: 'end' }), MT],
+  /* the fireworks photo at Kyoto's last scene: each result, both modes, the end */
+  ['ph-start', L8, atPhoto({}), PH],
+  ['ph-sky', L8, atPhoto({ mode: 'sky' }), PH],
+  ['ph-face', L8, atPhoto({ shots: 1, grade: 'face', n: 4 }), PH],
+  ['ph-few', L8, atPhoto({ shots: 2, grade: 'few', n: 1 }), PH],
+  ['ph-good', L8, atPhoto({ shots: 1, grade: 'good', n: 2, done: true }), PH],
+  [
+    'ph-best',
+    L8,
+    () => (
+      vn.set({ ...VN_START, route: 'kyoto', i: KYOTO_PHOTO, got: 'a_kyoto_hanabi' }),
+      ph.set({ ...PH_START, shots: 1, grade: 'best', n: 5, done: true })
+    ),
+    /class="achcard"/,
+  ],
+  ['ph-last', L8, atPhoto({ shots: 3, grade: 'face', n: 2, done: true }), PH],
+  ['ph-sky-good', L8, atPhoto({ mode: 'sky', shots: 1, grade: 'skyGood', n: 4, done: true }), PH],
+  ['ph-sky-few', L8, atPhoto({ mode: 'sky', shots: 3, grade: 'skyFew', n: 1, done: true }), PH],
   ['legal', { name: 'legal' }, undefined, /class="legal"[\s\S]*<table>[\s\S]*yunabi@juha\.dev/],
   ['me-empty', { name: 'me' }, undefined, /class="empty"/],
   [

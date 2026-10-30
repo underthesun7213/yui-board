@@ -29,7 +29,9 @@ const BUDGETS = [
   },
   {
     name: 'lessons and game',
-    kb: 30,
+    /* 33 since 2026-10-31: the Kyoto route grew from six short scenes to eight
+       with replies and three endings, all of it text in three languages */
+    kb: 33,
     roots: [
       'src/features/learn/LearnList.tsx',
       'src/features/learn/Lesson.tsx',
@@ -57,6 +59,13 @@ const BUDGETS = [
     name: 'matcha mini-game',
     kb: 24,
     roots: ['src/features/learn/MatchaGame.tsx'],
+    after: 'lessons and game',
+  },
+  {
+    /* the fireworks photo: its own lazy screen, the phone runtime and its text */
+    name: 'photo mini-game',
+    kb: 8,
+    roots: ['src/features/learn/PhotoGame.tsx'],
     after: 'lessons and game',
   },
 ];

@@ -2616,3 +2616,22 @@ rt {
   font-size: 14px;
   color: var(--muted);
 }
+
+/* the fireworks photo (level 8, Kyoto): the phone's screen, then the zoom */
+.ph-stage {
+  background: #0b1230;
+  cursor: grab;
+}
+.ph-zoom {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.ph-zoom input {
+  flex: 1;
+  min-width: 0;
+  accent-color: var(--primary);
+}
