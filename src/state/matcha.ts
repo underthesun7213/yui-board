@@ -1,7 +1,7 @@
 import type { MtFbKey, MtPhrase, MtTip, MtTool } from '../content/matcha';
 import { createStore } from './store';
 
-/* 아야노 미니게임 (level 8, Kyoto scene 5). The table — tools, tea, milk and
+/* 아야노 미니게임 (level 8, Kyoto scene 4). The table — tools, tea, milk and
    the player's hand — lives in minigames/matcha.ts, outside React; this is
    what the screen shows around it. */
 export type MtStep =

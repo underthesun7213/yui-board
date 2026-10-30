@@ -264,7 +264,7 @@ Draw the place only: no people in the foreground, at most a few small distant pa
 
 ```text
 Style: Korean-webtoon anime illustration, clean dark line art, soft painterly cel shading, muted natural colours, natural proportions (not chibi). Everyday places in Kansai, Japan, drawn as they really look, with detailed backgrounds.
-One horizontal background illustration, aspect ratio 4:3, of the place where this happens, seen at eye level: Kyoto Station's great staircase, one friend waiting with a small bow.
+One horizontal background illustration, aspect ratio 4:3, of the place where this happens, seen at eye level: Gion Shirakawa at 3 pm, a stone path and willows, few people, Ayano in kimono waiting quietly.
 Draw the place only: no people in the foreground, at most a few small distant passers-by with no visible faces. No text, signs left blank or unreadable, no speech balloons.
 ```
 
@@ -272,7 +272,7 @@ Draw the place only: no people in the foreground, at most a few small distant pa
 
 ```text
 Style: Korean-webtoon anime illustration, clean dark line art, soft painterly cel shading, muted natural colours, natural proportions (not chibi). Everyday places in Kansai, Japan, drawn as they really look, with detailed backgrounds.
-One horizontal background illustration, aspect ratio 4:3, of the place where this happens, seen at eye level: Nishiki Market, narrow and crowded, a skewer held out.
+One horizontal background illustration, aspect ratio 4:3, of the place where this happens, seen at eye level: The same Gion street in the afternoon sun, Ayano tilting her head, thinking.
 Draw the place only: no people in the foreground, at most a few small distant passers-by with no visible faces. No text, signs left blank or unreadable, no speech balloons.
 ```
 
@@ -280,7 +280,7 @@ Draw the place only: no people in the foreground, at most a few small distant pa
 
 ```text
 Style: Korean-webtoon anime illustration, clean dark line art, soft painterly cel shading, muted natural colours, natural proportions (not chibi). Everyday places in Kansai, Japan, drawn as they really look, with detailed backgrounds.
-One horizontal background illustration, aspect ratio 4:3, of the place where this happens, seen at eye level: A temple garden, gravel path, the friend speaking very quietly.
+One horizontal background illustration, aspect ratio 4:3, of the place where this happens, seen at eye level: Inside a quiet Kyoto matcha tea house at 4 pm, tatami and low tables, Ayano holding a menu.
 Draw the place only: no people in the foreground, at most a few small distant passers-by with no visible faces. No text, signs left blank or unreadable, no speech balloons.
 ```
 
@@ -288,7 +288,7 @@ Draw the place only: no people in the foreground, at most a few small distant pa
 
 ```text
 Style: Korean-webtoon anime illustration, clean dark line art, soft painterly cel shading, muted natural colours, natural proportions (not chibi). Everyday places in Kansai, Japan, drawn as they really look, with detailed backgrounds.
-One horizontal background illustration, aspect ratio 4:3, of the place where this happens, seen at eye level: A traditional living room, late afternoon light, a teapot being lifted.
+One horizontal background illustration, aspect ratio 4:3, of the place where this happens, seen at eye level: A Kyoto matcha tea house by day, the two at a table with a self-serve matcha set.
 Draw the place only: no people in the foreground, at most a few small distant passers-by with no visible faces. No text, signs left blank or unreadable, no speech balloons.
 ```
 
@@ -296,7 +296,7 @@ Draw the place only: no people in the foreground, at most a few small distant pa
 
 ```text
 Style: Korean-webtoon anime illustration, clean dark line art, soft painterly cel shading, muted natural colours, natural proportions (not chibi). Everyday places in Kansai, Japan, drawn as they really look, with detailed backgrounds.
-One horizontal background illustration, aspect ratio 4:3, of the place where this happens, seen at eye level: A Kyoto matcha tea house by day, the two at a table with a self-serve matcha set.
+One horizontal background illustration, aspect ratio 4:3, of the place where this happens, seen at eye level: The Kamo riverbank at dusk, a little sunset, the two walking toward the festival, lanterns being lit.
 Draw the place only: no people in the foreground, at most a few small distant passers-by with no visible faces. No text, signs left blank or unreadable, no speech balloons.
 ```
 
@@ -304,7 +304,23 @@ Draw the place only: no people in the foreground, at most a few small distant pa
 
 ```text
 Style: Korean-webtoon anime illustration, clean dark line art, soft painterly cel shading, muted natural colours, natural proportions (not chibi). Everyday places in Kansai, Japan, drawn as they really look, with detailed backgrounds.
-One horizontal background illustration, aspect ratio 4:3, of the place where this happens, seen at eye level: A narrow lane at dusk, the friend standing in a doorway.
+One horizontal background illustration, aspect ratio 4:3, of the place where this happens, seen at eye level: A festival street lined with yatai stalls, lively and packed, Ayano looking over the stalls.
+Draw the place only: no people in the foreground, at most a few small distant passers-by with no visible faces. No text, signs left blank or unreadable, no speech balloons.
+```
+
+### 아야노 (교토) 장면 7 → `src/art/vn/kyoto/07`
+
+```text
+Style: Korean-webtoon anime illustration, clean dark line art, soft painterly cel shading, muted natural colours, natural proportions (not chibi). Everyday places in Kansai, Japan, drawn as they really look, with detailed backgrounds.
+One horizontal background illustration, aspect ratio 4:3, of the place where this happens, seen at eye level: A red wooden bridge over a river at 7 pm, fireworks in full bloom, Ayano holding her phone out with a small smile.
+Draw the place only: no people in the foreground, at most a few small distant passers-by with no visible faces. No text, signs left blank or unreadable, no speech balloons.
+```
+
+### 아야노 (교토) 장면 8 → `src/art/vn/kyoto/08`
+
+```text
+Style: Korean-webtoon anime illustration, clean dark line art, soft painterly cel shading, muted natural colours, natural proportions (not chibi). Everyday places in Kansai, Japan, drawn as they really look, with detailed backgrounds.
+One horizontal background illustration, aspect ratio 4:3, of the place where this happens, seen at eye level: Ayano on the red bridge, looking back over her shoulder, fireworks over the hills behind.
 Draw the place only: no people in the foreground, at most a few small distant passers-by with no visible faces. No text, signs left blank or unreadable, no speech balloons.
 ```
 
@@ -337,20 +353,29 @@ Draw the place only: no people in the foreground, at most a few small distant pa
 Make it feel like the last shot of a good day.
 ```
 
-### 말하지 않은 것들 → `src/art/endings/e_kyoto_best`
+### 내년 여름에도 → `src/art/endings/e_kyoto_best`
 
 ```text
 Style: Korean-webtoon anime illustration, clean dark line art, soft painterly cel shading, muted natural colours, natural proportions (not chibi). Everyday places in Kansai, Japan, drawn as they really look, with detailed backgrounds.
-One horizontal background illustration, aspect ratio 3:2, of the place where this happens, seen at eye level: A narrow Kyoto lane at dusk, two friends walking slowly, lanterns lit.
+One horizontal background illustration, aspect ratio 3:2, of the place where this happens, seen at eye level: The red bridge after the last firework, Ayano smiling openly, her sleeve raised to her lips.
 Draw the place only: no people in the foreground, at most a few small distant passers-by with no visible faces. No text, signs left blank or unreadable, no speech balloons.
 Make it feel like the last shot of a good day.
 ```
 
-### 오차즈케 이야기 → `src/art/endings/e_kyoto_norm`
+### 조심히 들어가세요 → `src/art/endings/e_kyoto_norm`
 
 ```text
 Style: Korean-webtoon anime illustration, clean dark line art, soft painterly cel shading, muted natural colours, natural proportions (not chibi). Everyday places in Kansai, Japan, drawn as they really look, with detailed backgrounds.
-One horizontal background illustration, aspect ratio 3:2, of the place where this happens, seen at eye level: A traditional room, teapot on the table, afternoon light going amber.
+One horizontal background illustration, aspect ratio 3:2, of the place where this happens, seen at eye level: The end of the red bridge, the crowd thinning, Ayano bowing politely.
+Draw the place only: no people in the foreground, at most a few small distant passers-by with no visible faces. No text, signs left blank or unreadable, no speech balloons.
+Make it feel like the last shot of a good day.
+```
+
+### 인연이 닿으면 → `src/art/endings/e_kyoto_bad`
+
+```text
+Style: Korean-webtoon anime illustration, clean dark line art, soft painterly cel shading, muted natural colours, natural proportions (not chibi). Everyday places in Kansai, Japan, drawn as they really look, with detailed backgrounds.
+One horizontal background illustration, aspect ratio 3:2, of the place where this happens, seen at eye level: The red bridge in drifting smoke after the fireworks, Ayano walking away with a small polite bow over her shoulder.
 Draw the place only: no people in the foreground, at most a few small distant passers-by with no visible faces. No text, signs left blank or unreadable, no speech balloons.
 Make it feel like the last shot of a good day.
 ```

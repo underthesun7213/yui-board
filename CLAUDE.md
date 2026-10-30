@@ -96,7 +96,7 @@ none of that is needed — the stack runs without Docker.
 `npm test` includes the render check: every route × en/ja/ko × state, rendered
 with `prerender` in Node, failing on thrown errors, a loading fallback left in
 the output, and `undefined`, `NaN` or `[object Object]`. `npm run build` fails
-over the bundle budgets (home 100 KB, map 61, lessons 30, gzip). The browser
+over the bundle budgets (home 100 KB, map 61, lessons 33, gzip). The browser
 tests run on a production build with its CSP and fail on any console error or
 CSP violation; `tests/e2e/v13-parity.spec.ts` is the v1.3 parity list.
 

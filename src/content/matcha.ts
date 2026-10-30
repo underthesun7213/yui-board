@@ -71,7 +71,7 @@ export const MT_LINES: Record<MtLine, MtSay> = {
   },
   ask: {
     who: 'ayano',
-    jp: 'わぁ、{自分|じぶん}で{点|た}てるんやて。うちのは、ミルク{入|い}れてラテにしてもろてもええ？',
+    jp: 'わぁ、{自分|じぶん}で{点|た}てるんどすて。うちのは、ミルク{入|い}れてラテにしてもろてもよろしおす？',
     t: {
       ja: 'わあ、自分で点てるんだって。私のは、ミルクを入れてラテにしてもらってもいい？',
       en: 'Oh, we whisk it ourselves! Could you make mine a latte, with milk?',
@@ -80,17 +80,21 @@ export const MT_LINES: Record<MtLine, MtSay> = {
   },
   quiz0: {
     who: 'ayano',
-    jp: 'これ、なんて{言|い}うか{知|し}ってはる？ {茶筅|ちゃせん}はどれやと{思|おも}う？',
+    jp: '{茶筅|ちゃせん}いうの、どれかわからはります？',
     t: {
-      ja: 'これ、何て言うか知ってる？ 茶筅はどれだと思う？',
-      en: 'Do you know what these are called? Which one is the tea whisk?',
-      ko: '이거 뭐라고 부르는지 알아요? 차선은 어느 거 같아요?',
+      ja: '茶筅って、どれかわかる？',
+      en: 'Can you tell which one is the tea whisk?',
+      ko: '차선이 어느 건지 알겠어요?',
     },
   },
   quiz1: {
     who: 'ayano',
-    jp: 'ほな、{茶杓|ちゃしゃく}は？',
-    t: { ja: 'じゃあ、茶杓は？', en: 'And the tea scoop?', ko: '그럼 차샤쿠는요?' },
+    jp: 'ほな、{茶杓|ちゃしゃく}はどれどすやろ？',
+    t: {
+      ja: 'じゃあ、茶杓はどれかな？',
+      en: 'And which is the tea scoop?',
+      ko: '그럼 차샤쿠는 어느 걸까요?',
+    },
   },
   powder: {
     who: 'ayano',
@@ -103,7 +107,7 @@ export const MT_LINES: Record<MtLine, MtSay> = {
   },
   water: {
     who: 'ayano',
-    jp: 'お{湯|ゆ}は{七十|ななじゅう}ミリくらい。ゆっくり{注|そそ}いでな。',
+    jp: 'お{湯|ゆ}は{七十|ななじゅう}ミリくらい。ゆっくり{注|そそ}いでおくれやす。',
     t: {
       ja: 'お湯は70ミリくらい。ゆっくり注いでね。',
       en: 'About 70 ml of hot water. Pour slowly.',
@@ -112,7 +116,7 @@ export const MT_LINES: Record<MtLine, MtSay> = {
   },
   whisk: {
     who: 'ayano',
-    jp: '{茶筅|ちゃせん}で、Wの{字|じ}を{描|か}くようにシャカシャカ。くるくる{回|まわ}したらあかんえ。',
+    jp: '{茶筅|ちゃせん}で、Wの{字|じ}を{描|か}くようにシャカシャカ。くるくる{回|まわ}したらあきまへんえ。',
     t: {
       ja: '茶筅でWの字を描くようにシャカシャカ。くるくる回したらだめだよ。',
       en: 'Whisk in a W, shaka-shaka. No stirring in circles.',
@@ -121,7 +125,7 @@ export const MT_LINES: Record<MtLine, MtSay> = {
   },
   base: {
     who: 'ayano',
-    jp: 'ラテのは、お{湯|ゆ}{少|すく}なめで{濃|こ}いめにな。',
+    jp: 'ラテの{方|ほう}は、お{湯|ゆ}{少|すく}なめで{濃|こ}いめにしておくれやす。',
     t: {
       ja: 'ラテのは、お湯を少なめにして濃いめにね。',
       en: 'For the latte, less water, so it comes out strong.',
@@ -497,11 +501,11 @@ export const MT_FB: Record<MtFbKey, { head: L3; body: L3; say?: string }> = {
 /** what Ayano says over the table when the hand keeps wandering */
 export const MT_TIPS = {
   w: {
-    jp: 'Wの{字|じ}を{描|か}くように{振|ふ}ってな',
+    jp: 'Wの{字|じ}を{描|か}くように{振|ふ}っておくれやす',
     t: { ja: 'Wを描くように', en: 'Whisk along the W', ko: 'W를 그리듯이' },
   },
   dash: {
-    jp: '{点線|てんせん}のとおりに{注|そそ}いでな',
+    jp: '{点線|てんせん}のとおりに{注|そそ}いでおくれやす',
     t: { ja: '点線のとおりに', en: 'Pour along the dashed line', ko: '점선대로 부어요' },
   },
 } satisfies Record<string, { jp: string; t: L3 }>;

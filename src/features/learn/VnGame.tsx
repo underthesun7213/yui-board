@@ -1,6 +1,6 @@
 import { endingFor, nextScene, pickOption, pickRoute, resetVn } from '../../actions/learn';
 import { go } from '../../actions/nav';
-import { MatchaGame, SmartBall, YukiGame } from '../../app/screens';
+import { MatchaGame, PhotoGame, SmartBall, YukiGame } from '../../app/screens';
 import { ACHIEVEMENTS } from '../../content/achievements';
 import { achievementKey, endingKey, sceneKey } from '../../content/art';
 import { plain } from '../../content/ruby';
@@ -117,6 +117,12 @@ export function VnGame({ lesson }: { lesson: VnLesson }) {
             {sc.note && <p className="vnnote">{sc.note[lang]}</p>}
             {/* the 아야노 미니게임 draws its own table; its last Next ends it */}
             <MatchaGame onDone={nextScene} />
+          </>
+        ) : kind === 'photo' ? (
+          <>
+            {sc.note && <p className="vnnote">{sc.note[lang]}</p>}
+            {/* the fireworks photo on the bridge; its Next goes to the goodbye */}
+            <PhotoGame onDone={nextScene} />
           </>
         ) : kind === 'smartball' ? null : (
           <>

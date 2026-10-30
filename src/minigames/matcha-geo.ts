@@ -1,5 +1,5 @@
 /* The matcha table's layout and the lines the player follows (아야노 미니게임,
-   level 8, Kyoto scene 5). Pure numbers in the table's 800 × 600 units, so the
+   level 8, Kyoto scene 4). Pure numbers in the table's 800 × 600 units, so the
    scoring can be tested without a canvas. */
 export interface Pt {
   x: number;

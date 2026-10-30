@@ -9,6 +9,8 @@
      endings/<id>              ending card, 3:2
      achievements/<id>         achievement illustration (src/content/achievements.ts), 3:2
      minigames/yuki/<name>     유우키 미니게임: street, table, tease (src/content/yuki-minigame.ts), 4:3
+     minigames/ayano/hanabi    the fireworks photo: Ayano on the bridge, 900 × 1200
+                               (src/minigames/photo-geo.ts places her face and the fireworks)
    Each as .webp, .png or .jpg (one file per slot; tests/unit/domain.test.ts
    checks the names, sizes and shapes). Comic pages are built into
    assets/comic/ and cached by the service worker the first time they are

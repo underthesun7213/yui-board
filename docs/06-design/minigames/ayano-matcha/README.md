@@ -2,7 +2,7 @@
 
 | 항목 | 내용 |
 |---|---|
-| 이름 | **아야노 미니게임** — 레벨 8 교토 장면 #5 (말차 카페, 셀프 말차 세트) |
+| 이름 | **아야노 미니게임** — 레벨 8 교토 장면 #4 (말차 카페, 셀프 말차 세트) |
 | 상태 | 앱에 들어감: `src/features/learn/MatchaGame.tsx`(화면), `src/minigames/matcha.ts`(게임), `matcha-draw.ts`(그리기), `matcha-geo.ts`(배치·채점), `src/content/matcha.ts`(대사·글 ja·en·ko) |
 | 미리보기 | [`index.html`](index.html) — 비공개 아티팩트: https://claude.ai/artifact/SLryggicoQPnUrjAbScuig |
 
@@ -30,4 +30,4 @@
 
 - 업적 일러스트(`src/art/achievements/a_kyoto_latte`): Gemini 로, 「Ayano basic.png」 만 참고해서. 그 전에는 회색 자리.
 - 음성: 미니게임 대사는 아직 글자만.
-- 교토 대본을 새로 쓰면 이 장면의 자리(지금 #5, 오차즈케 장면 다음)를 다시 맞춘다.
+- 교토 대본(2026-10-31)에서 #3 주문 다음, #4 에 들어간다.

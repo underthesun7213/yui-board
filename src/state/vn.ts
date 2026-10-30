@@ -1,4 +1,4 @@
-import type { Bet, Route } from '../content/types';
+import type { Bet, Route, Shot } from '../content/types';
 import { createStore } from './store';
 
 export interface Vn {
@@ -10,6 +10,8 @@ export interface Vn {
   ball: 'win' | 'lose' | null;
   /** what the smart-ball match is played for, from the reply before it */
   bet: Bet | null;
+  /** what the photo game shoots, from the reply before it */
+  shot: Shot;
   /** an achievement unlocked in this scene, shown until the next one */
   got: string | null;
 }
@@ -20,6 +22,7 @@ export const VN_START: Vn = {
   score: 0,
   ball: null,
   bet: null,
+  shot: 'friend',
   got: null,
 };
 export const vn = createStore<Vn>(VN_START);

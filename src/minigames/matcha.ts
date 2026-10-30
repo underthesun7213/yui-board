@@ -1,4 +1,4 @@
-/* The matcha table (아야노 미니게임, level 8, Kyoto scene 5), outside React
+/* The matcha table (아야노 미니게임, level 8, Kyoto scene 4), outside React
    like the smart-ball table: the player's hand on the canvas, the tea in the
    bowl and the cup, the scoring, and a few synthesised sounds. It writes what
    the screen shows to the `mt` store; MatchaGame.tsx shows the rest, and

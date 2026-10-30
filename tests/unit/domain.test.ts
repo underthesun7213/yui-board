@@ -39,6 +39,7 @@ import type { EventSeries, OccurrenceOverride, Place } from '../../src/domain/ty
 import { en } from '../../src/i18n/en';
 import { ja } from '../../src/i18n/ja';
 import { ko } from '../../src/i18n/ko';
+import { PHOTO_ART } from '../../src/minigames/photo-geo';
 
 const MESSAGES = { en, ja, ko };
 import events from '../fixtures/events.json';
@@ -382,6 +383,7 @@ describe('art', () => {
     for (const e of ENDINGS) slots.add(endingKey(e.id));
     for (const a of ACHIEVEMENTS) slots.add(achievementKey(a.id));
     for (const k of Object.values(YUKI_ART)) slots.add(k);
+    slots.add(PHOTO_ART);
     for (const k of Object.keys(ART))
       expect(slots.has(k), `src/art/${k} matches no slot`).toBe(true);
   });

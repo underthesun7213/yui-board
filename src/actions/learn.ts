@@ -9,6 +9,8 @@ import { prefs } from '../state/prefs';
 import { vn, VN_START } from '../state/vn';
 import { yuki, YUKI_START } from '../state/yuki';
 import { mt, MT_START } from '../state/matcha';
+import { ph, PH_START } from '../state/photo';
+import { unlock } from './achievements';
 import { toast } from './ui';
 
 export function openLesson(lid: string) {
@@ -22,7 +24,13 @@ export function pickOption(i: number) {
   const v = vn.get();
   if (!v.route || v.picked !== null) return;
   const opt = VN[v.route].scenes[v.i]?.opts[i];
-  vn.set({ picked: i, score: v.score + (opt?.ok ? 1 : 0), ...(opt?.bet ? { bet: opt.bet } : {}) });
+  vn.set({
+    picked: i,
+    score: v.score + (opt?.ok ? 1 : 0),
+    ...(opt?.bet ? { bet: opt.bet } : {}),
+    ...(opt?.shot ? { shot: opt.shot } : {}),
+  });
+  if (opt?.ach) unlock(opt.ach);
 }
 
 /** scenes that ask for a reply: the only ones scored */
@@ -48,6 +56,8 @@ export function nextScene() {
   if (VN[v.route].scenes[i]?.kind === 'yuki') yuki.set({ ...YUKI_START, step: 'drink' });
   /* the 아야노 미니게임 starts at the tea house door */
   if (VN[v.route].scenes[i]?.kind === 'matcha') mt.set({ ...MT_START, muted: mt.get().muted });
+  /* the photo shoots Ayano, or only the sky after a reply that left her out */
+  if (VN[v.route].scenes[i]?.kind === 'photo') ph.set({ ...PH_START, mode: v.shot });
   if (i < VN[v.route].scenes.length) return;
   const card = endingFor(v.route, v.score);
   const cg = { ...collection.get().cg };

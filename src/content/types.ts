@@ -62,6 +62,9 @@ export interface VnSay {
 }
 /** what the smart-ball match is played for, as agreed in the reply before it */
 export type Bet = 'juice' | 'takoyaki';
+/** who the photo on the bridge is of: Ayano with the fireworks, or the sky only
+    (after a reply that took a photo for yourself and left her out) */
+export type Shot = 'friend' | 'sky';
 export interface VnOption {
   jp: string;
   ok: boolean;
@@ -70,6 +73,10 @@ export interface VnOption {
   reply?: VnSay[];
   /** this reply takes the smart-ball bet, for this */
   bet?: Bet;
+  /** this reply unlocks an achievement illustration */
+  ach?: string;
+  /** this reply decides what the photo game shoots */
+  shot?: Shot;
 }
 /** An achievement illustration: unlocked once, the moment its condition is met. */
 export interface Achievement {
@@ -84,8 +91,8 @@ export interface Achievement {
 }
 /** talk: a line and replies to pick (scored). move: walking on, no choice.
     yuki: the 유우키 미니게임. smartball: the smart-ball match. matcha: the 아야노
-    미니게임 at the tea house. */
-export type VnKind = 'talk' | 'move' | 'yuki' | 'smartball' | 'matcha';
+    미니게임 at the tea house. photo: the fireworks photo on the bridge. */
+export type VnKind = 'talk' | 'move' | 'yuki' | 'smartball' | 'matcha' | 'photo';
 export interface VnScene {
   kind?: VnKind;
   s: string;

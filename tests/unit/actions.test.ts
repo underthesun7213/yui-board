@@ -23,6 +23,7 @@ const { mapUi } = await import('../../src/state/mapUi');
 const { collection } = await import('../../src/state/collection');
 const { vn } = await import('../../src/state/vn');
 const { VN } = await import('../../src/content/vn');
+const { ph } = await import('../../src/state/photo');
 
 describe('location', () => {
   beforeEach(() => location.set({ state: 'ask', loc: null, refreshing: false }));
@@ -107,11 +108,28 @@ describe('episode 8', () => {
     expect(endingFor('osaka', 1).id).toBe('e_osaka_bad');
   });
 
-  it('Kyoto keeps one miss for good and has no bad card yet', () => {
+  it('Kyoto says goodbye three ways, like Osaka', () => {
     const n = scoredScenes('kyoto');
+    expect(n).toBe(5);
     expect(endingFor('kyoto', n).tier).toBe('good');
-    expect(endingFor('kyoto', n - 1).tier).toBe('good');
-    expect(endingFor('kyoto', 0).tier).toBe('normal');
+    expect(endingFor('kyoto', n - 1).tier).toBe('normal');
+    expect(endingFor('kyoto', 2).tier).toBe('normal');
+    expect(endingFor('kyoto', 1).tier).toBe('bad');
+    expect(endingFor('kyoto', 0).id).toBe('e_kyoto_bad');
+  });
+
+  it('unlocks the candy apple on its reply, and points the photo at the sky after a selfish one', () => {
+    pickRoute('kyoto');
+    const fair = VN.kyoto.scenes.findIndex((s) => s.opts.some((o) => o.ach));
+    vn.set({ i: fair });
+    pickOption(VN.kyoto.scenes[fair]!.opts.findIndex((o) => o.ach));
+    expect(vn.get().got).toBe('a_kyoto_ringo');
+    const bridge = VN.kyoto.scenes.findIndex((s) => s.opts.some((o) => o.shot));
+    vn.set({ i: bridge, picked: null });
+    pickOption(VN.kyoto.scenes[bridge]!.opts.findIndex((o) => o.shot === 'sky'));
+    nextScene();
+    expect(VN.kyoto.scenes[vn.get().i]!.kind).toBe('photo');
+    expect(ph.get().mode).toBe('sky');
   });
 
   it('scores only the scenes that ask for a reply', () => {

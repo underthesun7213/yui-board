@@ -66,7 +66,7 @@ const useTx = () => {
   return (k: MtText) => MT_TEXT[k][lang];
 };
 
-/* 아야노 미니게임 (docs/06-design/minigames/ayano-matcha), scene 5 of
+/* 아야노 미니게임 (docs/06-design/minigames/ayano-matcha), scene 4 of
    level 8's Kyoto route: a self-serve matcha set at a tea house. The table is
    a canvas run by minigames/matcha.ts; the step's lines, feedback and
    buttons are below it. A heart in her latte unlocks Ayano's picture; Next

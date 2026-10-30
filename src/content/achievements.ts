@@ -68,8 +68,42 @@ export const ACHIEVEMENTS: Achievement[] = [
       ko: '아야노의 라테에 하트를 그렸다. 작은 배려는 말하지 않아도 전해진다',
     },
   },
+  {
+    id: 'a_kyoto_ringo',
+    route: 'kyoto',
+    t: {
+      ja: 'りんご飴とあやの',
+      en: 'Ayano and the candy apple',
+      ko: '링고아메와 아야노',
+    },
+    jp: 'やっぱり、お{祭|まつ}りはりんご{飴|あめ}どすなぁ',
+    s: 'Ayano in her kimono at a festival stall at dusk, holding a shiny red candy apple, smiling',
+    n: {
+      ja: '着物に似合う甘い物をすすめた。相手の服や場面まで考えると、選択がやさしくなる',
+      en: 'You suggested a sweet that suits a kimono. Thinking of what she is wearing makes the choice a kind one',
+      ko: '기모노에 어울리는 단것을 권했다. 상대의 옷차림까지 생각하면 선택이 상냥해진다',
+    },
+  },
+  {
+    id: 'a_kyoto_hanabi',
+    route: 'kyoto',
+    t: {
+      ja: '花火とあやの',
+      en: 'Ayano under the fireworks',
+      ko: '불꽃놀이와 아야노',
+    },
+    jp: 'ええ{写真|しゃしん}、おおきに。{大事|だいじ}にしますえ',
+    s: 'Ayano on the red bridge at night, looking back over her shoulder with a gentle smile, fireworks bursting above the hills behind',
+    n: {
+      ja: '「撮ってさしあげまひょか」に気づいて、あやのを花火と一緒に撮った。言われなくても、してほしいことを汲む',
+      en: 'You heard what her offer meant and took her photo with the fireworks. Doing what someone wanted without being asked',
+      ko: '「撮ってさしあげまひょか」의 속뜻을 알아채고 아야노를 불꽃과 함께 찍었다. 말하지 않아도 바라는 것을 헤아린다',
+    },
+  },
 ];
 
+/** a good photo of Ayano with the fireworks (the photo game) */
+export const ACH_HANABI = 'a_kyoto_hanabi';
 /** a heart in Ayano's latte (the 아야노 미니게임) */
 export const ACH_LATTE = 'a_kyoto_latte';
 /** finishing the 유우키 미니게임 without a second dip */

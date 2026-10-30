@@ -7,11 +7,11 @@ import type { Route, VnRoute } from './types';
    reply (Osaka five since 2026-10-29, Kyoto five; the mini-games and walks are
    not scored). Good: at most goodMisses missed. Bad: at most badMax right, on
    a route that has a bad card. Normal: anything between. Osaka (owner,
-   2026-10-30): all five good, two to four normal, one or none bad. Kyoto keeps
-   its two cards and one miss for good until its scenario is rewritten. */
+   2026-10-30): all five good, two to four normal, one or none bad. Kyoto
+   (2026-10-31) the same, with its three goodbyes on the bridge. */
 export const ENDING_RULE: Record<Route, { goodMisses: number; badMax: number | null }> = {
   osaka: { goodMisses: 0, badMax: 1 },
-  kyoto: { goodMisses: 1, badMax: null },
+  kyoto: { goodMisses: 0, badMax: 1 },
 };
 
 export const VN: Record<Route, VnRoute> = {
@@ -284,6 +284,10 @@ export const VN: Record<Route, VnRoute> = {
       },
     ],
   },
+  /* The day with Ayano, from the owner's storyboard
+     (docs/06-design/game-storyboard-template.md, 2026-10-31): Gion, the matcha
+     tea house (the 아야노 미니게임), the festival stalls, the fireworks from a
+     red bridge (the photo game), goodbye on the bridge. */
   kyoto: {
     name: {
       ja: 'あやの（京都）',
@@ -291,188 +295,294 @@ export const VN: Record<Route, VnRoute> = {
       ko: '아야노 (교토)',
     },
     blurb: {
-      ja: 'やわらかく言う。本音は少し後ろにある',
-      en: 'Says things gently; the real meaning sits one step behind',
-      ko: '부드럽게 말한다. 속뜻은 한 걸음 뒤에 있다',
+      ja: '声が小さい。言いたいことは、いつも一歩うしろにある',
+      en: 'Soft-spoken; what she means is always one step behind what she says',
+      ko: '목소리가 작다. 하고 싶은 말은 늘 한 걸음 뒤에 있다',
     },
     scenes: [
       {
-        s: "Kyoto Station's great staircase, one friend waiting with a small bow",
-        jp: 'わざわざ{来|き}てくれはって、おおきに。',
+        s: 'Gion Shirakawa at 3 pm, a stone path and willows, few people, Ayano in kimono waiting quietly',
+        jp: '{遠|とお}いとこ、ようおこしやす。……えらい{動|うご}きやすそうな{格好|かっこう}してはりますなぁ。',
+        note: {
+          ja: '花火大会の日。あやのは着物で来た。こちらは普段着だ。あやのの「どす」「おくれやす」は昔ながらの京言葉で、今の京都の若い人はあまり使わない。',
+          en: 'Fireworks day. Ayano came in a kimono; you came in everyday clothes. Her どす and おくれやす are old Kyoto speech that young people there rarely use today.',
+          ko: '불꽃놀이 날. 아야노는 기모노를 입고 왔고, 나는 평상복이다. 아야노의 どす·おくれやす는 옛 교토 말투로, 요즘 교토 젊은이는 잘 쓰지 않는다.',
+        },
         opts: [
           {
-            jp: 'いえいえ、こちらこそ。',
-            ok: true,
-            fb: {
-              ja: '謙遜で受けるのが自然。「〜はる」は京都のやわらかい敬語',
-              en: "Deflecting is the natural reply. 〜はる is Kyoto's gentle honorific",
-              ko: '겸손으로 받는 게 자연스럽다. 〜はる는 교토의 부드러운 경어',
-            },
-          },
-          {
-            jp: '{来|き}たかったから。',
-            ok: true,
-            fb: {
-              ja: '素直もいい。ただし京都では少し直球に響く',
-              en: 'Honest works too, though it lands a little straight here',
-              ko: '솔직한 것도 좋다. 다만 교토에선 조금 직구로 들린다',
-            },
-          },
-          {
-            jp: 'はい。',
+            jp: 'あ、そうなんです！すごく{楽|らく}なんですよ。',
             ok: false,
             fb: {
-              ja: '短すぎる。返事が一語だと「怒ってる？」と思われる',
-              en: "Too short. A one-word reply reads as 'are you annoyed?'",
-              ko: "너무 짧다. 한 마디면 '화났나?'로 읽힌다",
+              ja: 'ほめ言葉ではない。「動きやすそう」は「今日その格好？」という京都流のひと言。相手は着物で来ている',
+              en: 'Not a compliment. 「動きやすそう」 is Kyoto for "you came like that, today?" She came in a kimono',
+              ko: "칭찬이 아니다. 「動きやすそう」는 '오늘 같은 날 그 옷이에요?'라는 교토식 꼬집기. 상대는 기모노를 차려입고 왔다",
             },
+            reply: [{ who: 'friend', jp: 'あらまぁ、それはよろしおしたなぁ。' }],
+          },
+          {
+            jp: '{大変|たいへん}{申|もう}し{訳|わけ}ございません。',
+            ok: false,
+            fb: {
+              ja: '丁寧すぎる。軽いひと言が本気のお叱りになって、かえって相手が気をつかう',
+              en: 'Far too polite. A light jab turns into a real telling-off, and now she is the one who feels bad',
+              ko: '너무 정중하다. 가볍게 꼬집은 말이 진짜 꾸중이 되어, 오히려 상대가 미안해진다',
+            },
+            reply: [{ who: 'friend', jp: 'いえいえ、そないなこと{気|き}にせんといておくれやす。' }],
+          },
+          {
+            jp: 'わっ、あやのさん、{着物|きもの}すごく{似合|にあ}ってますね！せっかくの{花火|はなび}なのに、{普段着|ふだんぎ}でごめんなさい。',
+            ok: true,
+            fb: {
+              ja: 'おしゃれしてきた相手を先にほめて、普段着は軽くあやまった。どちらも押さえた満点の返事',
+              en: 'You praised her kimono first and apologised lightly for your clothes. Both covered: a perfect reply',
+              ko: '차려입은 상대를 먼저 칭찬하고, 편한 옷은 가볍게 사과했다. 둘 다 챙긴 완벽한 대답',
+            },
+            reply: [
+              { who: 'friend', jp: 'おおきに。{謝|あやま}らはることあらしまへん。' },
+              {
+                who: 'friend',
+                jp: 'うち、{家|いえ}が{古|ふる}い{呉服屋|ごふくや}どすさかい、{着物|きもの}も{言葉|ことば}も、つい{昔風|むかしふう}になってしまうんどす。',
+              },
+            ],
           },
         ],
       },
       {
-        s: 'Nishiki Market, narrow and crowded, a skewer held out',
-        jp: 'これ、{食|た}べてみはる？',
+        s: 'The same Gion street in the afternoon sun, Ayano tilting her head, thinking',
+        jp: '{始|はじ}まるまで、まだ{時間|じかん}おすなぁ。どこぞ{行|い}きまひょか？',
         opts: [
           {
-            jp: 'じゃあ、ちょっとだけ。',
+            jp: 'この{辺|へん}にいい{雰囲気|ふんいき}の{抹茶|まっちゃ}カフェがあるらしいんですけど、どうですか？',
             ok: true,
             fb: {
-              ja: '遠慮の形。全部もらうより収まりがいい',
-              en: 'The polite middle. Better than taking the whole thing',
-              ko: '사양의 형태. 다 받는 것보다 자연스럽다',
+              ja: '近くて気軽、着物の相手が座って休める場所を選んだ。気づかいが伝わる',
+              en: 'Close by, easy, and somewhere she can sit down in her kimono. The thought shows',
+              ko: '가까워서 부담이 없고, 기모노 차림의 상대가 앉아 쉴 수 있는 곳. 배려가 느껴진다',
             },
+            reply: [
+              {
+                who: 'friend',
+                jp: 'よろしおすなぁ。ちょうど{三時|さんじ}やし、おやつの{時間|じかん}どすなぁ。',
+              },
+            ],
           },
           {
-            jp: 'いただきます。',
-            ok: true,
-            fb: {
-              ja: 'まっすぐ受け取るのも失礼ではない',
-              en: 'Simply accepting is not rude either',
-              ko: '그대로 받는 것도 실례는 아니다',
-            },
-          },
-          {
-            jp: '{結構|けっこう}です。',
+            jp: '{京都|きょうと}の{観光|かんこう}がしたいです！{嵐山|あらしやま}はどうですか？',
             ok: false,
             fb: {
-              ja: '強い。断るなら「お腹いっぱいで」と理由を添える',
-              en: 'Too blunt. If refusing, give a reason — お腹いっぱいで',
-              ko: '강하다. 거절하려면 お腹いっぱいで처럼 이유를 붙인다',
+              ja: '花火の前に行くには遠すぎる。京都の「また今度」はていねいな断り',
+              en: 'Too far to go before the fireworks. In Kyoto, 「また今度」 is a polite no',
+              ko: '불꽃놀이 전에 다녀오기엔 멀다. 교토의 「また今度」는 정중한 거절이다',
             },
+            reply: [
+              {
+                who: 'friend',
+                jp: '{嵐山|あらしやま}どすか。よろしおすなぁ。また{今度|こんど}、ゆっくりの{時|とき}にでも。',
+              },
+            ],
+          },
+          {
+            jp: 'ハイキングはどうですか？あそこにちょうどいい{山|やま}が{見|み}えますよ！',
+            ok: false,
+            fb: {
+              ja: '下駄と着物の相手のことを考えていない。「お元気どすなぁ」はほめ言葉ではない',
+              en: 'She is in geta and a kimono. 「お元気どすなぁ」 is not a compliment',
+              ko: '게타에 기모노 차림인 상대를 생각하지 않았다. 「お元気どすなぁ」는 칭찬이 아니다',
+            },
+            reply: [
+              {
+                who: 'friend',
+                jp: 'ハイキング……お{元気|げんき}どすなぁ。うち、この{格好|かっこう}どすさかい。',
+              },
+            ],
           },
         ],
       },
       {
-        s: 'A temple garden, gravel path, the friend speaking very quietly',
-        jp: 'ここ、{静|しず}かにしといた{方|ほう}がええかもしれへんね。',
+        s: 'Inside a quiet Kyoto matcha tea house at 4 pm, tatami and low tables, Ayano holding a menu',
+        jp: 'デザートセット{頼|たの}める{時間|じかん}どすなぁ、うれしおすわぁ。{何|なに}にしはります？',
         opts: [
           {
-            jp: 'あ、うるさかった？ごめん。',
-            ok: true,
-            fb: {
-              ja: '遠回しの注意に気づけた。京都の注意はこの形で来る',
-              en: 'You caught an indirect correction. This is how it arrives here',
-              ko: '돌려 말한 주의를 알아챘다. 교토의 지적은 이 형태로 온다',
-            },
-          },
-          {
-            jp: '（{声|こえ}を{小|ちい}さくする）',
-            ok: true,
-            fb: {
-              ja: '言葉より行動。これがいちばん自然',
-              en: 'Act rather than answer. The most natural response of the three',
-              ko: '말보다 행동. 이게 가장 자연스럽다',
-            },
-          },
-          {
-            jp: 'そうですね。',
+            jp: '{私|わたし}、あんまり{欲|ほ}しいものないんで、お{水|みず}で{大丈夫|だいじょうぶ}です。あやのさんだけ{注文|ちゅうもん}しますか？',
             ok: false,
             fb: {
-              ja: '同意しただけ。注意されたことに気づいていない返事',
-              en: 'You agreed without noticing you were being corrected',
-              ko: '동의만 했다. 지적받았다는 걸 못 알아챈 대답',
+              ja: '日本のカフェは一人一品が基本。相手だけ頼ませると困らせる。しかもこの店を選んだのは自分',
+              en: 'Japanese cafés expect one order each, and leaving her to order alone puts her on the spot. You chose this place, too',
+              ko: '일본 카페는 1인 1주문이 기본. 혼자만 시키게 하면 상대가 곤란하다. 게다가 이 가게를 고른 건 나다',
             },
+            reply: [
+              {
+                who: 'friend',
+                jp: 'そうどすか。ここはあんまりお{口|くち}に{合|あ}わへんみたいどすなぁ。ほな、{他|ほか}のとこ{行|い}きまひょか？',
+              },
+            ],
+          },
+          {
+            jp: '{抹茶|まっちゃ}とみたらし{団子|だんご}のセットが{美味|おい}しそうですね。',
+            ok: true,
+            fb: {
+              ja: 'ごく自然で、常識的ないい返事',
+              en: 'Natural and sensible: a good reply',
+              ko: '무난하고 상식적인 좋은 대답',
+            },
+            reply: [
+              {
+                who: 'friend',
+                jp: 'みたらし{団子|だんご}、{美味|おい}しそうどすなぁ。うちはアーモンドのパウンドケーキにしまひょ。',
+              },
+            ],
+          },
+          {
+            jp: 'チョコレートケーキが{美味|おい}しそうですね。{分|わ}けて{食|た}べませんか？',
+            ok: true,
+            fb: {
+              ja: '一人一品が基本だけど、それぞれ頼んで分けるのはいい',
+              en: 'One each is the rule, but ordering one each and sharing is fine',
+              ko: '1인 1디저트가 기본이지만, 각자 시켜서 나눠 먹는 건 괜찮다',
+            },
+            reply: [
+              {
+                who: 'friend',
+                jp: 'よろしおすなぁ。ほな、うちも{頼|たの}んで{半分|はんぶん}こしまひょか。',
+              },
+            ],
           },
         ],
       },
       {
-        s: 'A traditional living room, late afternoon light, a teapot being lifted',
-        jp: 'そろそろ、お{茶漬|ちゃづ}けでもどうどす？',
-        opts: [
-          {
-            jp: 'あ、もうこんな{時間|じかん}。そろそろ{失礼|しつれい}します。',
-            ok: true,
-            fb: {
-              ja: '有名な遠回し。「そろそろ帰っては」の合図とされる',
-              en: "The famous one. Traditionally read as 'it may be time to go'",
-              ko: "유명한 돌려말하기. '슬슬 갈 때'라는 신호로 통한다",
-            },
-          },
-          {
-            jp: 'お{構|かま}いなく。',
-            ok: true,
-            fb: {
-              ja: '曖昧に受け流す。角が立たない',
-              en: 'Deflects without committing. Nothing is bruised',
-              ko: '애매하게 넘긴다. 모서리가 안 생긴다',
-            },
-          },
-          {
-            jp: 'いただきます！',
-            ok: false,
-            fb: {
-              ja: '言い伝えでは誤読。ただし現代の京都で本当にこう言う人は稀で、都市伝説として語られることが多い',
-              en: 'The classic misread — though few people in Kyoto actually say this today; it survives mostly as a story about the city',
-              ko: '전설적인 오독. 다만 요즘 교토에서 실제로 이렇게 말하는 사람은 드물고, 도시전설처럼 회자된다',
-            },
-          },
-        ],
-      },
-      {
-        /* the 아야노 미니게임 (src/features/learn/MatchaGame.tsx), scene 5 until
-           the Kyoto scenario is rewritten around it */
+        /* the 아야노 미니게임 (src/features/learn/MatchaGame.tsx) */
         kind: 'matcha',
         s: 'A Kyoto matcha tea house by day, the two at a table with a self-serve matcha set',
         jp: '',
         note: {
-          ja: '帰り道、抹茶の店に寄った。お茶は自分で点てるセット。',
-          en: 'On the way, you stop at a matcha tea house. The set lets you whisk the tea yourselves.',
-          ko: '돌아가는 길에 말차 카페에 들렀다. 차를 직접 만드는 세트다.',
+          ja: '頼んだセットは、お茶を自分で点てるもの。自分の抹茶と、あやのの抹茶ラテを作る。',
+          en: 'The set you ordered lets you whisk the tea yourself: a matcha for you and a matcha latte for Ayano.',
+          ko: '주문한 세트는 차를 직접 만드는 방식이다. 내 말차 한 잔과 아야노의 말차 라테 한 잔을 만든다.',
         },
         opts: [],
       },
       {
-        s: 'A narrow lane at dusk, the friend standing in a doorway',
-        jp: 'また{寄|よ}っとくれやす。',
+        kind: 'move',
+        s: 'The Kamo riverbank at dusk, a little sunset, the two walking toward the festival, lanterns being lit',
+        /* draft: the storyboard has no line here */
+        jp: 'ええ{時間|じかん}になってきましたなぁ。ほな、そろそろ{行|い}きまひょか。',
+        note: {
+          ja: 'カフェを出て、花火の会場へ向かう。',
+          en: 'You leave the café and head for the fireworks.',
+          ko: '카페를 나와 불꽃놀이 장소로 향한다.',
+        },
+        opts: [],
+      },
+      {
+        s: 'A festival street lined with yatai stalls, lively and packed, Ayano looking over the stalls',
+        jp: 'ほんま{迷|まよ}いますなぁ。{何|なに}がよろしおすやろ？',
         opts: [
           {
-            jp: 'おおきに、また。',
+            jp: 'りんご{飴|あめ}とか{綿|わた}あめみたいな{甘|あま}いもの、どうですか？',
             ok: true,
+            ach: 'a_kyoto_ringo',
             fb: {
-              ja: '真似して返すと距離が縮まる。観光客はまず使わない言葉',
-              en: 'Echo it back and the distance shrinks. Visitors almost never try it',
-              ko: '따라 돌려주면 거리가 줄어든다. 관광객은 거의 쓰지 않는 말',
+              ja: '屋台の定番。きれいな着物にも似合う、かわいい選択',
+              en: 'The festival classic, and a pretty one that suits her kimono',
+              ko: '노점의 정석. 예쁜 옷에 어울리는 귀여운 선택',
             },
+            reply: [
+              {
+                who: 'friend',
+                jp: 'りんご{飴|あめ}、{食|た}べはったことあります？お{祭|まつ}りいうたら、やっぱりりんご{飴|あめ}どすなぁ。',
+              },
+            ],
           },
           {
-            jp: 'ありがとう、またね。',
+            jp: 'たこ{焼|や}きとかベビーカステラなら{一口|ひとくち}で{食|た}べられるし、{食|た}べやすそうですね！',
             ok: true,
             fb: {
-              ja: '標準語でも十分。無理に方言を使わなくていい',
-              en: 'Standard Japanese is plenty. No need to force the dialect',
-              ko: '표준어로도 충분하다. 억지로 사투리를 쓸 필요는 없다',
+              ja: '一口で食べられて、着物でも食べやすい',
+              en: 'One bite each, easy to eat even in a kimono',
+              ko: '한 입 크기라 기모노를 입고도 먹기 편하다',
             },
+            reply: [
+              {
+                who: 'friend',
+                jp: 'ベビーカステラ、{懐|なつ}かしおすなぁ。{小|ちい}さい{頃|ころ}、ほんまに{好|す}きどしたんえ。{一緒|いっしょ}に{食|た}べまひょか？',
+              },
+            ],
           },
           {
-            jp: '{必|かなら}ず{行|い}きます。',
+            jp: '{焼|や}きとうもろこしとか、イカ{焼|や}きはどうですか？すごくいい{匂|にお}いがしますね。',
             ok: false,
             fb: {
-              ja: '社交辞令に真顔で答えた形。約束として重く響く',
-              en: 'You answered a pleasantry as if it were a plan. Lands heavily',
-              ko: '인사치레에 정색으로 답한 셈. 약속처럼 무겁게 들린다',
+              ja: 'かじって食べる物は着物を汚しやすい。「匂いは」の「は」が「食べるのはちょっと」の合図',
+              en: 'Food you bite off the cob or stick is easy to spill on a kimono. The は in 「匂いは」 means "the eating, less so"',
+              ko: "뜯어 먹는 음식은 기모노를 더럽히기 쉽다. 「匂いは」의 は가 '먹기는 글쎄'라는 신호",
             },
+            reply: [
+              {
+                who: 'friend',
+                jp: '{匂|にお}いはほんまによろしおすなぁ。……{着物|きもの}で、{上手|じょうず}に{食|た}べられますやろか。',
+              },
+            ],
           },
         ],
+      },
+      {
+        s: 'A red wooden bridge over a river at 7 pm, fireworks in full bloom, Ayano holding her phone out with a small smile',
+        jp: 'ほんまに{見事|みごと}な{景色|けしき}どすなぁ。お{写真|しゃしん}、{撮|と}ってさしあげまひょか？',
+        opts: [
+          {
+            jp: 'そうですね！こういう{所|ところ}だと{写真|しゃしん}{撮|と}りたくなりますね。{私|わたし}もあやのさんの{撮|と}りますよ！',
+            ok: true,
+            fb: {
+              ja: '「撮ってさしあげまひょか」は「うちも撮ってほしい」の合図。気づいて、撮り合った',
+              en: '「撮ってさしあげまひょか」 is her way of saying she would like one too. You caught it and offered',
+              ko: "「撮ってさしあげまひょか」는 '나도 찍히고 싶다'는 신호. 알아채고 서로 찍어 주었다",
+            },
+            reply: [
+              {
+                who: 'friend',
+                jp: 'あら、よろしおすなぁ。おおきに。{二人|ふたり}のも、どなたかに{頼|たの}んでみまひょか？',
+              },
+            ],
+          },
+          {
+            jp: 'あ、ありがとうございます！はい、チーズ！',
+            ok: false,
+            shot: 'sky',
+            fb: {
+              ja: '自分だけ撮ってもらって終わった。「よろしおすこと」は「よろしいこと（うちは？）」に近い',
+              en: 'You had yours taken and left it there. 「よろしおすこと」 is closer to "how nice for you (and me?)"',
+              ko: "자기만 찍고 끝냈다. 「よろしおすこと」는 '좋겠네요(나는?)'에 가깝다",
+            },
+            reply: [{ who: 'friend', jp: 'えらい{楽|たの}しそうどすなぁ。よろしおすこと。' }],
+          },
+          {
+            jp: 'うーん、{私|わたし}あんまり{写真|しゃしん}{撮|と}られるの{得意|とくい}じゃなくて……あやのさんはどうですか？{撮|と}りますよ！',
+            ok: true,
+            fb: {
+              ja: '自分の好みで断ってもいい。そのかわり、相手はどうかを聞いたのがポイント',
+              en: 'Saying no for yourself is fine; asking what she would like is what counts',
+              ko: '내 성향대로 거절해도 된다. 대신 상대는 어떤지 물어본 게 포인트',
+            },
+            reply: [
+              {
+                who: 'friend',
+                jp: 'そうどすか、{残念|ざんねん}やけどしゃあおへんなぁ。ほな、かんにんどすけど、うちだけ{撮|と}ってもろてもよろしおす？',
+              },
+            ],
+          },
+        ],
+      },
+      {
+        /* the photo game (src/features/learn/PhotoGame.tsx) */
+        kind: 'photo',
+        s: 'Ayano on the red bridge, looking back over her shoulder, fireworks over the hills behind',
+        jp: '',
+        note: {
+          ja: 'スマホを構える。花火とあやのが一緒に入るように撮ろう。',
+          en: 'Hold up the phone and frame the shot: Ayano and the fireworks together.',
+          ko: '휴대폰을 든다. 아야노와 불꽃이 함께 들어오게 찍자.',
+        },
+        opts: [],
       },
     ],
   },
