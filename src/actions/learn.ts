@@ -8,6 +8,7 @@ import { collection } from '../state/collection';
 import { prefs } from '../state/prefs';
 import { vn, VN_START } from '../state/vn';
 import { yuki, YUKI_START } from '../state/yuki';
+import { mt, MT_START } from '../state/matcha';
 import { toast } from './ui';
 
 export function openLesson(lid: string) {
@@ -45,6 +46,8 @@ export function nextScene() {
   vn.set({ i, picked: null, ball: null, got: null });
   /* the 유우키 미니게임 starts at the drink: the scene before was the doorway */
   if (VN[v.route].scenes[i]?.kind === 'yuki') yuki.set({ ...YUKI_START, step: 'drink' });
+  /* the 아야노 미니게임 starts at the tea house door */
+  if (VN[v.route].scenes[i]?.kind === 'matcha') mt.set({ ...MT_START, muted: mt.get().muted });
   if (i < VN[v.route].scenes.length) return;
   const card = endingFor(v.route, v.score);
   const cg = { ...collection.get().cg };

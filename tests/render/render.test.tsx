@@ -29,6 +29,7 @@ import { prefs } from '../../src/state/prefs';
 import { route, type Route } from '../../src/state/route';
 import { vn, VN_START } from '../../src/state/vn';
 import { yuki, YUKI_START, type Yuki } from '../../src/state/yuki';
+import { mt, MT_START, type Mt } from '../../src/state/matcha';
 import { session } from '../../src/state/session';
 import { net } from '../../src/state/net';
 import { ui } from '../../src/state/ui';
@@ -88,6 +89,12 @@ const atBall = (st: Partial<Sb>) => () => (
   sb.set({ ...SB_START, ...st })
 );
 const SB = /class="sb"/;
+const KYOTO_TEA = VN.kyoto.scenes.findIndex((sc) => sc.kind === 'matcha');
+const atTea = (st: Partial<Mt>) => () => (
+  vn.set({ ...VN_START, route: 'kyoto', i: KYOTO_TEA }),
+  mt.set({ ...MT_START, ...st })
+);
+const MT = /class="mt"/;
 const GIP = (events as EventSeries[]).find((e) => e.weekly_until)!.id;
 
 async function html(): Promise<string> {
@@ -123,6 +130,7 @@ function reset() {
   vn.set(VN_START);
   yuki.set(YUKI_START);
   sb.set(SB_START);
+  mt.set(MT_START);
   ui.set({ report: null, zoom: null });
   delete ART[FAKE_PAGE];
   prefIntro.set({ texts: null });
@@ -467,6 +475,89 @@ const cases: Case[] = [
         ],
       }),
   ],
+  /* the 아야노 미니게임 at Kyoto scene 5: every step, wrong answers, a miss, the end */
+  ['mt-intro', L8, atTea({}), MT],
+  ['mt-intro-wrong', L8, atTea({ wrong: [1] }), MT],
+  ['mt-intro-ok', L8, atTea({ picked: 0, done: true }), MT],
+  ['mt-tools', L8, atTea({ step: 'tools', fb: { k: 'quiz', tool: 'chasen' } }), MT],
+  [
+    'mt-tools-wrong',
+    L8,
+    atTea({ step: 'tools', fb: { k: 'toolWrong', tool: 'chasen', hit: 'natsume' } }),
+    MT,
+  ],
+  ['mt-tools-ok', L8, atTea({ step: 'tools', quiz: 1, fb: { k: 'chashakuOk' }, done: true }), MT],
+  ['mt-powder', L8, atTea({ step: 'powder', fb: { k: 'scoop' } }), MT],
+  ['mt-powder-thin', L8, atTea({ step: 'powder', scoops: 1, fb: { k: 'powderThin' } }), MT],
+  ['mt-powder-ok', L8, atTea({ step: 'powder', scoops: 2, fb: { k: 'powderOk' }, done: true }), MT],
+  [
+    'mt-water',
+    L8,
+    atTea({
+      step: 'water',
+      fb: { k: 'pourBowl' },
+      meter: { v: 0.4, lo: 0.55, hi: 0.73, k: 'mlMore', n: 44 },
+    }),
+    MT,
+  ],
+  ['mt-water-over', L8, atTea({ step: 'water', fb: { k: 'overBowl' } }), MT],
+  [
+    'mt-whisk',
+    L8,
+    atTea({
+      step: 'whisk',
+      fb: { k: 'whisk' },
+      meter: { v: 0.3, k: 'froth', n: 30, a: 58 },
+      tip: 'w',
+    }),
+    MT,
+  ],
+  ['mt-whisk-done', L8, atTea({ step: 'whisk', fb: { k: 'whiskLively', n: 52 }, done: true }), MT],
+  ['mt-base', L8, atTea({ step: 'base', fb: { k: 'baseOk' }, done: true }), MT],
+  [
+    'mt-art',
+    L8,
+    atTea({
+      step: 'art',
+      fb: { k: 'artTrace' },
+      meter: { v: 0.5, k: 'accuracy', n: 0, a: 91 },
+      tip: 'dash',
+    }),
+    MT,
+  ],
+  [
+    'mt-art-miss',
+    L8,
+    atTea({ step: 'art', fb: { k: 'artMiss', n: 41 }, tries: 1, retry: true }),
+    MT,
+  ],
+  [
+    'mt-art-last',
+    L8,
+    atTea({ step: 'art', fb: { k: 'artMiss', n: 30 }, tries: 2, last: true, done: true }),
+    MT,
+  ],
+  [
+    'mt-art-heart',
+    L8,
+    () => (
+      vn.set({ ...VN_START, route: 'kyoto', i: KYOTO_TEA, got: 'a_kyoto_latte' }),
+      mt.set({ ...MT_START, step: 'art', fb: { k: 'artBest', n: 96 }, got: true, done: true })
+    ),
+    /class="achcard"/,
+  ],
+  ['mt-serve', L8, atTea({ step: 'serve', wrong: [2] }), MT],
+  [
+    'mt-end',
+    L8,
+    atTea({
+      step: 'end',
+      got: true,
+      said: [{ jp: '{二杯|にはい}', t: { ja: '二杯', en: 'two scoops', ko: '두 잔' } }],
+    }),
+    MT,
+  ],
+  ['mt-end-none', L8, atTea({ step: 'end' }), MT],
   ['legal', { name: 'legal' }, undefined, /class="legal"[\s\S]*<table>[\s\S]*yunabi@juha\.dev/],
   ['me-empty', { name: 'me' }, undefined, /class="empty"/],
   [

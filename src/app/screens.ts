@@ -9,6 +9,7 @@ export const loaders = {
   collection: () => import('../features/learn/Collection'),
   yuki: () => import('../features/learn/YukiGame'),
   smartball: () => import('../features/learn/SmartBall'),
+  matcha: () => import('../features/learn/MatchaGame'),
   map: () => import('../features/map/MapScreen'),
   cal: () => import('../features/calendar/Calendar'),
   event: () => import('../features/calendar/EventDetail'),
@@ -26,6 +27,7 @@ export const Lesson = lazy(() => loaders.lesson().then((m) => ({ default: m.Less
 export const Collection = lazy(() => loaders.collection().then((m) => ({ default: m.Collection })));
 export const YukiGame = lazy(() => loaders.yuki().then((m) => ({ default: m.YukiGame })));
 export const SmartBall = lazy(() => loaders.smartball().then((m) => ({ default: m.SmartBall })));
+export const MatchaGame = lazy(() => loaders.matcha().then((m) => ({ default: m.MatchaGame })));
 export const MapScreen = lazy(() => loaders.map().then((m) => ({ default: m.MapScreen })));
 export const Calendar = lazy(() => loaders.cal().then((m) => ({ default: m.Calendar })));
 export const EventDetail = lazy(() => loaders.event().then((m) => ({ default: m.EventDetail })));

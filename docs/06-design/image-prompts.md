@@ -296,6 +296,14 @@ Draw the place only: no people in the foreground, at most a few small distant pa
 
 ```text
 Style: Korean-webtoon anime illustration, clean dark line art, soft painterly cel shading, muted natural colours, natural proportions (not chibi). Everyday places in Kansai, Japan, drawn as they really look, with detailed backgrounds.
+One horizontal background illustration, aspect ratio 4:3, of the place where this happens, seen at eye level: A Kyoto matcha tea house by day, the two at a table with a self-serve matcha set.
+Draw the place only: no people in the foreground, at most a few small distant passers-by with no visible faces. No text, signs left blank or unreadable, no speech balloons.
+```
+
+### 아야노 (교토) 장면 6 → `src/art/vn/kyoto/06`
+
+```text
+Style: Korean-webtoon anime illustration, clean dark line art, soft painterly cel shading, muted natural colours, natural proportions (not chibi). Everyday places in Kansai, Japan, drawn as they really look, with detailed backgrounds.
 One horizontal background illustration, aspect ratio 4:3, of the place where this happens, seen at eye level: A narrow lane at dusk, the friend standing in a doorway.
 Draw the place only: no people in the foreground, at most a few small distant passers-by with no visible faces. No text, signs left blank or unreadable, no speech balloons.
 ```

@@ -145,6 +145,14 @@
 
 ### 장면 5 — `src/art/vn/kyoto/05`
 
+- 장면 메모: A Kyoto matcha tea house by day, the two at a table with a self-serve matcha set
+- 대사: ****
+
+| 선택지 | | 피드백(ko) |
+|---|---|---|
+
+### 장면 6 — `src/art/vn/kyoto/06`
+
 - 장면 메모: A narrow lane at dusk, the friend standing in a doorway
 - 대사: **また寄(よ)っとくれやす。**
 
