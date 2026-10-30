@@ -2469,3 +2469,150 @@ rt {
   outline-offset: 2px;
   border-radius: var(--r-s);
 }
+
+/* level 8, Kyoto: the 아야노 미니게임 (minigames/matcha.ts draws the table) */
+.mt {
+  display: grid;
+  gap: 12px;
+  margin-top: 12px;
+}
+.mt-stage {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  border-radius: var(--r-l);
+  overflow: hidden;
+  background: #b88758;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.mt-stage canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.mt-tip {
+  position: absolute;
+  left: 50%;
+  top: 8%;
+  transform: translateX(-50%);
+  max-width: 86%;
+  padding: 6px 14px;
+  border: 2px solid var(--navy);
+  border-radius: 18px;
+  background: var(--canvas);
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.9;
+  text-align: center;
+  box-shadow: 0 6px 18px #1d3e5c33;
+  pointer-events: none;
+}
+.mt-tip small {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.3;
+  color: var(--muted);
+}
+.mt-lead {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  text-align: center;
+}
+.mt .vnline,
+.mt .opts,
+.mt .fb,
+.mt .fb + .primary {
+  margin-top: 0;
+}
+.mt-mean {
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--muted);
+}
+.mt-fb {
+  display: block;
+}
+.mt-fb p + p {
+  margin-top: 4px;
+}
+.mt-fb.info {
+  background: var(--primary-tint);
+  color: var(--primary-pressed);
+}
+.mt-say {
+  font-size: 16px !important;
+  font-weight: 700;
+  line-height: 1.9 !important;
+}
+.mt-meter {
+  position: relative;
+  height: 32px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--canvas);
+  overflow: hidden;
+}
+.mt-meter > i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: #cfe3a8;
+}
+.mt-meter > u {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-left: 2px dashed var(--matcha, #5c8a2a);
+  border-right: 2px dashed var(--matcha, #5c8a2a);
+  background: #5c8a2a1c;
+}
+.mt-meter > span {
+  position: relative;
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 30px;
+  text-align: center;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.mt-meter.over > i {
+  background: #f6c9c3;
+}
+.mt-count,
+.mt-title {
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1.5;
+  color: var(--navy);
+  text-align: center;
+}
+.mt-phr {
+  display: grid;
+  gap: 6px;
+}
+.mt-phr > b {
+  color: var(--ink);
+}
+.mt-phr > div {
+  padding: 6px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-m);
+  background: var(--canvas);
+}
+.mt-phr p {
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.8;
+  color: var(--ink);
+}
+.mt-phr small {
+  font-size: 14px;
+  color: var(--muted);
+}

@@ -51,6 +51,14 @@ const BUDGETS = [
     roots: ['src/features/learn/SmartBall.tsx'],
     after: 'lessons and game',
   },
+  {
+    /* the 아야노 미니게임: its own lazy screen, the table drawn by hand on a
+       canvas (tools, tea, milk, the held whisk) and its text in three languages */
+    name: 'matcha mini-game',
+    kb: 24,
+    roots: ['src/features/learn/MatchaGame.tsx'],
+    after: 'lessons and game',
+  },
 ];
 
 function closure(keys) {

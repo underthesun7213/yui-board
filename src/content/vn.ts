@@ -429,6 +429,19 @@ export const VN: Record<Route, VnRoute> = {
         ],
       },
       {
+        /* the 아야노 미니게임 (src/features/learn/MatchaGame.tsx), scene 5 until
+           the Kyoto scenario is rewritten around it */
+        kind: 'matcha',
+        s: 'A Kyoto matcha tea house by day, the two at a table with a self-serve matcha set',
+        jp: '',
+        note: {
+          ja: '帰り道、抹茶の店に寄った。お茶は自分で点てるセット。',
+          en: 'On the way, you stop at a matcha tea house. The set lets you whisk the tea yourselves.',
+          ko: '돌아가는 길에 말차 카페에 들렀다. 차를 직접 만드는 세트다.',
+        },
+        opts: [],
+      },
+      {
         s: 'A narrow lane at dusk, the friend standing in a doorway',
         jp: 'また{寄|よ}っとくれやす。',
         opts: [

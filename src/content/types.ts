@@ -83,8 +83,9 @@ export interface Achievement {
   n: L3;
 }
 /** talk: a line and replies to pick (scored). move: walking on, no choice.
-    yuki: the 유우키 미니게임. smartball: the smart-ball match. */
-export type VnKind = 'talk' | 'move' | 'yuki' | 'smartball';
+    yuki: the 유우키 미니게임. smartball: the smart-ball match. matcha: the 아야노
+    미니게임 at the tea house. */
+export type VnKind = 'talk' | 'move' | 'yuki' | 'smartball' | 'matcha';
 export interface VnScene {
   kind?: VnKind;
   s: string;

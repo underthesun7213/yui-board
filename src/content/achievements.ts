@@ -52,8 +52,26 @@ export const ACHIEVEMENTS: Achievement[] = [
       ko: '주스를 타코야키로 키워 받았다. 농담을 키워 받으면 더 신난다. 누가 이기든 같은 그림',
     },
   },
+  {
+    id: 'a_kyoto_latte',
+    route: 'kyoto',
+    t: {
+      ja: 'ラテを飲むあやの',
+      en: 'Ayano with her latte',
+      ko: '라테를 마시는 아야노',
+    },
+    jp: 'ハートのラテ、{飲|の}むのもったいないわぁ',
+    s: 'Ayano at the matcha tea house table holding a latte cup with a heart in the milk, smiling softly',
+    n: {
+      ja: 'あやののラテにハートを描いた。小さな心づかいは、言葉にしなくても伝わる',
+      en: 'You drew a heart in her latte. A small kindness gets through without a word',
+      ko: '아야노의 라테에 하트를 그렸다. 작은 배려는 말하지 않아도 전해진다',
+    },
+  },
 ];
 
+/** a heart in Ayano's latte (the 아야노 미니게임) */
+export const ACH_LATTE = 'a_kyoto_latte';
 /** finishing the 유우키 미니게임 without a second dip */
 export const ACH_NO_DOUBLE_DIP = 'a_osaka_kushikatsu';
 /** finishing the smart-ball match, by what it was played for */

@@ -6,6 +6,7 @@ export const CARD_IDS = [
   'a_osaka_kushikatsu',
   'a_osaka_juice',
   'a_osaka_takoyaki',
+  'a_kyoto_latte',
   'e_osaka_best',
   'e_osaka_norm',
   'e_osaka_bad',
