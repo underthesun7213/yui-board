@@ -21,12 +21,18 @@ import {
   type MtLine,
   type MtText,
 } from '../../content/matcha';
+import { addVoices } from '../../content/voice-files';
+import { mtVoiceKey, mtVoiceLines, mtWrongTool, mtWrongToolKey } from '../../content/voice-lines';
 import { fill } from '../../i18n';
 import { useT } from '../../i18n/useT';
 import { MT_STAGE, mt, type MtStep } from '../../state/matcha';
 import { prefs } from '../../state/prefs';
 import { useStore } from '../../state/useStore';
 import { Ruby } from '../../ui/Ruby';
+import { Say } from '../../ui/Say';
+
+/* the table's lines join the recorded ones from this chunk */
+addVoices(mtVoiceLines(MT_LINES, MT_OPTS, MT_FB, MT_TOOLS));
 
 const LEAD: Record<MtStep, MtText | null> = {
   intro: 'leadIntro',
@@ -151,6 +157,7 @@ function Line({ k }: { k: MtLine }) {
       <b>{tx(l.who)}</b>
       <p lang="ja">
         <Ruby text={l.jp} />
+        <Say k={mtVoiceKey(k)} />
       </p>
       <p className="mt-mean">{l.t[lang]}</p>
     </div>
@@ -196,6 +203,7 @@ function Replies({ k }: { k: 'intro' | 'serve' }) {
           </p>
           <p className="mt-say" lang="ja">
             {tx('ayano')}「<Ruby text={shown.reply} />」
+            <Say k={mtVoiceKey(`${k}-${(last ?? 0) + 1}r`)} />
           </p>
           <p>{shown.fb[lang]}</p>
         </div>
@@ -270,7 +278,9 @@ function Feedback() {
     hit: f.hit ? MT_TOOLS[f.hit].name[lang] : '',
     look: f.tool ? (MT_TOOLS[f.tool].look?.[lang] ?? '') : '',
   };
-  const say = f.k === 'toolWrong' && f.hit ? `それは${MT_TOOLS[f.hit].ja}どすえ。` : e.say;
+  const hit = f.k === 'toolWrong' ? f.hit : undefined;
+  const say = hit ? mtWrongTool(MT_TOOLS[hit].ja) : e.say;
+  const sayKey = hit ? mtWrongToolKey(hit) : mtVoiceKey(`fb-${f.k}`);
   return (
     <div className={'fb mt-fb ' + cls} role="status" data-fb={f.k}>
       <p>
@@ -279,6 +289,7 @@ function Feedback() {
       {say && (
         <p className="mt-say" lang="ja">
           {tx('ayano')}「<Ruby text={say} />」
+          <Say k={sayKey} />
         </p>
       )}
       <p>{fill(e.body[lang], vals)}</p>

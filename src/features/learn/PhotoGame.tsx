@@ -9,12 +9,18 @@ import {
   type PhSay,
   type PhZone,
 } from '../../content/photo';
+import { addVoices } from '../../content/voice-files';
+import { phVoiceKey, phVoiceLines } from '../../content/voice-lines';
 import { fill } from '../../i18n';
 import { useT } from '../../i18n/useT';
 import { ph } from '../../state/photo';
 import { prefs } from '../../state/prefs';
 import { useStore } from '../../state/useStore';
 import { Ruby } from '../../ui/Ruby';
+import { Say } from '../../ui/Say';
+
+/* her lines join the recorded ones from this chunk */
+addVoices(phVoiceLines(PH_OPEN, PH_LAST, PH_FB));
 
 /* The fireworks photo, the last scene of level 8's Kyoto route: the phone's
    screen is a canvas run by minigames/photo.ts, swinging up and down, then side
@@ -79,7 +85,7 @@ export function PhotoGame({ onDone }: { onDone: () => void }) {
             {tx(step === 'v' ? 'stop' : 'shutter')}
           </button>
           <p className="mt-lead">{tx(step === 'v' ? 'leadV' : 'leadH')}</p>
-          {shots === 0 && step === 'v' && <Line say={PH_OPEN[mode]} />}
+          {shots === 0 && step === 'v' && <Line say={PH_OPEN[mode]} k={'open-' + mode} />}
         </>
       )}
       {fb && grade && (
@@ -97,11 +103,12 @@ export function PhotoGame({ onDone }: { onDone: () => void }) {
           </div>
           <p className="mt-say" lang="ja">
             {tx('ayano')}「<Ruby text={fb.say} />」
+            <Say k={phVoiceKey('fb-' + grade)} />
           </p>
           <p>{fb.body[lang]}</p>
         </div>
       )}
-      {missedAll && mode === 'friend' && <Line say={PH_LAST} />}
+      {missedAll && mode === 'friend' && <Line say={PH_LAST} k="last" />}
       {grade && !done && (
         <button type="button" className="primary wide" data-ph="again" onClick={again}>
           {tx('again')}
@@ -116,13 +123,14 @@ export function PhotoGame({ onDone }: { onDone: () => void }) {
   );
 }
 
-function Line({ say }: { say: PhSay }) {
+function Line({ say, k }: { say: PhSay; k: string }) {
   const lang = useStore(prefs, (s) => s.lang);
   return (
     <div className="vnline mt-line ayano">
       <b>{PH_TEXT.ayano[lang]}</b>
       <p lang="ja">
         <Ruby text={say.jp} />
+        <Say k={phVoiceKey(k)} />
       </p>
       <p className="mt-mean">{say.t[lang]}</p>
     </div>
