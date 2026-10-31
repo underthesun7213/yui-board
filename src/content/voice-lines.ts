@@ -122,7 +122,7 @@ export function voiceLines(
 }
 
 /* The two mini-games' lines. They are listed here for the generator; the
-   app adds them to its voice map from the games' own chunks (addVoices). */
+   app adds them from the games' own chunks (addVoices). */
 interface GameLine {
   jp: string;
   mean: L3;

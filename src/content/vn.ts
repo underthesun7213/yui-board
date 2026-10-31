@@ -337,13 +337,7 @@ export const VN: Record<Route, VnRoute> = {
               en: 'You praised her kimono first and apologised lightly for your clothes. Both covered: a perfect reply',
               ko: '차려입은 상대를 먼저 칭찬하고, 편한 옷은 가볍게 사과했다. 둘 다 챙긴 완벽한 대답',
             },
-            reply: [
-              { who: 'friend', jp: 'おおきに。{謝|あやま}らはることあらしまへん。' },
-              {
-                who: 'friend',
-                jp: 'うち、{家|いえ}が{古|ふる}い{呉服屋|ごふくや}どすさかい、{着物|きもの}も{言葉|ことば}も、つい{昔風|むかしふう}になってしまうんどす。',
-              },
-            ],
+            reply: [{ who: 'friend', jp: 'おおきに。{謝|あやま}らはることあらしまへん。' }],
           },
         ],
       },
