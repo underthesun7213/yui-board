@@ -1,26 +1,36 @@
 import { useEffect, useRef } from 'react';
-import { again, attachPhone, detachPhone, shoot, zoomTo } from '../../actions/photo';
-import { PH_FB, PH_LAST, PH_OPEN, PH_TEXT, PH_TRIES, type PhSay } from '../../content/photo';
+import { again, attachPhone, detachPhone, stop } from '../../actions/photo';
+import {
+  PH_FB,
+  PH_LAST,
+  PH_OPEN,
+  PH_TEXT,
+  PH_TRIES,
+  type PhSay,
+  type PhZone,
+} from '../../content/photo';
 import { fill } from '../../i18n';
 import { useT } from '../../i18n/useT';
-import { PH_ZOOM } from '../../minigames/photo-geo';
 import { ph } from '../../state/photo';
 import { prefs } from '../../state/prefs';
 import { useStore } from '../../state/useStore';
 import { Ruby } from '../../ui/Ruby';
 
 /* The fireworks photo, the last scene of level 8's Kyoto route: the phone's
-   screen is a canvas run by minigames/photo.ts; the zoom, the shutter, how the
-   shot came out and Ayano's words are below it. A good shot of her unlocks her
-   picture; after a good shot or three, Next carries the story to the goodbye. */
+   screen is a canvas run by minigames/photo.ts, swinging up and down, then side
+   to side, with its gauges on the screen's edges; the stop button (the shutter
+   on the second stop), how the shot came out and Ayano's words are below it. A
+   good shot of her unlocks her picture; after a good shot or three, Next
+   carries the story to the goodbye. */
 export function PhotoGame({ onDone }: { onDone: () => void }) {
   const m = useT();
   const lang = useStore(prefs, (s) => s.lang);
   const mode = useStore(ph, (s) => s.mode);
-  const zoom = useStore(ph, (s) => s.zoom);
+  const step = useStore(ph, (s) => s.step);
+  const zv = useStore(ph, (s) => s.zv);
+  const zh = useStore(ph, (s) => s.zh);
   const shots = useStore(ph, (s) => s.shots);
   const grade = useStore(ph, (s) => s.grade);
-  const n = useStore(ph, (s) => s.n);
   const done = useStore(ph, (s) => s.done);
   const canvas = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
@@ -31,36 +41,33 @@ export function PhotoGame({ onDone }: { onDone: () => void }) {
   const fb = grade ? PH_FB[grade] : null;
   const missedAll =
     done && grade !== null && grade !== 'best' && grade !== 'good' && grade !== 'skyGood';
+  const tag = (label: 'stepV' | 'stepH', z: PhZone | null) =>
+    z && (
+      <span className={'ph-tag ' + z}>
+        {tx(label)} {tx(z)}
+      </span>
+    );
   return (
     <div className="mt ph">
       <div className="sb-hud">
         <span>
           {done
             ? tx('done')
-            : fill(tx('shot'), { n: Math.min(shots + 1, PH_TRIES), all: PH_TRIES })}
+            : fill(tx('shot'), { n: Math.min(shots + (grade ? 0 : 1), PH_TRIES), all: PH_TRIES })}
         </span>
+        {!grade && <span>{tx(step === 'v' ? 'stepV' : 'stepH')}</span>}
       </div>
-      <div className="mt-stage ph-stage">
+      <div className={'mt-stage ph-stage ' + mode}>
         <canvas ref={canvas} aria-label={tx('view')} />
       </div>
       {!grade && (
         <>
-          <label className="ph-zoom">
-            <span>{tx('zoom')}</span>
-            <input
-              type="range"
-              min={PH_ZOOM[0]}
-              max={PH_ZOOM[1]}
-              step={0.05}
-              value={zoom}
-              onChange={(e) => zoomTo(Number(e.target.value))}
-            />
-          </label>
-          <button type="button" className="primary wide" data-ph="shoot" onClick={shoot}>
-            {tx('shutter')}
+          {zv && <div className="ph-tags">{tag('stepV', zv)}</div>}
+          <button type="button" className="primary wide" data-ph="stop" onClick={stop}>
+            {tx(step === 'v' ? 'stop' : 'shutter')}
           </button>
-          <p className="mt-lead">{tx(mode === 'sky' ? 'leadSky' : 'leadFriend')}</p>
-          {shots === 0 && <Line say={PH_OPEN[mode]} />}
+          <p className="mt-lead">{tx(step === 'v' ? 'leadV' : 'leadH')}</p>
+          {shots === 0 && step === 'v' && <Line say={PH_OPEN[mode]} />}
         </>
       )}
       {fb && grade && (
@@ -70,8 +77,12 @@ export function PhotoGame({ onDone }: { onDone: () => void }) {
           data-fb={grade}
         >
           <p>
-            <b>{fill(fb.head[lang], { n })}</b>
+            <b>{fb.head[lang]}</b>
           </p>
+          <div className="ph-tags">
+            {tag('stepV', zv)}
+            {tag('stepH', zh)}
+          </div>
           <p className="mt-say" lang="ja">
             {tx('ayano')}「<Ruby text={fb.say} />」
           </p>

@@ -1,15 +1,19 @@
 import type { L3 } from './types';
 
 /* The fireworks photo on the bridge (level 8's Kyoto route, the last scene):
-   the phone held up, the frame moved and zoomed over Ayano and the sky, three
-   shots at most. Her lines in Japanese with furigana as {漢字|かな}; the
-   screen's own words in all three languages, here and not in i18n (as the
-   smart-ball's SB_TEXT). */
+   the phone held up swings on its own, first up and down, then side to side;
+   each swing is stopped on a gauge (bad / good / great / good / bad), and the
+   second stop is the shutter. Three shots at most. Her lines in Japanese with
+   furigana as {漢字|かな}; the screen's own words in all three languages, here
+   and not in i18n (as the smart-ball's SB_TEXT). */
 
 /** who is in the photo: Ayano with the fireworks, or the sky only */
 export type PhMode = 'friend' | 'sky';
-/** how a shot came out */
-export type PhGrade = 'best' | 'good' | 'face' | 'few' | 'skyGood' | 'skyFew';
+/** where a gauge was stopped */
+export type PhZone = 'great' | 'good' | 'bad';
+/** how a shot came out: of her, perfect, good, or cut at the feet, at the face,
+    or off to a side; of the sky, steady or not */
+export type PhGrade = 'best' | 'good' | 'feet' | 'face' | 'side' | 'skyGood' | 'skyMiss';
 
 export const PH_TRIES = 3;
 
@@ -19,25 +23,29 @@ export const PH_TEXT = {
   done: { ja: '撮影おわり', en: 'All done', ko: '촬영 끝' },
   ayano: { ja: 'あやの', en: 'Ayano', ko: '아야노' },
   view: {
-    ja: 'スマホの画面。ドラッグで動かす',
-    en: 'The phone screen. Drag to move it',
-    ko: '휴대폰 화면. 드래그해서 움직인다',
+    ja: 'スマホの画面。押すと止まる',
+    en: 'The phone screen. Tap to stop it',
+    ko: '휴대폰 화면. 누르면 멈춘다',
   },
-  leadFriend: {
-    ja: 'ドラッグで画面を動かし、ズームで大きさを決める。あやのの顔と花火を三つ以上入れて、シャッター。',
-    en: 'Drag to move the frame and zoom to size it. Get Ayano’s face and three or more fireworks in, then press the shutter.',
-    ko: '드래그로 화면을 옮기고 줌으로 크기를 맞춘다. 아야노의 얼굴과 불꽃 세 개 이상을 넣고 셔터.',
+  stepV: { ja: '① 上下', en: '① Up and down', ko: '① 위아래' },
+  stepH: { ja: '② 左右', en: '② Side to side', ko: '② 좌우' },
+  leadV: {
+    ja: 'スマホが上下に揺れている。ゲージが真ん中の黄色に来たら止める。画面を押してもいい。',
+    en: 'The phone is swinging up and down. Stop it when the gauge is in the yellow middle. Tapping the screen works too.',
+    ko: '휴대폰이 위아래로 흔들린다. 게이지가 가운데 노란 칸에 올 때 멈춘다. 화면을 눌러도 된다.',
   },
-  leadSky: {
-    ja: 'ドラッグで画面を動かし、ズームで大きさを決める。花火を三つ以上入れて、シャッター。',
-    en: 'Drag to move the frame and zoom to size it. Get three or more fireworks in, then press the shutter.',
-    ko: '드래그로 화면을 옮기고 줌으로 크기를 맞춘다. 불꽃을 세 개 이상 넣고 셔터.',
+  leadH: {
+    ja: '次は左右。もう一度、黄色で止めるとシャッターが切れる。',
+    en: 'Now side to side. Stop it in the yellow again and the shutter goes.',
+    ko: '이제 좌우. 다시 노란 칸에서 멈추면 셔터가 눌린다.',
   },
-  zoom: { ja: 'ズーム', en: 'Zoom', ko: '줌' },
+  stop: { ja: '止める', en: 'Stop', ko: '멈추기' },
   shutter: { ja: 'シャッター', en: 'Shutter', ko: '셔터' },
   again: { ja: 'もう一枚', en: 'Take another', ko: '한 장 더' },
-  /* in a heading: the fireworks in the shot */
-  count: { ja: '花火 {n}つ', en: '{n} fireworks', ko: '불꽃 {n}개' },
+  /* the two stops, as tags under a shot */
+  great: { ja: 'GREAT', en: 'GREAT', ko: 'GREAT' },
+  good: { ja: 'GOOD', en: 'GOOD', ko: 'GOOD' },
+  bad: { ja: 'BAD', en: 'BAD', ko: 'BAD' },
 } satisfies Record<string, L3>;
 export type PhText = keyof typeof PH_TEXT;
 
@@ -74,34 +82,47 @@ export const PH_LAST: PhSay = {
   },
 };
 
-/* How a shot came out: a heading (○ right, × or △ a miss, with the count of
-   fireworks), what to change, and Ayano's words. */
+/* How a shot came out: a heading (○ right, × a miss), what happened or what to
+   change, and Ayano's words. */
 export const PH_FB: Record<PhGrade, { head: L3; body: L3; say: string }> = {
   best: {
     head: {
-      ja: '○ 完璧な一枚 — 花火 {n}つ',
-      en: '○ A perfect shot — {n} fireworks',
-      ko: '○ 완벽한 한 장 — 불꽃 {n}개',
+      ja: '○ 完璧な一枚',
+      en: '○ A perfect shot',
+      ko: '○ 완벽한 한 장',
     },
     body: {
-      ja: 'あやのの顔も、空いっぱいの花火も入った。',
-      en: 'Ayano’s face and a sky full of fireworks, all in.',
-      ko: '아야노의 얼굴도, 하늘 가득한 불꽃도 다 들어왔다.',
+      ja: '頭から足の先まで、花火も一緒にぴったり入った。',
+      en: 'Head to toe, with the fireworks around her: just right.',
+      ko: '머리부터 발끝까지, 불꽃까지 딱 맞게 들어왔다.',
     },
     say: 'わぁ、{上手|じょうず}に{撮|と}らはりましたなぁ。おおきに、{大事|だいじ}にしますえ。',
   },
   good: {
     head: {
-      ja: '○ いい写真 — 花火 {n}つ',
-      en: '○ A good shot — {n} fireworks',
-      ko: '○ 좋은 사진 — 불꽃 {n}개',
+      ja: '○ いい写真',
+      en: '○ A good shot',
+      ko: '○ 좋은 사진',
     },
     body: {
-      ja: '顔はきれいに入った。花火がもう少しあると、なおいい。',
-      en: 'Her face is in nicely. A few more fireworks would make it even better.',
-      ko: '얼굴이 잘 들어왔다. 불꽃이 조금 더 있으면 더 좋다.',
+      ja: '少しずれたけれど、あやのも花火もちゃんと入った。',
+      en: 'A little off, but Ayano and the fireworks are both in.',
+      ko: '조금 어긋났지만 아야노도 불꽃도 잘 들어왔다.',
     },
     say: 'ええ{写真|しゃしん}どすなぁ。おおきに。',
+  },
+  feet: {
+    head: {
+      ja: '× 足が切れている',
+      en: '× Her feet are cut off',
+      ko: '× 발이 잘렸다',
+    },
+    body: {
+      ja: '上で止めすぎた。ゲージが真ん中に来るのを待つ。',
+      en: 'Stopped too high. Wait for the gauge to reach the middle.',
+      ko: '너무 위에서 멈췄다. 게이지가 가운데 올 때까지 기다린다.',
+    },
+    say: 'あら、{足|あし}が{切|き}れてしもてますなぁ。もういっぺん、よろしおす？',
   },
   face: {
     head: {
@@ -110,30 +131,30 @@ export const PH_FB: Record<PhGrade, { head: L3; body: L3; say: string }> = {
       ko: '× 얼굴이 잘렸다',
     },
     body: {
-      ja: 'あやのの顔が全部入るように、画面を動かすかズームを引く。',
-      en: 'Move the frame or zoom out until her whole face is in.',
-      ko: '아야노의 얼굴이 다 들어오게 화면을 옮기거나 줌을 줄인다.',
+      ja: '下で止めすぎた。ゲージが真ん中に来るのを待つ。',
+      en: 'Stopped too low. Wait for the gauge to reach the middle.',
+      ko: '너무 아래에서 멈췄다. 게이지가 가운데 올 때까지 기다린다.',
     },
     say: 'あら……うち、{半分|はんぶん}しか{写|うつ}ってしまへんなぁ。もういっぺん、よろしおす？',
   },
-  few: {
+  side: {
     head: {
-      ja: '△ 花火が少ない — {n}つ',
-      en: '△ Not enough fireworks — {n}',
-      ko: '△ 불꽃이 적다 — {n}개',
+      ja: '× 端に寄っている',
+      en: '× She is off to one side',
+      ko: '× 한쪽으로 치우쳤다',
     },
     body: {
-      ja: '顔は入った。空の方へ画面を動かすか、ズームを引いて花火を二つ以上入れる。',
-      en: 'Her face is in. Move up toward the sky or zoom out to get two or more fireworks.',
-      ko: '얼굴은 들어왔다. 하늘 쪽으로 옮기거나 줌을 줄여서 불꽃을 두 개 이상 넣는다.',
+      ja: '左右で止めるのが早すぎるか遅すぎた。真ん中を狙う。',
+      en: 'The side-to-side stop came too early or too late. Aim for the middle.',
+      ko: '좌우에서 너무 빨리 또는 늦게 멈췄다. 가운데를 노린다.',
     },
-    say: '{花火|はなび}、あんまり{入|はい}ってしまへんなぁ。',
+    say: 'うち、{端|はし}っこにおりますなぁ。もういっぺん、よろしおす？',
   },
   skyGood: {
     head: {
-      ja: '○ きれいに撮れた — 花火 {n}つ',
-      en: '○ A lovely shot — {n} fireworks',
-      ko: '○ 예쁘게 찍혔다 — 불꽃 {n}개',
+      ja: '○ きれいに撮れた',
+      en: '○ A lovely shot',
+      ko: '○ 예쁘게 찍혔다',
     },
     body: {
       ja: '空いっぱいの花火。……あやのは写っていない。',
@@ -142,16 +163,16 @@ export const PH_FB: Record<PhGrade, { head: L3; body: L3; say: string }> = {
     },
     say: 'きれいに{撮|と}れましたなぁ。',
   },
-  skyFew: {
+  skyMiss: {
     head: {
-      ja: '△ 花火が少ない — {n}つ',
-      en: '△ Not enough fireworks — {n}',
-      ko: '△ 불꽃이 적다 — {n}개',
+      ja: '× 花火が切れている',
+      en: '× The fireworks are cut off',
+      ko: '× 불꽃이 잘렸다',
     },
     body: {
-      ja: '空の方へ画面を動かすか、ズームを引いて花火を三つ以上入れる。',
-      en: 'Move up toward the sky or zoom out to get three or more fireworks.',
-      ko: '하늘 쪽으로 옮기거나 줌을 줄여서 불꽃을 세 개 이상 넣는다.',
+      ja: 'ゲージが真ん中に来たときに止める。',
+      en: 'Stop when the gauge is in the middle.',
+      ko: '게이지가 가운데 올 때 멈춘다.',
     },
     say: 'あら、{花火|はなび}が{終|お}わったとこどしたなぁ。',
   },

@@ -7,6 +7,5 @@ import { unlock } from './achievements';
 export const attachPhone = (canvas: HTMLCanvasElement) =>
   phone.attach(canvas, () => unlock(ACH_HANABI));
 export const detachPhone = phone.detach;
-export const shoot = phone.shoot;
+export const stop = phone.stop;
 export const again = phone.again;
-export const zoomTo = phone.zoomTo;
