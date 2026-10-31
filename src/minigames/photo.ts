@@ -7,6 +7,7 @@ import { PH_TRIES } from '../content/photo';
 import { ph, PH_START } from '../state/photo';
 import {
   FIREWORKS,
+  IMG,
   PHOTO_ART,
   START,
   centre,
@@ -48,7 +49,7 @@ function draw(now: number) {
   c.fillStyle = '#0b1230';
   c.fillRect(0, 0, w, h);
   if (img?.complete && img.naturalWidth) {
-    const sx = img.naturalWidth / 900;
+    const sx = img.naturalWidth / IMG.w;
     c.drawImage(img, v.x0 * sx, v.y0 * sx, (v.x1 - v.x0) * sx, (v.y1 - v.y0) * sx, 0, 0, w, h);
   }
   /* the fireworks in the frame shimmer a little: they are live */

@@ -31,17 +31,17 @@ describe('photo game', () => {
   });
 
   it('starts away from her face and from the fireworks', () => {
-    const v = view({ x: 640, y: 880 }, 2.6);
+    const v = view({ x: 780, y: 1400 }, 3.4);
     expect(grade(v, 'friend').grade).toBe('face');
     expect(inFrame(v)).toBe(0);
   });
 
   it('grades a shot by her face first, then the fireworks', () => {
     /* zoomed out over the sky: her face and most of the fireworks */
-    const wide = view({ x: 450, y: 260 }, PH_ZOOM[0]);
+    const wide = view({ x: 625, y: 600 }, PH_ZOOM[0]);
     expect(grade(wide, 'friend').grade).toBe('best');
     /* close on her face: one firework at most */
-    const close = view({ x: 485, y: 200 }, PH_ZOOM[1]);
+    const close = view({ x: 625, y: 718 }, PH_ZOOM[1]);
     expect(['few', 'good']).toContain(grade(close, 'friend').grade);
     /* the sky only: her face does not matter */
     const sky = view({ x: 200, y: 250 }, 2);
@@ -59,7 +59,7 @@ describe('photo game', () => {
     shoot();
     expect(ph.get()).toMatchObject({ shots: 3, done: true });
     reset('friend');
-    settleShot(450, 260, PH_ZOOM[0]);
+    settleShot(625, 600, PH_ZOOM[0]);
     expect(ph.get()).toMatchObject({ shots: 1, grade: 'best', done: true });
   });
 });

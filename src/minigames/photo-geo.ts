@@ -1,6 +1,6 @@
 /* The fireworks photo: where things are in the picture and how a shot is
    scored. Pure numbers in the picture's own pixels
-   (src/art/minigames/ayano/hanabi.jpg, 900 × 1200), so the unit tests run
+   (src/art/minigames/ayano/hanabi.jpg, 1200 × 1625), so the unit tests run
    without a canvas. */
 import type { PhGrade, PhMode } from '../content/photo';
 
@@ -17,25 +17,44 @@ export interface Pt {
 
 /** the picture's art slot */
 export const PHOTO_ART = 'minigames/ayano/hanabi';
-export const IMG = { w: 900, h: 1200 };
+export const IMG = { w: 1200, h: 1625 };
 /** the phone is held sideways: the frame is 4:3 */
 export const ASPECT = 3 / 4;
 /** zoom: how many frames fit across the picture */
-export const PH_ZOOM: [number, number] = [1.3, 3];
+export const PH_ZOOM: [number, number] = [1.6, 4];
 /** where the frame starts: zoomed in on the bridge rail, away from both */
-export const START: Pt = { x: 640, y: 880 };
+export const START: Pt = { x: 780, y: 1400 };
 
 /** Ayano's face, hair and hair ornament: a shot must hold all of it */
-export const FACE: Box = { x0: 395, y0: 115, x1: 575, y1: 275 };
-/** the fireworks drawn in the picture: a shot holds one when it holds its middle */
+export const FACE: Box = { x0: 535, y0: 638, x1: 715, y1: 798 };
+/** the fireworks drawn in the picture: a shot holds one when it holds its middle.
+    The upper sky first (drawn above the owner's picture), then those around her. */
 export const FIREWORKS: (Pt & { r: number })[] = [
-  { x: 225, y: 105, r: 130 },
-  { x: 50, y: 220, r: 75 },
-  { x: 65, y: 360, r: 75 },
-  { x: 178, y: 305, r: 38 },
-  { x: 312, y: 290, r: 75 },
-  { x: 648, y: 232, r: 62 },
-  { x: 740, y: 105, r: 95 },
+  { x: 125, y: 130, r: 90 },
+  { x: 265, y: 225, r: 75 },
+  { x: 90, y: 330, r: 95 },
+  { x: 155, y: 460, r: 30 },
+  { x: 295, y: 370, r: 80 },
+  { x: 412, y: 320, r: 35 },
+  { x: 460, y: 140, r: 135 },
+  { x: 555, y: 295, r: 80 },
+  { x: 645, y: 100, r: 35 },
+  { x: 795, y: 95, r: 90 },
+  { x: 690, y: 225, r: 75 },
+  { x: 875, y: 255, r: 100 },
+  { x: 735, y: 385, r: 90 },
+  { x: 853, y: 460, r: 40 },
+  { x: 1060, y: 120, r: 115 },
+  { x: 1000, y: 270, r: 25 },
+  { x: 1110, y: 285, r: 85 },
+  { x: 990, y: 395, r: 90 },
+  { x: 366, y: 628, r: 130 },
+  { x: 191, y: 743, r: 75 },
+  { x: 206, y: 883, r: 75 },
+  { x: 319, y: 828, r: 38 },
+  { x: 453, y: 813, r: 75 },
+  { x: 789, y: 755, r: 62 },
+  { x: 881, y: 628, r: 95 },
 ];
 
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
