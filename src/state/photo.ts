@@ -18,7 +18,7 @@ export interface Ph {
 }
 export const PH_START: Ph = {
   mode: 'friend',
-  zoom: 3.4,
+  zoom: 3,
   shots: 0,
   grade: null,
   n: 0,

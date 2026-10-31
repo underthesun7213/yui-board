@@ -22,8 +22,8 @@ export const IMG = { w: 1200, h: 1625 };
 export const ASPECT = 3 / 4;
 /** zoom: how many frames fit across the picture */
 export const PH_ZOOM: [number, number] = [1.6, 4];
-/** where the frame starts: zoomed in on the bridge rail, away from both */
-export const START: Pt = { x: 780, y: 1400 };
+/** where the frame starts: the lit town to her right, away from her face and the fireworks */
+export const START: Pt = { x: 1000, y: 960 };
 
 /** Ayano's face, hair and hair ornament: a shot must hold all of it */
 export const FACE: Box = { x0: 535, y0: 638, x1: 715, y1: 798 };

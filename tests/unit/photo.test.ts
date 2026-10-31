@@ -31,7 +31,7 @@ describe('photo game', () => {
   });
 
   it('starts away from her face and from the fireworks', () => {
-    const v = view({ x: 780, y: 1400 }, 3.4);
+    const v = view({ x: 1000, y: 960 }, 3);
     expect(grade(v, 'friend').grade).toBe('face');
     expect(inFrame(v)).toBe(0);
   });
