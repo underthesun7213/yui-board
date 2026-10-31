@@ -63,7 +63,19 @@ export function PhotoGame({ onDone }: { onDone: () => void }) {
       {!grade && (
         <>
           {zv && <div className="ph-tags">{tag('stepV', zv)}</div>}
-          <button type="button" className="primary wide" data-ph="stop" onClick={stop}>
+          {/* the stop counts at the touch, not the release; a key press still works */}
+          <button
+            type="button"
+            className="primary wide"
+            data-ph="stop"
+            onPointerDown={(e) => {
+              e.preventDefault();
+              stop(e.timeStamp);
+            }}
+            onClick={(e) => {
+              if (e.detail === 0) stop();
+            }}
+          >
             {tx(step === 'v' ? 'stop' : 'shutter')}
           </button>
           <p className="mt-lead">{tx(step === 'v' ? 'leadV' : 'leadH')}</p>

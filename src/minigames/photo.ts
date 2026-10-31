@@ -22,7 +22,7 @@ import {
 } from './photo-geo';
 
 /** how fast each swing runs on average: gauge phase per second (4 is one round trip) */
-const SPEED = { v: 1.54, h: 1.82 };
+const SPEED = { v: 1.1, h: 1.3 };
 
 let cv: HTMLCanvasElement | null = null;
 let ctx: CanvasRenderingContext2D | null = null;
@@ -164,13 +164,16 @@ function draw(now: number) {
     c.fillRect(0, 0, w, h);
   }
 }
+/** the running swing moved on by dt seconds */
+function advance(dt: number) {
+  if (frozen || ph.get().done) return;
+  if (ph.get().step === 'v') gv = swing((tv += dt * SPEED.v * pace(gv)));
+  else gh = swing((th += dt * SPEED.h * pace(gh)));
+}
 function frame(now: number) {
-  const dt = Math.min(0.05, (now - lastT) / 1000);
+  const dt = Math.min(0.05, Math.max(0, now - lastT) / 1000);
   lastT = now;
-  if (!frozen && !ph.get().done) {
-    if (ph.get().step === 'v') gv = swing((tv += dt * SPEED.v * pace(gv)));
-    else gh = swing((th += dt * SPEED.h * pace(gh)));
-  }
+  advance(dt);
   if (flash > 0) flash = Math.max(0, flash - dt * 2.2);
   draw(now);
   raf = requestAnimationFrame(frame);
@@ -198,14 +201,14 @@ export function attach(canvas: HTMLCanvasElement, good: () => void) {
   }
   fit();
   addEventListener('resize', fit);
-  canvas.addEventListener('pointerdown', stop);
+  canvas.addEventListener('pointerdown', tap);
   lastT = performance.now();
   raf = requestAnimationFrame(frame);
 }
 export function detach() {
   cancelAnimationFrame(raf);
   removeEventListener('resize', fit);
-  cv?.removeEventListener('pointerdown', stop);
+  cv?.removeEventListener('pointerdown', tap);
   cv = null;
   ctx = null;
 }
@@ -216,9 +219,17 @@ export function reset(mode: PhMode) {
   flash = 0;
 }
 /** a stop: the first holds the up-and-down swing, the second is the shutter */
-export function stop() {
+/* A stop counts where the gauge was the moment the finger touched (as in a
+   rhythm game): the swing is moved on from the last drawn frame to the
+   touch's own time, not read at the next frame or on release. */
+const tap = (e: PointerEvent) => stop(e.timeStamp);
+export function stop(at?: number) {
   const s = ph.get();
   if (frozen || s.done || s.shots >= PH_TRIES) return;
+  if (at !== undefined && at > lastT) {
+    advance(Math.min(0.05, (at - lastT) / 1000));
+    lastT = at;
+  }
   if (s.step === 'v') {
     ph.set({ step: 'h', zv: zone(gv) });
     return;
