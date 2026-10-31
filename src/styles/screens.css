@@ -2617,21 +2617,33 @@ rt {
   color: var(--muted);
 }
 
-/* the fireworks photo (level 8, Kyoto): the phone's screen, then the zoom */
+/* the fireworks photo (level 8, Kyoto): the phone's screen, upright for her
+   head to toe, sideways for the sky; the stops as tags */
 .ph-stage {
   background: #0b1230;
-  cursor: grab;
+  cursor: pointer;
 }
-.ph-zoom {
+.ph-stage.friend {
+  aspect-ratio: 3 / 4;
+}
+.ph-tags {
   display: flex;
-  align-items: center;
-  gap: 12px;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--muted);
+  flex-wrap: wrap;
+  gap: 6px;
 }
-.ph-zoom input {
-  flex: 1;
-  min-width: 0;
-  accent-color: var(--primary);
+.ph-tag {
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #0b1230;
+}
+.ph-tag.great {
+  background: #f2c35b;
+}
+.ph-tag.good {
+  background: #7fd6a1;
+}
+.ph-tag.bad {
+  background: #e07a8a;
 }

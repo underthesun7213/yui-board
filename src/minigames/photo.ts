@@ -1,30 +1,40 @@
 /* The fireworks photo (level 8, Kyoto's last scene), outside React like the
-   matcha table: the phone's screen on a canvas, a frame dragged and zoomed
-   over the picture of Ayano on the bridge, the shutter and its flash. It
-   writes each shot's result to the `ph` store; PhotoGame.tsx shows the rest. */
+   matcha table: the phone's screen on a canvas, a frame swinging over the
+   picture of Ayano on the bridge, first up and down, then side to side, with a
+   gauge for each drawn on the screen's edges; a stop on each, the shutter and
+   its flash. It writes each stop and shot to the `ph` store; PhotoGame.tsx
+   shows the rest. */
 import { ART } from '../content/art';
-import { PH_TRIES } from '../content/photo';
+import { PH_TRIES, type PhMode } from '../content/photo';
 import { ph, PH_START } from '../state/photo';
 import {
   FIREWORKS,
+  GOOD,
+  GREAT,
+  IMG,
   PHOTO_ART,
-  START,
-  centre,
-  clampZoom,
+  frameAt,
   grade,
   isGood,
-  view,
-  type Box,
-  type Pt,
+  pace,
+  swing,
+  zone,
 } from './photo-geo';
+
+/** how fast each swing runs on average: gauge phase per second (4 is one round trip) */
+const SPEED = { v: 1.1, h: 1.3 };
 
 let cv: HTMLCanvasElement | null = null;
 let ctx: CanvasRenderingContext2D | null = null;
 let img: HTMLImageElement | null = null;
 let raf = 0;
-let mid: Pt = { ...START };
+/** the swings' phases and gauge values */
+let tv = 0;
+let th = 0;
+let gv = 0;
+let gh = 0;
 /** after the shutter: the frame stays where it was shot until the next one */
-let frozen: Box | null = null;
+let frozen = false;
 let flash = 0;
 let lastT = 0;
 let onGood: () => void = () => {};
@@ -36,19 +46,62 @@ function fit() {
   cv.width = Math.max(1, Math.round(r.width * d));
   cv.height = Math.max(1, Math.round(r.height * d));
 }
-const current = () => frozen ?? view(mid, ph.get().zoom);
+
+/* the gauge: bad / good / great / good / bad, along one edge of the screen */
+const ZONES: [number, number, string][] = [
+  [-1, -GOOD, '#e07a8a'],
+  [-GOOD, -GREAT, '#7fd6a1'],
+  [-GREAT, GREAT, '#f2c35b'],
+  [GREAT, GOOD, '#7fd6a1'],
+  [GOOD, 1, '#e07a8a'],
+];
+function gauge(
+  c: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  len: number,
+  thick: number,
+  upright: boolean,
+  m: number,
+  live: boolean,
+) {
+  c.save();
+  c.globalAlpha = live ? 0.9 : 0.35;
+  for (const [a, b, col] of ZONES) {
+    c.fillStyle = col;
+    const p0 = ((a + 1) / 2) * len;
+    const p1 = ((b + 1) / 2) * len;
+    if (upright) c.fillRect(x, y + p0, thick, p1 - p0);
+    else c.fillRect(x + p0, y, p1 - p0, thick);
+  }
+  c.globalAlpha = 1;
+  const p = ((m + 1) / 2) * len;
+  c.fillStyle = '#fff';
+  c.strokeStyle = '#0b1230';
+  c.lineWidth = thick / 6;
+  const k = thick / 3;
+  if (upright) {
+    c.fillRect(x - k, y + p - k, thick + 2 * k, 2 * k);
+    c.strokeRect(x - k, y + p - k, thick + 2 * k, 2 * k);
+  } else {
+    c.fillRect(x + p - k, y - k, 2 * k, thick + 2 * k);
+    c.strokeRect(x + p - k, y - k, 2 * k, thick + 2 * k);
+  }
+  c.restore();
+}
 
 function draw(now: number) {
   if (!cv || !ctx) return;
   const c = ctx;
   const w = cv.width;
   const h = cv.height;
-  const v = current();
+  const s = ph.get();
+  const v = frameAt(s.mode, gv, s.step === 'v' ? 0 : gh);
   const k = w / (v.x1 - v.x0);
   c.fillStyle = '#0b1230';
   c.fillRect(0, 0, w, h);
   if (img?.complete && img.naturalWidth) {
-    const sx = img.naturalWidth / 900;
+    const sx = img.naturalWidth / IMG.w;
     c.drawImage(img, v.x0 * sx, v.y0 * sx, (v.x1 - v.x0) * sx, (v.y1 - v.y0) * sx, 0, 0, w, h);
   }
   /* the fireworks in the frame shimmer a little: they are live */
@@ -67,9 +120,9 @@ function draw(now: number) {
     c.fillRect(x - r, y - r, r * 2, r * 2);
   });
   c.restore();
-  /* the camera's guides: thirds and corner marks; none on a shot taken */
   const u = Math.max(1, w / 400);
   if (!frozen) {
+    /* the camera's guides: thirds and corner marks */
     c.strokeStyle = 'rgba(255,255,255,0.35)';
     c.lineWidth = u;
     c.beginPath();
@@ -96,6 +149,11 @@ function draw(now: number) {
       c.lineTo(x + dx * l, y);
     }
     c.stroke();
+    /* the two gauges: up and down on the right edge, side to side along the foot */
+    const t = 12 * u;
+    const pad = 10 * u;
+    gauge(c, w - pad - t, pad * 4, h - pad * 8, t, true, gv, s.step === 'v');
+    gauge(c, pad * 4, h - pad - t, w - pad * 8 - t, t, false, gh, s.step === 'h');
   } else {
     c.strokeStyle = '#fff';
     c.lineWidth = u * 6;
@@ -106,45 +164,28 @@ function draw(now: number) {
     c.fillRect(0, 0, w, h);
   }
 }
+/** the running swing moved on by dt seconds */
+function advance(dt: number) {
+  if (frozen || ph.get().done) return;
+  if (ph.get().step === 'v') gv = swing((tv += dt * SPEED.v * pace(gv)));
+  else gh = swing((th += dt * SPEED.h * pace(gh)));
+}
 function frame(now: number) {
-  const dt = Math.min(0.05, (now - lastT) / 1000);
+  const dt = Math.min(0.05, Math.max(0, now - lastT) / 1000);
   lastT = now;
+  advance(dt);
   if (flash > 0) flash = Math.max(0, flash - dt * 2.2);
   draw(now);
   raf = requestAnimationFrame(frame);
 }
 
-/* ---------- the hand: drag to move the frame, wheel to zoom ---------- */
-let down: Pt | null = null;
-function pointerdown(e: PointerEvent) {
-  if (frozen || ph.get().done) return;
-  down = { x: e.clientX, y: e.clientY };
-  try {
-    cv!.setPointerCapture(e.pointerId);
-  } catch {
-    /* a synthetic pointer */
-  }
-}
-function pointermove(e: PointerEvent) {
-  if (!down || !cv) return;
-  const v = current();
-  const k = (v.x1 - v.x0) / cv.getBoundingClientRect().width;
-  /* the picture follows the finger, so the frame moves the other way */
-  mid = centre(
-    view(
-      { x: mid.x - (e.clientX - down.x) * k, y: mid.y - (e.clientY - down.y) * k },
-      ph.get().zoom,
-    ),
-  );
-  down = { x: e.clientX, y: e.clientY };
-}
-function pointerup() {
-  down = null;
-}
-function wheel(e: WheelEvent) {
-  if (frozen || ph.get().done) return;
-  e.preventDefault();
-  zoomTo(ph.get().zoom * (e.deltaY < 0 ? 1.08 : 1 / 1.08));
+/** a fresh swing: from a random place, so no two shots time the same */
+function swingAgain() {
+  tv = Math.random() * 4;
+  th = Math.random() * 4;
+  gv = swing(tv);
+  gh = 0;
+  frozen = false;
 }
 
 /* ---------- what the screen calls ---------- */
@@ -152,72 +193,67 @@ export function attach(canvas: HTMLCanvasElement, good: () => void) {
   cv = canvas;
   ctx = canvas.getContext('2d');
   onGood = good;
-  /* a scene not started yet: the phone comes up on the bridge rail */
-  if (!ph.get().shots) {
-    mid = { ...START };
-    frozen = null;
-  }
+  /* a scene not started yet: the phone comes up swinging */
+  if (!ph.get().shots && ph.get().step === 'v') swingAgain();
   if (!img) {
     img = new Image();
     img.src = ART[PHOTO_ART] ?? '';
   }
   fit();
   addEventListener('resize', fit);
-  canvas.addEventListener('pointerdown', pointerdown);
-  canvas.addEventListener('pointermove', pointermove);
-  canvas.addEventListener('pointerup', pointerup);
-  canvas.addEventListener('pointercancel', pointerup);
-  canvas.addEventListener('wheel', wheel, { passive: false });
+  canvas.addEventListener('pointerdown', tap);
   lastT = performance.now();
   raf = requestAnimationFrame(frame);
 }
 export function detach() {
   cancelAnimationFrame(raf);
   removeEventListener('resize', fit);
-  if (cv) {
-    cv.removeEventListener('pointerdown', pointerdown);
-    cv.removeEventListener('pointermove', pointermove);
-    cv.removeEventListener('pointerup', pointerup);
-    cv.removeEventListener('pointercancel', pointerup);
-    cv.removeEventListener('wheel', wheel);
-  }
+  cv?.removeEventListener('pointerdown', tap);
   cv = null;
   ctx = null;
-  down = null;
 }
-/** a fresh scene: the phone comes up on the bridge rail */
-export function reset(mode: 'friend' | 'sky') {
+/** a fresh scene */
+export function reset(mode: PhMode) {
   ph.set({ ...PH_START, mode });
-  mid = { ...START };
-  frozen = null;
+  swingAgain();
   flash = 0;
 }
-export function zoomTo(z: number) {
-  ph.set({ zoom: clampZoom(z) });
-  mid = centre(view(mid, ph.get().zoom));
-}
-/** the shutter: the frame is scored as it stands */
-export function shoot() {
+/** a stop: the first holds the up-and-down swing, the second is the shutter */
+/* A stop counts where the gauge was the moment the finger touched (as in a
+   rhythm game): the swing is moved on from the last drawn frame to the
+   touch's own time, not read at the next frame or on release. */
+const tap = (e: PointerEvent) => stop(e.timeStamp);
+export function stop(at?: number) {
   const s = ph.get();
   if (frozen || s.done || s.shots >= PH_TRIES) return;
-  frozen = view(mid, s.zoom);
+  if (at !== undefined && at > lastT) {
+    advance(Math.min(0.05, (at - lastT) / 1000));
+    lastT = at;
+  }
+  if (s.step === 'v') {
+    ph.set({ step: 'h', zv: zone(gv) });
+    return;
+  }
+  frozen = true;
   flash = 1;
-  const r = grade(frozen, s.mode);
+  const g = grade(s.mode, gv, gh);
   const shots = s.shots + 1;
-  const good = isGood(r.grade);
-  ph.set({ shots, grade: r.grade, n: r.n, done: good || shots >= PH_TRIES });
+  const good = isGood(g);
+  ph.set({ zh: zone(gh), shots, grade: g, done: good || shots >= PH_TRIES });
   if (good && s.mode === 'friend') onGood();
 }
-/** after a miss: the phone comes back up where it was */
+/** after a miss: the phone comes back up, swinging again */
 export function again() {
   if (ph.get().done) return;
-  frozen = null;
-  ph.set({ grade: null });
+  swingAgain();
+  ph.set({ step: 'v', zv: null, zh: null, grade: null });
 }
-/** e2e: the frame put here, at this zoom, and shot */
-export function settleShot(x: number, y: number, zoom: number) {
-  frozen = null;
-  ph.set({ zoom: clampZoom(zoom) });
-  mid = centre(view({ x, y }, zoom));
-  shoot();
+/** e2e and tests: both swings stopped at these gauge values */
+export function settleShot(v: number, h: number) {
+  swingAgain();
+  ph.set({ step: 'v', zv: null, zh: null, grade: null });
+  gv = v;
+  stop();
+  gh = h;
+  stop();
 }
