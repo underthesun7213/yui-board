@@ -18,7 +18,16 @@ import { ACHIEVEMENTS } from '../../src/content/achievements';
 import { CARD_IDS } from '../../src/content/card-ids';
 import { LESSONS } from '../../src/content/lessons';
 import { plain, segments } from '../../src/content/ruby';
-import { sbVoiceLines, voiceHash, voiceLines, yukiVoiceLines } from '../../src/content/voice-lines';
+import {
+  mtVoiceLines,
+  phVoiceLines,
+  sbVoiceLines,
+  voiceHash,
+  voiceLines,
+  yukiVoiceLines,
+} from '../../src/content/voice-lines';
+import { MT_FB, MT_LINES, MT_OPTS, MT_TOOLS } from '../../src/content/matcha';
+import { PH_FB, PH_LAST, PH_OPEN } from '../../src/content/photo';
 import { toSsml } from '../../scripts/gen-voice.mjs';
 import { ENDING_RULE, VN } from '../../src/content/vn';
 import {
@@ -282,8 +291,13 @@ describe('comic pages (Y-J1)', () => {
       ...voiceLines(LESSONS, VN, ENDINGS, ACHIEVEMENTS),
       ...yukiVoiceLines(TALK, YUKI_LINES),
       ...sbVoiceLines(SB_LINES),
+      ...mtVoiceLines(MT_LINES, MT_OPTS, MT_FB, MT_TOOLS),
+      ...phVoiceLines(PH_OPEN, PH_LAST, PH_FB),
     ];
     const keys = new Set(lines.map((l) => l.key));
+    /* the player's replies: a woman with Yuki, a man with Ayano */
+    expect(lines.find((l) => l.key === 'vn/osaka/01-1')?.voice).toBe('ja-JP-ShioriNeural');
+    expect(lines.find((l) => l.key === 'vn/kyoto/01-1')?.voice).toBe('ja-JP-DaichiNeural');
     expect(keys.size).toBe(lines.length);
     const made = JSON.parse(readFileSync('src/voice/manifest.json', 'utf8')) as Record<
       string,

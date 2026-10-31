@@ -79,13 +79,16 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   const { ACHIEVEMENTS } = await load('src/content/achievements.ts');
   const { TALK, LINES } = await load('src/content/yuki-minigame.ts');
   const { SB_LINES } = await load('src/content/smartball.ts');
-  const { voiceLines, voiceHash, yukiVoiceLines, sbVoiceLines } = await load(
-    'src/content/voice-lines.ts',
-  );
+  const { MT_LINES, MT_OPTS, MT_FB, MT_TOOLS } = await load('src/content/matcha.ts');
+  const { PH_OPEN, PH_LAST, PH_FB } = await load('src/content/photo.ts');
+  const { voiceLines, voiceHash, yukiVoiceLines, sbVoiceLines, mtVoiceLines, phVoiceLines } =
+    await load('src/content/voice-lines.ts');
   const lines = [
     ...voiceLines(LESSONS, VN, ENDINGS, ACHIEVEMENTS),
     ...yukiVoiceLines(TALK, LINES),
     ...sbVoiceLines(SB_LINES),
+    ...mtVoiceLines(MT_LINES, MT_OPTS, MT_FB, MT_TOOLS),
+    ...phVoiceLines(PH_OPEN, PH_LAST, PH_FB),
   ];
   const made = existsSync(MANIFEST) ? JSON.parse(readFileSync(MANIFEST, 'utf8')) : {};
   const file = (k) => join(DIR, `${k}.mp3`);

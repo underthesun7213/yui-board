@@ -567,7 +567,7 @@ update app.settings set int_value = 1 where key = 'translation_enabled';
 
 ### 7.5 대사 음성 만들기 (D35) `[아직 해 보지 않음]`
 
-만화·표현·게임의 일본어 대사(현재 129줄)를 Azure AI Speech 신경망 음성으로 미리 만들어 `src/voice/` 에 커밋한다. 앱은 파일이 있고 **대사가 녹음 뒤 바뀌지 않은 줄에만** 재생 버튼을 보인다(`src/voice/manifest.json` 의 해시). 키는 책임자 PC 의 환경 변수로만 쓰고 저장소·채팅에 넣지 않는다.
+만화·표현·게임·미니게임의 일본어 대사(2026-11-01 기준 242줄)를 Azure AI Speech 신경망 음성으로 미리 만들어 `src/voice/` 에 커밋한다. 앱은 파일이 있고 **대사가 녹음 뒤 바뀌지 않은 줄에만** 재생 버튼을 보인다(`src/voice/manifest.json` 의 해시). 키는 책임자 PC 의 환경 변수로만 쓰고 저장소·채팅에 넣지 않는다.
 
 **처음 한 번 — Speech 리소스 (번역기와 별도):**
 
@@ -587,7 +587,7 @@ Remove-Item Env:AZURE_SPEECH_KEY
 
 - 이미 녹음했고 바뀌지 않은 줄은 건너뛴다. 대사를 고친 뒤 다시 돌리면 고친 줄만 녹음되고, 없어진 줄의 파일은 지워진다.
 - 결과 `src/voice/**.mp3` 와 `manifest.json` 을 커밋해 PR 로 올린다 → 배포(§7.3).
-- 목소리·말하는 사람: `src/content/voice-lines.ts`(학생은 레벨마다 남녀, 다른 사람은 `who`), 읽기는 후리가나 그대로(`<sub alias>`), 속도 90%.
+- 목소리·말하는 사람: `src/content/voice-lines.ts`(학생은 레벨마다 남녀, 다른 사람은 `who`, 게임의 플레이어는 오사카 여자·교토 남자), 읽기는 후리가나 그대로(`<sub alias>`), 속도 90%.
 - 오사카·교토 사투리 억양은 기계 음성의 한계다(D35). 사람 녹음으로 바꾸려면 같은 이름의 mp3 로 덮고, manifest 의 그 줄 해시는 그대로 둔다.
 
 ### 7.6 자동 배포 `deploy.yml` (B-13) `[아직 해 보지 않음]`

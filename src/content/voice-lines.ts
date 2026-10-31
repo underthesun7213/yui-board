@@ -31,7 +31,9 @@ const VOICES = {
   narrator: 'ja-JP-AoiNeural',
   osaka: 'ja-JP-NaokiNeural',
   kyoto: 'ja-JP-MayuNeural',
+  /* the player: a woman with Yuki in Osaka, a man with Ayano in Kyoto */
   player: 'ja-JP-ShioriNeural',
+  playerKyoto: 'ja-JP-DaichiNeural',
   /* shop staff in the game (the kushikatsu shop) */
   staff: 'ja-JP-KeitaNeural',
 };
@@ -94,7 +96,11 @@ export function voiceLines(
         out.push({ key: moreVoiceKey(route, i, j), text: l.jp, voice: by(l) }),
       );
       sc.opts.forEach((o, k) => {
-        out.push({ key: optVoiceKey(route, i, k), text: o.jp, voice: VOICES.player });
+        out.push({
+          key: optVoiceKey(route, i, k),
+          text: o.jp,
+          voice: route === 'kyoto' ? VOICES.playerKyoto : VOICES.player,
+        });
         o.reply?.forEach((l, j) =>
           out.push({ key: replyVoiceKey(route, i, k, j), text: l.jp, voice: by(l) }),
         );
@@ -147,6 +153,55 @@ export function yukiVoiceLines(
       voice: name === 'end' ? VOICES.staff : VOICES.osaka,
     });
   return out;
+}
+/* Kyoto's two mini-games: Ayano's lines (and the shop staff's) at the matcha
+   table, and hers at the fireworks photo. */
+export const mtVoiceKey = (name: string) => `minigames/matcha/${name}`;
+export const phVoiceKey = (name: string) => `minigames/photo/${name}`;
+export function mtVoiceLines(
+  lines: Record<string, { who: 'ayano' | 'staff'; jp: string }>,
+  opts: Record<string, { reply: string }[]>,
+  fb: Record<string, { say?: string }>,
+  tools: Record<string, { ja: string }>,
+): VoiceLine[] {
+  const out: VoiceLine[] = [];
+  for (const [name, l] of Object.entries(lines))
+    out.push({
+      key: mtVoiceKey(name),
+      text: l.jp,
+      voice: l.who === 'staff' ? VOICES.staff : VOICES.kyoto,
+    });
+  for (const [k, list] of Object.entries(opts))
+    list.forEach((o, i) =>
+      out.push({ key: mtVoiceKey(`${k}-${i + 1}r`), text: o.reply, voice: VOICES.kyoto }),
+    );
+  for (const [k, f] of Object.entries(fb))
+    if (f.say) out.push({ key: mtVoiceKey(`fb-${k}`), text: f.say, voice: VOICES.kyoto });
+  /* a wrong tool tapped: she names the one that was */
+  for (const [k, t] of Object.entries(tools))
+    out.push({ key: mtWrongToolKey(k), text: mtWrongTool(t.ja), voice: VOICES.kyoto });
+  return out;
+}
+export const mtWrongToolKey = (tool: string) => mtVoiceKey(`fb-toolWrong-${tool}`);
+export const mtWrongTool = (ja: string) => `それは${ja}どすえ。`;
+export function phVoiceLines(
+  open: Record<string, { jp: string }>,
+  last: { jp: string },
+  fb: Record<string, { say: string }>,
+): VoiceLine[] {
+  return [
+    ...Object.entries(open).map(([k, l]) => ({
+      key: phVoiceKey(`open-${k}`),
+      text: l.jp,
+      voice: VOICES.kyoto,
+    })),
+    { key: phVoiceKey('last'), text: last.jp, voice: VOICES.kyoto },
+    ...Object.entries(fb).map(([k, f]) => ({
+      key: phVoiceKey(`fb-${k}`),
+      text: f.say,
+      voice: VOICES.kyoto,
+    })),
+  ];
 }
 export function sbVoiceLines(lines: Record<string, { jp: string }>): VoiceLine[] {
   return Object.entries(lines).map(([name, l]) => ({
