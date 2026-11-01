@@ -40,6 +40,24 @@ export const test = base.extend<{ badTiles: boolean; errors: string[] }>({
 });
 export { expect };
 
+/* Opens a screen by its path. Once the app is loaded this is a step inside
+   it (pushState and popstate, as system back and forward make), so what the
+   test set up in the page stays, as it did with hash links; the first visit
+   loads the page. */
+export async function go(page: Page, path: string) {
+  const loaded = await page
+    .evaluate(() => !!(window as unknown as { __yunabi?: unknown }).__yunabi)
+    .catch(() => false);
+  if (!loaded) {
+    await page.goto('./' + path);
+    return;
+  }
+  await page.evaluate((p) => {
+    history.pushState(null, '', '/' + p);
+    dispatchEvent(new PopStateEvent('popstate'));
+  }, path);
+}
+
 type Handle = {
   route: { get(): { route: { name: string; lid?: string } } };
   prefs: { get(): { lang: string } };

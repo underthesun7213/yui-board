@@ -1,7 +1,7 @@
 /* The v1.3 browser checks (docs/08-qa/legacy/v1.3-browser-checks.js), ported.
    Y-1 is done when this file passes (RFC-0003 §19.1). IDs: PRD-MLP ML-*, PRD-YUNABI Y-*. */
 import { readFileSync } from 'node:fs';
-import { expect, mapReady, tap, test, y } from './fixtures';
+import { expect, go, mapReady, tap, test, y } from './fixtures';
 
 const DORM = { latitude: 34.8252, longitude: 135.653 };
 
@@ -87,7 +87,7 @@ test.describe('home, tabs, language, back', () => {
     errors,
   }) => {
     void errors;
-    await page.goto('./learn');
+    await go(page, 'learn');
     await expect(page.locator('.lesson')).toHaveCount(8);
     await page.evaluate(() => scrollTo(0, 245));
     await tap(page, '[data-lesson="l5"]');
@@ -101,7 +101,7 @@ test.describe('home, tabs, language, back', () => {
 
   test('Y-C hash links open their screen', async ({ page, errors }) => {
     void errors;
-    await page.goto('./learn/collection');
+    await go(page, 'learn/collection');
     await expect(page.locator('.cgrid').first()).toBeVisible();
     await tap(page, '.bar .back');
     await expect(page.locator('.lesson')).toHaveCount(8);
@@ -111,7 +111,7 @@ test.describe('home, tabs, language, back', () => {
 test.describe('game and collection', () => {
   test('ML-05 playing episode 8 collects a card that survives reload', async ({ page, errors }) => {
     void errors;
-    await page.goto('./learn/l8');
+    await go(page, 'learn/l8');
     await tap(page, '[data-route="osaka"]');
     /* play to the end however many scenes the route has: a reply, a walk, the
        유우키 미니게임 (its own test plays it; here it skips to the bill) and the
@@ -149,7 +149,7 @@ test.describe('game and collection', () => {
     expect(Object.keys(await y(page, (a) => a.collection.get().cg)).length).toBeGreaterThanOrEqual(
       1,
     );
-    await page.goto('./learn/collection');
+    await go(page, 'learn/collection');
     /* the juice picture and the ending card */
     await expect(page.locator('.card:not(.lock)')).toHaveCount(2);
   });
@@ -158,7 +158,7 @@ test.describe('game and collection', () => {
 test.describe('calendar', () => {
   test('ML-06 real date, weekly override, .ics file, back', async ({ page, errors }) => {
     void errors;
-    await page.goto('./cal');
+    await go(page, 'cal');
     const today = await page.evaluate(() =>
       new Intl.DateTimeFormat('en-CA', {
         timeZone: 'Asia/Tokyo',
@@ -168,7 +168,7 @@ test.describe('calendar', () => {
       }).format(new Date()),
     );
     await expect(page.locator(`.cell.today[data-d="${today}"]`)).toHaveCount(1);
-    await page.goto('./cal/event/4/2026-09-22');
+    await go(page, 'cal/event/4/2026-09-22');
     await expect(page.locator('.evwrap h1')).toHaveText('GIP: Karaoke Night');
     const [dl] = await Promise.all([page.waitForEvent('download'), tap(page, '[data-ics]')]);
     const ics = readFileSync((await dl.path())!, 'utf8');
@@ -181,7 +181,7 @@ test.describe('calendar', () => {
 
   test('Y-K a cancelled week and a missing date say there is nothing', async ({ page, errors }) => {
     void errors;
-    await page.goto('./cal/event/4/2026-10-20');
+    await go(page, 'cal/event/4/2026-10-20');
     await expect(page.locator('.empty')).toHaveCount(1);
   });
 });
@@ -194,7 +194,7 @@ test.describe('map', () => {
     errors,
   }) => {
     void errors;
-    await page.goto('./map');
+    await go(page, 'map');
     await mapReady(page);
     await expect(page.locator('[data-loc="use"]')).toHaveCount(1);
     expect(await y(page, (a) => a.location.get().state)).toBe('ask');
@@ -225,7 +225,7 @@ test.describe('map', () => {
     errors,
   }) => {
     void errors;
-    await page.goto('./map');
+    await go(page, 'map');
     await mapReady(page);
     await tap(page, '[data-mode="japan"]');
     await page.waitForFunction(() => !!window.__yunabi.map().prefLayer);
@@ -260,7 +260,7 @@ test.describe('map', () => {
     errors,
   }) => {
     void errors;
-    await page.goto('./map');
+    await go(page, 'map');
     await mapReady(page);
     await page.evaluate(() => {
       navigator.geolocation.getCurrentPosition = (_ok, no) =>
@@ -282,7 +282,7 @@ test.describe('map', () => {
       await new Promise((x) => setTimeout(x, 1500));
       await r.continue();
     });
-    await page.goto('./map');
+    await go(page, 'map');
     await mapReady(page);
     await page.evaluate(() => {
       const g = navigator.geolocation.getCurrentPosition.bind(navigator.geolocation);
@@ -368,7 +368,7 @@ test.describe('map', () => {
     errors,
   }) => {
     void errors;
-    await page.goto('./map');
+    await go(page, 'map');
     await mapReady(page);
     await tap(page, '[data-loc="skip"]');
     await expect(page.locator('.mstatus [data-loc="use"]')).toHaveCount(1);
@@ -404,7 +404,7 @@ test('Y-M2 a map that failed to load offers a reload that brings it back', async
 }) => {
   let block = true;
   await context.route('**/assets/leaflet-src-*.js', (r) => (block ? r.abort() : r.continue()));
-  await page.goto('./map');
+  await go(page, 'map');
   await expect(page.locator('.maperr')).toHaveCount(1);
   /* the blocked request is the one expected error */
   errors.splice(0, errors.length, ...errors.filter((e) => !/ERR_FAILED/.test(e)));
@@ -418,7 +418,7 @@ test.describe('map tiles failing', () => {
   test.use({ badTiles: true });
   test('ML-12 tile failure is explained', async ({ page, errors }) => {
     void errors;
-    await page.goto('./map');
+    await go(page, 'map');
     await mapReady(page);
     await page.waitForFunction(() => window.__yunabi.mapUi.get().tileFail);
     expect((await page.locator('.mstatus').innerText()).length).toBeGreaterThan(10);
