@@ -63,8 +63,6 @@ export function nextScene() {
   const cg = { ...collection.get().cg };
   const fresh = !cg[card.id];
   cg[card.id] = true;
-  const other: Route = v.route === 'osaka' ? 'kyoto' : 'osaka';
-  if (ENDINGS.some((e) => e.route === other && cg[e.id])) cg.e_both = true;
   collection.set({ cg });
   store.set('cg', cg);
   const m = t(prefs.get().lang);

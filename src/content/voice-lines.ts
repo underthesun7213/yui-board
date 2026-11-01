@@ -116,7 +116,7 @@ export function voiceLines(
     out.push({
       key: endingVoiceKey(e.id),
       text: e.jp,
-      voice: e.route === 'both' ? VOICES.narrator : VOICES[e.route],
+      voice: VOICES[e.route],
     });
   return out;
 }

@@ -105,21 +105,4 @@ export const ENDINGS: Ending[] = [
       ko: "교토의 「またご縁があれば」는 대개 '다시 볼 일은 없을 것'. 오사카의 「行けたら行くわ」와 같다",
     },
   },
-  {
-    id: 'e_both',
-    route: 'both',
-    tier: 'good',
-    t: {
-      ja: '二つの関西',
-      en: 'Two Kansais',
-      ko: '두 개의 간사이',
-    },
-    jp: '{大阪|おおさか}と{京都|きょうと}、{電車|でんしゃ}で40{分|ぷん}。',
-    s: 'A split scene: Osaka neon on one side, a quiet Kyoto lane on the other, the same student in both',
-    n: {
-      ja: '両方を歩いた人だけのカード。40分しか離れていないのに、話し方がこれだけ違う',
-      en: 'Only for those who walked both. Forty minutes apart, and the way people speak is this different',
-      ko: '양쪽을 모두 걸은 사람만의 카드. 40분 거리인데 말하는 방식이 이만큼 다르다',
-    },
-  },
 ];

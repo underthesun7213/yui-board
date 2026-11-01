@@ -188,7 +188,7 @@ const cases: Case[] = [
     { name: 'collection' },
     () =>
       collection.set({
-        cg: { a_osaka_juice: true, e_osaka_best: true, e_kyoto_norm: true, e_both: true },
+        cg: { a_osaka_juice: true, e_osaka_best: true, e_kyoto_norm: true },
       }),
   ],
   ['cal', { name: 'cal' }],
