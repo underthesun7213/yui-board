@@ -110,7 +110,7 @@ test.describe('user text stays text', () => {
       /* the same version, so opening the detail does not read the fixtures again */
       y.setData(d.places, [e], [], new Date().toISOString(), d.version);
     }, ev);
-    await page.goto('./');
+    await go(page, '');
     await expect(page.locator('.hcard.cal small span[lang]')).toHaveText(NAME);
     await go(page, `cal/event/99/${day}`);
     await expect(page.locator('.evwrap h1[lang]')).toHaveText(NAME);
