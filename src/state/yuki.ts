@@ -37,6 +37,8 @@ export interface Yuki {
   order: Record<string, number>;
   plate: Skewer[];
   sel: number;
+  /** the skewer carried toward the sauce, -1 for none */
+  held: number;
   warned: number;
   /** Yuki's teasing picture after a double dip */
   tease: boolean;
@@ -51,6 +53,7 @@ export const YUKI_START: Yuki = {
   order: {},
   plate: [],
   sel: 0,
+  held: -1,
   warned: 0,
   tease: false,
   said: [],
