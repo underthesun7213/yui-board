@@ -265,10 +265,12 @@ test('G-30 ⑤ a session older than 12 hours is refused and sent back to sign-in
     /cannot use the admin console|session has ended/,
   );
   await expect(page.locator('input[name=email]')).toBeVisible();
-  /* the refusal itself is the browser's one logged 403 here */
+  /* the refusal itself is the browser's logged 403 here: one, or two when
+     another request of the console was already on its way (seen in CI once) */
   const refused = errors.filter((e) => /status of 403/.test(e));
-  expect(refused).toHaveLength(1);
-  errors.splice(errors.indexOf(refused[0]!), 1);
+  expect(refused.length).toBeGreaterThanOrEqual(1);
+  expect(refused.length).toBeLessThanOrEqual(2);
+  for (const r of refused) errors.splice(errors.indexOf(r), 1);
 });
 
 test('G-30 ⑥ / G-31 a signed-in account that is not an admin gets nothing', async ({
