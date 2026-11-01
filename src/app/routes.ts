@@ -45,27 +45,27 @@ export function formatRoute(r: Route): string {
     case 'home':
       return '/';
     case 'learn':
-      return '/learn';
+      return '/japanese';
     case 'lesson':
-      return '/learn/' + encodeURIComponent(r.lid);
+      return '/japanese/' + encodeURIComponent(r.lid);
     case 'collection':
-      return '/learn/collection';
+      return '/japanese/collection';
     case 'map':
       return '/map';
     case 'cal':
-      return '/cal';
+      return '/calendar';
     case 'event':
-      return `/cal/event/${r.id}/${r.date}`;
+      return `/calendar/event/${r.id}/${r.date}`;
     case 'placeNew':
       return '/map/new';
     case 'placeEdit':
       return `/map/edit/${r.id}`;
     case 'eventNew':
-      return '/cal/new';
+      return '/calendar/new';
     case 'eventEdit':
-      return `/cal/edit/${r.id}`;
+      return `/calendar/edit/${r.id}`;
     case 'weekEdit':
-      return `/cal/edit/${r.id}/${r.date}`;
+      return `/calendar/edit/${r.id}/${r.date}`;
     case 'me':
       return '/me';
     case 'legal':
@@ -73,13 +73,16 @@ export function formatRoute(r: Route): string {
   }
 }
 
-/** A route from a path (/cal/new); an old hash link (#/cal/new) reads the same. */
+/** A route from a path (/calendar/new). The first names of two sections
+    (/learn, /cal) and old hash links (#/cal/new) read the same. */
 export function parseRoute(path: string): Route | null {
   const p = path
     .replace(/^#?\/?/, '')
     .split('/')
     .filter(Boolean);
   if (!p.length) return { name: 'home' };
+  if (p[0] === 'japanese') p[0] = 'learn';
+  if (p[0] === 'calendar') p[0] = 'cal';
   if (p[0] === 'learn') {
     if (p.length === 1) return { name: 'learn' };
     if (p.length === 2)

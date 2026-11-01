@@ -195,12 +195,17 @@ describe('routes', () => {
       expect(parseRoute(formatRoute(r))).toEqual(r);
   });
   it('rejects unknown paths and reads old links', () => {
-    expect(formatRoute({ name: 'lesson', lid: 'l3' })).toBe('/learn/l3');
+    /* the sections are named as their tabs: Japanese, Calendar */
+    expect(formatRoute({ name: 'lesson', lid: 'l3' })).toBe('/japanese/l3');
+    expect(formatRoute({ name: 'event', id: 4, date: '2026-09-22' })).toBe(
+      '/calendar/event/4/2026-09-22',
+    );
     expect(parseRoute('/')).toEqual({ name: 'home' });
     expect(parseRoute('/nope')).toBeNull();
-    expect(parseRoute('/cal/event/x/2026-01-01')).toBeNull();
-    /* the first addresses were hash links: they read the same */
+    expect(parseRoute('/calendar/event/x/2026-01-01')).toBeNull();
+    /* the first addresses were hash links with the first names: they read the same */
     expect(parseRoute('#/cal/new')).toEqual({ name: 'eventNew' });
+    expect(parseRoute('/learn/l3')).toEqual({ name: 'lesson', lid: 'l3' });
     expect(legacyRoute('?v=map')).toEqual({ name: 'map' });
     expect(legacyRoute('?tab=1')).toEqual({ name: 'cal' });
     expect(legacyRoute('?compose=1')).toEqual({ name: 'home' });
