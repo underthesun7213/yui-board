@@ -74,7 +74,7 @@ describe('eating', () => {
       ],
     }),
   );
-  it('takes a bite on a second tap within 400 ms, not on a slow one', () => {
+  it('takes a bite on a second tap within 500 ms, not on a slow one', () => {
     tapSkewer(0, 1000);
     tapSkewer(0, 1200);
     expect(yuki.get().plate[0]!.bites).toBe(1);

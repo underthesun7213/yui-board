@@ -126,9 +126,10 @@ export function biteSkewer(i: number) {
 }
 
 let lastTap = { i: -1, t: 0 };
-/** one tap picks a skewer, a second within 400 ms takes a bite */
+/** one tap picks a skewer, a second within half a second takes a bite (a
+    phone's double tap is slower than a mouse's) */
 export function tapSkewer(i: number, now = Date.now()) {
-  if (lastTap.i === i && now - lastTap.t < 400) {
+  if (lastTap.i === i && now - lastTap.t < 500) {
     lastTap = { i: -1, t: 0 };
     biteSkewer(i);
     return;

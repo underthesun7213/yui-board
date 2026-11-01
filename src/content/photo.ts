@@ -23,16 +23,16 @@ export const PH_TEXT = {
   done: { ja: '撮影おわり', en: 'All done', ko: '촬영 끝' },
   ayano: { ja: 'あやの', en: 'Ayano', ko: '아야노' },
   view: {
-    ja: 'スマホの画面。押すと止まる',
-    en: 'The phone screen. Tap to stop it',
-    ko: '휴대폰 화면. 누르면 멈춘다',
+    ja: 'スマホの画面',
+    en: 'The phone screen',
+    ko: '휴대폰 화면',
   },
   stepV: { ja: '① 上下', en: '① Up and down', ko: '① 위아래' },
   stepH: { ja: '② 左右', en: '② Side to side', ko: '② 좌우' },
   leadV: {
-    ja: 'スマホが上下に揺れている。ゲージが真ん中の黄色に来たら止める。画面を押してもいい。',
-    en: 'The phone is swinging up and down. Stop it when the gauge is in the yellow middle. Tapping the screen works too.',
-    ko: '휴대폰이 위아래로 흔들린다. 게이지가 가운데 노란 칸에 올 때 멈춘다. 화면을 눌러도 된다.',
+    ja: 'スマホが上下に揺れている。ゲージが真ん中の黄色に来たら、下のボタンで止める。',
+    en: 'The phone is swinging up and down. When the gauge is in the yellow middle, stop it with the button below.',
+    ko: '휴대폰이 위아래로 흔들린다. 게이지가 가운데 노란 칸에 올 때 아래 버튼으로 멈춘다.',
   },
   leadH: {
     ja: '次は左右。もう一度、黄色で止めるとシャッターが切れる。',

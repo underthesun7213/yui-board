@@ -2054,6 +2054,10 @@ rt {
   border-radius: var(--r-m);
   background: transparent;
   touch-action: none;
+  /* a long press on a phone must not open the text or link menu */
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
   cursor: grab;
 }
 .yk-kushi.sel {
@@ -2621,7 +2625,6 @@ rt {
    head to toe, sideways for the sky; the stops as tags */
 .ph-stage {
   background: #0b1230;
-  cursor: pointer;
 }
 .ph-stage.friend {
   aspect-ratio: 3 / 4;

@@ -201,14 +201,12 @@ export function attach(canvas: HTMLCanvasElement, good: () => void) {
   }
   fit();
   addEventListener('resize', fit);
-  canvas.addEventListener('pointerdown', tap);
   lastT = performance.now();
   raf = requestAnimationFrame(frame);
 }
 export function detach() {
   cancelAnimationFrame(raf);
   removeEventListener('resize', fit);
-  cv?.removeEventListener('pointerdown', tap);
   cv = null;
   ctx = null;
 }
@@ -219,17 +217,31 @@ export function reset(mode: PhMode) {
   flash = 0;
 }
 /** a stop: the first holds the up-and-down swing, the second is the shutter */
-/* A stop counts where the gauge was the moment the finger touched (as in a
-   rhythm game): the swing is moved on from the last drawn frame to the
-   touch's own time, not read at the next frame or on release. */
-const tap = (e: PointerEvent) => stop(e.timeStamp);
-export function stop(at?: number) {
+/* A stop counts where the gauge was the moment the finger touched the
+   button (as in a rhythm game), though the button acts on its click, which
+   every phone sends: the press marks the gauge, moved on from the last drawn
+   frame to the touch's own time, and the click that follows uses that mark.
+   Only the button stops the swing: a tap on the screen does nothing, so a
+   hand that brushes the photo does not take it. */
+let marked: { g: number; at: number } | null = null;
+export function mark(at: number) {
   const s = ph.get();
-  if (frozen || s.done || s.shots >= PH_TRIES) return;
-  if (at !== undefined && at > lastT) {
+  if (frozen || s.done) return;
+  if (at > lastT) {
     advance(Math.min(0.05, (at - lastT) / 1000));
     lastT = at;
   }
+  marked = { g: s.step === 'v' ? gv : gh, at: performance.now() };
+}
+export function stop() {
+  const s = ph.get();
+  if (frozen || s.done || s.shots >= PH_TRIES) return;
+  /* a press of the button a moment ago: the gauge as it was then */
+  if (marked && performance.now() - marked.at < 1000) {
+    if (s.step === 'v') gv = marked.g;
+    else gh = marked.g;
+  }
+  marked = null;
   if (s.step === 'v') {
     ph.set({ step: 'h', zv: zone(gv) });
     return;

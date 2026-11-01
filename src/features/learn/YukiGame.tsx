@@ -406,19 +406,20 @@ function Eat({ sauce }: { sauce: RefObject<HTMLButtonElement | null> }) {
   const plate = useStore(yuki, (s) => s.plate);
   const sel = useStore(yuki, (s) => s.sel);
   const tease = useStore(yuki, (s) => s.tease);
-  const [drag, setDrag] = useState<{
-    i: number;
-    x0: number;
-    y0: number;
-    x: number;
-    y: number;
-    moved: boolean;
-  } | null>(null);
+  /* The finger's skewer is kept in a ref, not state: a quick tap on a phone
+     can end before React draws again, and the release must still see it.
+     Only the dragged copy under the finger is state, once it moves. */
+  const press = useRef<{ i: number; x0: number; y0: number; moved: boolean } | null>(null);
+  const [drag, setDrag] = useState<{ i: number; x: number; y: number } | null>(null);
   const left = plate.filter((k) => k.bites > 0).length;
   const eaten = plate.length - left;
+  /* the dish counts a little beyond its edge: a fingertip covers what it aims at */
   const overSauce = (x: number, y: number) => {
     const r = sauce.current?.getBoundingClientRect();
-    return !!r && x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
+    const pad = 24;
+    return (
+      !!r && x >= r.left - pad && x <= r.right + pad && y >= r.top - pad && y <= r.bottom + pad
+    );
   };
   return (
     <div className="yk-panel">
@@ -432,32 +433,38 @@ function Eat({ sauce }: { sauce: RefObject<HTMLButtonElement | null> }) {
             disabled={k.bites === 0}
             aria-label={fill(m.yukiSkewer, { x: nameOf(k, lang), s: m.yukiState[stateOf(k)] })}
             onPointerDown={(e) => {
-              e.currentTarget.setPointerCapture(e.pointerId);
-              setDrag({
-                i,
-                x0: e.clientX,
-                y0: e.clientY,
-                x: e.clientX,
-                y: e.clientY,
-                moved: false,
-              });
+              try {
+                e.currentTarget.setPointerCapture(e.pointerId);
+              } catch {
+                /* a synthetic pointer */
+              }
+              press.current = { i, x0: e.clientX, y0: e.clientY, moved: false };
             }}
             onPointerMove={(e) => {
-              if (!drag || drag.i !== i) return;
-              const moved =
-                drag.moved || Math.abs(e.clientX - drag.x0) + Math.abs(e.clientY - drag.y0) > 8;
-              setDrag({ ...drag, x: e.clientX, y: e.clientY, moved });
-              sauce.current?.classList.toggle('hot', moved && overSauce(e.clientX, e.clientY));
+              const p = press.current;
+              if (!p || p.i !== i) return;
+              /* a fingertip wobbles during a tap: a drag starts only past it */
+              const slop = e.pointerType === 'touch' ? 16 : 8;
+              if (!p.moved && Math.hypot(e.clientX - p.x0, e.clientY - p.y0) <= slop) return;
+              p.moved = true;
+              setDrag({ i, x: e.clientX, y: e.clientY });
+              sauce.current?.classList.toggle('hot', overSauce(e.clientX, e.clientY));
             }}
             onPointerUp={(e) => {
-              if (!drag || drag.i !== i) return;
+              const p = press.current;
+              press.current = null;
+              setDrag(null);
+              if (!p || p.i !== i) return;
               sauce.current?.classList.remove('hot');
-              if (drag.moved) {
+              if (p.moved) {
                 if (overSauce(e.clientX, e.clientY)) dipSkewer(i);
               } else tapSkewer(i);
-              setDrag(null);
             }}
-            onPointerCancel={() => setDrag(null)}
+            onPointerCancel={() => {
+              press.current = null;
+              setDrag(null);
+              sauce.current?.classList.remove('hot');
+            }}
             onKeyDown={(e) => {
               if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
@@ -470,7 +477,7 @@ function Eat({ sauce }: { sauce: RefObject<HTMLButtonElement | null> }) {
           </button>
         ))}
       </div>
-      {drag?.moved && (
+      {drag && (
         <div className="yk-ghost" style={{ left: drag.x, top: drag.y }} aria-hidden="true">
           <SkewerArt
             look={lookOf(plate[drag.i]!)}
