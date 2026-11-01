@@ -1640,6 +1640,34 @@ rt {
 .warnbox .check {
   color: var(--ink);
 }
+/* the place form: a Google Maps link or two numbers puts the pin there */
+.findspot {
+  margin-top: 4px;
+}
+.findrow {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+.findrow input {
+  flex: 1;
+  min-width: 0;
+}
+.findrow button {
+  flex: none;
+}
+.findspot .hint.ok {
+  color: var(--success);
+}
+.findspot button.link {
+  border: 0;
+  padding: 0;
+  background: none;
+  color: var(--primary);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
 .primary:disabled,
 .secondary:disabled {
   background: var(--surface);

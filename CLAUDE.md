@@ -7,7 +7,8 @@ map of everyday places, and a shared calendar, for the residents of 結 -YUI-.
 Read `README.md`, then `docs/02-requirements/PRD-YUNABI.md` for scope,
 `docs/architecture/rfc/0003-yunabi-v2.md` for the design and
 `docs/architecture/erd-v2.md` for the database. React 19 + Vite + TypeScript
-(ADR-0023, ADR-0024); Supabase (Postgres + Auth + PostgREST), no other server.
+(ADR-0023, ADR-0024); Supabase (Postgres + Auth + PostgREST); the only other server code is one
+small Worker in front of the app that opens short Google Maps links (ADR-0027).
 Without `VITE_SUPABASE_URL` the app runs on `tests/fixtures/` (fixture mode).
 
 ## The shape of the code
@@ -31,6 +32,7 @@ src/admin/          admin console: its own build (admin/index.html, vite.admin.c
                     dist-admin/, CSP in _headers), its own strings (src/admin/i18n.ts)
 supabase/migrations database, in order; the last one fails unless grants match the design
 supabase/tests      pgTAP;  supabase/seed  fixtures for local and CI only
+worker/index.ts    the app's Worker: /api/maps-link only (ADR-0027); everything else is static assets
 scripts/local-stack a local Supabase: Postgres 16 + Supabase Auth + PostgREST + gateway
 ```
 

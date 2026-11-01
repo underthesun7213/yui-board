@@ -17,6 +17,8 @@ export interface MapUi {
   /** the place form is open: a tap on the map sets `pick` */
   picking: boolean;
   pick: { lat: number; lng: number } | null;
+  /** bumped when the pin is put somewhere off screen (a pasted link): the map goes to it */
+  pickSeq: number;
 }
 export const mapUi = createStore<MapUi>({
   mode: 'near',
@@ -30,4 +32,5 @@ export const mapUi = createStore<MapUi>({
   fitSeq: 0,
   picking: false,
   pick: null,
+  pickSeq: 0,
 });

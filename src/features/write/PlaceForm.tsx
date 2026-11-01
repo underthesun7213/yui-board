@@ -2,10 +2,13 @@ import { useEffect, useState } from 'react';
 import {
   dropDraft,
   explain,
+  findSpot,
+  type FindResult,
   loadOwn,
   openDraft,
   pickHere,
   savePlace,
+  showPick,
   saveDraft,
   startPick,
   stopPick,
@@ -137,6 +140,11 @@ function PlaceFormBody({ id, editing, mine }: { id?: number; editing?: Place; mi
           </p>
         </Field>
         <MapSlot loading={m.mapLoading} />
+        <FindSpot
+          onLink={(u) => {
+            if (!f.gmaps_url) set('gmaps_url', u);
+          }}
+        />
         {!warn ? (
           <button type="button" className="secondary wide" onClick={() => setWarn(true)}>
             {m.useHere}
@@ -282,5 +290,88 @@ function PlaceFormBody({ id, editing, mine }: { id?: number; editing?: Place; mi
         </div>
       </form>
     </>
+  );
+}
+
+/* A Google Maps link or the two numbers from a long press, pasted here,
+   puts the pin there (Y-BL-02): for those who add a place later, from home,
+   rather than standing at it. The pin moves for the person to check, with a
+   way back; nothing is saved until the form is. */
+function FindSpot({ onLink }: { onLink(u: string): void }) {
+  const m = useT();
+  const pick = useStore(mapUi, (s) => s.pick);
+  const [text, setText] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [res, setRes] = useState<{ r: FindResult; before: typeof pick } | null>(null);
+
+  async function find() {
+    if (!text.trim() || busy) return;
+    const before = pick;
+    setBusy(true);
+    const r = await findSpot(text);
+    setBusy(false);
+    setRes({ r, before });
+    if (r === 'ok' && /^https:/.test(text.trim())) onLink(text.trim());
+  }
+  const err = res && res.r !== 'ok' ? m.findErr[res.r] : null;
+  return (
+    <div className="field findspot">
+      <label htmlFor="pf-find">{m.findT}</label>
+      <p className="hint" id="pf-find-hint">
+        {m.findHint}
+      </p>
+      <div className="findrow">
+        <input
+          id="pf-find"
+          type="text"
+          inputMode="url"
+          value={text}
+          maxLength={500}
+          autoComplete="off"
+          placeholder={m.findPh}
+          aria-invalid={!!err}
+          aria-describedby={'pf-find-hint' + (err || res ? ' pf-find-out' : '')}
+          onChange={(e) => {
+            setText(e.target.value);
+            setRes(null);
+          }}
+          onKeyDown={(e) => {
+            /* Enter finds, it does not send the form */
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              void find();
+            }
+          }}
+        />
+        <button
+          type="button"
+          className="secondary"
+          disabled={busy || !text.trim()}
+          onClick={() => void find()}
+        >
+          {busy ? m.finding : m.findGo}
+        </button>
+      </div>
+      {res?.r === 'ok' && (
+        <p className="hint ok" id="pf-find-out" role="status">
+          {m.findOk}{' '}
+          <button
+            type="button"
+            className="link"
+            onClick={() => {
+              showPick(res.before);
+              setRes(null);
+            }}
+          >
+            {m.findUndo}
+          </button>
+        </p>
+      )}
+      {err && (
+        <p className="err" id="pf-find-out" role="alert">
+          {err}
+        </p>
+      )}
+    </div>
   );
 }

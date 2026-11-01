@@ -20,6 +20,7 @@
     "vite.admin.config.ts",
     "vitest.config.ts",
     "playwright.config.ts",
-    "tests"
+    "tests",
+    "worker"
   ]
 }

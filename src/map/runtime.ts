@@ -44,6 +44,7 @@ interface Applied {
   picking: boolean;
   pickLat: number | null;
   pickLng: number | null;
+  pickSeq: number;
 }
 
 export interface MapHandlers {
@@ -107,6 +108,7 @@ function snapshot(): Applied {
     picking: m.picking,
     pickLat: m.pick?.lat ?? null,
     pickLng: m.pick?.lng ?? null,
+    pickSeq: m.pickSeq,
   };
 }
 const shown = (a: Applied) =>
@@ -217,12 +219,12 @@ function apply(next: Applied) {
   }
   sync(next);
   /* the place form: a spot that did not come from a tap (current location,
-     or the place being edited) is brought into view */
+     a pasted link, or the place being edited) is brought into view */
   if (
     next.picking &&
     next.pickLat != null &&
     next.pickLng != null &&
-    (!prev || !prev.picking || prev.pickLat == null)
+    (!prev || !prev.picking || prev.pickLat == null || prev.pickSeq !== next.pickSeq)
   ) {
     const at: [number, number] = [next.pickLat, next.pickLng];
     afterZoom(() => map!.setView(at, Math.max(map!.getZoom(), 16), { animate: false }));
