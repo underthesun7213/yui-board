@@ -1779,7 +1779,9 @@ rt {
 }
 .yk-stage {
   position: relative;
-  touch-action: none;
+  /* a skewer's drag starts on the plate, which keeps it; the picture lets the
+     page scroll up and down */
+  touch-action: pan-y;
 }
 .yk-sauce {
   position: absolute;
