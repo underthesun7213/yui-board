@@ -1779,7 +1779,9 @@ rt {
 }
 .yk-stage {
   position: relative;
-  touch-action: none;
+  /* a skewer's drag starts on the plate, which keeps it; the picture lets the
+     page scroll up and down */
+  touch-action: pan-y;
 }
 .yk-sauce {
   position: absolute;
@@ -2248,7 +2250,8 @@ rt {
   border-radius: var(--r-l);
   background: #3a2416;
   overflow: hidden;
-  touch-action: none;
+  /* the page still scrolls up and down from the board; a tap flips */
+  touch-action: pan-y;
 }
 .sb-stage canvas {
   display: block;
@@ -2311,6 +2314,8 @@ rt {
   touch-action: none;
   user-select: none;
   -webkit-user-select: none;
+  /* a held button on a phone must not open the long-press menu */
+  -webkit-touch-callout: none;
 }
 .arc::before {
   content: '';
@@ -2627,6 +2632,9 @@ rt {
    head to toe, sideways for the sky; the stops as tags */
 .ph-stage {
   background: #0b1230;
+  /* nothing is dragged on the photo (the button stops it): the page scrolls
+     up and down over it, unlike the matcha table that shares .mt-stage */
+  touch-action: pan-y;
 }
 .ph-stage.friend {
   aspect-ratio: 3 / 4;
