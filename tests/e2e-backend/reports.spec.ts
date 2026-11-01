@@ -25,7 +25,7 @@ async function device(browser: Browser): Promise<Page> {
   return ctx.newPage();
 }
 async function openPlace(p: Page, name: string) {
-  await p.goto('./#/map');
+  await p.goto('./map');
   await p.waitForFunction(
     (n) => window.__yunabi?.data.get().places.some((x) => x.name === n),
     name,
@@ -104,7 +104,7 @@ test('Y-R2/R3 one report per person; three people hide it everywhere', async ({
   /* the third reporter's own map drops it at once */
   await expect(last.locator('.plist button', { hasText: 'Spam shop' })).toHaveCount(0);
   /* and a device that only reads drops it on its next poll */
-  await page.goto('./#/map');
+  await page.goto('./map');
   await mapReady(page);
   await tap(page, '[data-loc="skip"]');
   await expect(page.locator('.plist button', { hasText: 'Sheet test' })).toBeVisible();

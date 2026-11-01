@@ -16,9 +16,9 @@ test.describe('offline (service worker)', () => {
     /* let the idle preload finish so every screen chunk is cached too */
     await page.waitForTimeout(500);
     await context.setOffline(true);
-    await page.goto('./#/learn');
+    await page.goto('./learn');
     await expect(page.locator('.lesson')).toHaveCount(8);
-    await page.goto('./#/map');
+    await page.goto('./map');
     await mapReady(page);
     await tap(page, '[data-loc="skip"]');
     await tap(page, '[data-mode="japan"]');
@@ -43,7 +43,7 @@ test.describe('user text stays text', () => {
       dialogs++;
       void d.dismiss();
     });
-    await page.goto('./#/map');
+    await page.goto('./map');
     await mapReady(page);
     await page.waitForFunction(() => window.__yunabi.data.get().status === 'ok');
     await page.evaluate((name) => {
@@ -87,7 +87,7 @@ test.describe('user text stays text', () => {
       dialogs++;
       void d.dismiss();
     });
-    await page.goto('./#/cal');
+    await page.goto('./cal');
     await page.waitForFunction(() => window.__yunabi?.data.get().status === 'ok');
     /* tomorrow in Tokyo, and the only event, so it is the home card's "next" */
     const day = new Date(Date.now() + 9 * 3600e3 + 86400e3).toISOString().slice(0, 10);
@@ -110,9 +110,9 @@ test.describe('user text stays text', () => {
       /* the same version, so opening the detail does not read the fixtures again */
       y.setData(d.places, [e], [], new Date().toISOString(), d.version);
     }, ev);
-    await page.goto('./#/');
+    await page.goto('./');
     await expect(page.locator('.hcard.cal small span[lang]')).toHaveText(NAME);
-    await page.goto(`./#/cal/event/99/${day}`);
+    await page.goto(`./cal/event/99/${day}`);
     await expect(page.locator('.evwrap h1[lang]')).toHaveText(NAME);
     await expect(page.locator('.evwrap .facts dd[lang]')).toHaveText(NAME);
     await expect(page.locator('.evwrap .body[lang]')).toHaveText(BODY);
@@ -141,7 +141,7 @@ test.describe('long text without spaces', () => {
     const run = 'https://instagram.com/the_corner_bakery_official_account_x';
     const link = 'https://www.example.com/slides/study-group/week-1-introduction-to-keigo.pdf';
     const day = jpDay(1);
-    await page.goto('./#/map');
+    await page.goto('./map');
     await mapReady(page);
     await page.waitForFunction(() => window.__yunabi.data.get().status === 'ok');
     /* with the current version kept, a screen change does not read the fixtures again */
@@ -179,14 +179,18 @@ test.describe('long text without spaces', () => {
     await page.locator('.plist button', { hasText: run }).click();
     await expect(page.locator('.pcard h3')).toHaveText(run);
     expect(await wide(), 'map').toBeLessThanOrEqual(375);
-    for (const [hash, shown] of [
-      ['#/', run],
-      ['#/cal', run],
-      [`#/cal/event/900/${day}`, link],
+    for (const [path, shown] of [
+      ['/', run],
+      ['/cal', run],
+      [`/cal/event/900/${day}`, link],
     ] as const) {
-      await page.evaluate((h) => (location.hash = h), hash);
+      /* a step through history, as system back and forward make */
+      await page.evaluate((p) => {
+        history.pushState(null, '', p);
+        dispatchEvent(new PopStateEvent('popstate'));
+      }, path);
       await expect(page.getByText(shown).first()).toBeVisible();
-      expect(await wide(), hash).toBeLessThanOrEqual(375);
+      expect(await wide(), path).toBeLessThanOrEqual(375);
     }
   });
 });
@@ -197,7 +201,7 @@ test('Y-K4 after 19:00 in Japan a new event starts tomorrow, not in a slot alrea
 }) => {
   void errors;
   await page.clock.install({ time: new Date('2026-10-25T19:30:00+09:00') });
-  await page.goto('./#/cal/new');
+  await page.goto('./cal/new');
   await expect(page.locator('#ef-date')).toHaveValue('2026-10-26');
   /* moved back to today, the slot is refused before anything is sent */
   await page.fill('#ef-title', 'Study group');
@@ -214,7 +218,7 @@ test('a picked prefecture shows its introduction, in the app language', async ({
 }) => {
   void errors;
   await page.addInitScript(() => localStorage.setItem('yui.v1.lang', JSON.stringify('ko')));
-  await page.goto('./#/map');
+  await page.goto('./map');
   await mapReady(page);
   await tap(page, '[data-mode="japan"]');
   await tap(page, '.preflist [data-pref="26"]');
@@ -232,7 +236,7 @@ test('Y-M12 a place name needs a Latin letter; the form says so before sending',
 }) => {
   void errors;
   await page.addInitScript(() => localStorage.setItem('yui.v1.lang', JSON.stringify('ko')));
-  await page.goto('./#/map/new');
+  await page.goto('./map/new');
   /* opened straight from a link, the form's map still has Leaflet's styles: clipped, not covering the page */
   await expect(page.locator('#lmap')).toHaveCSS('overflow', 'hidden');
   await expect(page.locator('#pf-name-hint')).toContainText('Mandai');
@@ -259,7 +263,7 @@ test.describe('D32 description translation', () => {
   }) => {
     void errors;
     await page.addInitScript(() => localStorage.setItem('yui.v1.lang', JSON.stringify('ko')));
-    await page.goto('./#/map');
+    await page.goto('./map');
     await mapReady(page);
     await tap(page, '[data-loc="skip"]');
     await tap(page, '[data-pl="1"]');
@@ -283,7 +287,7 @@ test('TR-Q2 an event shows translated, with the original one tap away and rewrit
 }) => {
   void errors;
   await page.addInitScript(() => localStorage.setItem('yui.v1.lang', JSON.stringify('ko')));
-  await page.goto('./#/cal/event/2/2026-09-11');
+  await page.goto('./cal/event/2/2026-09-11');
   const ev = page.locator('.evwrap');
   await expect(ev.locator('h1')).toHaveText('소방 설비 점검');
   await expect(ev.locator('h1')).toHaveAttribute('lang', 'ko');
@@ -292,10 +296,28 @@ test('TR-Q2 an event shows translated, with the original one tap away and rewrit
   await expect(ev.locator('h1')).toHaveText('消防設備点検');
   await expect(ev.locator('.body')).toHaveAttribute('lang', 'ja');
   /* this week rewrote the title and body: they stay as written, the place is the series' */
-  await page.goto('./#/cal/event/4/2026-09-15');
+  await page.goto('./cal/event/4/2026-09-15');
   await expect(ev.locator('h1')).toHaveText('GIP: Board Game Day');
   await expect(ev.locator('h1')).toHaveAttribute('lang', 'en');
   await expect(ev.locator('.trnote')).toHaveCount(1);
+});
+
+test('Y-BL-01 every screen has a path that reloads, and an old hash link becomes its path', async ({
+  page,
+  errors,
+}) => {
+  void errors;
+  await page.goto('./#/cal/new');
+  await expect(page).toHaveURL(/\/cal\/new$/);
+  expect(await page.evaluate(() => location.hash)).toBe('');
+  /* a deep path loaded or reloaded straight away still finds the app and its files */
+  await page.goto('./learn/l8');
+  await page.reload();
+  await expect(page.locator('[data-route="osaka"]')).toBeVisible();
+  await expect(page).toHaveURL(/\/learn\/l8$/);
+  /* a path that is no screen opens home */
+  await page.goto('./nowhere/at/all');
+  await expect(page).toHaveURL(/127\.0\.0\.1:\d+\/$/);
 });
 
 test('SYS-04 the terms, privacy policy and contact open from home and from a first post', async ({
@@ -305,7 +327,7 @@ test('SYS-04 the terms, privacy policy and contact open from home and from a fir
   void errors;
   await page.goto('./');
   await page.getByRole('button', { name: /Terms, privacy and contact/ }).click();
-  await expect(page).toHaveURL(/#\/legal$/);
+  await expect(page).toHaveURL(/\/legal$/);
   const doc = page.locator('article.legal');
   await expect(doc.locator('h2')).toHaveText(['Terms of Use', 'Privacy Policy', 'Contact']);
   await expect(doc.locator('table')).toHaveCount(3);
@@ -318,9 +340,9 @@ test('SYS-04 the terms, privacy policy and contact open from home and from a fir
   await page.reload();
   await expect(doc.locator('h2').first()).toHaveText('利用規約');
   /* before the first post, the form links here too */
-  await page.goto('./#/cal/new');
+  await page.goto('./cal/new');
   await page.getByRole('button', { name: /利用規約・プライバシー・お問い合わせ/ }).click();
-  await expect(page).toHaveURL(/#\/legal$/);
+  await expect(page).toHaveURL(/\/legal$/);
 });
 
 test('유우키 미니게임: order on the phone, dip once, Yuki teases a second dip', async ({
@@ -329,14 +351,14 @@ test('유우키 미니게임: order on the phone, dip once, Yuki teases a second
 }) => {
   void errors;
   /* level 8 with Yuki: the game is scene 4, after three scenes of talk */
-  await page.goto('./#/learn/l8');
+  await page.goto('./learn/l8');
   await tap(page, '[data-route="osaka"]');
   for (let i = 0; i < 3; i++) {
     await tap(page, '[data-opt="0"]');
     await tap(page, '[data-next]');
   }
   await expect(page.locator('.vnwrap .yk')).toHaveCount(1);
-  await expect(page).toHaveURL(/#\/learn\/l8$/);
+  await expect(page).toHaveURL(/\/learn\/l8$/);
   /* far too polite for a friend: marked, and another answer can be tried */
   await tap(page, '.yk [data-opt="2"]');
   await expect(page.locator('.yk .fb.hm')).toBeVisible();

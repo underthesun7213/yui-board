@@ -36,7 +36,7 @@
     {
       "name": "Everyday Japanese",
       "short_name": "Japanese",
-      "url": "./#/learn",
+      "url": "./learn",
       "icons": [
         {
           "src": "./icon-192.png",
@@ -47,7 +47,7 @@
     {
       "name": "Map",
       "short_name": "Map",
-      "url": "./#/map",
+      "url": "./map",
       "icons": [
         {
           "src": "./icon-192.png",
@@ -58,7 +58,7 @@
     {
       "name": "Calendar",
       "short_name": "Calendar",
-      "url": "./#/cal",
+      "url": "./cal",
       "icons": [
         {
           "src": "./icon-192.png",

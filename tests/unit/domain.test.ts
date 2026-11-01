@@ -194,9 +194,13 @@ describe('routes', () => {
     ] as const)
       expect(parseRoute(formatRoute(r))).toEqual(r);
   });
-  it('rejects unknown hashes and reads old links', () => {
-    expect(parseRoute('#/nope')).toBeNull();
-    expect(parseRoute('#/cal/event/x/2026-01-01')).toBeNull();
+  it('rejects unknown paths and reads old links', () => {
+    expect(formatRoute({ name: 'lesson', lid: 'l3' })).toBe('/learn/l3');
+    expect(parseRoute('/')).toEqual({ name: 'home' });
+    expect(parseRoute('/nope')).toBeNull();
+    expect(parseRoute('/cal/event/x/2026-01-01')).toBeNull();
+    /* the first addresses were hash links: they read the same */
+    expect(parseRoute('#/cal/new')).toEqual({ name: 'eventNew' });
     expect(legacyRoute('?v=map')).toEqual({ name: 'map' });
     expect(legacyRoute('?tab=1')).toEqual({ name: 'cal' });
     expect(legacyRoute('?compose=1')).toEqual({ name: 'home' });

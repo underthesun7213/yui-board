@@ -134,7 +134,7 @@ export async function readVersion(): Promise<number> {
 }
 
 export async function fetchPrefectures(): Promise<unknown> {
-  const r = await fetch('data/japan-prefectures.geojson');
+  const r = await fetch('/data/japan-prefectures.geojson');
   if (!r.ok) throw new Error(String(r.status));
   return r.json();
 }

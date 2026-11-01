@@ -12,6 +12,8 @@
   "compatibility_date": "2026-10-24",
   "assets": {
     "directory": "./dist",
+    // every screen has a path (/map, /cal/new): a page load of one gets the app
+    "not_found_handling": "single-page-application",
   },
   // Reachable only at its own host: no *.workers.dev address, no preview URLs.
   "workers_dev": false,
