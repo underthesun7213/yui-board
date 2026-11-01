@@ -2630,6 +2630,9 @@ rt {
    head to toe, sideways for the sky; the stops as tags */
 .ph-stage {
   background: #0b1230;
+  /* nothing is dragged on the photo (the button stops it): the page scrolls
+     up and down over it, unlike the matcha table that shares .mt-stage */
+  touch-action: pan-y;
 }
 .ph-stage.friend {
   aspect-ratio: 3 / 4;
