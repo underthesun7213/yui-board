@@ -14,7 +14,7 @@ Without `VITE_SUPABASE_URL` the app runs on `tests/fixtures/` (fixture mode).
 
 ```
 src/main.tsx        boot: restore device storage, start the router, render <App/>
-src/app/            App.tsx, router.ts (hash routes, history), routes.ts (PARENT, tabs), screens.ts (lazy chunks)
+src/app/            App.tsx, router.ts (path routes, history; old #/ links still open), routes.ts (PARENT, tabs), screens.ts (lazy chunks)
 src/state/          small stores (createStore) read in React with useStore
 src/actions/        the only place side effects start
 src/platform/       storage, geolocation, download, service worker registration

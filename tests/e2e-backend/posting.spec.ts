@@ -1,7 +1,7 @@
 /* Y-2 against the local backend: the seed holds the 13 sample places and 6
    events. Tests run in order on one database. */
 import type { Page } from '@playwright/test';
-import { expect, mapReady, tap, test, y } from '../e2e/fixtures';
+import { expect, go, mapReady, tap, test, y } from '../e2e/fixtures';
 
 const DORM = { latitude: 34.8252, longitude: 135.653 };
 test.use({ geolocation: DORM, permissions: ['geolocation'] });
@@ -15,7 +15,7 @@ async function tapMapCenter(p: Page) {
   await p.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
 }
 async function fillPlace(p: Page, name: string) {
-  await p.goto('./#/map/new');
+  await go(p, 'map/new');
   await tapMapCenter(p);
   await expect(p.locator('.form .hint').first()).not.toHaveText('');
   await p.fill('#pf-name', name);
@@ -27,11 +27,11 @@ test('Y-A1 reading makes no account; the seed is shared data from the server', a
   errors,
 }) => {
   void errors;
-  await page.goto('./#/map');
+  await go(page, 'map');
   await mapReady(page);
   await tap(page, '[data-loc="skip"]');
   await expect(page.locator('.plist [data-pl]')).toHaveCount(13);
-  await page.goto('./#/cal');
+  await go(page, 'cal');
   await expect(page.locator('.mnav')).toBeVisible();
   expect(await hasAccount(page)).toBe(false);
 });
@@ -58,7 +58,7 @@ test('Y-M6 the first post creates the account; another device sees the place', a
     permissions: ['geolocation'],
   });
   const p2 = await other.newPage();
-  await p2.goto('./#/map');
+  await go(p2, 'map');
   await p2.waitForFunction(() =>
     window.__yunabi?.data.get().places.some((p) => p.name === 'Corner bakery'),
   );
@@ -141,7 +141,7 @@ test("Y-M8 / Y-E1 edit and delete one's own place; My posts shows the states", a
   await fillPlace(page, 'Corner bakery');
   await page.click('.form button[type=submit]');
   await expect(page.locator('.pcard h3')).toHaveText('Corner bakery');
-  await page.goto('./#/me');
+  await go(page, 'me');
   await expect(page.locator('.my')).toHaveCount(1);
   await page
     .locator('.my', { hasText: 'Corner bakery' })
@@ -154,7 +154,7 @@ test("Y-M8 / Y-E1 edit and delete one's own place; My posts shows the states", a
   page.once('dialog', (d) => void d.accept());
   await page.locator('.pcard').getByRole('button', { name: 'Delete' }).click();
   await expect(page.locator('.pcard')).toHaveCount(0);
-  await page.goto('./#/me');
+  await go(page, 'me');
   await expect(page.locator('.my', { hasText: 'Corner bakery 2' }).locator('.state')).toHaveClass(
     /deleted/,
   );
@@ -162,7 +162,7 @@ test("Y-M8 / Y-E1 edit and delete one's own place; My posts shows the states", a
 
 test('Y-K4~K7 a weekly event, one week cancelled', async ({ page, errors }) => {
   void errors;
-  await page.goto('./#/cal/new');
+  await go(page, 'cal/new');
   await page.fill('#ef-title', 'Study group');
   /* tomorrow in Japan: the default slot today (18:00–19:00) has ended by evening */
   const start = new Date(Date.now() + (9 + 24) * 3600_000).toISOString().slice(0, 10);
@@ -183,7 +183,7 @@ test.describe('offline', () => {
   test.use({ serviceWorkers: 'allow' });
   test('Y-C3 offline: last data with its time, posting off', async ({ page, context, errors }) => {
     void errors;
-    await page.goto('./#/map');
+    await go(page, 'map');
     await page.evaluate(() => navigator.serviceWorker.ready);
     await page.reload();
     await page.waitForFunction(() => !!navigator.serviceWorker.controller);
@@ -193,7 +193,7 @@ test.describe('offline', () => {
     await page.reload();
     await mapReady(page);
     await expect(page.locator('.dstatus.warn')).toBeVisible();
-    await page.goto('./#/map/new');
+    await go(page, 'map/new');
     await expect(page.locator('.form button[type=submit]')).toBeDisabled();
     await context.setOffline(false);
     errors.splice(
@@ -222,7 +222,7 @@ test('Y-S4 a stored script stays text', async ({ page, browser, errors }) => {
     permissions: ['geolocation'],
   });
   const p2 = await other.newPage();
-  await p2.goto('./#/map');
+  await go(p2, 'map');
   await p2.waitForFunction(
     (n) => window.__yunabi?.data.get().places.some((p) => p.name === n),
     payload,
@@ -246,7 +246,7 @@ test('Y-E1 a hidden place can still be edited from My posts, and stays hidden', 
   execSync(
     `psql -X -q -h 127.0.0.1 -p 54322 -U postgres -c "update app.places set auto_hidden_at = now() where name = 'Hidden later'"`,
   );
-  await page.goto('./#/me');
+  await go(page, 'me');
   const row = page.locator('.my', { hasText: 'Hidden later' });
   await expect(row.locator('.state')).toHaveClass(/hidden_review/);
   await row.getByRole('button', { name: 'Edit' }).click();
@@ -254,7 +254,7 @@ test('Y-E1 a hidden place can still be edited from My posts, and stays hidden', 
   await page.fill('#pf-name', 'Hidden later, fixed');
   await page.click('.form button[type=submit]');
   /* still hidden, so the app returns to My posts rather than the map */
-  await page.waitForURL(/#\/me$/);
+  await page.waitForURL(/\/me$/);
   await expect(
     page.locator('.my', { hasText: 'Hidden later, fixed' }).locator('.state'),
   ).toHaveClass(/hidden_review/);

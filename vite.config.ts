@@ -114,7 +114,8 @@ const security = (): Plugin => ({
 });
 
 export default defineConfig({
-  base: './',
+  /* absolute: a deep path (/learn/l8) still finds /assets/ */
+  base: '/',
   build: {
     assetsDir: 'assets',
     target: 'es2022',

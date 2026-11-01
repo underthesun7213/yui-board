@@ -2,7 +2,7 @@
    step, and G-60 (reports at the same moment hide an item once). */
 import type { Browser, Page } from '@playwright/test';
 import { execSync } from 'node:child_process';
-import { expect, mapReady, tap, test } from '../e2e/fixtures';
+import { expect, go, mapReady, tap, test } from '../e2e/fixtures';
 
 const DORM = { latitude: 34.8252, longitude: 135.653 };
 test.use({ geolocation: DORM, permissions: ['geolocation'] });
@@ -25,7 +25,7 @@ async function device(browser: Browser): Promise<Page> {
   return ctx.newPage();
 }
 async function openPlace(p: Page, name: string) {
-  await p.goto('./#/map');
+  await go(p, 'map');
   await p.waitForFunction(
     (n) => window.__yunabi?.data.get().places.some((x) => x.name === n),
     name,
@@ -65,7 +65,7 @@ test('Y-R1 the sheet: five reasons, back closes it and keeps the card', async ({
   await page.goBack();
   await expect(dialog).toHaveCount(0);
   await expect(page.locator('.pcard h3')).toHaveText('Sheet test');
-  expect(page.url()).toMatch(/#\/map$/);
+  expect(page.url()).toMatch(/\/map$/);
   /* Escape closes it too, and takes its history step back with it */
   await page.click('[data-report-open]');
   await page.keyboard.press('Escape');
@@ -104,7 +104,7 @@ test('Y-R2/R3 one report per person; three people hide it everywhere', async ({
   /* the third reporter's own map drops it at once */
   await expect(last.locator('.plist button', { hasText: 'Spam shop' })).toHaveCount(0);
   /* and a device that only reads drops it on its next poll */
-  await page.goto('./#/map');
+  await go(page, 'map');
   await mapReady(page);
   await tap(page, '[data-loc="skip"]');
   await expect(page.locator('.plist button', { hasText: 'Sheet test' })).toBeVisible();

@@ -43,39 +43,43 @@ export const PARENT: Partial<Record<RouteName, Route>> = {
 export function formatRoute(r: Route): string {
   switch (r.name) {
     case 'home':
-      return '#/';
+      return '/';
     case 'learn':
-      return '#/learn';
+      return '/learn';
     case 'lesson':
-      return '#/learn/' + encodeURIComponent(r.lid);
+      return '/learn/' + encodeURIComponent(r.lid);
     case 'collection':
-      return '#/learn/collection';
+      return '/learn/collection';
     case 'map':
-      return '#/map';
+      return '/map';
     case 'cal':
-      return '#/cal';
+      return '/cal';
     case 'event':
-      return `#/cal/event/${r.id}/${r.date}`;
+      return `/cal/event/${r.id}/${r.date}`;
     case 'placeNew':
-      return '#/map/new';
+      return '/map/new';
     case 'placeEdit':
-      return `#/map/edit/${r.id}`;
+      return `/map/edit/${r.id}`;
     case 'eventNew':
-      return '#/cal/new';
+      return '/cal/new';
     case 'eventEdit':
-      return `#/cal/edit/${r.id}`;
+      return `/cal/edit/${r.id}`;
     case 'weekEdit':
-      return `#/cal/edit/${r.id}/${r.date}`;
+      return `/cal/edit/${r.id}/${r.date}`;
     case 'me':
-      return '#/me';
+      return '/me';
     case 'legal':
-      return '#/legal';
+      return '/legal';
   }
 }
 
-export function parseRoute(hash: string): Route | null {
-  const p = hash.replace(/^#\/?/, '').split('/').filter(Boolean);
-  if (!p.length) return hash ? { name: 'home' } : null;
+/** A route from a path (/cal/new); an old hash link (#/cal/new) reads the same. */
+export function parseRoute(path: string): Route | null {
+  const p = path
+    .replace(/^#?\/?/, '')
+    .split('/')
+    .filter(Boolean);
+  if (!p.length) return { name: 'home' };
   if (p[0] === 'learn') {
     if (p.length === 1) return { name: 'learn' };
     if (p.length === 2)
