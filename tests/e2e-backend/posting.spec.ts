@@ -31,7 +31,7 @@ test('Y-A1 reading makes no account; the seed is shared data from the server', a
   await mapReady(page);
   await tap(page, '[data-loc="skip"]');
   await expect(page.locator('.plist [data-pl]')).toHaveCount(13);
-  await go(page, 'cal');
+  await go(page, 'calendar');
   await expect(page.locator('.mnav')).toBeVisible();
   expect(await hasAccount(page)).toBe(false);
 });
@@ -162,7 +162,7 @@ test("Y-M8 / Y-E1 edit and delete one's own place; My posts shows the states", a
 
 test('Y-K4~K7 a weekly event, one week cancelled', async ({ page, errors }) => {
   void errors;
-  await go(page, 'cal/new');
+  await go(page, 'calendar/new');
   await page.fill('#ef-title', 'Study group');
   /* tomorrow in Japan: the default slot today (18:00–19:00) has ended by evening */
   const start = new Date(Date.now() + (9 + 24) * 3600_000).toISOString().slice(0, 10);

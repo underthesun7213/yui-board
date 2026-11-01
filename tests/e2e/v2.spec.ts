@@ -16,7 +16,7 @@ test.describe('offline (service worker)', () => {
     /* let the idle preload finish so every screen chunk is cached too */
     await page.waitForTimeout(500);
     await context.setOffline(true);
-    await go(page, 'learn');
+    await go(page, 'japanese');
     await expect(page.locator('.lesson')).toHaveCount(8);
     await go(page, 'map');
     await mapReady(page);
@@ -87,7 +87,7 @@ test.describe('user text stays text', () => {
       dialogs++;
       void d.dismiss();
     });
-    await go(page, 'cal');
+    await go(page, 'calendar');
     await page.waitForFunction(() => window.__yunabi?.data.get().status === 'ok');
     /* tomorrow in Tokyo, and the only event, so it is the home card's "next" */
     const day = new Date(Date.now() + 9 * 3600e3 + 86400e3).toISOString().slice(0, 10);
@@ -112,7 +112,7 @@ test.describe('user text stays text', () => {
     }, ev);
     await go(page, '');
     await expect(page.locator('.hcard.cal small span[lang]')).toHaveText(NAME);
-    await go(page, `cal/event/99/${day}`);
+    await go(page, `calendar/event/99/${day}`);
     await expect(page.locator('.evwrap h1[lang]')).toHaveText(NAME);
     await expect(page.locator('.evwrap .facts dd[lang]')).toHaveText(NAME);
     await expect(page.locator('.evwrap .body[lang]')).toHaveText(BODY);
@@ -181,8 +181,8 @@ test.describe('long text without spaces', () => {
     expect(await wide(), 'map').toBeLessThanOrEqual(375);
     for (const [path, shown] of [
       ['/', run],
-      ['/cal', run],
-      [`/cal/event/900/${day}`, link],
+      ['/calendar', run],
+      [`/calendar/event/900/${day}`, link],
     ] as const) {
       /* a step through history, as system back and forward make */
       await page.evaluate((p) => {
@@ -201,7 +201,7 @@ test('Y-K4 after 19:00 in Japan a new event starts tomorrow, not in a slot alrea
 }) => {
   void errors;
   await page.clock.install({ time: new Date('2026-10-25T19:30:00+09:00') });
-  await go(page, 'cal/new');
+  await go(page, 'calendar/new');
   await expect(page.locator('#ef-date')).toHaveValue('2026-10-26');
   /* moved back to today, the slot is refused before anything is sent */
   await page.fill('#ef-title', 'Study group');
@@ -287,7 +287,7 @@ test('TR-Q2 an event shows translated, with the original one tap away and rewrit
 }) => {
   void errors;
   await page.addInitScript(() => localStorage.setItem('yui.v1.lang', JSON.stringify('ko')));
-  await go(page, 'cal/event/2/2026-09-11');
+  await go(page, 'calendar/event/2/2026-09-11');
   const ev = page.locator('.evwrap');
   await expect(ev.locator('h1')).toHaveText('소방 설비 점검');
   await expect(ev.locator('h1')).toHaveAttribute('lang', 'ko');
@@ -296,25 +296,29 @@ test('TR-Q2 an event shows translated, with the original one tap away and rewrit
   await expect(ev.locator('h1')).toHaveText('消防設備点検');
   await expect(ev.locator('.body')).toHaveAttribute('lang', 'ja');
   /* this week rewrote the title and body: they stay as written, the place is the series' */
-  await go(page, 'cal/event/4/2026-09-15');
+  await go(page, 'calendar/event/4/2026-09-15');
   await expect(ev.locator('h1')).toHaveText('GIP: Board Game Day');
   await expect(ev.locator('h1')).toHaveAttribute('lang', 'en');
   await expect(ev.locator('.trnote')).toHaveCount(1);
 });
 
-test('Y-BL-01 every screen has a path that reloads, and an old hash link becomes its path', async ({
+test('Y-BL-01 every screen has a path that reloads, and an old link becomes its path', async ({
   page,
   errors,
 }) => {
   void errors;
+  /* an old hash link, with a section's first name (cal) */
   await page.goto('./#/cal/new');
-  await expect(page).toHaveURL(/\/cal\/new$/);
+  await expect(page).toHaveURL(/\/calendar\/new$/);
   expect(await page.evaluate(() => location.hash)).toBe('');
-  /* a deep path loaded or reloaded straight away still finds the app and its files */
+  /* a section's first name as a path (learn) */
   await page.goto('./learn/l8');
+  await expect(page).toHaveURL(/\/japanese\/l8$/);
+  /* a deep path loaded or reloaded straight away still finds the app and its files */
+  await page.goto('./japanese/l8');
   await page.reload();
   await expect(page.locator('[data-route="osaka"]')).toBeVisible();
-  await expect(page).toHaveURL(/\/learn\/l8$/);
+  await expect(page).toHaveURL(/\/japanese\/l8$/);
   /* a path that is no screen opens home */
   await page.goto('./nowhere/at/all');
   await expect(page).toHaveURL(/127\.0\.0\.1:\d+\/$/);
@@ -340,7 +344,7 @@ test('SYS-04 the terms, privacy policy and contact open from home and from a fir
   await page.reload();
   await expect(doc.locator('h2').first()).toHaveText('利用規約');
   /* before the first post, the form links here too */
-  await go(page, 'cal/new');
+  await go(page, 'calendar/new');
   await page.getByRole('button', { name: /利用規約・プライバシー・お問い合わせ/ }).click();
   await expect(page).toHaveURL(/\/legal$/);
 });
@@ -351,14 +355,14 @@ test('유우키 미니게임: order on the phone, dip once, Yuki teases a second
 }) => {
   void errors;
   /* level 8 with Yuki: the game is scene 4, after three scenes of talk */
-  await go(page, 'learn/l8');
+  await go(page, 'japanese/l8');
   await tap(page, '[data-route="osaka"]');
   for (let i = 0; i < 3; i++) {
     await tap(page, '[data-opt="0"]');
     await tap(page, '[data-next]');
   }
   await expect(page.locator('.vnwrap .yk')).toHaveCount(1);
-  await expect(page).toHaveURL(/\/learn\/l8$/);
+  await expect(page).toHaveURL(/\/japanese\/l8$/);
   /* far too polite for a friend: marked, and another answer can be tried */
   await tap(page, '.yk [data-opt="2"]');
   await expect(page.locator('.yk .fb.hm')).toBeVisible();

@@ -108,8 +108,9 @@ function onPop(e: PopStateEvent) {
   if (to.name === 'map')
     mapUi.set({ mode: mp?.mode ?? 'near', pref: mp?.pref ?? null, pl: null, cat: '' });
   route.set({ route: to, prev: st.prev ?? null });
-  /* it becomes its path, as a new step from the screen it was typed over */
-  if (oldHash) {
+  /* an old link (a hash, a section's first name, no screen at all) becomes
+     its path, as a new step from the screen it was typed over */
+  if (oldHash || location.pathname !== formatRoute(to)) {
     route.set({ prev: from.name });
     write(true, formatRoute(to));
   }

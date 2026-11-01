@@ -87,7 +87,7 @@ test.describe('home, tabs, language, back', () => {
     errors,
   }) => {
     void errors;
-    await go(page, 'learn');
+    await go(page, 'japanese');
     await expect(page.locator('.lesson')).toHaveCount(8);
     await page.evaluate(() => scrollTo(0, 245));
     await tap(page, '[data-lesson="l5"]');
@@ -101,7 +101,7 @@ test.describe('home, tabs, language, back', () => {
 
   test('Y-C hash links open their screen', async ({ page, errors }) => {
     void errors;
-    await go(page, 'learn/collection');
+    await go(page, 'japanese/collection');
     await expect(page.locator('.cgrid').first()).toBeVisible();
     await tap(page, '.bar .back');
     await expect(page.locator('.lesson')).toHaveCount(8);
@@ -111,7 +111,7 @@ test.describe('home, tabs, language, back', () => {
 test.describe('game and collection', () => {
   test('ML-05 playing episode 8 collects a card that survives reload', async ({ page, errors }) => {
     void errors;
-    await go(page, 'learn/l8');
+    await go(page, 'japanese/l8');
     await tap(page, '[data-route="osaka"]');
     /* play to the end however many scenes the route has: a reply, a walk, the
        유우키 미니게임 (its own test plays it; here it skips to the bill) and the
@@ -149,7 +149,7 @@ test.describe('game and collection', () => {
     expect(Object.keys(await y(page, (a) => a.collection.get().cg)).length).toBeGreaterThanOrEqual(
       1,
     );
-    await go(page, 'learn/collection');
+    await go(page, 'japanese/collection');
     /* the juice picture and the ending card */
     await expect(page.locator('.card:not(.lock)')).toHaveCount(2);
   });
@@ -158,7 +158,7 @@ test.describe('game and collection', () => {
 test.describe('calendar', () => {
   test('ML-06 real date, weekly override, .ics file, back', async ({ page, errors }) => {
     void errors;
-    await go(page, 'cal');
+    await go(page, 'calendar');
     const today = await page.evaluate(() =>
       new Intl.DateTimeFormat('en-CA', {
         timeZone: 'Asia/Tokyo',
@@ -168,7 +168,7 @@ test.describe('calendar', () => {
       }).format(new Date()),
     );
     await expect(page.locator(`.cell.today[data-d="${today}"]`)).toHaveCount(1);
-    await go(page, 'cal/event/4/2026-09-22');
+    await go(page, 'calendar/event/4/2026-09-22');
     await expect(page.locator('.evwrap h1')).toHaveText('GIP: Karaoke Night');
     const [dl] = await Promise.all([page.waitForEvent('download'), tap(page, '[data-ics]')]);
     const ics = readFileSync((await dl.path())!, 'utf8');
@@ -181,7 +181,7 @@ test.describe('calendar', () => {
 
   test('Y-K a cancelled week and a missing date say there is nothing', async ({ page, errors }) => {
     void errors;
-    await go(page, 'cal/event/4/2026-10-20');
+    await go(page, 'calendar/event/4/2026-10-20');
     await expect(page.locator('.empty')).toHaveCount(1);
   });
 });
@@ -447,12 +447,12 @@ test('Y-C1 no horizontal overflow at 375px, every root screen, every language', 
   for (const lang of ['en', 'ja', 'ko'])
     for (const h of [
       '',
-      'learn',
-      'cal',
+      'japanese',
+      'calendar',
       'map',
-      'learn/collection',
-      'learn/l8',
-      'cal/event/4/2026-09-22',
+      'japanese/collection',
+      'japanese/l8',
+      'calendar/event/4/2026-09-22',
     ]) {
       await page.goto('./' + h);
       await page.evaluate((l) => localStorage.setItem('yui.v1.lang', JSON.stringify(l)), lang);
