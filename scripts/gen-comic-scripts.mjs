@@ -81,7 +81,6 @@ export function renderGameScript(vn, endings, rule) {
           ? ', 그 밖은 보통 엔딩.'
           : `, 맞힌 선택 ${x.badMax}개 이하면 나쁜 엔딩, 그 사이는 보통 엔딩.`),
     ),
-    '- 두 친구의 엔딩을 하나씩 모으면 `e_both`.',
     '',
   ];
   for (const [route, r] of Object.entries(vn)) {
@@ -108,8 +107,7 @@ export function renderGameScript(vn, endings, rule) {
     '|---|---|---|---|---|---|---|',
   );
   for (const e of endings) {
-    const kind =
-      e.route === 'both' ? '수집' : { good: '좋음', normal: '보통', bad: '나쁨' }[e.tier];
+    const kind = { good: '좋음', normal: '보통', bad: '나쁨' }[e.tier];
     out.push(
       `| \`${e.id}\` | ${e.route} | ${kind} | ${cell(e.t.ko)} | ${cell(read(e.jp))} | ${cell(e.s)} | ${cell(e.n.ko)} |`,
     );

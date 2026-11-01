@@ -10,7 +10,6 @@
 - 한자 뒤 괄호 = 앱이 다는 후리가나.
 - osaka 엔딩: 놓친 선택 0개 이하면 좋은 엔딩, 맞힌 선택 1개 이하면 나쁜 엔딩, 그 사이는 보통 엔딩.
 - kyoto 엔딩: 놓친 선택 0개 이하면 좋은 엔딩, 맞힌 선택 1개 이하면 나쁜 엔딩, 그 사이는 보통 엔딩.
-- 두 친구의 엔딩을 하나씩 모으면 `e_both`.
 
 ## 유우키 (오사카) — `osaka`
 
@@ -188,4 +187,3 @@
 | `e_kyoto_best` | kyoto | 좋음 | 내년 여름에도 | 今日(きょう)はほんまにおおきに。……来年(らいねん)の花火(はなび)も、一緒(いっしょ)に来(き)てくれはります？ | The red bridge after the last firework, Ayano smiling openly, her sleeve raised to her lips | 돌려 말한 걸 전부 알아챈 하루. 교토 사람이 먼저 꺼낸 '다음'은 진짜 약속이다 |
 | `e_kyoto_norm` | kyoto | 보통 | 조심히 들어가세요 | 今日(きょう)はおおきに。気(き)ぃつけて帰(かえ)っておくれやす。 | The end of the red bridge, the crowd thinning, Ayano bowing politely | 나쁘지 않은 하루. 몇 개를 놓쳤지만 아야노는 끝까지 상냥했다. 교토의 상냥함은 거리이기도 하다 |
 | `e_kyoto_bad` | kyoto | 나쁨 | 인연이 닿으면 | ほな、またご縁(えん)がありましたら。 | The red bridge in drifting smoke after the fireworks, Ayano walking away with a small polite bow over her shoulder | 교토의 「またご縁があれば」는 대개 '다시 볼 일은 없을 것'. 오사카의 「行けたら行くわ」와 같다 |
-| `e_both` | both | 수집 | 두 개의 간사이 | 大阪(おおさか)と京都(きょうと)、電車(でんしゃ)で40分(ぷん)。 | A split scene: Osaka neon on one side, a quiet Kyoto lane on the other, the same student in both | 양쪽을 모두 걸은 사람만의 카드. 40분 거리인데 말하는 방식이 이만큼 다르다 |

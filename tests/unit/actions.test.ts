@@ -191,13 +191,6 @@ describe('episode 8', () => {
     expect(collection.get().cg[ACH_NO_DOUBLE_DIP]).toBe(true);
   });
 
-  it('gives the both-routes card only after both routes', () => {
-    play('kyoto', false);
-    expect(collection.get().cg.e_both).toBeUndefined();
-    play('osaka', true);
-    expect(collection.get().cg.e_both).toBe(true);
-  });
-
   it('ignores a second pick on the same scene', () => {
     pickRoute('kyoto');
     const ok = VN.kyoto.scenes[0]!.opts.findIndex((o) => o.ok);

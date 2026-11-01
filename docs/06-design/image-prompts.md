@@ -380,12 +380,3 @@ Draw the place only: no people in the foreground, at most a few small distant pa
 Make it feel like the last shot of a good day.
 ```
 
-### 두 개의 간사이 → `src/art/endings/e_both`
-
-```text
-Style: Korean-webtoon anime illustration, clean dark line art, soft painterly cel shading, muted natural colours, natural proportions (not chibi). Everyday places in Kansai, Japan, drawn as they really look, with detailed backgrounds.
-One horizontal background illustration, aspect ratio 3:2, of the place where this happens, seen at eye level: A split scene: Osaka neon on one side, a quiet Kyoto lane on the other, the same student in both.
-Draw the place only: no people in the foreground, at most a few small distant passers-by with no visible faces. No text, signs left blank or unreadable, no speech balloons.
-Make it feel like the last shot of a good day.
-```
-

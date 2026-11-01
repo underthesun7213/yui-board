@@ -15,5 +15,4 @@ export const CARD_IDS = [
   'e_kyoto_best',
   'e_kyoto_norm',
   'e_kyoto_bad',
-  'e_both',
 ] as const;

@@ -48,7 +48,7 @@ export type Route = 'osaka' | 'kyoto';
 export type Tier = 'good' | 'normal' | 'bad';
 export interface Ending {
   id: string;
-  route: Route | 'both';
+  route: Route;
   tier: Tier;
   t: L3;
   jp: string;
