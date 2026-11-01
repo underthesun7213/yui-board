@@ -152,7 +152,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ['*.{js,ts,mjs}', 'scripts/**', 'tests/**'],
+    files: ['*.{js,ts,mjs}', 'scripts/**', 'tests/**', 'worker/**'],
     languageOptions: { globals: { ...globals.node, ...globals.browser } },
   },
   {

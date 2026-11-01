@@ -65,7 +65,14 @@ type Handle = {
   yuki: { set(p: { step: 'end' }): void };
   sbSettle(won: boolean): void;
   location: { get(): { state: string; refreshing: boolean } };
-  mapUi: { get(): { mode: string; pref: string | null; tileFail: boolean } };
+  mapUi: {
+    get(): {
+      mode: string;
+      pref: string | null;
+      tileFail: boolean;
+      pick: { lat: number; lng: number } | null;
+    };
+  };
   data: {
     get(): {
       status: string;

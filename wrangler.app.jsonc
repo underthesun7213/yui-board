@@ -10,11 +10,20 @@
 {
   "name": "yunabi",
   "compatibility_date": "2026-10-24",
+  // One small Worker in front (ADR-0027): /api/maps-link turns a short Google
+  // Maps link into a position. Nothing else runs it; the rest is the assets.
+  "main": "./worker/index.ts",
   "assets": {
     "directory": "./dist",
+    "binding": "ASSETS",
+    "run_worker_first": ["/api/*"],
     // every screen has a path (/map, /cal/new): a page load of one gets the app
     "not_found_handling": "single-page-application",
   },
+  // 20 link lookups a minute per address (the Workers rate limiting binding)
+  "ratelimits": [
+    { "name": "LINKS", "namespace_id": "2701", "simple": { "limit": 20, "period": 60 } },
+  ],
   // Reachable only at its own host: no *.workers.dev address, no preview URLs.
   "workers_dev": false,
   "preview_urls": false,

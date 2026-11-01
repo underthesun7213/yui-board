@@ -383,3 +383,66 @@ test('유우키 미니게임: order on the phone, dip once, Yuki teases a second
   await expect(page.locator('.yk-stage img')).toHaveAttribute('src', /tease/);
   await expect(page.locator('.yk .fb.hm')).toBeVisible();
 });
+
+test('Y-BL-02 a pasted Google Maps link or pair of numbers puts the pin there', async ({
+  page,
+  errors,
+}) => {
+  void errors;
+  /* the app's Worker is not behind vite preview: the test answers for it */
+  await page.route('**/api/maps-link?*', (r) =>
+    r.fulfill({ json: { status: 'ok', lat: 34.8301, lng: 135.6602 } }),
+  );
+  await go(page, 'map/new');
+  await mapReady(page);
+  const pick = () => y(page, (h) => h.mapUi.get().pick);
+  const center = () =>
+    y(page, (h) => {
+      const c = h.map().map!.getCenter();
+      return [Number(c.lat.toFixed(4)), Number(c.lng.toFixed(4))];
+    });
+
+  /* two numbers, as Google Maps copies them from a long press; Enter finds, it does not send */
+  await page.fill('#pf-find', '34.8211, 135.6544');
+  await page.press('#pf-find', 'Enter');
+  await expect(page.locator('#pf-find-out')).toContainText('The pin is on the spot');
+  expect(await pick()).toEqual({ lat: 34.8211, lng: 135.6544 });
+  await expect.poll(center).toEqual([34.8211, 135.6544]);
+  await expect(page.locator('#pf-name-err')).toHaveCount(0);
+
+  /* a short link from the phone app's Share: the Worker answers; the link fills the link field */
+  await page.fill('#pf-find', 'https://maps.app.goo.gl/RvL7iSNSsNaVBRru8?g_st=ic');
+  await page.click('.findrow button');
+  await expect(page.locator('#pf-find-out')).toContainText('The pin is on the spot');
+  expect(await pick()).toEqual({ lat: 34.8301, lng: 135.6602 });
+  await expect.poll(center).toEqual([34.8301, 135.6602]);
+  await expect(page.locator('#pf-link')).toHaveValue(
+    'https://maps.app.goo.gl/RvL7iSNSsNaVBRru8?g_st=ic',
+  );
+
+  /* and back */
+  await page.click('#pf-find-out button');
+  expect(await pick()).toEqual({ lat: 34.8211, lng: 135.6544 });
+
+  /* a long link reads its place pin; one outside Japan, or not a link at all, says why */
+  await page.fill(
+    '#pf-find',
+    'https://www.google.com/maps/place/X/@34.80,135.60,17z/data=!3m1!4b1!4m6!3m5!1s0x1:0x2!8m2!3d34.8123!4d135.6543',
+  );
+  await page.click('.findrow button');
+  await expect(page.locator('#pf-find-out')).toContainText('The pin is on the spot');
+  expect(await pick()).toEqual({ lat: 34.8123, lng: 135.6543 });
+  await page.fill('#pf-find', '41.9, 12.48');
+  await page.click('.findrow button');
+  await expect(page.locator('#pf-find-out')).toHaveText('That spot is outside Japan.');
+  await page.fill('#pf-find', 'Kansai Gaidai');
+  await page.click('.findrow button');
+  await expect(page.locator('#pf-find-out')).toContainText('Paste a Google Maps link');
+  expect(await pick()).toEqual({ lat: 34.8123, lng: 135.6543 });
+
+  /* a share link without a position: the person is told what to paste instead */
+  await page.route('**/api/maps-link?*', (r) => r.fulfill({ json: { status: 'none' } }));
+  await page.fill('#pf-find', 'https://maps.app.goo.gl/91jma2zHp9mWgG6M6');
+  await page.click('.findrow button');
+  await expect(page.locator('#pf-find-out')).toContainText('long-press the spot');
+});

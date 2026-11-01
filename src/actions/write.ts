@@ -3,7 +3,7 @@ import { FIXTURE_MODE } from '../api/config';
 import { myItems, write as rpcWrite, type WriteResult } from '../api/rpc';
 import { captchaNeeded, takeCaptchaToken } from './captcha';
 import { navigate } from '../app/router';
-import { distM, HOME, NEAR_M } from '../domain/geo/geo';
+import { distM, HOME, JAPAN_BOUNDS, NEAR_M } from '../domain/geo/geo';
 import type { EventSeries, Place } from '../domain/types';
 import { trimText, type EventInput, type PlaceInput } from '../domain/validation';
 import { t } from '../i18n';
@@ -258,6 +258,40 @@ export const startPick = (at: { lat: number; lng: number } | null) =>
   mapUi.set({ picking: true, pick: at, pl: null });
 export const stopPick = () => mapUi.set({ picking: false, pick: null });
 export const setPick = (at: { lat: number; lng: number }) => mapUi.set({ pick: at });
+/** the pin put somewhere the map is not looking: the map goes there too */
+export const showPick = (at: { lat: number; lng: number } | null) =>
+  mapUi.set((s) => ({ pick: at, pickSeq: s.pickSeq + 1 }));
+
+export type FindResult = 'ok' | 'none' | 'outside' | 'fail' | 'limit' | 'notLink';
+/* A Google Maps link or a pair of numbers pasted into the place form
+   (Y-BL-02): the pin moves there for the person to check. A short link
+   (the phone app's Share) is opened by the app's Worker. */
+export async function findSpot(text: string): Promise<FindResult> {
+  const [{ pairFromLink, pairFromText, SHORT_LINK }, { safeMapsUrl }] = await Promise.all([
+    import('../domain/maps-coords'),
+    import('../domain/links'),
+  ]);
+  const s = text.trim();
+  let at = pairFromText(s);
+  if (!at && safeMapsUrl(s)) {
+    if (SHORT_LINK.test(s)) {
+      const { expandShortLink } = await import('../api/mapsLink');
+      const r = await expandShortLink(s);
+      if (r.status !== 'ok') return r.status === 'invalid' ? 'notLink' : r.status;
+      at = { lat: r.lat, lng: r.lng };
+    } else {
+      at = pairFromLink(s);
+      if (!at) return 'none';
+    }
+  }
+  if (!at) return 'notLink';
+  if (!inJapan(at)) return 'outside';
+  showPick(at);
+  return 'ok';
+}
+const [[S, W], [N, E]] = JAPAN_BOUNDS;
+const inJapan = (p: { lat: number; lng: number }) =>
+  p.lat >= S && p.lat <= N && p.lng >= W && p.lng <= E;
 
 /* "Use my current location" in the place form — only after the person has
    read and accepted that the spot becomes public (Y-M7). */
@@ -268,7 +302,7 @@ export async function pickHere(): Promise<boolean> {
     toast(r.denied ? m().locDenied : m().locFail);
     return false;
   }
-  setPick(r.loc);
+  showPick(r.loc);
   return true;
 }
 
