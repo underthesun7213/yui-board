@@ -754,6 +754,19 @@ function pointerup(e: PointerEvent) {
   flip(side, false);
 }
 
+/* Safari on the iPhone turns a held touch into its own long press or text
+   selection, which cancels the pointer and lets go of the button; a
+   touchstart refused on the buttons keeps the hold (pointer events still
+   come). React's touch handlers are passive and cannot refuse it. */
+const holdTouch = (e: TouchEvent) => {
+  if ((e.target as Element | null)?.closest('.arc')) e.preventDefault();
+};
+/** the launch and flipper buttons' row: holds stay holds on a phone */
+export function guardButtons(row: HTMLElement) {
+  row.addEventListener('touchstart', holdTouch, { passive: false });
+  return () => row.removeEventListener('touchstart', holdTouch);
+}
+
 /* ---------- what the screen calls ---------- */
 export function attach(canvas: HTMLCanvasElement, end: (won: boolean) => void) {
   cv = canvas;

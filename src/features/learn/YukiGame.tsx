@@ -1,4 +1,4 @@
-import { useEffect, useRef, type RefObject } from 'react';
+import { useEffect, useId, useRef, type RefObject } from 'react';
 import {
   addItem,
   attachPlate,
@@ -542,7 +542,10 @@ const stateOf = (k: Skewer) =>
 
 /* a skewer drawn from simple shapes: two pieces, one after a bite */
 function SkewerArt({ look, bites, dip }: { look: Look; bites: number; dip: boolean }) {
-  const fill = dip ? 'url(#yk-sauced)' : 'url(#yk-batter)';
+  /* ids of its own: with the plate's and the carried copy's sharing one, Safari
+     filled a skewer from another drawing and left it hollow */
+  const id = 'yk' + useId().replace(/[^a-zA-Z0-9]/g, '');
+  const fill = dip ? `url(#${id}-sauced)` : `url(#${id}-batter)`;
   const stroke = { stroke: '#5a3a28', strokeWidth: 2, strokeLinejoin: 'round' as const };
   const piece = (i: number) => {
     const y = 8 + i * 24;
@@ -573,12 +576,12 @@ function SkewerArt({ look, bites, dip }: { look: Look; bites: number; dip: boole
   return (
     <svg width="40" height="70" viewBox="0 0 40 70" aria-hidden="true">
       <defs>
-        <radialGradient id="yk-batter" cx="40%" cy="35%" r="70%">
+        <radialGradient id={`${id}-batter`} cx="40%" cy="35%" r="70%">
           <stop offset="0" stopColor="#f7d58e" />
           <stop offset=".65" stopColor="#e0a548" />
           <stop offset="1" stopColor="#b07428" />
         </radialGradient>
-        <radialGradient id="yk-sauced" cx="40%" cy="35%" r="70%">
+        <radialGradient id={`${id}-sauced`} cx="40%" cy="35%" r="70%">
           <stop offset="0" stopColor="#a8683a" />
           <stop offset=".65" stopColor="#734020" />
           <stop offset="1" stopColor="#52290f" />

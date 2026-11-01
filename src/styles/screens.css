@@ -2248,7 +2248,8 @@ rt {
   border-radius: var(--r-l);
   background: #3a2416;
   overflow: hidden;
-  touch-action: none;
+  /* the page still scrolls up and down from the board; a tap flips */
+  touch-action: pan-y;
 }
 .sb-stage canvas {
   display: block;
@@ -2311,6 +2312,8 @@ rt {
   touch-action: none;
   user-select: none;
   -webkit-user-select: none;
+  /* a held button on a phone must not open the long-press menu */
+  -webkit-touch-callout: none;
 }
 .arc::before {
   content: '';

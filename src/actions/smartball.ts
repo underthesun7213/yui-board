@@ -6,6 +6,7 @@ import { endBall } from './achievements';
 export const attachTable = (canvas: HTMLCanvasElement) =>
   table.attach(canvas, (won) => endBall(won ? 'win' : 'lose'));
 export const detachTable = table.detach;
+export const guardButtons = table.guardButtons;
 export const startMatch = table.start;
 export const rematch = () => table.reset(true);
 export const resetMatch = () => table.reset(false);

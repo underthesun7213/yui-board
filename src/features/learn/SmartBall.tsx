@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   attachTable,
   charge,
   detachTable,
+  guardButtons,
   flip,
   rematch,
   resetMatch,
@@ -58,6 +59,8 @@ export function SmartBall({
     if (canvas.current) attachTable(canvas.current);
     return detachTable;
   }, []);
+  /* the buttons' row comes and goes with the match: guarded whenever it is there */
+  const deck = useCallback((el: HTMLDivElement | null) => (el ? guardButtons(el) : undefined), []);
 
   const mine = s.phase === 'play' && s.turn === 'me';
   const me = sbTotal(s, 'me');
@@ -67,9 +70,17 @@ export function SmartBall({
   const hold = (b: Btn, on: () => void, off: () => void) => ({
     onPointerDown: (e: React.PointerEvent) => {
       e.preventDefault();
+      /* the finger stays on this button though it drifts off its edge */
+      try {
+        e.currentTarget.setPointerCapture(e.pointerId);
+      } catch {
+        /* a synthetic pointer */
+      }
       setHeld(b);
       on();
     },
+    /* a long press must not open the phone's menu, which ends the hold */
+    onContextMenu: (e: React.MouseEvent) => e.preventDefault(),
     onPointerUp: () => {
       setHeld(null);
       off();
@@ -176,7 +187,7 @@ export function SmartBall({
       )}
       {s.phase === 'play' && (
         <>
-          <div className="sb-deck">
+          <div className="sb-deck" ref={deck}>
             {flipper('left')}
             <div className="sb-slot">
               <button
