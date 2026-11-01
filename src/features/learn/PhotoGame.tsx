@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { again, attachPhone, detachPhone, stop } from '../../actions/photo';
+import { again, attachPhone, detachPhone, mark, stop } from '../../actions/photo';
 import {
   PH_FB,
   PH_LAST,
@@ -69,18 +69,14 @@ export function PhotoGame({ onDone }: { onDone: () => void }) {
       {!grade && (
         <>
           {zv && <div className="ph-tags">{tag('stepV', zv)}</div>}
-          {/* the stop counts at the touch, not the release; a key press still works */}
+          {/* the gauge is read at the touch, the stop made on the click (a key press too);
+              the screen itself does not stop it */}
           <button
             type="button"
             className="primary wide"
             data-ph="stop"
-            onPointerDown={(e) => {
-              e.preventDefault();
-              stop(e.timeStamp);
-            }}
-            onClick={(e) => {
-              if (e.detail === 0) stop();
-            }}
+            onPointerDown={(e) => mark(e.timeStamp)}
+            onClick={stop}
           >
             {tx(step === 'v' ? 'stop' : 'shutter')}
           </button>
