@@ -565,7 +565,7 @@ update app.settings set int_value = 1 where key = 'translation_enabled';
 
 **끄기 (되돌리기):** `update app.settings set int_value = 0 where key = 'translation_enabled';` — 깨우기가 바로 멈춘다. 이미 들어온 번역은 계속 보인다. 지우려면 R-9 ②.
 
-### 7.5 대사 음성 만들기 (D35) `[아직 해 보지 않음]`
+### 7.5 대사 음성 만들기 (D35) `[해 봄 2026-10-28 만화·2026-11-01 교토 — 책임자 PC, Free F0]`
 
 만화·표현·게임·미니게임의 일본어 대사(2026-11-01 기준 242줄)를 Azure AI Speech 신경망 음성으로 미리 만들어 `src/voice/` 에 커밋한다. 앱은 파일이 있고 **대사가 녹음 뒤 바뀌지 않은 줄에만** 재생 버튼을 보인다(`src/voice/manifest.json` 의 해시). 키는 책임자 PC 의 환경 변수로만 쓰고 저장소·채팅에 넣지 않는다.
 
@@ -586,11 +586,11 @@ Remove-Item Env:AZURE_SPEECH_KEY
 ```
 
 - 이미 녹음했고 바뀌지 않은 줄은 건너뛴다. 대사를 고친 뒤 다시 돌리면 고친 줄만 녹음되고, 없어진 줄의 파일은 지워진다.
-- 결과 `src/voice/**.mp3` 와 `manifest.json` 을 커밋해 PR 로 올린다 → 배포(§7.3).
+- 결과 `src/voice/**.mp3` 와 `manifest.json` 을 PR 로 올린다 → 배포(§7.6). 2026-11-01 에는 Claude 가 녹음 파일을 작업 브랜치로 복사해 PR(#48)을 만들었고, 책임자 폴더는 머지 뒤 `git restore src/voice/manifest.json` → `git clean -fd src/voice` → `git pull` 로 맞췄다(커밋 안 된 같은 파일이 있으면 pull 이 멈춘다).
 - 목소리·말하는 사람: `src/content/voice-lines.ts`(학생은 레벨마다 남녀, 다른 사람은 `who`, 게임의 플레이어는 오사카 여자·교토 남자), 읽기는 후리가나 그대로(`<sub alias>`), 속도 90%.
 - 오사카·교토 사투리 억양은 기계 음성의 한계다(D35). 사람 녹음으로 바꾸려면 같은 이름의 mp3 로 덮고, manifest 의 그 줄 해시는 그대로 둔다.
 
-### 7.6 자동 배포 `deploy.yml` (B-13) `[아직 해 보지 않음]`
+### 7.6 자동 배포 `deploy.yml` (B-13) `[해 봄 2026-10-28 — 첫 성공 실행 40734711237]`
 
 `main` 에 merge 되어 CI 가 초록이 되면 `deploy.yml` 이 시작하고, **책임자가 GitHub 에서 승인하면** §7.1 → §7.3 → §7.2 를 차례로 한다: `db push`(대기 중인 마이그레이션이 없으면 아무것도 안 함) → 사용자 앱 → 관리자 콘솔 → 실제 응답 헤더 확인. 승인 알림은 GitHub 메일·앱으로 온다(Actions → 해당 실행 → **Review deployments → Approve and deploy**). 다시 배포만 하려면 Actions → deploy → **Run workflow**(main). 그 뒤로 §7.1~7.3 의 PC 수동 절차는 쓰지 않는다(비상용으로만 남긴다).
 
