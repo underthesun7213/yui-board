@@ -2044,6 +2044,8 @@ rt {
   background: radial-gradient(ellipse at 50% 35%, var(--canvas), var(--surface) 70%, var(--line));
   user-select: none;
   -webkit-user-select: none;
+  /* the whole plate is the game: no scroll or zoom starts on it (minigames/yuki-plate) */
+  touch-action: none;
 }
 .yk-kushi {
   width: 44px;

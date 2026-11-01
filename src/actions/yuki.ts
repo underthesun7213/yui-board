@@ -10,6 +10,7 @@ import {
 } from '../content/yuki-minigame';
 import { ACH_NO_DOUBLE_DIP } from '../content/achievements';
 import { yuki, YUKI_STEPS } from '../state/yuki';
+import * as plateRt from '../minigames/yuki-plate';
 import { unlock } from './achievements';
 
 export function nextYuki() {
@@ -149,3 +150,11 @@ export function paid() {
   pop(SFX_TEXT.paid, 50, 60);
   nextYuki();
 }
+
+/** the plate is on screen: taps and drags on it, outside React (minigames/yuki-plate) */
+export const attachPlate = (
+  plate: HTMLElement,
+  sauce: () => HTMLElement | null,
+  ghost: HTMLElement,
+) => plateRt.attach(plate, sauce, ghost, { tap: tapSkewer, dip: dipSkewer });
+export const detachPlate = plateRt.detach;
