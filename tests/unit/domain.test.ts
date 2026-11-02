@@ -41,7 +41,6 @@ import { makeSchedule, occOn, upcoming } from '../../src/domain/calendar/occurre
 import { distM, HOME, mainBounds, regionOf, shownPlaces } from '../../src/domain/geo/geo';
 import { PREFS } from '../../src/domain/geo/prefs';
 import { PREF_INTRO } from '../../src/content/prefIntro';
-import { buildIcs, icsEsc, icsFold } from '../../src/domain/ics';
 import { safeMapsUrl } from '../../src/domain/links';
 import { checkEvent, checkPlace, HAS_LATIN, newEventDay } from '../../src/domain/validation';
 import type { EventSeries, OccurrenceOverride, Place } from '../../src/domain/types';
@@ -106,27 +105,6 @@ describe('prefecture introductions', () => {
         expect([...t].length, `${code} ${lang}`).toBeGreaterThan(20);
         expect([...t].length, `${code} ${lang}`).toBeLessThanOrEqual(200);
       }
-  });
-});
-
-describe('ics', () => {
-  it('turns a lone carriage return into an escaped newline too', () => {
-    expect(icsEsc('a\rDESCRIPTION:x')).toBe('a\\nDESCRIPTION:x');
-  });
-  it('escapes RFC 5545 text', () => {
-    expect(icsEsc('a;b,c\\d\ne')).toBe('a\\;b\\,c\\\\d\\ne');
-  });
-  it('folds at 75 octets without splitting characters', () => {
-    const line = 'SUMMARY:' + 'あ'.repeat(40);
-    const parts = icsFold(line).split('\r\n ');
-    for (const p of parts) expect(new TextEncoder().encode(p).length).toBeLessThanOrEqual(75);
-    expect(parts.join('')).toBe(line);
-  });
-  it('writes an event in Asia/Tokyo', () => {
-    const o = occOn(S, '2026-09-22')[0]!;
-    const ics = buildIcs(o, new Date('2026-09-01T00:00:00Z'));
-    expect(ics).toContain('DTSTART;TZID=Asia/Tokyo:20260922T170000');
-    expect(ics.endsWith('END:VCALENDAR\r\n')).toBe(true);
   });
 });
 

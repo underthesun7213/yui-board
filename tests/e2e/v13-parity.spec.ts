@@ -1,6 +1,5 @@
 /* The v1.3 browser checks (docs/08-qa/legacy/v1.3-browser-checks.js), ported.
    Y-1 is done when this file passes (RFC-0003 §19.1). IDs: PRD-MLP ML-*, PRD-YUNABI Y-*. */
-import { readFileSync } from 'node:fs';
 import { expect, go, mapReady, tap, test, y } from './fixtures';
 
 const DORM = { latitude: 34.8252, longitude: 135.653 };
@@ -156,7 +155,7 @@ test.describe('game and collection', () => {
 });
 
 test.describe('calendar', () => {
-  test('ML-06 real date, weekly override, .ics file, back', async ({ page, errors }) => {
+  test('ML-06 real date, weekly override, back', async ({ page, errors }) => {
     void errors;
     await go(page, 'calendar');
     const today = await page.evaluate(() =>
@@ -170,11 +169,8 @@ test.describe('calendar', () => {
     await expect(page.locator(`.cell.today[data-d="${today}"]`)).toHaveCount(1);
     await go(page, 'calendar/event/4/2026-09-22');
     await expect(page.locator('.evwrap h1')).toHaveText('GIP: Karaoke Night');
-    const [dl] = await Promise.all([page.waitForEvent('download'), tap(page, '[data-ics]')]);
-    const ics = readFileSync((await dl.path())!, 'utf8');
-    expect(ics).toContain('BEGIN:VTIMEZONE');
-    expect(ics.endsWith('\r\n')).toBe(true);
-    expect(ics.split('\r\n').every((l) => Buffer.byteLength(l) <= 75)).toBe(true);
+    /* no "add to my calendar": the .ics download was removed (2026-11-02) */
+    await expect(page.locator('[data-ics]')).toHaveCount(0);
     await tap(page, '.bar .back');
     expect(await y(page, (a) => a.route.get().route.name)).toBe('cal');
   });

@@ -18,11 +18,11 @@ src/main.tsx        boot: restore device storage, start the router, render <App/
 src/app/            App.tsx, router.ts (path routes, history; old #/ links still open), routes.ts (PARENT, tabs), screens.ts (lazy chunks)
 src/state/          small stores (createStore) read in React with useStore
 src/actions/        the only place side effects start
-src/platform/       storage, geolocation, download, service worker registration
+src/platform/       storage, geolocation, service worker registration
 src/api/            rest.ts (reads: plain fetch to public views), auth.ts (anonymous account,
                     loaded on first write), rpc.ts (writes through database functions)
 src/map/            the Leaflet runtime (outside React), MapSlot, icons, layers
-src/domain/         pure logic: calendar, ics, geo, types
+src/domain/         pure logic: calendar, geo, types
 src/i18n/           en.ts (source), ja.ts, ko.ts, useT
 src/content/        lessons, game, endings, art lookup
 src/features/       screens;  src/ui/  shared components
