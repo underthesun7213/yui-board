@@ -60,6 +60,13 @@ To add a screen: a component in `features/`, a route in `state/route.ts` and
   object per call re-renders forever.
 - **Japanese is the shortest language, Korean the longest.** Size against Korean.
 - **Ask before using location.** Locating runs only after the notice was accepted.
+- **Every deploy is zero-downtime (ADR-0028).** Old tabs and installed copies keep
+  running the previous app against the new database, Worker and assets, and
+  migrations go live before the app. So: database and `/api/*` changes only add
+  (new function, `…_v2`, defaulted argument, extra field); removing or renaming
+  waits for a later deploy once the app no longer uses it (7 days on). A PR that
+  touches a `public` function, `/api/*` or device storage says in its body what the
+  old app does against the new one ("Zero-downtime: …").
 - **Device storage keys stay `yui.v1.*`** — installed copies read them.
 - **The e2e builds (`dist-e2e*/`) carry a test handle on `window`.** Never
   deploy them; deploys come from `npm run build:deploy` into `dist/`
