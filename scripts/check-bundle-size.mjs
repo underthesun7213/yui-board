@@ -7,7 +7,14 @@ const DIST = (process.env.DIST ?? 'dist') + '/';
 const manifest = JSON.parse(readFileSync(DIST + '.vite/manifest.json', 'utf8'));
 const KB = 1024;
 const BUDGETS = [
-  { name: 'home (first screen)', kb: 100, roots: ['index.html'], dynamic: false },
+  {
+    name: 'home (first screen)',
+    /* 101 since 2026-11-03 (owner): episode 8's banner in the Everyday Japanese
+       card left 100 with no room at all */
+    kb: 101,
+    roots: ['index.html'],
+    dynamic: false,
+  },
   {
     name: 'map',
     kb: 61, // D33: 60 until the description translation toggle (2026-10-27)

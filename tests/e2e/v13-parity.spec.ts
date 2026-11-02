@@ -20,7 +20,7 @@ test.describe('home, tabs, language, back', () => {
   test('ML-02 home card → learn, ‹ and OS back', async ({ page, errors }) => {
     void errors;
     await page.goto('./');
-    await tap(page, '.hcard.jp');
+    await tap(page, '.hcard.jp > button');
     await expect(page.locator('.lesson')).toHaveCount(8);
     await tap(page, '[data-lesson="l1"]');
     /* two comic pages of four panels (Y-J1), each with its artwork as a

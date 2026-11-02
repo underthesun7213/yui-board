@@ -407,6 +407,7 @@ describe('art', () => {
     for (const a of ACHIEVEMENTS) slots.add(achievementKey(a.id));
     for (const k of Object.values(YUKI_ART)) slots.add(k);
     slots.add(PHOTO_ART);
+    slots.add('home/hero');
     for (const k of Object.keys(ART))
       expect(slots.has(k), `src/art/${k} matches no slot`).toBe(true);
   });

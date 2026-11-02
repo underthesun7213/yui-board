@@ -459,3 +459,20 @@ test('Y-BL-02 a pasted Google Maps link or pair of numbers puts the pin there', 
   await expect(page.locator('#pf-find-out')).toContainText('Found from the address in the link');
   expect(await pick()).toEqual({ lat: 34.82021, lng: 135.652481 });
 });
+
+test('home banner: each side of the picture opens episode 8 on that route', async ({
+  page,
+  errors,
+}) => {
+  void errors;
+  for (const r of ['kyoto', 'osaka'] as const) {
+    await go(page, '');
+    await expect(page.locator('#hhero-t')).toHaveText('How good is your Japanese?');
+    /* the label: the box of each side is the whole picture, cut by clip-path */
+    await tap(page, `.hhero [data-route="${r}"] span`);
+    expect(await y(page, (a) => a.route.get().route)).toMatchObject({ name: 'lesson', lid: 'l8' });
+    expect(await y(page, (a) => a.vn.get().route)).toBe(r);
+    /* straight into the first scene, not the route picker */
+    await expect(page.locator('.routes')).toHaveCount(0);
+  }
+});
