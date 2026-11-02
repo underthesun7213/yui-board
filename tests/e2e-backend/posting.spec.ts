@@ -170,7 +170,7 @@ test('Y-K4~K7 a weekly event, one week cancelled', async ({ page, errors }) => {
   await page.check('.form .check input');
   await page.click('.form button[type=submit]');
   await expect(page.locator('.evwrap h1')).toHaveText('Study group');
-  await expect(page.locator('.evwrap .note')).toBeVisible(); // Y-K11
+  await expect(page.locator('[data-ics]')).toHaveCount(0); // .ics export removed (2026-11-02)
   await page.getByRole('button', { name: 'This week only' }).click();
   page.once('dialog', (d) => void d.accept());
   await page.getByRole('button', { name: 'Cancel this week' }).click();
