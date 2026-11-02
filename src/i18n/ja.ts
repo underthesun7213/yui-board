@@ -36,7 +36,6 @@ export const ja = {
   prefFail: '都道府県の地図を読み込めませんでした。下の一覧から選べます。',
   prefCount: '{n}か所',
   mapLoading: '地図を読み込んでいます…',
-  walkAbout: '徒歩 約{n}分',
   regions: {
     hokkaido: '北海道',
     tohoku: '東北',

@@ -36,7 +36,6 @@ export const en = {
   prefFail: 'The prefecture map could not load. You can still pick from the list below.',
   prefCount: '{n} places',
   mapLoading: 'Loading the map…',
-  walkAbout: 'about {n} min walk',
   regions: {
     hokkaido: 'Hokkaido',
     tohoku: 'Tohoku',

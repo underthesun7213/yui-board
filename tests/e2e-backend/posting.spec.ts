@@ -229,7 +229,7 @@ test('Y-S4 a stored script stays text', async ({ page, browser, errors }) => {
   );
   await mapReady(p2);
   await tap(p2, '[data-loc="skip"]');
-  await expect(p2.locator('.plist button', { hasText: payload }).locator('.pmin')).toBeVisible();
+  await expect(p2.locator('.plist button', { hasText: payload })).toBeVisible();
   expect(await p2.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(375);
   await other.close();
 });

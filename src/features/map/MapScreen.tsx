@@ -13,7 +13,7 @@ import {
   useLocation,
 } from '../../actions/map';
 import { CAT } from '../../domain/categories';
-import { HOME, prefName, regionOf, shownPlaces, walkMin, type Region } from '../../domain/geo/geo';
+import { HOME, prefName, regionOf, shownPlaces, type Region } from '../../domain/geo/geo';
 import { PREFS } from '../../domain/geo/prefs';
 import { CATEGORIES, type Place } from '../../domain/types';
 import { fill, LOCALE } from '../../i18n';
@@ -175,7 +175,7 @@ function CategoryChips() {
   );
 }
 
-function useShown(): { list: Place[]; near: boolean; from: { lat: number; lng: number } } {
+function useShown(): { list: Place[]; near: boolean } {
   const places = useStore(data, (s) => s.places);
   const mode = useStore(mapUi, (s) => s.mode);
   const pref = useStore(mapUi, (s) => s.pref);
@@ -183,7 +183,7 @@ function useShown(): { list: Place[]; near: boolean; from: { lat: number; lng: n
   const st = useStore(location, (s) => s.state);
   const loc = useStore(location, (s) => s.loc);
   const from = st === 'ok' && loc ? loc : HOME;
-  return { list: shownPlaces(places, { mode, pref, cat }, from), near: mode === 'near', from };
+  return { list: shownPlaces(places, { mode, pref, cat }, from), near: mode === 'near' };
 }
 
 function PlaceCard() {
@@ -192,7 +192,6 @@ function PlaceCard() {
   const pl = useStore(mapUi, (s) => s.pl);
   const places = useStore(data, (s) => s.places);
   const mine = useStore(session, (s) => (pl != null ? !!s.minePlaces[pl] : false));
-  const { near, from } = useShown();
   const p = pl == null ? null : places.find((x) => x.id === pl);
   if (!p) return null;
   const day = (d: string) =>
@@ -202,7 +201,6 @@ function PlaceCard() {
     <div className="pcard">
       <div className="pcat" style={{ color: CAT[p.category].color }}>
         <span aria-hidden="true">{CAT[p.category].icon}</span> {m.cats[p.category]}
-        {near && ' · ' + fill(m.walkAbout, { n: walkMin(from, p) })}
       </div>
       <h3 lang={p.lang}>{p.name}</h3>
       {p.description && <Described key={p.id} text={p.description} lang={p.lang} tr={p.tr} />}
@@ -250,7 +248,7 @@ function PlaceList() {
   const pref = useStore(mapUi, (s) => s.pref);
   const pl = useStore(mapUi, (s) => s.pl);
   const places = useStore(data, (s) => s.places);
-  const { list, near, from } = useShown();
+  const { list, near } = useShown();
   const loaded = useStore(data, (s) => !!s.fetchedAt);
   if (!loaded && !places.length) return null;
   if (mode === 'japan' && !pref) {
@@ -303,7 +301,6 @@ function PlaceList() {
               {CAT[p.category].icon}
             </span>
             <b lang={p.lang}>{p.name}</b>
-            {near && <span className="pmin">{fill(m.walkAbout, { n: walkMin(from, p) })}</span>}
           </button>
         </li>
       ))}

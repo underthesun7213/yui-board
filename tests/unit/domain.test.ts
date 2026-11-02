@@ -38,7 +38,7 @@ import {
   weekday,
 } from '../../src/domain/calendar/dates';
 import { makeSchedule, occOn, upcoming } from '../../src/domain/calendar/occurrences';
-import { HOME, mainBounds, regionOf, shownPlaces, walkMin } from '../../src/domain/geo/geo';
+import { distM, HOME, mainBounds, regionOf, shownPlaces } from '../../src/domain/geo/geo';
 import { PREFS } from '../../src/domain/geo/prefs';
 import { PREF_INTRO } from '../../src/content/prefIntro';
 import { buildIcs, icsEsc, icsFold } from '../../src/domain/ics';
@@ -135,7 +135,7 @@ describe('geo', () => {
   it('lists near places by distance within 3 km', () => {
     const near = shownPlaces(P, { mode: 'near', pref: null, cat: '' }, HOME);
     expect(near.length).toBeGreaterThan(5);
-    expect(walkMin(HOME, near[0]!)).toBeLessThanOrEqual(walkMin(HOME, near.at(-1)!));
+    expect(distM(HOME, near[0]!)).toBeLessThanOrEqual(distM(HOME, near.at(-1)!));
     expect(
       shownPlaces(P, { mode: 'near', pref: null, cat: '' }, { lat: 35.68, lng: 139.76 }),
     ).toHaveLength(0);

@@ -19,10 +19,6 @@ export function distM(a: LatLng, b: LatLng): number {
   return 12742e3 * Math.asin(Math.sqrt(h));
 }
 
-/* Straight-line distance x1.25 for streets, at 78 m/min (the hill up to campus). */
-export const walkMin = (from: LatLng, p: LatLng) =>
-  Math.max(1, Math.round((distM(from, p) * 1.25) / 78));
-
 export type Region =
   'hokkaido' | 'tohoku' | 'kanto' | 'chubu' | 'kinki' | 'chugoku' | 'shikoku' | 'kyushu';
 export function regionOf(code: string): Region {

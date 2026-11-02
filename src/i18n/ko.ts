@@ -36,7 +36,6 @@ export const ko = {
   prefFail: '도도부현 지도를 불러오지 못했습니다. 아래 목록에서 고를 수 있습니다.',
   prefCount: '{n}곳',
   mapLoading: '지도를 불러오고 있습니다…',
-  walkAbout: '도보 약 {n}분',
   regions: {
     hokkaido: '홋카이도',
     tohoku: '도호쿠',
