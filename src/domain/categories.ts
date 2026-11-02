@@ -6,7 +6,8 @@ import type { Category } from './types';
 export const CAT: Record<Category, { color: string; icon: string }> = {
   transit: { color: '#1D3E5C', icon: '🚉' },
   daily: { color: '#1769AA', icon: '🛒' },
-  food: { color: '#B53D2E', icon: '🍜' },
+  /* fork and knife, not ramen: most places are food, and not most of them ramen */
+  food: { color: '#B53D2E', icon: '🍴' },
   study: { color: '#2B7A4B', icon: '📚' },
   admin: { color: '#6A4C9C', icon: '📄' },
   health: { color: '#9A5B00', icon: '➕' },
