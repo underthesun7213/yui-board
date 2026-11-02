@@ -18,13 +18,13 @@ export const pinIcon = (L: LT, color: string, icon: string, on: boolean) =>
     iconAnchor: [13, 13],
   });
 export const clusterIcon = (L: LT, n: number) =>
-  L.divIcon({ className: 'clw', html: clusterNode(n), iconSize: [34, 34] });
+  L.divIcon({ className: 'clw', html: clusterNode(n), iconSize: [24, 24] });
 export const homeIcon = (L: LT, label: string) =>
   L.divIcon({
     className: 'homew',
     html: textNode('b', label),
-    iconSize: [32, 32],
-    iconAnchor: [16, 16],
+    iconSize: [24, 24],
+    iconAnchor: [12, 12],
   });
 export const meIcon = (L: LT, label: string) =>
   L.divIcon({ className: 'mew', html: meNode(label), iconSize: [22, 22], iconAnchor: [11, 11] });

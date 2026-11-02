@@ -674,49 +674,55 @@ main {
   background: none;
   border: none;
 }
-.pindot {
+/* A small dot in a larger box: the box (26px, icons.ts) is what a finger taps. */
+.pinw {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 26px;
-  height: 26px;
+}
+.pindot {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 15px;
+  height: 15px;
   border-radius: 50%;
-  border: 2px solid #fff;
-  box-shadow: 0 1px 3px rgba(21, 32, 43, 0.35);
-  font-size: 13px;
+  border: 1.5px solid #fff;
+  box-shadow: 0 1px 2px rgba(21, 32, 43, 0.35);
+  font-size: 8px;
   line-height: 1;
 }
 .pinw.on .pindot {
-  width: 36px;
-  height: 36px;
-  margin: -5px 0 0 -5px;
-  font-size: 18px;
-  border: 3px solid var(--navy);
-  box-shadow: 0 0 0 4px var(--sky);
+  width: 24px;
+  height: 24px;
+  font-size: 13px;
+  border: 2px solid var(--navy);
+  box-shadow: 0 0 0 3px var(--sky);
 }
 .homew b {
   display: block;
-  width: 32px;
-  height: 32px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
   background: var(--navy);
   color: #fff;
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 700;
-  line-height: 28px;
+  line-height: 20px;
   text-align: center;
   border: 2px solid #fff;
   box-shadow: 0 1px 4px rgba(21, 32, 43, 0.4);
 }
 .cl {
-  width: 34px;
-  height: 34px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
   background: var(--navy);
   color: #fff;
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 700;
-  line-height: 30px;
+  line-height: 20px;
   text-align: center;
   border: 2px solid #fff;
   box-shadow: 0 1px 4px rgba(21, 32, 43, 0.3);
