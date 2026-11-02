@@ -33,6 +33,7 @@ src/admin/          admin console: its own build (admin/index.html, vite.admin.c
 supabase/migrations database, in order; the last one fails unless grants match the design
 supabase/tests      pgTAP;  supabase/seed  fixtures for local and CI only
 worker/index.ts    the app's Worker: /api/maps-link only (ADR-0027); everything else is static assets
+worker/address.ts  a link with an address but no position: zipcloud + GSI address search
 scripts/local-stack a local Supabase: Postgres 16 + Supabase Auth + PostgREST + gateway
 ```
 

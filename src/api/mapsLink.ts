@@ -1,7 +1,8 @@
 /* The app's own Worker (worker/index.ts, ADR-0027): where a maps.app.goo.gl
    link leads. Same origin, so the CSP's connect-src 'self' covers it. */
 export type LinkAnswer =
-  { status: 'ok'; lat: number; lng: number } | { status: 'none' | 'invalid' | 'limit' | 'fail' };
+  | { status: 'ok'; lat: number; lng: number; by?: 'address' }
+  | { status: 'none' | 'invalid' | 'limit' | 'fail' };
 
 export async function expandShortLink(u: string): Promise<LinkAnswer> {
   try {

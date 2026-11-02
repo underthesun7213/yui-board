@@ -6,6 +6,7 @@ import {
   pairFromLink,
   pairFromText,
 } from '../../src/domain/maps-coords';
+import { blockOf, placeText, zipOf } from '../../worker/address';
 import worker, { mapsLink } from '../../worker/index';
 
 /* The long links below are the shapes maps.app.goo.gl answered with in
@@ -163,5 +164,91 @@ describe('the Worker', () => {
     const r = await worker.fetch(new Request('https://yunabi.juha.dev/map'), e);
     expect(await r.text()).toBe('app');
     expect((await worker.fetch(new Request('https://yunabi.juha.dev/api/x'), e)).status).toBe(404);
+  });
+});
+
+/* What the two phone shares of November 2026 led to: an address, no position. */
+const ADDR_ROMAJI =
+  'https://maps.google.com/?q=%E3%80%92573-1196+Osaka,+Hirakata,+Nakamiyahonmachi,+4%E2%88%929+%E3%81%A1%E3%82%83%E3%82%93%E3%81%BD%E3%82%93%E4%BA%AD+%E8%B1%8A%E5%8A%A9&ftid=0x60011d587e767665:0x5c44fe73bb1df1d4&entry=gps';
+const ADDR_ZIP_LAST =
+  'https://maps.google.com/?q=Mandai+Hirakata,+%EF%BD%8D%EF%BD%81%EF%BD%8E%EF%BD%84%EF%BD%81%EF%BD%89%E6%9E%9A%E6%96%B9%E5%BA%97+2+Chome-46-3+Nishikinya,+Hirakata,+Osaka+573-1192&ftid=0x1:0x2&entry=gps';
+
+describe('the address in a link', () => {
+  it('reads the place text, its postal code and its block', () => {
+    expect(placeText(ADDR_ROMAJI)).toBe(
+      '〒573-1196 Osaka, Hirakata, Nakamiyahonmachi, 4−9 ちゃんぽん亭 豊助',
+    );
+    expect(zipOf(placeText(ADDR_ROMAJI)!)).toBe('5731196');
+    expect(blockOf(placeText(ADDR_ROMAJI)!)).toBe('4-9');
+    expect(zipOf(placeText(ADDR_ZIP_LAST)!)).toBe('5731192');
+    expect(blockOf(placeText(ADDR_ZIP_LAST)!)).toBe('2-46-3');
+    expect(blockOf('大阪府枚方市西禁野2丁目46番3号')).toBe('2-46-3');
+    expect(placeText(NO_POS)).toBe('Somewhere');
+    expect(blockOf('Somewhere')).toBeNull();
+  });
+});
+
+describe('the Worker with an address', () => {
+  afterEach(() => vi.unstubAllGlobals());
+  const env = () => ({
+    ASSETS: { fetch: vi.fn(async () => new Response('app')) },
+    LINKS: { limit: vi.fn(async () => ({ success: true })) },
+  });
+  const ask = (id: string) =>
+    mapsLink(
+      new Request(
+        `https://yunabi.juha.dev/api/maps-link?u=${encodeURIComponent(`https://maps.app.goo.gl/${id}`)}`,
+      ),
+      env(),
+    );
+  /* goo.gl → the long link; zipcloud → the town; GSI → the point */
+  const services = (long: string, gsiTitle = '大阪府枚方市西禁野二丁目４６番３号') =>
+    vi.fn(async (u: string) => {
+      if (u.startsWith('https://maps.app.goo.gl/'))
+        return new Response(null, { status: 302, headers: { location: long } });
+      if (u.startsWith('https://zipcloud.ibsnet.co.jp/'))
+        return Response.json({
+          results: [{ address1: '大阪府', address2: '枚方市', address3: '西禁野' }],
+        });
+      if (u.startsWith('https://msearch.gsi.go.jp/'))
+        return Response.json([
+          { geometry: { coordinates: [135.652481, 34.82021] }, properties: { title: gsiTitle } },
+        ]);
+      throw new Error('unexpected ' + u);
+    });
+
+  it('finds the point of the address the link names', async () => {
+    const f = services(ADDR_ZIP_LAST);
+    vi.stubGlobal('fetch', f);
+    expect(await (await ask('USAht4Xw95ossEGX8')).json()).toEqual({
+      status: 'ok',
+      lat: 34.82021,
+      lng: 135.652481,
+      by: 'address',
+    });
+    const asked = f.mock.calls.map((c) => String((c as unknown[])[0]));
+    expect(asked[1]).toBe('https://zipcloud.ibsnet.co.jp/api/search?zipcode=5731192');
+    expect(decodeURIComponent(asked[2]!)).toContain('q=大阪府枚方市西禁野2-46-3');
+  });
+  it('does not take a point in another town', async () => {
+    vi.stubGlobal('fetch', services(ADDR_ZIP_LAST, '大阪府枚方市中宮本町４番９号'));
+    expect(await (await ask('USAht4Xw95ossEGX8')).json()).toEqual({ status: 'none' });
+  });
+  it('asks no address service for a link without a block', async () => {
+    const f = services(NO_POS);
+    vi.stubGlobal('fetch', f);
+    expect(await (await ask('91jma2zHp9mWgG6M6')).json()).toEqual({ status: 'none' });
+    expect(f).toHaveBeenCalledTimes(1);
+  });
+  it('reports an address service that is down', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (u: string) => {
+        if (u.startsWith('https://maps.app.goo.gl/'))
+          return new Response(null, { status: 302, headers: { location: ADDR_ROMAJI } });
+        throw new Error('down');
+      }),
+    );
+    expect((await ask('8otK81sLubNLNjBS9')).status).toBe(502);
   });
 });
