@@ -1,4 +1,3 @@
-import { downloadIcs } from '../../actions/calendar';
 import { go } from '../../actions/nav';
 import { openReport } from '../../actions/report';
 import { session } from '../../state/session';
@@ -69,12 +68,6 @@ export function EventDetail({ id, date }: { id: number; date: string }) {
           {fill(m.addedOn, { d: day(e.created_on) })}
           {e.edited_on && ' · ' + fill(m.editedOn, { d: day(e.edited_on) })}
         </p>
-        <div className="btns">
-          <button className="primary" data-ics onClick={() => downloadIcs(e.id, o.date)}>
-            {m.ics}
-          </button>
-        </div>
-        <p className="note">{m.icsNote}</p>
         {mine && (
           <div className="btns">
             <span className="mine">{m.mine}</span>
