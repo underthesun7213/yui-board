@@ -410,8 +410,12 @@ test('Y-BL-02 a pasted Google Maps link or pair of numbers puts the pin there', 
   await expect.poll(center).toEqual([34.8211, 135.6544]);
   await expect(page.locator('#pf-name-err')).toHaveCount(0);
 
-  /* a short link from the phone app's Share: the Worker answers; the link fills the link field */
-  await page.fill('#pf-find', 'https://maps.app.goo.gl/RvL7iSNSsNaVBRru8?g_st=ic');
+  /* what the phone app's Share copies (name, address, short link; the input drops the line
+     breaks): the Worker answers; the link alone fills the link field */
+  await page.fill(
+    '#pf-find',
+    'Global Commons YUI\n〒573-1001 大阪府枚方市\nhttps://maps.app.goo.gl/RvL7iSNSsNaVBRru8?g_st=ic',
+  );
   await page.click('.findrow button');
   await expect(page.locator('#pf-find-out')).toContainText('The pin is on the spot');
   expect(await pick()).toEqual({ lat: 34.8301, lng: 135.6602 });

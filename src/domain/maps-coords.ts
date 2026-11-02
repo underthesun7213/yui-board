@@ -33,6 +33,15 @@ export function pairFromText(s: string): LatLngPair | null {
   return m ? ok(Number(m[1]), Number(m[2])) : null;
 }
 
+/** The link in what was pasted: the Google Maps app's Share puts the name and
+    address before it, and a link typed by hand may lack its https://. */
+export function linkIn(s: string): string | null {
+  const m = /(?:https:\/\/|(?<![\w./])(?=maps\.app\.goo\.gl\/))[^\s<>"'「」『』（）]+/.exec(s);
+  if (!m) return null;
+  const u = m[0].replace(/[.,;:!?。、)\]]+$/, '');
+  return u.startsWith('https://') ? u : 'https://' + u;
+}
+
 /** the position a long Google Maps link carries, or null */
 export function pairFromLink(u: string): LatLngPair | null {
   let s = u;

@@ -308,10 +308,10 @@ function FindSpot({ onLink }: { onLink(u: string): void }) {
     if (!text.trim() || busy) return;
     const before = pick;
     setBusy(true);
-    const r = await findSpot(text);
+    const { r, link } = await findSpot(text);
     setBusy(false);
     setRes({ r, before });
-    if (r === 'ok' && /^https:/.test(text.trim())) onLink(text.trim());
+    if (link) onLink(link);
   }
   const err = res && res.r !== 'ok' ? m.findErr[res.r] : null;
   return (
