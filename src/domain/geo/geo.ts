@@ -1,8 +1,9 @@
 import type { Category, LatLng, Place } from '../types';
 import { PREFS } from './prefs';
 
-/** 結 -YUI-, the reference point when location is not used. */
-export const HOME: LatLng = { lat: 34.8244, lng: 135.6525 };
+/** 結 -YUI- (Kansai Gaidai Residence: Global Commons YUI), the reference point
+    when location is not used: its pin on Google Maps, checked 2026-11-02. */
+export const HOME: LatLng = { lat: 34.82373, lng: 135.65708 };
 export const JAPAN_BOUNDS: [[number, number], [number, number]] = [
   [24.0, 122.9],
   [45.6, 146.0],
