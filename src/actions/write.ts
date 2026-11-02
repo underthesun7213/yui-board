@@ -266,28 +266,29 @@ export type FindResult = 'ok' | 'none' | 'outside' | 'fail' | 'limit' | 'notLink
 /* A Google Maps link or a pair of numbers pasted into the place form
    (Y-BL-02): the pin moves there for the person to check. A short link
    (the phone app's Share) is opened by the app's Worker. */
-export async function findSpot(text: string): Promise<FindResult> {
-  const [{ pairFromLink, pairFromText, SHORT_LINK }, { safeMapsUrl }] = await Promise.all([
+export async function findSpot(text: string): Promise<{ r: FindResult; link: string | null }> {
+  const [{ linkIn, pairFromLink, pairFromText, SHORT_LINK }, { safeMapsUrl }] = await Promise.all([
     import('../domain/maps-coords'),
     import('../domain/links'),
   ]);
-  const s = text.trim();
-  let at = pairFromText(s);
-  if (!at && safeMapsUrl(s)) {
-    if (SHORT_LINK.test(s)) {
+  let at = pairFromText(text.trim());
+  const u = at ? null : linkIn(text);
+  const no = (r: FindResult) => ({ r, link: null });
+  if (u && safeMapsUrl(u)) {
+    if (SHORT_LINK.test(u)) {
       const { expandShortLink } = await import('../api/mapsLink');
-      const r = await expandShortLink(s);
-      if (r.status !== 'ok') return r.status === 'invalid' ? 'notLink' : r.status;
+      const r = await expandShortLink(u);
+      if (r.status !== 'ok') return no(r.status === 'invalid' ? 'notLink' : r.status);
       at = { lat: r.lat, lng: r.lng };
     } else {
-      at = pairFromLink(s);
-      if (!at) return 'none';
+      at = pairFromLink(u);
+      if (!at) return no('none');
     }
   }
-  if (!at) return 'notLink';
-  if (!inJapan(at)) return 'outside';
+  if (!at) return no('notLink');
+  if (!inJapan(at)) return no('outside');
   showPick(at);
-  return 'ok';
+  return { r: 'ok', link: u };
 }
 const [[S, W], [N, E]] = JAPAN_BOUNDS;
 const inJapan = (p: { lat: number; lng: number }) =>

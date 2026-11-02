@@ -1,5 +1,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { LONG_LINK, SHORT_LINK, pairFromLink, pairFromText } from '../../src/domain/maps-coords';
+import {
+  LONG_LINK,
+  SHORT_LINK,
+  linkIn,
+  pairFromLink,
+  pairFromText,
+} from '../../src/domain/maps-coords';
 import worker, { mapsLink } from '../../worker/index';
 
 /* The long links below are the shapes maps.app.goo.gl answered with in
@@ -47,6 +53,30 @@ describe('pairFromLink', () => {
   });
   it('finds nothing in a share link without a position', () => {
     expect(pairFromLink(NO_POS)).toBeNull();
+  });
+});
+
+describe('linkIn', () => {
+  it('finds the link in what the phone app shares', () => {
+    expect(
+      linkIn(
+        'Kansai Gaidai Residence: Global Commons YUI\n〒573-1001 大阪府枚方市\nhttps://maps.app.goo.gl/RvL7iSNSsNaVBRru8?g_st=ic',
+      ),
+    ).toBe('https://maps.app.goo.gl/RvL7iSNSsNaVBRru8?g_st=ic');
+    expect(linkIn('「YUI」 https://maps.app.goo.gl/RvL7iSNSsNaVBRru8。')).toBe(
+      'https://maps.app.goo.gl/RvL7iSNSsNaVBRru8',
+    );
+    expect(linkIn(PLACE)).toBe(PLACE);
+  });
+  it('adds https:// to a short link typed without it', () => {
+    expect(linkIn('maps.app.goo.gl/RvL7iSNSsNaVBRru8')).toBe(
+      'https://maps.app.goo.gl/RvL7iSNSsNaVBRru8',
+    );
+    expect(linkIn('evil.com/maps.app.goo.gl/abcd')).toBeNull();
+  });
+  it('finds nothing in plain text', () => {
+    for (const s of ['', 'Global Commons YUI', 'http://maps.app.goo.gl/abcd'])
+      expect(linkIn(s)).toBeNull();
   });
 });
 
