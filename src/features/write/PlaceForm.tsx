@@ -313,7 +313,7 @@ function FindSpot({ onLink }: { onLink(u: string): void }) {
     setRes({ r, before });
     if (link) onLink(link);
   }
-  const err = res && res.r !== 'ok' ? m.findErr[res.r] : null;
+  const err = res && res.r !== 'ok' && res.r !== 'addr' ? m.findErr[res.r] : null;
   return (
     <div className="field findspot">
       <label htmlFor="pf-find">{m.findT}</label>
@@ -352,9 +352,9 @@ function FindSpot({ onLink }: { onLink(u: string): void }) {
           {busy ? m.finding : m.findGo}
         </button>
       </div>
-      {res?.r === 'ok' && (
+      {(res?.r === 'ok' || res?.r === 'addr') && (
         <p className="hint ok" id="pf-find-out" role="status">
-          {m.findOk}{' '}
+          {res.r === 'addr' ? m.findOkAddr : m.findOk}{' '}
           <button
             type="button"
             className="link"

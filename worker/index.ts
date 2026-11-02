@@ -5,14 +5,19 @@
    wrangler.app.jsonc); every other request goes straight to the assets.
 
    GET /api/maps-link?u=https://maps.app.goo.gl/<id>
-     → { status: 'ok', lat, lng } | { status: 'none' } | { status: 'invalid' }
+     → { status: 'ok', lat, lng, by?: 'address' } | { status: 'none' } | { status: 'invalid' }
        | { status: 'limit' } (429) | { status: 'fail' } (502)
 
    It is not an open proxy: only a maps.app.goo.gl link is fetched, without
    following redirects, and only the Location it answers with is read — never
    a page — and only when that is a Google Maps link. Nothing is stored or
-   logged; the link itself is all the person sends. */
+   logged; the link itself is all the person sends.
+
+   When the long link has no position but names an address (the phone app's
+   Share, mostly), worker/address.ts asks two fixed Japanese address services
+   for its point: then the answer says by: 'address'. */
 import { LONG_LINK, SHORT_LINK, pairFromLink } from '../src/domain/maps-coords';
+import { pairFromAddress } from './address';
 
 interface Env {
   ASSETS: { fetch(req: Request): Promise<Response> };
@@ -67,7 +72,15 @@ export async function mapsLink(req: Request, env: Env): Promise<Response> {
   }
   if (!long) return json({ status: 'none' });
   const at = pairFromLink(long);
-  return json(at ? { status: 'ok', lat: at.lat, lng: at.lng } : { status: 'none' });
+  if (at) return json({ status: 'ok', lat: at.lat, lng: at.lng });
+  try {
+    const addr = await pairFromAddress(long);
+    return json(
+      addr ? { status: 'ok', lat: addr.lat, lng: addr.lng, by: 'address' } : { status: 'none' },
+    );
+  } catch {
+    return json({ status: 'fail' }, 502);
+  }
 }
 
 export default {

@@ -449,4 +449,13 @@ test('Y-BL-02 a pasted Google Maps link or pair of numbers puts the pin there', 
   await page.fill('#pf-find', 'https://maps.app.goo.gl/91jma2zHp9mWgG6M6');
   await page.click('.findrow button');
   await expect(page.locator('#pf-find-out')).toContainText('long-press the spot');
+
+  /* a share link with an address but no position: the Worker found the address's point */
+  await page.route('**/api/maps-link?*', (r) =>
+    r.fulfill({ json: { status: 'ok', lat: 34.82021, lng: 135.652481, by: 'address' } }),
+  );
+  await page.fill('#pf-find', 'https://maps.app.goo.gl/USAht4Xw95ossEGX8?g_st=ic');
+  await page.click('.findrow button');
+  await expect(page.locator('#pf-find-out')).toContainText('Found from the address in the link');
+  expect(await pick()).toEqual({ lat: 34.82021, lng: 135.652481 });
 });

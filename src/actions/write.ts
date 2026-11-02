@@ -262,7 +262,8 @@ export const setPick = (at: { lat: number; lng: number }) => mapUi.set({ pick: a
 export const showPick = (at: { lat: number; lng: number } | null) =>
   mapUi.set((s) => ({ pick: at, pickSeq: s.pickSeq + 1 }));
 
-export type FindResult = 'ok' | 'none' | 'outside' | 'fail' | 'limit' | 'notLink';
+/** 'addr': found by the address the link names (GSI), not a position in it */
+export type FindResult = 'ok' | 'addr' | 'none' | 'outside' | 'fail' | 'limit' | 'notLink';
 /* A Google Maps link or a pair of numbers pasted into the place form
    (Y-BL-02): the pin moves there for the person to check. A short link
    (the phone app's Share) is opened by the app's Worker. */
@@ -272,6 +273,7 @@ export async function findSpot(text: string): Promise<{ r: FindResult; link: str
     import('../domain/links'),
   ]);
   let at = pairFromText(text.trim());
+  let found: FindResult = 'ok';
   const u = at ? null : linkIn(text);
   const no = (r: FindResult) => ({ r, link: null });
   if (u && safeMapsUrl(u)) {
@@ -280,6 +282,7 @@ export async function findSpot(text: string): Promise<{ r: FindResult; link: str
       const r = await expandShortLink(u);
       if (r.status !== 'ok') return no(r.status === 'invalid' ? 'notLink' : r.status);
       at = { lat: r.lat, lng: r.lng };
+      if (r.by === 'address') found = 'addr';
     } else {
       at = pairFromLink(u);
       if (!at) return no('none');
@@ -288,7 +291,7 @@ export async function findSpot(text: string): Promise<{ r: FindResult; link: str
   if (!at) return no('notLink');
   if (!inJapan(at)) return no('outside');
   showPick(at);
-  return { r: 'ok', link: u };
+  return { r: found, link: u };
 }
 const [[S, W], [N, E]] = JAPAN_BOUNDS;
 const inJapan = (p: { lat: number; lng: number }) =>

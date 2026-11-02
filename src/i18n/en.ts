@@ -195,9 +195,11 @@ export const en = {
   findGo: 'Find',
   finding: 'Finding…',
   findOk: 'The pin is on the spot from the link. Check it on the map; tap the map to adjust.',
+  findOkAddr:
+    'Found from the address in the link (GSI address search, Japan). Check the pin on the map; tap the map to adjust.',
   findUndo: 'Put it back',
   findErr: {
-    none: 'This link has no position in it. In Google Maps, long-press the spot and paste the numbers shown at the top.',
+    none: 'This link has no position or street address in it. In Google Maps, long-press the spot and paste the numbers shown at the top.',
     outside: 'That spot is outside Japan.',
     fail: "Couldn't open the link. Check your connection and try again.",
     limit: 'Too many tries. Wait a minute and try again.',
