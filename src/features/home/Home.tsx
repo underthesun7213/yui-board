@@ -1,4 +1,5 @@
-import { go } from '../../actions/nav';
+import { go, openRoute } from '../../actions/nav';
+import hero from '../../art/home/hero.webp';
 import { CARD_IDS } from '../../content/card-ids';
 import { formatDay, tokyoToday, weekday } from '../../domain/calendar/dates';
 import { inLang, upcoming } from '../../domain/calendar/occurrences';
@@ -25,14 +26,31 @@ export function Home() {
       </div>
       <DataStatus />
       <div className="hcards">
-        <button className="hcard jp" onClick={() => go({ name: 'learn' })}>
-          <i aria-hidden="true">あ</i>
-          <span>
-            <b>{m.homeJp}</b>
-            <em>{m.homeJpS}</em>
-            <small>{fill(m.homeCol, { n: got, m: CARD_IDS.length })}</small>
-          </span>
-        </button>
+        {/* Everyday Japanese, with episode 8's banner inside: a button cannot hold buttons */}
+        <div className="hcard jp">
+          <button onClick={() => go({ name: 'learn' })}>
+            <i aria-hidden="true">あ</i>
+            <span>
+              <b>{m.homeJp}</b>
+              <em>{m.homeJpS}</em>
+              <small>{fill(m.homeCol, { n: got, m: CARD_IDS.length })}</small>
+            </span>
+          </button>
+          <section className="hhero" aria-labelledby="hhero-t">
+            <b id="hhero-t">{m.homeVnT}</b>
+            <em>{m.homeVnS}</em>
+            <div>
+              <img src={hero} alt="" />
+              {/* one button per side of the picture's diagonal line */}
+              <button className="side kyoto" data-route="kyoto" onClick={() => openRoute('kyoto')}>
+                <span>{m.homeVnKyoto} →</span>
+              </button>
+              <button className="side osaka" data-route="osaka" onClick={() => openRoute('osaka')}>
+                <span>{m.homeVnOsaka} →</span>
+              </button>
+            </div>
+          </section>
+        </div>
         <button className="hcard map" onClick={() => go({ name: 'map' })}>
           <i aria-hidden="true">◉</i>
           <span>

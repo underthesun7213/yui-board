@@ -255,6 +255,68 @@ main {
 }
 
 /* ---------- home ---------- */
+/* Episode 8's banner, inside the Everyday Japanese card: Ayano (Kyoto) and
+   Yuki (Osaka) either side of the picture's diagonal line (src/art/home/hero,
+   3:4; the line runs from 45.6% of the width at the top to 58.6% at the bottom).
+   Shown 8:7, the top two thirds, where the line ends at 54%. Each side is a
+   button cut to its half, its label centred under the person. */
+.hcard.jp {
+  flex-direction: column;
+  align-items: stretch;
+}
+.hcard.jp > button {
+  display: flex;
+  gap: 14px;
+  padding: 0;
+  border: 0;
+  background: none;
+  text-align: left;
+}
+.hhero {
+  margin-top: 14px;
+}
+.hhero div {
+  margin-top: 10px;
+  position: relative;
+  aspect-ratio: 8 / 7;
+  border-radius: var(--r-m);
+  overflow: hidden;
+}
+.hhero img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top;
+}
+.side {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0 52% 10px 0;
+  border: 0;
+  background: none;
+}
+.kyoto {
+  clip-path: polygon(0 0, 45.6% 0, 54% 100%, 0 100%);
+}
+.osaka {
+  clip-path: polygon(45.6% 0, 100% 0, 100% 100%, 54% 100%);
+  padding: 0 0 10px 52%;
+}
+.side span {
+  padding: 6px 12px;
+  border-radius: 99px;
+  background: var(--navy);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.side:focus-visible span {
+  outline: 3px solid var(--primary);
+}
 .hcards {
   display: flex;
   flex-direction: column;
