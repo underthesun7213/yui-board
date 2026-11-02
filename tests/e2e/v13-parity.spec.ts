@@ -201,7 +201,7 @@ test.describe('map', () => {
     await tap(page, '[data-loc="use"]');
     await page.waitForFunction(() => window.__yunabi.location.get().state === 'ok');
     await expect(page.locator('.mew')).toHaveCount(1);
-    expect(await page.locator('.plist .pmin').count()).toBeGreaterThan(0);
+    expect(await page.locator('.plist li').count()).toBeGreaterThan(0);
     await tap(page, '.globe');
     await tap(page, '[data-l="ja"]');
     expect(

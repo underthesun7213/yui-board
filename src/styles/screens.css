@@ -798,11 +798,6 @@ main {
   flex: 1;
   font-weight: 500;
 }
-.pmin {
-  font-size: 13px;
-  color: var(--muted);
-  white-space: nowrap;
-}
 .preflist {
   display: flex;
   flex-wrap: wrap;
