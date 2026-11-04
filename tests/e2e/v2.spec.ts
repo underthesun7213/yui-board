@@ -488,6 +488,8 @@ test('home: "Install app" shows the Add to Home Screen steps on iPhone, and noth
   await page.evaluate(() => window.__yunabi.ui.set({ install: 'ios' }));
   await tap(page, '.hhead .install');
   await expect(page.locator('.installsteps')).toContainText('Add to Home Screen');
+  /* one screenshot per step, loaded only now */
+  await expect(page.locator('.installsteps li img')).toHaveCount(6);
   await page.evaluate(() => window.__yunabi.ui.set({ install: 'no' }));
   await expect(page.locator('.hhead .install, .installsteps')).toHaveCount(0);
 });

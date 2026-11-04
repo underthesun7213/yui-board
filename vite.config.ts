@@ -150,7 +150,7 @@ export default defineConfig({
       injectManifest: {
         globPatterns: ['**/*.{js,css,html,png,webp,jpg,svg,webmanifest,geojson}'],
         /* comic pages: cached on first view instead (src/sw.ts) */
-        globIgnores: ['assets/comic/**', 'assets/voice/**'],
+        globIgnores: ['assets/comic/**', 'assets/voice/**', 'assets/install-step*'],
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
       },
     }),

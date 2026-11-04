@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import { go, openRoute } from '../../actions/nav';
 import { installApp } from '../../actions/update';
 import hero from '../../art/home/hero.webp';
@@ -13,6 +13,8 @@ import { prefs } from '../../state/prefs';
 import { ui } from '../../state/ui';
 import { useStore } from '../../state/useStore';
 import { DataStatus } from '../../ui/DataStatus';
+
+const InstallSteps = lazy(() => import('./InstallSteps'));
 
 export function Home() {
   const m = useT();
@@ -34,11 +36,15 @@ export function Home() {
             aria-expanded={install === 'ios' ? steps : undefined}
             onClick={() => (install === 'ios' ? setSteps(!steps) : void installApp())}
           >
-            ⊕ {m.install}
+            + {m.install}
           </button>
         )}
       </div>
-      {steps && install === 'ios' && <p className="hint installsteps">{m.installIos}</p>}
+      {steps && install === 'ios' && (
+        <Suspense fallback={null}>
+          <InstallSteps />
+        </Suspense>
+      )}
       <DataStatus />
       <div className="hcards">
         {/* Everyday Japanese, with episode 8's banner inside: a button cannot hold buttons */}
