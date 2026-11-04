@@ -210,6 +210,54 @@ main {
 .hhead {
   padding: 20px var(--gutter) 4px;
 }
+/* "Install app" beside the greeting, until the app runs installed */
+.hhead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.hhead h1 {
+  flex: 1;
+}
+.install {
+  padding: 6px 12px;
+  border: 1px solid var(--line);
+  border-radius: 99px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--primary);
+}
+/* iPhone's steps: a row of screenshots, swiped sideways */
+.installsteps {
+  padding: 4px var(--gutter) 0;
+  font-size: 14px;
+}
+.installsteps ol {
+  display: flex;
+  gap: 10px;
+  margin: 8px 0 0;
+  padding: 0 0 8px;
+  list-style: none;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+}
+.installsteps li {
+  flex: 0 0 44%;
+  scroll-snap-align: start;
+}
+.installsteps img {
+  display: block;
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: var(--r-m);
+}
+.installsteps span {
+  display: block;
+  min-height: 3.6em;
+  margin-bottom: 4px;
+  font-size: 13px;
+  font-weight: 600;
+}
 .pagehead h1,
 .hhead h1 {
   font-size: 22px;

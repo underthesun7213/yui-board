@@ -1,4 +1,6 @@
+import { lazy, Suspense, useState } from 'react';
 import { go, openRoute } from '../../actions/nav';
+import { installApp } from '../../actions/update';
 import hero from '../../art/home/hero.webp';
 import { CARD_IDS } from '../../content/card-ids';
 import { formatDay, tokyoToday, weekday } from '../../domain/calendar/dates';
@@ -8,8 +10,11 @@ import { useT } from '../../i18n/useT';
 import { collection } from '../../state/collection';
 import { data } from '../../state/data';
 import { prefs } from '../../state/prefs';
+import { ui } from '../../state/ui';
 import { useStore } from '../../state/useStore';
 import { DataStatus } from '../../ui/DataStatus';
+
+const InstallSteps = lazy(() => import('./InstallSteps'));
 
 export function Home() {
   const m = useT();
@@ -19,11 +24,27 @@ export function Home() {
   const got = CARD_IDS.filter((id) => cg[id]).length;
   const nx = upcoming(schedule, tokyoToday(), 1)[0];
   const nxTitle = nx && inLang(nx, lang).title;
+  const install = useStore(ui, (s) => s.install);
+  const [steps, setSteps] = useState(false);
   return (
     <>
       <div className="hhead">
         <h1>{m.homeT}</h1>
+        {install !== 'no' && (
+          <button
+            className="install"
+            aria-expanded={install === 'ios' ? steps : undefined}
+            onClick={() => (install === 'ios' ? setSteps(!steps) : void installApp())}
+          >
+            + {m.install}
+          </button>
+        )}
       </div>
+      {steps && install === 'ios' && (
+        <Suspense fallback={null}>
+          <InstallSteps />
+        </Suspense>
+      )}
       <DataStatus />
       <div className="hcards">
         {/* Everyday Japanese, with episode 8's banner inside: a button cannot hold buttons */}
