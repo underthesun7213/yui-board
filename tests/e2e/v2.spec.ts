@@ -476,3 +476,18 @@ test('home banner: each side of the picture opens episode 8 on that route', asyn
     await expect(page.locator('.routes')).toHaveCount(0);
   }
 });
+
+test('home: "Install app" shows the Add to Home Screen steps on iPhone, and nothing once installed', async ({
+  page,
+  errors,
+}) => {
+  void errors;
+  await go(page, '');
+  /* headless Chrome offers no install, so nothing shows */
+  await expect(page.locator('.hhead .install')).toHaveCount(0);
+  await page.evaluate(() => window.__yunabi.ui.set({ install: 'ios' }));
+  await tap(page, '.hhead .install');
+  await expect(page.locator('.installsteps')).toContainText('Add to Home Screen');
+  await page.evaluate(() => window.__yunabi.ui.set({ install: 'no' }));
+  await expect(page.locator('.hhead .install, .installsteps')).toHaveCount(0);
+});

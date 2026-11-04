@@ -12,6 +12,7 @@ import { mapUi } from './state/mapUi';
 import { ph } from './state/photo';
 import { prefs } from './state/prefs';
 import { route } from './state/route';
+import { ui } from './state/ui';
 import { vn } from './state/vn';
 import { yuki } from './state/yuki';
 
@@ -25,6 +26,7 @@ import { yuki } from './state/yuki';
   setData,
   yuki,
   vn,
+  ui,
   sbSettle: settle,
   mt,
   mtSettle: settleArt,

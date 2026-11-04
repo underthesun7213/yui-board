@@ -6,6 +6,8 @@ export const ja = {
   tabs: ['ホーム', '日本語', 'マップ', 'カレンダー'],
   tabIcon: ['⌂', 'あ', '◉', '▦'],
   homeT: '今日は何をする？',
+  install: 'アプリを追加',
+  installIos: 'Safari の共有ボタンを押して「ホーム画面に追加」を選んでください。',
   homeVnT: 'あなたの日本語力は？',
   homeVnS: '日本人の友だちシミュレーターで楽しむ実践日本語',
   homeVnKyoto: '京都・あやの',

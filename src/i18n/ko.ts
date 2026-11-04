@@ -6,6 +6,8 @@ export const ko = {
   tabs: ['홈', '일본어', '지도', '캘린더'],
   tabIcon: ['⌂', 'あ', '◉', '▦'],
   homeT: '오늘은 뭐 할까요?',
+  install: '앱 설치',
+  installIos: 'Safari의 공유 버튼을 누르고 "홈 화면에 추가"를 고르세요.',
   homeVnT: '당신의 일본어 능력은?',
   homeVnS: '일본인 친구 시뮬레이터로 즐기는 실전 일본어',
   homeVnKyoto: '교토 · 아야노',

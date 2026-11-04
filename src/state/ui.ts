@@ -1,3 +1,4 @@
+import type { Install } from '../platform/install';
 import { createStore } from './store';
 
 export interface ReportTarget {
@@ -14,12 +15,15 @@ export const ui = createStore<{
   toast: string;
   toastSeq: number;
   updateReady: boolean;
+  /** "Install app" on the home screen (platform/install.ts) */
+  install: Install;
   report: ReportTarget | null;
   zoom: ZoomTarget | null;
 }>({
   toast: '',
   toastSeq: 0,
   updateReady: false,
+  install: 'no',
   report: null,
   zoom: null,
 });

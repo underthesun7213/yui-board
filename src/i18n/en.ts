@@ -6,6 +6,8 @@ export const en = {
   tabs: ['Home', 'Japanese', 'Map', 'Calendar'],
   tabIcon: ['⌂', 'あ', '◉', '▦'],
   homeT: 'What are you up to today?',
+  install: 'Install app',
+  installIos: 'In Safari, tap the Share button, then “Add to Home Screen”.',
   homeVnT: 'How good is your Japanese?',
   homeVnS: 'Real Japanese with a Japanese-friend simulator',
   homeVnKyoto: 'Kyoto · Ayano',
