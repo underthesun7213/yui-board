@@ -1,10 +1,18 @@
-import { endingFor, nextScene, pickOption, pickRoute, resetVn } from '../../actions/learn';
+import { useEffect } from 'react';
+import {
+  endingFor,
+  ensureVnEn,
+  nextScene,
+  pickOption,
+  pickRoute,
+  resetVn,
+} from '../../actions/learn';
 import { go } from '../../actions/nav';
 import { MatchaGame, PhotoGame, SmartBall, YukiGame } from '../../app/screens';
 import { ACHIEVEMENTS } from '../../content/achievements';
 import { achievementKey, endingKey, sceneKey } from '../../content/art';
 import { plain } from '../../content/ruby';
-import type { VnLesson, VnSay } from '../../content/types';
+import type { VnSay } from '../../content/types';
 import { VN } from '../../content/vn';
 import { useT } from '../../i18n/useT';
 import { prefs } from '../../state/prefs';
@@ -23,12 +31,16 @@ import {
 } from '../../content/voice-lines';
 import { Ruby } from '../../ui/Ruby';
 import { Say } from '../../ui/Say';
+import { VnTr } from './VnTr';
 
-export function VnGame({ lesson }: { lesson: VnLesson }) {
+export function VnGame() {
   const m = useT();
   const lang = useStore(prefs, (s) => s.lang);
   const v = useStore(vn, (s) => s);
-  const bar = <BackBar title={`${m.lvL} ${lesson.lv}`} />;
+  useEffect(() => {
+    if (lang !== 'ja') void ensureVnEn();
+  }, [lang]);
+  const bar = <BackBar title={m.lvGame} />;
   if (!v.route) {
     return (
       <>
@@ -63,6 +75,7 @@ export function VnGame({ lesson }: { lesson: VnLesson }) {
             <Ruby text={card.jp} />
             <Say k={endingVoiceKey(card.id)} />
           </q>
+          <VnTr jp={card.jp} />
           <p className="endnote">{card.n[lang]}</p>
           <p className="endscore">
             {m.vnScore} {v.score} / {R.scenes.filter((s) => s.opts.length).length}
@@ -90,6 +103,7 @@ export function VnGame({ lesson }: { lesson: VnLesson }) {
         <Ruby text={l.jp} />
         {voice && <Say k={voice} />}
       </p>
+      <VnTr jp={l.jp} />
     </div>
   );
   const next = (
@@ -143,6 +157,8 @@ export function VnGame({ lesson }: { lesson: VnLesson }) {
                       onClick={() => pickOption(i)}
                     >
                       <Ruby text={o.jp} />
+                      {/* only once chosen: before that, reading the Japanese is the game */}
+                      {picked && <VnTr jp={o.jp} />}
                     </button>
                   ))}
                 </div>
@@ -187,6 +203,7 @@ export function VnGame({ lesson }: { lesson: VnLesson }) {
               <Ruby text={got.jp} />
               <Say k={achievementVoiceKey(got.id)} />
             </q>
+            <VnTr jp={got.jp} />
           </div>
         )}
       </div>
