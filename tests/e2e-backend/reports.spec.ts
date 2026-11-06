@@ -32,6 +32,7 @@ async function openPlace(p: Page, name: string) {
   );
   await mapReady(p);
   await tap(p, '[data-loc="skip"]');
+  await tap(p, '.listmore');
   await p.locator('.plist button', { hasText: name }).click();
   await expect(p.locator('.pcard h3')).toHaveText(name);
 }
@@ -107,6 +108,7 @@ test('Y-R2/R3 one report per person; three people hide it everywhere', async ({
   await go(page, 'map');
   await mapReady(page);
   await tap(page, '[data-loc="skip"]');
+  await tap(page, '.listmore');
   await expect(page.locator('.plist button', { hasText: 'Sheet test' })).toBeVisible();
   await expect(page.locator('.plist button', { hasText: 'Spam shop' })).toHaveCount(0);
   for (const p of [first, ...others]) await p.context().close();

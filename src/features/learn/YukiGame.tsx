@@ -1,3 +1,4 @@
+import '../../styles/yuki.css';
 import { useEffect, useId, useRef, type RefObject } from 'react';
 import {
   addItem,

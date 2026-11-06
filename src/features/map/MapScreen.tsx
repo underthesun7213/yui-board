@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { reload } from '../../actions/app';
 import { go } from '../../actions/nav';
 import { openReport } from '../../actions/report';
@@ -13,9 +14,9 @@ import {
   useLocation,
 } from '../../actions/map';
 import { CAT } from '../../domain/categories';
-import { HOME, prefName, regionOf, shownPlaces, type Region } from '../../domain/geo/geo';
+import { distM, HOME, prefName, regionOf, shownPlaces, type Region } from '../../domain/geo/geo';
 import { PREFS } from '../../domain/geo/prefs';
-import { CATEGORIES, type Place } from '../../domain/types';
+import { CATEGORIES, type LatLng, type Place } from '../../domain/types';
 import { fill, LOCALE } from '../../i18n';
 import { useT } from '../../i18n/useT';
 import { MapSlot } from '../../map/MapSlot';
@@ -175,7 +176,7 @@ function CategoryChips() {
   );
 }
 
-function useShown(): { list: Place[]; near: boolean } {
+function useShown(): { list: Place[]; near: boolean; from: LatLng } {
   const places = useStore(data, (s) => s.places);
   const mode = useStore(mapUi, (s) => s.mode);
   const pref = useStore(mapUi, (s) => s.pref);
@@ -183,7 +184,7 @@ function useShown(): { list: Place[]; near: boolean } {
   const st = useStore(location, (s) => s.state);
   const loc = useStore(location, (s) => s.loc);
   const from = st === 'ok' && loc ? loc : HOME;
-  return { list: shownPlaces(places, { mode, pref, cat }, from), near: mode === 'near' };
+  return { list: shownPlaces(places, { mode, pref, cat }, from), near: mode === 'near', from };
 }
 
 function PlaceCard() {
@@ -246,9 +247,9 @@ function PlaceList() {
   const lang = useStore(prefs, (s) => s.lang);
   const mode = useStore(mapUi, (s) => s.mode);
   const pref = useStore(mapUi, (s) => s.pref);
-  const pl = useStore(mapUi, (s) => s.pl);
+  const cat = useStore(mapUi, (s) => s.cat);
   const places = useStore(data, (s) => s.places);
-  const { list, near } = useShown();
+  const { list, near, from } = useShown();
   const loaded = useStore(data, (s) => !!s.fetchedAt);
   if (!loaded && !places.length) return null;
   if (mode === 'japan' && !pref) {
@@ -292,18 +293,46 @@ function PlaceList() {
         {!places.length && loaded ? m.emptyPlaces : near ? m.nearEmpty : m.prefEmpty}
       </p>
     );
+  /* the key starts again at 8 when the tab, prefecture or category changes */
+  return <Rows key={`${mode}|${pref}|${cat}`} list={list} from={near ? from : null} />;
+}
+
+const PAGE = 8;
+
+/* The first places and a button for the next ones; the pins always show them all. */
+function Rows({ list, from }: { list: Place[]; from: LatLng | null }) {
+  const m = useT();
+  const pl = useStore(mapUi, (s) => s.pl);
+  const [shown, setShown] = useState(PAGE);
+  const left = list.length - shown;
+  const dist = (d: number) =>
+    d < 1000
+      ? fill(m.distM, { n: Math.round(d / 10) * 10 })
+      : fill(m.distKm, { n: (d / 1000).toFixed(1) });
   return (
-    <ul className="plist" aria-label={m.aPlaces}>
-      {list.map((p) => (
-        <li key={p.id}>
-          <button data-pl={p.id} aria-pressed={pl === p.id} onClick={() => togglePlace(p.id)}>
-            <span className="dotc" style={{ background: CAT[p.category].color }} aria-hidden="true">
-              {CAT[p.category].icon}
-            </span>
-            <b lang={p.lang}>{p.name}</b>
-          </button>
-        </li>
-      ))}
-    </ul>
+    <>
+      <ul className="plist" aria-label={m.aPlaces}>
+        {list.slice(0, shown).map((p) => (
+          <li key={p.id}>
+            <button data-pl={p.id} aria-pressed={pl === p.id} onClick={() => togglePlace(p.id)}>
+              <span
+                className="dotc"
+                style={{ background: CAT[p.category].color }}
+                aria-hidden="true"
+              >
+                {CAT[p.category].icon}
+              </span>
+              <b lang={p.lang}>{p.name}</b>
+              {from && <small className="dist">{dist(distM(from, p))}</small>}
+            </button>
+          </li>
+        ))}
+      </ul>
+      {left > 0 && (
+        <button className="listmore" onClick={() => setShown(shown + PAGE)}>
+          {fill(m.listMore, { n: left })}
+        </button>
+      )}
+    </>
   );
 }

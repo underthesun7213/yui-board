@@ -1,3 +1,4 @@
+import '../../styles/yuki.css';
 import { useEffect, useRef } from 'react';
 import {
   againArt,

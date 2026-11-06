@@ -30,6 +30,7 @@ test('Y-A1 reading makes no account; the seed is shared data from the server', a
   await go(page, 'map');
   await mapReady(page);
   await tap(page, '[data-loc="skip"]');
+  await tap(page, '.listmore');
   await expect(page.locator('.plist [data-pl]')).toHaveCount(13);
   await go(page, 'calendar');
   await expect(page.locator('.mnav')).toBeVisible();
@@ -63,6 +64,7 @@ test('Y-M6 the first post creates the account; another device sees the place', a
     window.__yunabi?.data.get().places.some((p) => p.name === 'Corner bakery'),
   );
   await tap(p2, '[data-loc="skip"]');
+  await tap(p2, '.listmore');
   await p2.locator('.plist button', { hasText: 'Corner bakery' }).click();
   await expect(p2.locator('.pcard h3')).toHaveText('Corner bakery');
   await expect(p2.locator('.pcard .mine')).toHaveCount(0); // not theirs: no edit/delete (Y-M8)
@@ -229,6 +231,7 @@ test('Y-S4 a stored script stays text', async ({ page, browser, errors }) => {
   );
   await mapReady(p2);
   await tap(p2, '[data-loc="skip"]');
+  await tap(p2, '.listmore');
   await expect(p2.locator('.plist button', { hasText: payload })).toBeVisible();
   expect(await p2.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(375);
   await other.close();

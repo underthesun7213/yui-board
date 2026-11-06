@@ -228,7 +228,12 @@ test.describe('map', () => {
     expect(await y(page, (a) => a.map().prefLayer!.getLayers().length)).toBe(47);
     await expect(page.locator('.preflist button')).toHaveCount(47);
     await tap(page, '[data-pref="27"]');
+    /* 8 at a time; the pins always show all of them */
+    await expect(page.locator('.plist [data-pl]')).toHaveCount(8);
+    await expect(page.locator('.listmore')).toHaveText('+ More (5)');
+    await tap(page, '.listmore');
     await expect(page.locator('.plist [data-pl]')).toHaveCount(13);
+    await expect(page.locator('.listmore')).toHaveCount(0);
     await tap(page, '.prefbar [data-pref=""]');
     await tap(page, '[data-pref="13"]');
     await expect(page.locator('.empty')).toHaveCount(1);
