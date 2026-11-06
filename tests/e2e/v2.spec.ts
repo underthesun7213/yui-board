@@ -460,7 +460,7 @@ test('Y-BL-02 a pasted Google Maps link or pair of numbers puts the pin there', 
   expect(await pick()).toEqual({ lat: 34.82021, lng: 135.652481 });
 });
 
-test('episode 8: English under the lines, and under the replies only once one is chosen', async ({
+test('episode 8: English under the lines and the replies', async ({
   page,
   errors,
 }) => {
@@ -468,8 +468,6 @@ test('episode 8: English under the lines, and under the replies only once one is
   await go(page, '');
   await tap(page, '.hhero [data-route="osaka"] span');
   await expect(page.locator('.vnline .vntr').first()).toContainText('over here');
-  await expect(page.locator('.opts .vntr')).toHaveCount(0);
-  await tap(page, '[data-opt="1"]');
   await expect(page.locator('.opts .vntr')).toHaveCount(3);
   await expect(page.locator('.opts .vntr').nth(1)).toHaveText('I most deeply apologize.');
 });

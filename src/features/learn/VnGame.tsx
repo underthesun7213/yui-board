@@ -157,8 +157,7 @@ export function VnGame() {
                       onClick={() => pickOption(i)}
                     >
                       <Ruby text={o.jp} />
-                      {/* only once chosen: before that, reading the Japanese is the game */}
-                      {picked && <VnTr jp={o.jp} />}
+                      <VnTr jp={o.jp} />
                     </button>
                   ))}
                 </div>
