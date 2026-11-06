@@ -18,6 +18,7 @@ export const ja = {
   ],
   homeVnT: 'あなたの日本語力は？',
   homeVnS: '日本人の友だちシミュレーターで楽しむ実践日本語',
+  homeVnPlay: 'タップでプレイ',
   homeVnKyoto: '京都・あやの',
   homeVnOsaka: '大阪・ユウキ',
   homeJp: '生活の日本語',

@@ -18,6 +18,7 @@ export const en = {
   ],
   homeVnT: 'How good is your Japanese?',
   homeVnS: 'Real Japanese with a Japanese-friend simulator',
+  homeVnPlay: 'Tap to play',
   homeVnKyoto: 'Kyoto · Ayano',
   homeVnOsaka: 'Osaka · Yuki',
   homeJp: 'Everyday Japanese',

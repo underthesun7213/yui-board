@@ -333,6 +333,21 @@ main {
   object-fit: cover;
   object-position: top;
 }
+/* in the sky above Ayano, clear of both faces */
+.hcard .hhero small {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  margin: 0;
+  padding: 5px 12px;
+  border-radius: 99px;
+  background: var(--primary);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+  pointer-events: none;
+}
 .side {
   position: absolute;
   inset: 0;
@@ -1125,7 +1140,8 @@ rt {
   background: var(--placeholder);
   margin-bottom: 4px;
 }
-.panels .tr {
+.panels .tr,
+.vntr {
   font-size: 14px;
   line-height: 1.5;
   color: var(--muted);
@@ -1297,6 +1313,9 @@ rt {
 }
 .vnline {
   margin-top: 14px;
+}
+.vntr {
+  display: block;
 }
 .vnline b {
   font-size: 13px;

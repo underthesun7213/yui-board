@@ -7,6 +7,7 @@ import { store } from '../platform/storage';
 import { collection } from '../state/collection';
 import { prefs } from '../state/prefs';
 import { vn, VN_START } from '../state/vn';
+import { vnEn } from '../state/vnEn';
 import { yuki, YUKI_START } from '../state/yuki';
 import { mt, MT_START } from '../state/matcha';
 import { ph, PH_START } from '../state/photo';
@@ -17,6 +18,19 @@ export function openLesson(lid: string) {
   vn.set(VN_START);
   navigate({ name: 'lesson', lid });
 }
+/* English for the game's lines: its own chunk, so it stays out of the lessons
+   bundle. Without it the game just shows the Japanese. */
+let enLoad: Promise<void> | null = null;
+export function ensureVnEn(): Promise<void> {
+  if (vnEn.get().texts) return Promise.resolve();
+  enLoad ??= import('../content/vn-en')
+    .then((c) => vnEn.set({ texts: c.VN_EN }))
+    .catch(() => {
+      enLoad = null;
+    });
+  return enLoad;
+}
+
 export const pickRoute = (route: Route) => vn.set({ ...VN_START, route });
 export const resetVn = () => vn.set(VN_START);
 

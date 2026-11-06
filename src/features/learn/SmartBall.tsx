@@ -18,6 +18,7 @@ import { useT } from '../../i18n/useT';
 import { prefs } from '../../state/prefs';
 import { sb, sbLimit, sbTotal } from '../../state/smartball';
 import { useStore } from '../../state/useStore';
+import { VnTr } from './VnTr';
 import { Ruby } from '../../ui/Ruby';
 import { Say } from '../../ui/Say';
 
@@ -238,6 +239,7 @@ export function SmartBall({
               <Ruby text={won ? win : lose} />
               <Say k={won ? winVoice : loseVoice} />
             </p>
+            <VnTr jp={won ? win : lose} />
           </div>
           <div className="btns">
             {!s.rematch && (

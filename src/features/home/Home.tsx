@@ -69,6 +69,7 @@ export function Home() {
               <button className="side osaka" data-route="osaka" onClick={() => openRoute('osaka')}>
                 <span>{m.homeVnOsaka} →</span>
               </button>
+              <small>▶ {m.homeVnPlay}</small>
             </div>
           </section>
         </div>

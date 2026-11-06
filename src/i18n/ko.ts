@@ -18,6 +18,7 @@ export const ko = {
   ],
   homeVnT: '당신의 일본어 능력은?',
   homeVnS: '일본인 친구 시뮬레이터로 즐기는 실전 일본어',
+  homeVnPlay: '눌러서 플레이',
   homeVnKyoto: '교토 · 아야노',
   homeVnOsaka: '오사카 · 유우키',
   homeJp: '생활 일본어',
