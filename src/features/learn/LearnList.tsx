@@ -21,10 +21,12 @@ export function LearnList() {
       {LESSONS.map((l) => (
         <button key={l.id} className="lesson" data-lesson={l.id} onClick={() => openLesson(l.id)}>
           <span className={'lvbadge' + (l.vn ? ' vn' : '')} aria-hidden="true">
-            {l.vn ? '▶' : l.lv}
+            {l.vn ? '🎮' : '📖'}
           </span>
           <span className="lmain">
-            <b>{l.t[lang]}</b>
+            <b>
+              {l.vn ? m.lvGame : m.lvComic}: {l.t[lang]}
+            </b>
             <em>{l.d[lang]}</em>
           </span>
         </button>

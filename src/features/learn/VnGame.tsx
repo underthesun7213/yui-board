@@ -12,7 +12,7 @@ import { MatchaGame, PhotoGame, SmartBall, YukiGame } from '../../app/screens';
 import { ACHIEVEMENTS } from '../../content/achievements';
 import { achievementKey, endingKey, sceneKey } from '../../content/art';
 import { plain } from '../../content/ruby';
-import type { VnLesson, VnSay } from '../../content/types';
+import type { VnSay } from '../../content/types';
 import { VN } from '../../content/vn';
 import { useT } from '../../i18n/useT';
 import { prefs } from '../../state/prefs';
@@ -33,14 +33,14 @@ import { Ruby } from '../../ui/Ruby';
 import { Say } from '../../ui/Say';
 import { VnTr } from './VnTr';
 
-export function VnGame({ lesson }: { lesson: VnLesson }) {
+export function VnGame() {
   const m = useT();
   const lang = useStore(prefs, (s) => s.lang);
   const v = useStore(vn, (s) => s);
   useEffect(() => {
     if (lang !== 'ja') void ensureVnEn();
   }, [lang]);
-  const bar = <BackBar title={`${m.lvL} ${lesson.lv}`} />;
+  const bar = <BackBar title={m.lvGame} />;
   if (!v.route) {
     return (
       <>

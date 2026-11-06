@@ -17,10 +17,10 @@ export function Lesson({ lid }: { lid: string }) {
   const lang = useStore(prefs, (s) => s.lang);
   const l = LESSONS.find((x) => x.id === lid);
   if (!l) return <LearnList />;
-  if (l.vn) return <VnGame lesson={l} />;
+  if (l.vn) return <VnGame />;
   return (
     <>
-      <BackBar title={`${m.lvL} ${l.lv}`} />
+      <BackBar title={`${m.lvComic} ${l.lv}`} />
       <div className="lhead">
         <h1>{l.t[lang]}</h1>
         <p>{l.d[lang]}</p>
