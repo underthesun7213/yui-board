@@ -460,10 +460,7 @@ test('Y-BL-02 a pasted Google Maps link or pair of numbers puts the pin there', 
   expect(await pick()).toEqual({ lat: 34.82021, lng: 135.652481 });
 });
 
-test('episode 8: English under the lines and the replies', async ({
-  page,
-  errors,
-}) => {
+test('episode 8: English under the lines and the replies', async ({ page, errors }) => {
   void errors;
   await go(page, '');
   await tap(page, '.hhero [data-route="osaka"] span');
