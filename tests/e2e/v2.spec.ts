@@ -460,6 +460,83 @@ test('Y-BL-02 a pasted Google Maps link or pair of numbers puts the pin there', 
   expect(await pick()).toEqual({ lat: 34.82021, lng: 135.652481 });
 });
 
+test('map list: 8 and + more, distance on near me only, back to 8 on a new category', async ({
+  page,
+  errors,
+}) => {
+  void errors;
+  await go(page, 'map');
+  await mapReady(page);
+  await tap(page, '[data-loc="skip"]');
+  const rows = page.locator('.plist [data-pl]');
+  await expect(rows).toHaveCount(8);
+  await expect(page.locator('.plist .dist').first()).toHaveText(/^\d+ m$|^\d\.\d km$/);
+  await tap(page, '.listmore');
+  await expect(rows).toHaveCount(13);
+  await expect(page.locator('.listmore')).toHaveCount(0);
+  await tap(page, '.filters [data-cat="food"]');
+  await tap(page, '.filters .fchip:first-child');
+  await expect(rows).toHaveCount(8);
+  await tap(page, '[data-mode="japan"]');
+  await tap(page, '[data-pref="27"]');
+  await expect(rows).toHaveCount(8);
+  await expect(page.locator('.plist .dist')).toHaveCount(0);
+});
+
+test('install: words for Android, Samsung and an app browser', async ({ page, errors }) => {
+  void errors;
+  await go(page, '');
+  await expect(page.locator('.hcards')).toBeVisible();
+  const set = (install: 'android' | 'samsung' | 'line' | 'no') =>
+    page.evaluate((i) => window.__yunabi.ui.set({ install: i }), install);
+  await set('android');
+  await tap(page, '.hhead .install');
+  await expect(page.locator('[data-install="android"] li')).toHaveCount(3);
+  await set('samsung');
+  await expect(page.locator('[data-install="samsung"]')).toContainText('Chrome');
+  /* inside LINE the notice shows at once, with no button to open it */
+  await set('line');
+  await expect(page.locator('.hhead .install')).toHaveCount(0);
+  await expect(page.locator('[data-install="line"] a')).toHaveAttribute(
+    'href',
+    '/?openExternalBrowser=1',
+  );
+  await set('no');
+  await expect(page.locator('.installsteps')).toHaveCount(0);
+});
+
+test("LINE's open-in-browser parameter still opens the home screen", async ({ page, errors }) => {
+  void errors;
+  await page.goto('/?openExternalBrowser=1');
+  await expect(page.locator('.hcards')).toBeVisible();
+});
+
+test.describe('updates (service worker)', () => {
+  test.use({ serviceWorkers: 'allow' });
+  test('coming back to the app checks for a new version', async ({ page, errors }) => {
+    void errors;
+    await page.addInitScript(() => {
+      const w = window as unknown as { __updates: number };
+      w.__updates = 0;
+      const real = ServiceWorkerRegistration.prototype.update;
+      ServiceWorkerRegistration.prototype.update = function () {
+        w.__updates++;
+        return real.call(this);
+      };
+    });
+    await page.goto('./');
+    await page.evaluate(() => navigator.serviceWorker.ready);
+    await expect
+      .poll(() =>
+        page.evaluate(() => {
+          document.dispatchEvent(new Event('visibilitychange'));
+          return (window as unknown as { __updates: number }).__updates;
+        }),
+      )
+      .toBeGreaterThan(0);
+  });
+});
+
 test('episode 8: English under the lines and the replies', async ({ page, errors }) => {
   void errors;
   await go(page, '');
@@ -492,8 +569,8 @@ test('home: "Install app" shows the Add to Home Screen steps on iPhone, and noth
 }) => {
   void errors;
   await go(page, '');
-  /* headless Chrome offers no install, so nothing shows */
-  await expect(page.locator('.hhead .install')).toHaveCount(0);
+  /* the test phone is Android, and without the browser's own install event it gets words */
+  await expect(page.locator('.hhead .install')).toHaveCount(1);
   await page.evaluate(() => window.__yunabi.ui.set({ install: 'ios' }));
   await tap(page, '.hhead .install');
   await expect(page.locator('.installsteps')).toContainText('Add to Home Screen');

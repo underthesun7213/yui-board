@@ -39,6 +39,7 @@ import {
 } from '../../src/domain/calendar/dates';
 import { makeSchedule, occOn, upcoming } from '../../src/domain/calendar/occurrences';
 import { distM, HOME, mainBounds, regionOf, shownPlaces } from '../../src/domain/geo/geo';
+import { installKind } from '../../src/platform/install';
 import { PREFS } from '../../src/domain/geo/prefs';
 import { PREF_INTRO } from '../../src/content/prefIntro';
 import { safeMapsUrl } from '../../src/domain/links';
@@ -108,6 +109,23 @@ describe('prefecture introductions', () => {
   });
 });
 
+describe('install', () => {
+  const kind = (ua: string, touch = 0) => installKind(ua, touch);
+  it('tells browsers apart', () => {
+    expect(kind('Mozilla/5.0 (Linux; Android 14) Chrome/130 Mobile Line/14.0.0')).toBe('line');
+    expect(kind('Mozilla/5.0 (iPhone) Mobile Safari Line/14.0.0')).toBe('line');
+    expect(kind('Mozilla/5.0 (iPhone) Instagram 350.0')).toBe('inapp');
+    expect(kind('Mozilla/5.0 (Linux; Android 14) KAKAOTALK 11')).toBe('inapp');
+    expect(kind('Mozilla/5.0 (iPhone) Version/18 Mobile Safari')).toBe('ios');
+    expect(kind('Mozilla/5.0 (iPhone) CriOS/130 Mobile Safari')).toBe('ios');
+    expect(kind('Mozilla/5.0 (Macintosh) Version/18 Safari', 5)).toBe('ios');
+    expect(kind('Mozilla/5.0 (Linux; Android 14) SamsungBrowser/26 Chrome/121')).toBe('samsung');
+    expect(kind('Mozilla/5.0 (Linux; Android 14) Chrome/130 Mobile')).toBe('android');
+    expect(kind('Mozilla/5.0 (Windows NT 10.0) Chrome/130')).toBe('no');
+    expect(kind('Mozilla/5.0 (Macintosh) Chrome/130')).toBe('no');
+  });
+});
+
 describe('geo', () => {
   const P = places as Place[];
   it('lists near places by distance within 3 km', () => {
@@ -125,6 +143,14 @@ describe('geo', () => {
         (p) => p.category === 'food',
       ),
     ).toBe(true);
+  });
+  it('lists a prefecture newest first', () => {
+    const at = (id: number, created_on: string) => ({ ...P[0]!, id, pref: '26', created_on });
+    const list = [at(1, '2026-10-01'), at(2, '2026-10-05'), at(3, '2026-10-05')];
+    expect(
+      shownPlaces(list, { mode: 'japan', pref: '26', cat: '' }, HOME).map((p) => p.id),
+    ).toEqual([3, 2, 1]);
+    expect(list.map((p) => p.id)).toEqual([1, 2, 3]);
   });
   it('maps every prefecture to a region', () => {
     expect(PREFS).toHaveLength(47);

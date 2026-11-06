@@ -138,7 +138,7 @@ function reset() {
   yuki.set(YUKI_START);
   sb.set(SB_START);
   mt.set(MT_START);
-  ui.set({ report: null, zoom: null });
+  ui.set({ report: null, zoom: null, install: 'no' });
   delete ART[FAKE_PAGE];
   prefIntro.set({ texts: null });
 }
@@ -153,6 +153,26 @@ type Case = [name: string, r: Route, setup?: () => void, mark?: RegExp];
 const cases: Case[] = [
   ['home', { name: 'home' }],
   ['home-cards', { name: 'home' }, () => collection.set({ cg: { e_osaka_best: true } })],
+  ['home-in-line', { name: 'home' }, () => ui.set({ install: 'line' }), /openExternalBrowser/],
+  ['home-in-app', { name: 'home' }, () => ui.set({ install: 'inapp' }), /data-install="inapp"/],
+  [
+    'game-end-install',
+    L8,
+    () => (
+      vn.set({ ...VN_START, route: 'osaka', i: VN.osaka.scenes.length }),
+      ui.set({ install: 'android' })
+    ),
+    /data-install-end/,
+  ],
+  [
+    'game-end-in-line',
+    L8,
+    () => (
+      vn.set({ ...VN_START, route: 'osaka', i: VN.osaka.scenes.length }),
+      ui.set({ install: 'line' })
+    ),
+    /class="endinstall"[\s\S]*openExternalBrowser/,
+  ],
   ['learn', { name: 'learn' }],
   ['lesson', { name: 'lesson', lid: 'l1' }],
   ...LESSONS.filter((l) => !l.vn).map((l): Case => [
