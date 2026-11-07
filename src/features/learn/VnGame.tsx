@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import {
   endingFor,
   ensureVnEn,
@@ -32,6 +32,8 @@ import {
 import { Ruby } from '../../ui/Ruby';
 import { Say } from '../../ui/Say';
 import { VnTr } from './VnTr';
+
+const InstallNudge = lazy(() => import('./InstallNudge'));
 
 export function VnGame() {
   const m = useT();
@@ -88,6 +90,9 @@ export function VnGame() {
               {m.colT}
             </button>
           </div>
+          <Suspense fallback={null}>
+            <InstallNudge />
+          </Suspense>
         </div>
       </>
     );

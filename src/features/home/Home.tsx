@@ -26,21 +26,23 @@ export function Home() {
   const nxTitle = nx && inLang(nx, lang).title;
   const install = useStore(ui, (s) => s.install);
   const [steps, setSteps] = useState(false);
+  /* inside another app there is nothing to tap through: say so at once */
+  const inApp = install === 'line' || install === 'inapp';
   return (
     <>
       <div className="hhead">
         <h1>{m.homeT}</h1>
-        {install !== 'no' && (
+        {install !== 'no' && !inApp && (
           <button
             className="install"
-            aria-expanded={install === 'ios' ? steps : undefined}
-            onClick={() => (install === 'ios' ? setSteps(!steps) : void installApp())}
+            aria-expanded={install === 'prompt' ? undefined : steps}
+            onClick={() => (install === 'prompt' ? void installApp() : setSteps(!steps))}
           >
             + {m.install}
           </button>
         )}
       </div>
-      {steps && install === 'ios' && (
+      {(inApp || (steps && install !== 'no' && install !== 'prompt')) && (
         <Suspense fallback={null}>
           <InstallSteps />
         </Suspense>

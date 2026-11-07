@@ -51,7 +51,8 @@ export interface MapFilter {
   cat: Category | '';
 }
 
-/** Places shown in the list and as pins for the current mode. */
+/** Places shown in the list and as pins for the current mode: near me by
+    distance, a prefecture newest first. */
 export function shownPlaces(places: Place[], f: MapFilter, ref: LatLng): Place[] {
   let list: Place[];
   if (f.mode === 'near')
@@ -60,7 +61,10 @@ export function shownPlaces(places: Place[], f: MapFilter, ref: LatLng): Place[]
       .filter(([, d]) => d <= NEAR_M)
       .sort((a, b) => a[1] - b[1])
       .map(([p]) => p);
-  else if (f.pref) list = places.filter((p) => p.pref === f.pref);
+  else if (f.pref)
+    list = places
+      .filter((p) => p.pref === f.pref)
+      .sort((a, b) => b.created_on.localeCompare(a.created_on) || b.id - a.id);
   else list = [];
   return f.cat ? list.filter((p) => p.category === f.cat) : list;
 }

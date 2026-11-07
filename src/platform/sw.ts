@@ -2,7 +2,8 @@ import { Workbox } from 'workbox-window';
 
 /* /sw.js, scope / (ADR-0020 4; the address itself moved in ADR-0025; absolute
    since the screens have paths of their own).
-   A new worker waits until the person taps "Reload" on the toast. */
+   A new worker waits until the person taps "Reload" on the toast. An installed
+   app is often resumed rather than started, so coming back to it checks too. */
 export function registerSW(onWaiting: (activate: () => void) => void) {
   if (!('serviceWorker' in navigator) || !import.meta.env.PROD) return;
   const wb = new Workbox('/sw.js', { scope: '/' });
@@ -13,4 +14,7 @@ export function registerSW(onWaiting: (activate: () => void) => void) {
     }),
   );
   wb.register().catch(() => {});
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) wb.update().catch(() => {});
+  });
 }
