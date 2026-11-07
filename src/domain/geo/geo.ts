@@ -49,6 +49,8 @@ export interface MapFilter {
   mode: 'near' | 'japan';
   pref: string | null;
   cat: Category | '';
+  /** a place needs every one of these */
+  kw?: readonly string[];
 }
 
 /** Places shown in the list and as pins for the current mode: near me by
@@ -66,7 +68,9 @@ export function shownPlaces(places: Place[], f: MapFilter, ref: LatLng): Place[]
       .filter((p) => p.pref === f.pref)
       .sort((a, b) => b.created_on.localeCompare(a.created_on) || b.id - a.id);
   else list = [];
-  return f.cat ? list.filter((p) => p.category === f.cat) : list;
+  if (f.cat) list = list.filter((p) => p.category === f.cat);
+  const kw = f.kw ?? [];
+  return kw.length ? list.filter((p) => kw.every((k) => p.keywords?.includes(k))) : list;
 }
 
 type Ring = [number, number][];

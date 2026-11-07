@@ -240,6 +240,7 @@ export const ja = {
       'Google マップのリンクだけ使えます（google.com/maps、google.co.jp/maps、maps.app.goo.gl）。',
     location: '地図で日本国内の場所を選んでください。',
     lang: '書いた言語を選んでください。',
+    keywords: 'キーワードは3つまで。カードOKと現金のみは一緒に選べません。',
     title: 'タイトルは1〜60文字、1行で。',
     start_date: '今日以降の日付を選んでください。',
     time: '終了は開始より後の、まだ過ぎていない時刻にしてください。',

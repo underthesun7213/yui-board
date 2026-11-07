@@ -483,6 +483,52 @@ test('map list: 8 and + more, distance on near me only, back to 8 on a new categ
   await expect(page.locator('.plist .dist')).toHaveCount(0);
 });
 
+test('keywords: a row of their own, all must match, pins too; the form takes up to 3', async ({
+  page,
+  errors,
+}) => {
+  void errors;
+  await go(page, 'map');
+  await mapReady(page);
+  await tap(page, '[data-loc="skip"]');
+  const rows = page.locator('.plist [data-pl]');
+  /* only the keywords some listed place has */
+  await expect(page.locator('.kwfilters [data-kw]')).toHaveCount(7);
+  await tap(page, '.kwfilters [data-kw="card"]');
+  await expect(rows).toHaveCount(3);
+  await expect(page.locator('.plist [data-pl="7"] .kw')).toHaveText(['Cheap', 'Card OK']);
+  /* what is left to pick narrows with the list */
+  await expect(page.locator('.kwfilters [data-kw]')).toHaveCount(3);
+  await tap(page, '.kwfilters [data-kw="cheap"]');
+  await expect(rows).toHaveCount(1);
+  /* the pins follow: zoomed in on 7-Eleven (Card OK, not Cheap), its pin is gone */
+  const pins = () =>
+    y(page, (a) => {
+      a.map().map!.setView([34.8286027, 135.6541948], 19, { animate: false });
+      return [...a.map().container!.querySelectorAll('.leaflet-marker-icon')].map((e) =>
+        e.getAttribute('title'),
+      );
+    });
+  await expect.poll(pins).not.toContain('7-Eleven Gotenyama Station');
+  await tap(page, '.kwfilters [data-kw="cheap"]');
+  await expect.poll(pins).toContain('7-Eleven Gotenyama Station');
+  await tap(page, '.kwfilters [data-kw="card"]');
+  await expect(rows).toHaveCount(8);
+  await tap(page, '[data-pl="7"]');
+  await expect(page.locator('.pcard .kw')).toHaveText(['Cheap', 'Card OK']);
+
+  await go(page, 'map/new');
+  const box = (k: string) => page.locator(`.chiprow input[value="${k}"]`);
+  await box('cheap').check({ force: true });
+  await box('card').check({ force: true });
+  await box('late').check({ force: true });
+  await expect(box('free')).toBeDisabled();
+  /* Card OK and Cash only exclude each other: one replaces the other */
+  await box('cash_only').check({ force: true });
+  await expect(box('card')).not.toBeChecked();
+  await expect(box('cash_only')).toBeChecked();
+});
+
 test('install: words for Android, Samsung and an app browser', async ({ page, errors }) => {
   void errors;
   await go(page, '');

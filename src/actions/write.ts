@@ -118,6 +118,7 @@ const placeArgs = (p: PlaceInput) => ({
   p_lat: p.lat,
   p_lng: p.lng,
   p_lang: p.lang,
+  p_keywords: p.keywords ?? [],
 });
 
 export async function savePlace(
@@ -125,8 +126,8 @@ export async function savePlace(
   opts: { id?: number; token: string },
 ): Promise<WriteResult> {
   const r = opts.id
-    ? await write('update_place', { p_id: opts.id, ...placeArgs(p) })
-    : await write('create_place', { p_client_token: opts.token, ...placeArgs(p) });
+    ? await write('update_place_v2', { p_id: opts.id, ...placeArgs(p) })
+    : await write('create_place_v2', { p_client_token: opts.token, ...placeArgs(p) });
   await after(r, m().saved);
   if (r.status === 'ok' || r.status === 'duplicate') {
     if (!opts.id) dropDraft('place');
@@ -144,8 +145,15 @@ export async function savePlace(
       const stay = mapUi.get().mode === 'near' && !!saved && distM(from, saved) <= NEAR_M;
       mapUi.set((s) =>
         stay
-          ? { pl: id, cat: '', fitSeq: s.fitSeq + 1 }
-          : { mode: 'japan', pref: r.pref ?? s.pref, pl: id, cat: '', fitSeq: s.fitSeq + 1 },
+          ? { pl: id, cat: '', kw: [], fitSeq: s.fitSeq + 1 }
+          : {
+              mode: 'japan',
+              pref: r.pref ?? s.pref,
+              pl: id,
+              cat: '',
+              kw: [],
+              fitSeq: s.fitSeq + 1,
+            },
       );
     }
   }

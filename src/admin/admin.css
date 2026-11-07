@@ -287,3 +287,15 @@ button.link {
 .msg {
   font-weight: 600;
 }
+.kwedit {
+  margin: 16px 0;
+  border: 1px solid var(--line);
+  border-radius: var(--r-m);
+  padding: 8px 12px 12px;
+}
+.kwgrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 4px 12px;
+  margin: 8px 0 12px;
+}

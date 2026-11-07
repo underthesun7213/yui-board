@@ -1,5 +1,6 @@
 import { fetchPrefectures } from '../api/rest';
 import { isPrefEntry, pushPrefState, replaceMapState } from '../app/router';
+import type { Keyword } from '../domain/keywords';
 import type { Category } from '../domain/types';
 import { distM } from '../domain/geo/geo';
 import { forgetView, setHandlers, setPrefGeo } from '../map/runtime';
@@ -96,7 +97,7 @@ export function ensurePrefIntro(): Promise<void> {
    the map, so it locates only if that has not happened yet this session. */
 export function setMode(mode: 'near' | 'japan') {
   if (mode === mapUi.get().mode) return;
-  mapUi.set({ mode, pl: null, cat: '' });
+  mapUi.set({ mode, pl: null, cat: '', kw: [] });
   replaceMapState();
   if (mode === 'near' && location.get().state === 'idle') void locate();
   if (mode === 'japan') void ensurePrefs();
@@ -109,12 +110,19 @@ export function selectPref(code: string | null) {
     history.back();
     return;
   }
-  mapUi.set({ pref: code, pl: null, cat: '' });
+  mapUi.set({ pref: code, pl: null, cat: '', kw: [] });
   pushPrefState(!!code);
 }
 
 export function setCat(cat: Category | '') {
   mapUi.set({ cat, pl: null });
+}
+/** Picks or drops a keyword in the filter row; none clears them all. */
+export function setKeyword(k: Keyword | null) {
+  mapUi.set((s) => ({
+    kw: k === null ? [] : s.kw.includes(k) ? s.kw.filter((x) => x !== k) : [...s.kw, k],
+    pl: null,
+  }));
 }
 export function togglePlace(id: number) {
   mapUi.set((s) => ({ pl: s.pl === id ? null : id }));

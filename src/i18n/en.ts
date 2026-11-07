@@ -243,6 +243,7 @@ export const en = {
       'Only Google Maps links work here (google.com/maps, google.co.jp/maps or maps.app.goo.gl).',
     location: 'Pick a spot in Japan on the map.',
     lang: 'Pick the language you wrote in.',
+    keywords: 'Keywords: up to 3, not Card OK together with Cash only.',
     title: 'Title: 1 to 60 characters on one line.',
     start_date: 'Pick today or a later date.',
     time: 'The end has to be after the start, and not already past.',

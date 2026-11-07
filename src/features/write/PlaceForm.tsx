@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import '../../styles/keywords.css';
 import {
   dropDraft,
   explain,
@@ -14,7 +15,9 @@ import {
   stopPick,
 } from '../../actions/write';
 import { back } from '../../app/router';
+import { KEYWORD_TEXT } from '../../content/keywords';
 import { CAT } from '../../domain/categories';
+import { KEYWORDS, knownKeywords, toggleKeyword } from '../../domain/keywords';
 import { CATEGORIES, LANGS, type Lang, type Place } from '../../domain/types';
 import { checkPlace, LIMITS, type PlaceInput } from '../../domain/validation';
 import { LANG_NAME } from '../../i18n';
@@ -77,6 +80,7 @@ function PlaceFormBody({ id, editing, mine }: { id?: number; editing?: Place; mi
             description: editing.description,
             gmaps_url: editing.gmaps_url ?? '',
             lang: editing.lang,
+            keywords: knownKeywords(editing.keywords),
           } as Fields,
         }
       : openDraft<Fields>('place', {
@@ -85,6 +89,7 @@ function PlaceFormBody({ id, editing, mine }: { id?: number; editing?: Place; mi
           description: '',
           gmaps_url: '',
           lang,
+          keywords: [],
         }),
   );
   const [f, setF] = useState<Fields>(draft.fields);
@@ -116,6 +121,9 @@ function PlaceFormBody({ id, editing, mine }: { id?: number; editing?: Place; mi
   const set = <K extends keyof Fields>(k: K, v: Fields[K]) => setF((x) => ({ ...x, [k]: v }));
   const fieldErr = (k: string) => (err?.field === k ? err.msg : null);
   const nameErr = fieldErr('name') ?? fieldErr('name_latin');
+  /* a draft saved before keywords has none */
+  const kws = knownKeywords(f.keywords);
+  const kt = KEYWORD_TEXT[lang];
   const input: PlaceInput = { ...f, lat: pick?.lat ?? null, lng: pick?.lng ?? null };
 
   async function submit(e: React.FormEvent) {
@@ -212,6 +220,39 @@ function PlaceFormBody({ id, editing, mine }: { id?: number; editing?: Place; mi
           {fieldErr('category') && (
             <p className="err" role="alert">
               {fieldErr('category')}
+            </p>
+          )}
+        </fieldset>
+
+        <fieldset className={'field' + (fieldErr('keywords') ? ' bad' : '')}>
+          <legend>
+            {kt.field}
+            <span className="opt">{m.optional}</span>
+          </legend>
+          <p className="hint">{kt.hint}</p>
+          <div className="chiprow">
+            {KEYWORDS.map((x) => {
+              const on = kws.includes(x);
+              /* full: picking it would change nothing (a fourth) */
+              const full = !on && !toggleKeyword(kws, x).includes(x);
+              return (
+                <label key={x} className={'fchip' + (on ? ' on' : full ? ' off' : '')}>
+                  <input
+                    type="checkbox"
+                    name="pf-kw"
+                    value={x}
+                    checked={on}
+                    disabled={full}
+                    onChange={() => set('keywords', toggleKeyword(kws, x))}
+                  />
+                  {kt.kw[x]}
+                </label>
+              );
+            })}
+          </div>
+          {fieldErr('keywords') && (
+            <p className="err" role="alert">
+              {fieldErr('keywords')}
             </p>
           )}
         </fieldset>

@@ -240,6 +240,7 @@ export const ko = {
       'Google 지도 링크만 쓸 수 있어요 (google.com/maps, google.co.jp/maps, maps.app.goo.gl).',
     location: '지도에서 일본 안의 위치를 골라 주세요.',
     lang: '작성 언어를 골라 주세요.',
+    keywords: '키워드는 3개까지. 카드 가능과 현금만은 함께 고를 수 없어요.',
     title: '제목은 한 줄로 1~60자.',
     start_date: '오늘 이후 날짜를 골라 주세요.',
     time: '끝은 시작보다 뒤이고, 아직 지나지 않은 시각이어야 해요.',

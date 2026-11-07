@@ -34,6 +34,8 @@ interface Applied {
   mode: 'near' | 'japan';
   pref: string | null;
   cat: string;
+  /** the keyword filter, joined, so it compares as a value */
+  kw: string;
   pl: number | null;
   fitSeq: number;
   places: Place[];
@@ -98,6 +100,7 @@ function snapshot(): Applied {
     mode: m.mode,
     pref: m.pref,
     cat: m.cat,
+    kw: m.kw.join(','),
     pl: m.pl,
     fitSeq: m.fitSeq,
     places: data.get().places,
@@ -112,7 +115,11 @@ function snapshot(): Applied {
   };
 }
 const shown = (a: Applied) =>
-  shownPlaces(a.places, { mode: a.mode, pref: a.pref, cat: a.cat as '' }, ref(a));
+  shownPlaces(
+    a.places,
+    { mode: a.mode, pref: a.pref, cat: a.cat as '', kw: a.kw ? a.kw.split(',') : [] },
+    ref(a),
+  );
 
 /** Loads Leaflet and creates the map, once. Memoized; a failed load can retry. */
 export function ensure(): Promise<void> {

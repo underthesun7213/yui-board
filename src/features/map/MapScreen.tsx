@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import '../../styles/keywords.css';
 import { reload } from '../../actions/app';
 import { go } from '../../actions/nav';
 import { openReport } from '../../actions/report';
@@ -8,12 +9,15 @@ import { session } from '../../state/session';
 import {
   selectPref,
   setCat,
+  setKeyword,
   setMode,
   skipLocation,
   togglePlace,
   useLocation,
 } from '../../actions/map';
+import { KEYWORD_TEXT } from '../../content/keywords';
 import { CAT } from '../../domain/categories';
+import { KEYWORDS, knownKeywords } from '../../domain/keywords';
 import { distM, HOME, prefName, regionOf, shownPlaces, type Region } from '../../domain/geo/geo';
 import { PREFS } from '../../domain/geo/prefs';
 import { CATEGORIES, type LatLng, type Place } from '../../domain/types';
@@ -44,6 +48,7 @@ export function MapScreen() {
       <DataStatus />
       <StatusBar />
       <CategoryChips />
+      <KeywordChips />
       {mapFail ? (
         /* a failed chunk import stays failed until the page reloads */
         <div className="maperr" role="alert">
@@ -176,15 +181,57 @@ function CategoryChips() {
   );
 }
 
+/* Keywords, a row of their own under the categories: only those on a place
+   now listed (and any already picked), so a pick never empties the list.
+   Several picked means a place needs all of them. Hidden while none is. */
+function KeywordChips() {
+  const lang = useStore(prefs, (s) => s.lang);
+  const kw = useStore(mapUi, (s) => s.kw);
+  const { list } = useShown();
+  const k = KEYWORD_TEXT[lang];
+  const shown = KEYWORDS.filter((x) => kw.includes(x) || list.some((p) => p.keywords?.includes(x)));
+  if (!shown.length) return null;
+  return (
+    <div className="filters kwfilters" role="group" aria-label={k.aFilter}>
+      {shown.map((x) => (
+        <button
+          key={x}
+          className="fchip"
+          data-kw={x}
+          aria-pressed={kw.includes(x)}
+          onClick={() => setKeyword(x)}
+        >
+          {k.kw[x]}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function Keywords({ of, lang }: { of: Place; lang: keyof typeof KEYWORD_TEXT }) {
+  const list = knownKeywords(of.keywords);
+  if (!list.length) return null;
+  return (
+    <span className="kws">
+      {list.map((x) => (
+        <span key={x} className="kw">
+          {KEYWORD_TEXT[lang].kw[x]}
+        </span>
+      ))}
+    </span>
+  );
+}
+
 function useShown(): { list: Place[]; near: boolean; from: LatLng } {
   const places = useStore(data, (s) => s.places);
   const mode = useStore(mapUi, (s) => s.mode);
   const pref = useStore(mapUi, (s) => s.pref);
   const cat = useStore(mapUi, (s) => s.cat);
+  const kw = useStore(mapUi, (s) => s.kw);
   const st = useStore(location, (s) => s.state);
   const loc = useStore(location, (s) => s.loc);
   const from = st === 'ok' && loc ? loc : HOME;
-  return { list: shownPlaces(places, { mode, pref, cat }, from), near: mode === 'near', from };
+  return { list: shownPlaces(places, { mode, pref, cat, kw }, from), near: mode === 'near', from };
 }
 
 function PlaceCard() {
@@ -204,6 +251,7 @@ function PlaceCard() {
         <span aria-hidden="true">{CAT[p.category].icon}</span> {m.cats[p.category]}
       </div>
       <h3 lang={p.lang}>{p.name}</h3>
+      <Keywords of={p} lang={lang} />
       {p.description && <Described key={p.id} text={p.description} lang={p.lang} tr={p.tr} />}
       <LangBadge lang={p.lang} />
       <p className="dates">
@@ -248,6 +296,7 @@ function PlaceList() {
   const mode = useStore(mapUi, (s) => s.mode);
   const pref = useStore(mapUi, (s) => s.pref);
   const cat = useStore(mapUi, (s) => s.cat);
+  const kw = useStore(mapUi, (s) => s.kw);
   const places = useStore(data, (s) => s.places);
   const { list, near, from } = useShown();
   const loaded = useStore(data, (s) => !!s.fetchedAt);
@@ -293,8 +342,8 @@ function PlaceList() {
         {!places.length && loaded ? m.emptyPlaces : near ? m.nearEmpty : m.prefEmpty}
       </p>
     );
-  /* the key starts again at 8 when the tab, prefecture or category changes */
-  return <Rows key={`${mode}|${pref}|${cat}`} list={list} from={near ? from : null} />;
+  /* the key starts again at 8 when the tab, prefecture, category or keywords change */
+  return <Rows key={`${mode}|${pref}|${cat}|${kw.join()}`} list={list} from={near ? from : null} />;
 }
 
 const PAGE = 8;
@@ -302,6 +351,7 @@ const PAGE = 8;
 /* The first places and a button for the next ones; the pins always show them all. */
 function Rows({ list, from }: { list: Place[]; from: LatLng | null }) {
   const m = useT();
+  const lang = useStore(prefs, (s) => s.lang);
   const pl = useStore(mapUi, (s) => s.pl);
   const [shown, setShown] = useState(PAGE);
   const left = list.length - shown;
@@ -322,7 +372,10 @@ function Rows({ list, from }: { list: Place[]; from: LatLng | null }) {
               >
                 {CAT[p.category].icon}
               </span>
-              <b lang={p.lang}>{p.name}</b>
+              <span className="pmain">
+                <b lang={p.lang}>{p.name}</b>
+                <Keywords of={p} lang={lang} />
+              </span>
               {from && <small className="dist">{dist(distM(from, p))}</small>}
             </button>
           </li>

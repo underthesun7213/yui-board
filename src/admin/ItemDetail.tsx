@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
+import { KEYWORD_TEXT } from '../content/keywords';
+import { KEYWORDS, knownKeywords, toggleKeyword, type Keyword } from '../domain/keywords';
 import { rpc } from './api';
 import type { AdminMessages } from './i18n';
 import { admin, guarded, type ItemRef } from './state';
+import { useStore } from '../state/useStore';
 import { useM, useWhen } from './useM';
 
 type State = keyof AdminMessages['states'];
@@ -173,6 +176,13 @@ export function ItemDetail({ at }: { at: ItemRef }) {
       ) : (
         <p className="muted">{m.empty}</p>
       )}
+      {at.kind === 'place' && it.state !== 'deleted' && (
+        <KeywordEdit
+          key={String(it.keywords)}
+          now={knownKeywords(it.keywords as string[] | undefined)}
+          onSave={(kw) => void act('admin_set_keywords', { p_id: at.id, p_keywords: kw })}
+        />
+      )}
       <label className="note">
         {m.note}
         <textarea
@@ -251,5 +261,44 @@ export function ItemDetail({ at }: { at: ItemRef }) {
         <p className="muted">{m.empty}</p>
       )}
     </div>
+  );
+}
+
+/* The owner tags a place (up to three keywords). Uses the note above. */
+function KeywordEdit({ now, onSave }: { now: Keyword[]; onSave(kw: Keyword[]): void }) {
+  const m = useM();
+  const lang = useStore(admin, (s) => s.lang);
+  const [kw, setKw] = useState(now);
+  const k = KEYWORD_TEXT[lang];
+  return (
+    <fieldset className="kwedit" data-keywords="">
+      <legend>{m.keywordsT}</legend>
+      <p className="muted">{m.keywordsHint}</p>
+      <div className="kwgrid">
+        {KEYWORDS.map((x) => {
+          const on = kw.includes(x);
+          return (
+            <label key={x}>
+              <input
+                type="checkbox"
+                value={x}
+                checked={on}
+                disabled={!on && !toggleKeyword(kw, x).includes(x)}
+                onChange={() => setKw(toggleKeyword(kw, x))}
+              />{' '}
+              {k.kw[x]}
+            </label>
+          );
+        })}
+      </div>
+      <button
+        className="secondary"
+        data-act="keywords"
+        disabled={kw.join() === now.join()}
+        onClick={() => onSave(kw)}
+      >
+        {m.keywordsSave}
+      </button>
+    </fieldset>
   );
 }

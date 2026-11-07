@@ -262,6 +262,7 @@ create type app.item_kind      as enum ('place','event');
 | `lang` | `app.ui_lang not null` | Y-M6, Y-C5 |
 | `created_at` | `timestamptz not null default now()` | 공개는 날짜만(Y-M9) |
 | `edited_at` | `timestamptz` | Y-E1 "수정됨" |
+| `keywords` | `text[] not null default '{}'`, 고정 목록 14개 중 3개까지 (`places_keywords`) | 장소 키워드 (2026-11-07, `20261107000290`). 카드 가능과 현금만은 함께 못 씀(`app.clean_keywords`) |
 | `deleted_at`, `deleted_by` | `timestamptz`, `text check (deleted_by in ('owner','admin'))`, `check ((deleted_at is null) = (deleted_by is null))` | Y-E2 (30일 보관) |
 | `auto_hidden_at` | `timestamptz` | Y-R3 |
 | `suspension_hidden_at` | `timestamptz` | Y-R7 |
@@ -459,7 +460,7 @@ where p.deleted_at is null and p.auto_hidden_at is null and p.suspension_hidden_
 | 객체 | `anon` | `authenticated` | `service_role` | RLS | 비고 |
 |---|---|---|---|---|---|
 | `app.*` 모든 테이블 | — | — | — (정의자 함수 경유) | 활성, 정책 0 | V-1. `service_role` 도 테이블 GRANT 를 회수해 감시·백업 외 경로를 줄인다(백업은 DB 비밀번호로 `postgres` 연결) |
-| `public.places_public` (뷰) | SELECT | SELECT | — | — | 열: `id, name, category, description, gmaps_url, lat, lng, pref, lang, created_on, edited_on`. 조건 V-4 |
+| `public.places_public` (뷰) | SELECT | SELECT | — | — | 열: `id, name, category, description, gmaps_url, lat, lng, pref, lang, created_on, edited_on, keywords`. 조건 V-4 |
 | `public.events_public` (뷰) | SELECT | SELECT | — | — | 열: `id, title, start_date, start_time, end_time, weekly_until, place_text, body, lang, created_on, edited_on`. 조건 V-4 + `last_date >= 도쿄 오늘 - 1년` |
 | `public.event_occurrences_public` (뷰) | SELECT | SELECT | — | — | 보이는 일정의 회차 덮어쓰기 |
 | `public.prefecture_counts` (뷰) | SELECT | SELECT | — | — | `pref, n` (일본 전체 목록의 장소 수) |
@@ -534,6 +535,8 @@ revoke truncate, update, delete on app.mod_actions from public, anon, authentica
 |---|---|---|---|
 | `public.create_place` | `(p_client_token uuid, p_name text, p_category app.place_category, p_description text, p_gmaps_url text, p_lat double precision, p_lng double precision, p_lang app.ui_lang) → jsonb` `{status, id?, pref?}` | `require_writer` → 잠금 → 멱등(`duplicate`) → 한도 `place_create` → 형식 → `pref_of` → insert ×2 + `write_log` | Y-M6, Y-A3, Y-C4 |
 | `public.update_place` | `(p_id bigint, p_name text, p_category …, p_description text, p_gmaps_url text, p_lat double precision, p_lng double precision, p_lang app.ui_lang) → jsonb` `{status, pref?}` | `require_writer` → 소유·미삭제(`not_found`) → 한도 `edit` → 형식 → 갱신, `edited_at`, **`restored_at = null` 후 `evaluate_item`** (숨김 열은 건드리지 않음) | Y-M8, Y-E1, Y-R6 |
+| `public.create_place_v2`, `public.update_place_v2` | 위 두 함수 + `p_keywords text[]` (형식 오류는 `{status:'invalid', field:'keywords'}`) | 새 앱이 씀. 옛 `update_place`는 키워드를 그대로 둠 (ADR-0028) | 2026-11-07 |
+| `public.admin_set_keywords` | `(p_id bigint, p_keywords text[], p_note text default null) → jsonb` `{status, keywords?}` | `require_admin` → 형식 → 갱신(수정 날짜는 그대로) → `mod_actions` `keywords` | 2026-11-07 |
 | `public.delete_place` | `(p_id bigint) → jsonb` | `require_writer`(**정지 계정도 삭제는 허용할지** — OQ-E2) → 소유 → `deleted_at`, `deleted_by='owner'`. 숨김 상태여도 가능 | Y-E2, Y-E3 |
 | `public.create_event` | `(p_client_token uuid, p_title text, p_start_date date, p_start_time time, p_end_time time, p_weekly_until date, p_place_text text, p_body text, p_lang app.ui_lang) → jsonb` `{status, id?}` | 위와 같음 + `start_date >= 도쿄 오늘`, 반복 규칙 | Y-K4, Y-K6 |
 | `public.update_event` | `(p_id bigint, … 같은 필드) → jsonb` | 소유 → `last_date` 의 끝 시각이 지났으면 `past_event` → 시작일이 지났으면 `start_date`·요일 변경 금지(`invalid_start_date`) → 갱신, 보호 해제 + 재평가 | Y-K8, Y-K9, Y-R6 |
