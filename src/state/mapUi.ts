@@ -1,3 +1,4 @@
+import type { Keyword } from '../domain/keywords';
 import type { Category } from '../domain/types';
 import { createStore } from './store';
 
@@ -5,6 +6,8 @@ export interface MapUi {
   mode: 'near' | 'japan';
   pref: string | null;
   cat: Category | '';
+  /** keywords picked in the filter row: a place needs all of them */
+  kw: readonly Keyword[];
   /** selected place id */
   pl: number | null;
   prefFail: boolean;
@@ -24,6 +27,7 @@ export const mapUi = createStore<MapUi>({
   mode: 'near',
   pref: null,
   cat: '',
+  kw: [],
   pl: null,
   prefFail: false,
   prefReady: false,

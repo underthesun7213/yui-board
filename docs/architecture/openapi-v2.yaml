@@ -58,7 +58,7 @@ paths:
         - in: query
           name: select
           required: true
-          schema: { type: string, example: "id,name,category,description,gmaps_url,lat,lng,pref,lang,created_on,edited_on" }
+          schema: { type: string, example: "id,name,category,description,gmaps_url,lat,lng,pref,lang,created_on,edited_on,keywords" }
         - in: query
           name: pref
           required: false
@@ -676,6 +676,10 @@ components:
         lang: { $ref: '#/components/schemas/Lang' }
         created_on: { type: string, format: date }
         edited_on: { type: string, format: date, nullable: true }
+        keywords:
+          type: array
+          maxItems: 3
+          items: { type: string, enum: [cheap, late, english, card, cash_only, solo, groups, vegetarian, halal, study, takeout, photo, free, bike] }
     PlaceFields:
       type: object
       required: [p_name, p_category, p_lat, p_lng, p_lang]

@@ -1,0 +1,39 @@
+/* Place keywords: the map's filter row, the list and the card
+   (src/features/map/MapScreen.tsx), and the place form. Loaded with those
+   screens, not with the home screen. */
+.kwfilters {
+  padding-top: 0;
+}
+.kwfilters .fchip {
+  font-size: 13px;
+}
+.plist .pmain {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  text-align: start;
+}
+.kws {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.kw {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.5;
+}
+.pcard .kws {
+  margin: 4px 0 8px;
+}
+.chiprow .fchip.off {
+  opacity: 0.45;
+}
