@@ -17,7 +17,9 @@ const BUDGETS = [
   },
   {
     name: 'map',
-    kb: 61, // D33: 60 until the description translation toggle (2026-10-27)
+    /* D39: 62 since place keywords (2026-11-08); D33: 61 since the description
+       translation toggle (2026-10-27); 60 before that */
+    kb: 62,
     roots: [
       'src/features/map/MapScreen.tsx',
       'node_modules/leaflet/dist/leaflet-src.js',
