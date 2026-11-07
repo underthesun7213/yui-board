@@ -2,6 +2,7 @@
    sending. The server checks again; these only explain. Field names match the
    server's {status:'invalid', field}. */
 import { addDays, dayDiff, tokyoTime, tokyoToday } from './calendar/dates';
+import { keywordsOk } from './keywords';
 
 const CNTRL = /\p{Cc}/u;
 /* invisible or direction-changing characters, C1 controls, line separators (as the server) */
@@ -37,6 +38,8 @@ export interface PlaceInput {
   lat: number | null;
   lng: number | null;
   lang: string;
+  /** missing in a draft saved before keywords */
+  keywords?: string[];
 }
 /** D31: a place name is written in English, so it holds an ASCII Latin letter.
     The server checks the same 52 letters (app.has_latin). */
@@ -55,6 +58,7 @@ export function checkPlace(p: PlaceInput): string | null {
     return 'location';
   if (p.lat < 20 || p.lat > 46 || p.lng < 122 || p.lng > 154) return 'location';
   if (!p.lang) return 'lang';
+  if (!keywordsOk(p.keywords ?? [])) return 'keywords';
   return null;
 }
 

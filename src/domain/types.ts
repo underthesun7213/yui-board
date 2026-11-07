@@ -28,6 +28,8 @@ export interface Place extends LatLng {
   lang: Lang;
   created_on: string;
   edited_on: string | null;
+  /** codes from domain/keywords.ts; missing in data cached before keywords */
+  keywords?: readonly string[];
   /** the description in the other UI languages, once translated (D32) */
   tr?: Partial<Record<Lang, string>>;
 }

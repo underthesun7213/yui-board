@@ -74,7 +74,7 @@ test('Y-M6 the first post creates the account; another device sees the place', a
 test('Y-C4 a send whose answer is lost does not post twice', async ({ page, errors }) => {
   await fillPlace(page, 'Sent twice');
   let drop = true;
-  await page.route('**/rest/v1/rpc/create_place', async (route) => {
+  await page.route('**/rest/v1/rpc/create_place_v2', async (route) => {
     const res = await route.fetch(); // reaches the server …
     if (drop) {
       drop = false;

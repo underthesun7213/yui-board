@@ -10,7 +10,8 @@
     "pref": "27",
     "lang": "ja",
     "created_on": "2026-09-01",
-    "edited_on": null
+    "edited_on": null,
+    "keywords": []
   },
   {
     "id": 2,
@@ -23,7 +24,8 @@
     "pref": "27",
     "lang": "ja",
     "created_on": "2026-09-01",
-    "edited_on": null
+    "edited_on": null,
+    "keywords": ["bike"]
   },
   {
     "id": 3,
@@ -36,7 +38,8 @@
     "pref": "27",
     "lang": "ja",
     "created_on": "2026-09-01",
-    "edited_on": null
+    "edited_on": null,
+    "keywords": ["late", "card"]
   },
   {
     "id": 4,
@@ -49,7 +52,8 @@
     "pref": "27",
     "lang": "en",
     "created_on": "2026-09-01",
-    "edited_on": null
+    "edited_on": null,
+    "keywords": ["late", "card"]
   },
   {
     "id": 5,
@@ -62,7 +66,8 @@
     "pref": "27",
     "lang": "en",
     "created_on": "2026-09-01",
-    "edited_on": null
+    "edited_on": null,
+    "keywords": []
   },
   {
     "id": 6,
@@ -75,7 +80,8 @@
     "pref": "27",
     "lang": "en",
     "created_on": "2026-09-01",
-    "edited_on": null
+    "edited_on": null,
+    "keywords": []
   },
   {
     "id": 7,
@@ -88,7 +94,8 @@
     "pref": "27",
     "lang": "ko",
     "created_on": "2026-09-01",
-    "edited_on": null
+    "edited_on": null,
+    "keywords": ["cheap", "card"]
   },
   {
     "id": 8,
@@ -101,7 +108,8 @@
     "pref": "27",
     "lang": "ko",
     "created_on": "2026-09-01",
-    "edited_on": null
+    "edited_on": null,
+    "keywords": []
   },
   {
     "id": 9,
@@ -114,7 +122,8 @@
     "pref": "27",
     "lang": "ja",
     "created_on": "2026-09-01",
-    "edited_on": null
+    "edited_on": null,
+    "keywords": []
   },
   {
     "id": 10,
@@ -127,7 +136,8 @@
     "pref": "27",
     "lang": "en",
     "created_on": "2026-09-01",
-    "edited_on": null
+    "edited_on": null,
+    "keywords": ["cheap"]
   },
   {
     "id": 11,
@@ -140,7 +150,8 @@
     "pref": "27",
     "lang": "ko",
     "created_on": "2026-09-01",
-    "edited_on": null
+    "edited_on": null,
+    "keywords": ["study", "photo"]
   },
   {
     "id": 12,
@@ -153,7 +164,8 @@
     "pref": "27",
     "lang": "ja",
     "created_on": "2026-09-01",
-    "edited_on": null
+    "edited_on": null,
+    "keywords": []
   },
   {
     "id": 13,
@@ -166,6 +178,7 @@
     "pref": "27",
     "lang": "ko",
     "created_on": "2026-09-01",
-    "edited_on": null
+    "edited_on": null,
+    "keywords": ["cash_only"]
   }
 ]

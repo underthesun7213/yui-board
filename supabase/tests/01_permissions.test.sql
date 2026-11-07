@@ -41,7 +41,7 @@ select set_eq(
         'app.db_pre_request', 'public.submit_report', 'public.admin_whoami', 'public.admin_queue',
         'public.admin_item', 'public.admin_restore', 'public.admin_restore_bulk', 'public.admin_delete',
         'public.admin_dismiss', 'public.admin_suspend', 'public.admin_unsuspend', 'public.admin_search',
-        'public.admin_audit_log'],
+        'public.admin_audit_log', 'public.create_place_v2', 'public.update_place_v2', 'public.admin_set_keywords'],
   'authenticated may execute exactly these');
 select is_empty(
   $$select p.proname from pg_proc p where p.pronamespace in ('public'::regnamespace, 'app'::regnamespace)
@@ -51,7 +51,7 @@ select is_empty(
 
 -- G-20: view columns carry no owner, token or moderation field
 select columns_are('public', 'places_public',
-  array['id', 'name', 'category', 'description', 'gmaps_url', 'lat', 'lng', 'pref', 'lang', 'created_on', 'edited_on'],
+  array['id', 'name', 'category', 'description', 'gmaps_url', 'lat', 'lng', 'pref', 'lang', 'created_on', 'edited_on', 'keywords'],
   'places_public columns');
 
 -- T-19a / PL-6 ③: no GraphQL door next to the RPCs

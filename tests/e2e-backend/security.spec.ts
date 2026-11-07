@@ -234,6 +234,7 @@ test('G-21 another account sees none of my items; my own carry no owner column',
     'description',
     'gmaps_url',
     'id',
+    'keywords',
     'lang',
     'lat',
     'lng',
@@ -266,6 +267,20 @@ const CALLS: Record<string, { get?: string; post?: Record<string, unknown> }> = 
       p_lat: 34.82,
       p_lng: 135.65,
       p_lang: 'en',
+    },
+  },
+  create_place_v2: { post: { ...place(), p_keywords: ['cheap'] } },
+  update_place_v2: {
+    post: {
+      p_id: X,
+      p_name: 'x',
+      p_category: 'food',
+      p_description: '',
+      p_gmaps_url: null,
+      p_lat: 34.82,
+      p_lng: 135.65,
+      p_lang: 'en',
+      p_keywords: [],
     },
   },
   delete_place: { post: { p_id: X } },
@@ -329,6 +344,7 @@ const CALLS: Record<string, { get?: string; post?: Record<string, unknown> }> = 
   admin_unsuspend: { post: { p_account_ref: 'nobody', p_note: null } },
   admin_search: { post: { p_q: 'x', p_pref: null } },
   admin_audit_log: { post: { p_limit: 1, p_before: null } },
+  admin_set_keywords: { post: { p_id: X, p_keywords: ['cheap'], p_note: null } },
 };
 const call = (r: APIRequestContext, fn: string, h: Headers) => {
   const c = CALLS[fn]!;

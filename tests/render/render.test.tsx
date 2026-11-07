@@ -126,6 +126,7 @@ function reset() {
     mode: 'near',
     pref: null,
     cat: '',
+    kw: [],
     pl: null,
     prefFail: false,
     tileFail: false,
@@ -261,6 +262,12 @@ const cases: Case[] = [
     () => mapUi.set({ mode: 'japan', pref: '27', cat: 'daily', pl: 3 }),
   ],
   ['map-pref-13', { name: 'map' }, () => mapUi.set({ mode: 'japan', pref: '13' })],
+  [
+    'map-keywords',
+    { name: 'map' },
+    () => (location.set({ state: 'skip' }), mapUi.set({ kw: ['card'], pl: 7 })),
+    /data-kw="card" aria-pressed="true"[\s\S]*class="kw"/,
+  ],
   [
     'map-pref-intro',
     { name: 'map' },

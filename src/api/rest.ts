@@ -104,7 +104,7 @@ export async function readAll(): Promise<Snapshot> {
   }
   const [places, events, overrides, translations, eventTranslations] = await Promise.all([
     getAll<Place>(
-      'places_public?select=id,name,category,description,gmaps_url,lat,lng,pref,lang,created_on,edited_on&order=id',
+      'places_public?select=id,name,category,description,gmaps_url,lat,lng,pref,lang,created_on,edited_on,keywords&order=id',
     ),
     getAll<EventSeries>(
       'events_public?select=id,title,start_date,start_time,end_time,weekly_until,place_text,body,lang,created_on,edited_on&order=id',

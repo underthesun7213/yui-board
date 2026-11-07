@@ -43,6 +43,8 @@ import { installKind } from '../../src/platform/install';
 import { PREFS } from '../../src/domain/geo/prefs';
 import { PREF_INTRO } from '../../src/content/prefIntro';
 import { safeMapsUrl } from '../../src/domain/links';
+import { KEYWORDS, keywordsOk, knownKeywords, toggleKeyword } from '../../src/domain/keywords';
+import { KEYWORD_TEXT } from '../../src/content/keywords';
 import { checkEvent, checkPlace, HAS_LATIN, newEventDay } from '../../src/domain/validation';
 import type { EventSeries, OccurrenceOverride, Place } from '../../src/domain/types';
 import { en } from '../../src/i18n/en';
@@ -126,6 +128,41 @@ describe('install', () => {
   });
 });
 
+describe('keywords', () => {
+  it('match the database list', () => {
+    const sql = readFileSync('supabase/migrations/20261107000290_place_keywords.sql', 'utf8');
+    const lists = [...sql.matchAll(/array\[('cheap'[^\]]*)\]/g)].map((m) =>
+      [...m[1]!.matchAll(/'([a-z_]+)'/g)].map((x) => x[1]),
+    );
+    expect(lists).toHaveLength(2);
+    for (const l of lists) expect(l).toEqual([...KEYWORDS]);
+  });
+  it('are translated in every language', () => {
+    for (const t of Object.values(KEYWORD_TEXT))
+      expect(Object.keys(t.kw).sort()).toEqual([...KEYWORDS].sort());
+  });
+  it('follow the server rule', () => {
+    expect(keywordsOk([])).toBe(true);
+    expect(keywordsOk(['cheap', 'late', 'free'])).toBe(true);
+    expect(keywordsOk(['cheap', 'late', 'free', 'bike'])).toBe(false);
+    expect(keywordsOk(['card', 'cash_only'])).toBe(false);
+    expect(keywordsOk(['wifi'])).toBe(false);
+    expect(knownKeywords(['photo', 'cheap', 'photo', 'later'])).toEqual(['cheap', 'photo']);
+    expect(knownKeywords(undefined)).toEqual([]);
+  });
+  it('toggle within the rule', () => {
+    expect(toggleKeyword([], 'photo')).toEqual(['photo']);
+    expect(toggleKeyword(['photo', 'cheap'], 'photo')).toEqual(['cheap']);
+    expect(toggleKeyword(['card'], 'cash_only')).toEqual(['cash_only']);
+    expect(toggleKeyword(['cheap', 'late', 'free'], 'bike')).toEqual(['cheap', 'late', 'free']);
+    expect(toggleKeyword(['cheap', 'late', 'card'], 'cash_only')).toEqual([
+      'cheap',
+      'late',
+      'cash_only',
+    ]);
+  });
+});
+
 describe('geo', () => {
   const P = places as Place[];
   it('lists near places by distance within 3 km', () => {
@@ -143,6 +180,17 @@ describe('geo', () => {
         (p) => p.category === 'food',
       ),
     ).toBe(true);
+  });
+  it('filters by keywords: a place needs all of them', () => {
+    const f = (kw: string[]) =>
+      shownPlaces(P, { mode: 'near', pref: null, cat: '', kw }, HOME).map((p) => p.id);
+    expect(f(['card'])).toEqual(expect.arrayContaining([3, 4, 7]));
+    expect(f(['card']).every((id) => [3, 4, 7].includes(id))).toBe(true);
+    expect(f(['card', 'cheap'])).toEqual([7]);
+    expect(f(['card', 'cash_only'])).toEqual([]);
+    expect(f([])).toEqual(
+      shownPlaces(P, { mode: 'near', pref: null, cat: '' }, HOME).map((p) => p.id),
+    );
   });
   it('lists a prefecture newest first', () => {
     const at = (id: number, created_on: string) => ({ ...P[0]!, id, pref: '26', created_on });
