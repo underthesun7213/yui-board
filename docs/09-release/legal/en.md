@@ -1,6 +1,6 @@
 # YUNABI Terms of Use and Privacy Policy
 
-Effective: October 29, 2026　/　Operator: Juha Bak (individual)　/　Contact: yunabi@juha.dev
+Effective: October 29, 2026　/　Updated: November 12, 2026　/　Operator: Juha Bak (individual)　/　Contact: yunabi@juha.dev
 
 The Japanese version is authoritative; this English version is a translation.
 
@@ -57,6 +57,7 @@ Juha Bak (individual). The operator's address is provided without delay on reque
 | A record of posts (when, what) | When you post | Daily limits |
 | A pseudonymised value of your IP address (a hash mixed with a secret that changes daily) | With each post | Preventing abuse |
 | Records of the operator's actions | When the operator hides, deletes, restores or suspends | Record keeping and audit |
+| Usage statistics (that the app was opened, install was tapped or finished, the game was started or finished, with a random ID per device) | While you use the app (unless you turned it off) | Understanding use and improving the Service |
 
 **We do not collect:** your name, email address or current location.
 
@@ -69,8 +70,12 @@ After a place description, or an event's title, place or details, is posted or e
 ### 5. Analytics
 To understand how the app is used, we use Cloudflare Web Analytics. It uses no cookies and counts only the screens viewed, approximate country, browser and device type, and loading speed; it does not identify individuals or track them across sites.
 
+To learn how many people keep using the app, we also send only these events to Mixpanel (Mixpanel, Inc., USA): the app was opened, "add to home screen" was tapped, the install finished, the conversation game was started, the conversation game was finished (which route and which ending). Each carries a random ID for the device, the screen language, whether the app was opened from the home screen, and the kind of device (iPhone, Android and so on). They are sent with IP addresses switched off (no location is estimated from them), and without the page address, your location, anything you posted, or a name or email address. No cookies are used.
+
+You can turn this off at any time with the switch at the top of the "Terms and privacy" screen. Turning it off stops the sending and deletes the random ID from your device. If your browser sends Global Privacy Control, it starts off.
+
 ### 6. What stays on your device
-Your language setting, the cards you collected and whether you allowed location are kept only in your browser's storage (localStorage) and are not sent to the server. Clearing your browser data removes them.
+Your language setting, the cards you collected, whether you allowed location and whether usage statistics are on are kept only in your browser's storage (localStorage) and are not sent to the server. Clearing your browser data removes them. The random ID for usage statistics is kept in the same storage and is used only for the sending in 5 above.
 
 ### 7. Access logs
 Servers of the companies that provide the Service may keep access records (IP address, time, browser information and so on). In particular, the account service (Supabase Auth) records the IP address as is. These are kept according to each company's policy.
@@ -88,6 +93,7 @@ If there is an automated attack, the operator may switch on a Cloudflare Turnsti
 | Record of posts | 48 hours |
 | Pseudonymised IP values | One hour for counting posts; erased from security records after 48 hours (the security records themselves are kept 90 days) |
 | Automatic translations | Like the original: deleted and redone when the text changes, deleted when the place or event is deleted |
+| Usage statistics (Mixpanel) | While the Service runs; deleted with all its data within 3 months after the Service ends |
 | Backups | Weekly, encrypted, kept 90 days. Backups do not contain the daily secret, so pseudonymised IP values cannot be reversed |
 
 ### 10. Service providers and transfers abroad
@@ -100,10 +106,11 @@ To run the Service, we entrust the handling of personal data to the following co
 | GitHub, Inc. (USA) | Source code, storage of encrypted backups (private) | USA and elsewhere |
 | Microsoft Corporation (USA) | Automatic translation of place descriptions and event texts (text only; not stored) | Processed in a Japan East (Tokyo) resource |
 | OpenStreetMap Foundation (UK) | Map images (requested directly by your browser) | UK, Europe and elsewhere |
+| Mixpanel, Inc. (USA) | Usage statistics (a random ID and the events only; IP addresses not used) | USA |
 
 The operator entrusts this handling after confirming that these companies have systems meeting the standards set by Japan's Act on the Protection of Personal Information. For the personal information protection systems of each country, see the information provided by Japan's Personal Information Protection Commission.
 
-Apart from the above, we do not give personal data to third parties except as required by law. There is no advertising. The only analytics is the cookie-free Cloudflare Web Analytics.
+Apart from the above, we do not give personal data to third parties except as required by law. There is no advertising. The only analytics are the cookie-free Cloudflare Web Analytics and the Mixpanel usage statistics you can turn off (see 5).
 
 ### 11. Security
 Users' devices cannot read or write the database directly; writes go only through server-side functions that check them. Who posted an item is not shown to other users, and the operator sees only pseudonymous account IDs. Administrator sign-in uses a password and two-factor authentication. Backups are encrypted.

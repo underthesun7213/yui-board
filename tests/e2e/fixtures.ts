@@ -1,4 +1,15 @@
-import { test as base, expect, type Page } from '@playwright/test';
+import { test as base, expect, type BrowserContext, type Page } from '@playwright/test';
+
+/* What the app sent to Mixpanel (D40): the e2e build carries a made-up token,
+   and every context answers the API here, so nothing leaves the machine. */
+export interface Sent {
+  event: string;
+  properties: Record<string, unknown>;
+  url: string;
+  referer: string | undefined;
+  cookie: string | undefined;
+}
+const sentBy = new WeakMap<BrowserContext, Sent[]>();
 
 /* Tiles come from OpenStreetMap; answer them locally so the map settles the
    same way everywhere. Every test also fails on a page error, a console error
@@ -8,7 +19,21 @@ const PNG = Buffer.from(
   'base64',
 );
 
-export const test = base.extend<{ badTiles: boolean; errors: string[] }>({
+export const test = base.extend<{ badTiles: boolean; errors: string[]; stats: Sent[] }>({
+  context: async ({ context }, use) => {
+    const sent: Sent[] = [];
+    sentBy.set(context, sent);
+    await context.route('https://api-js.mixpanel.com/**', async (r) => {
+      const req = r.request();
+      const data = new URLSearchParams(req.postData() ?? '').get('data') ?? '[]';
+      const headers = await req.allHeaders();
+      for (const e of JSON.parse(data) as { event: string; properties: Record<string, unknown> }[])
+        sent.push({ ...e, url: req.url(), referer: headers.referer, cookie: headers.cookie });
+      await r.fulfill({ status: 200, body: '1' });
+    });
+    await use(context);
+  },
+  stats: async ({ context }, use) => use(sentBy.get(context)!),
   badTiles: [false, { option: true }],
   serviceWorkers: 'block',
   acceptDownloads: true,

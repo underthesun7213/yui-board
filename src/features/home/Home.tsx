@@ -1,6 +1,6 @@
 import { lazy, Suspense, useState } from 'react';
 import { go, openRoute } from '../../actions/nav';
-import { installApp } from '../../actions/update';
+import { installApp, installHelp } from '../../actions/update';
 import hero from '../../art/home/hero.webp';
 import { CARD_IDS } from '../../content/card-ids';
 import { formatDay, tokyoToday, weekday } from '../../domain/calendar/dates';
@@ -36,7 +36,9 @@ export function Home() {
           <button
             className="install"
             aria-expanded={install === 'prompt' ? undefined : steps}
-            onClick={() => (install === 'prompt' ? void installApp() : setSteps(!steps))}
+            onClick={() =>
+              install === 'prompt' ? void installApp() : (steps || installHelp(), setSteps(!steps))
+            }
           >
             + {m.install}
           </button>

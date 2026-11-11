@@ -6,6 +6,11 @@ import { VitePWA } from 'vite-plugin-pwa';
    it, and its asset path, rather than 'self' (RFC-0003 §17.3). */
 const ORIGIN = process.env.YUNABI_ORIGIN ?? '';
 const SUPABASE = (process.env.VITE_SUPABASE_URL ?? '').replace(/\/$/, '');
+/* Usage statistics (D40): a build with the Mixpanel project token may send to
+   its API; without one the app sends nothing and the CSP does not name it. */
+const MIXPANEL = /^[a-f0-9]{32}$/.test(process.env.VITE_MIXPANEL_TOKEN ?? '')
+  ? ' https://api-js.mixpanel.com'
+  : '';
 
 /* One list for both CSPs, so the meta tag and the header cannot drift apart. */
 function cspRules(): string[] {
@@ -27,7 +32,9 @@ function cspRules(): string[] {
     `img-src ${self} data: https://tile.openstreetmap.org`,
     /* recorded lines (D35), from assets/voice/ */
     `media-src ${self}`,
-    `connect-src ${self} ${SUPABASE} ${turnstile}${insights.connect}`.replace(/\s+/g, ' ').trim(),
+    `connect-src ${self} ${SUPABASE} ${turnstile}${insights.connect}${MIXPANEL}`
+      .replace(/\s+/g, ' ')
+      .trim(),
     `frame-src ${turnstile}`,
     `worker-src ${ORIGIN ? ORIGIN + 'sw.js' : "'self'"}`,
     `manifest-src ${self}`,

@@ -1,5 +1,5 @@
 import { lazy, Suspense, useState } from 'react';
-import { installApp } from '../../actions/update';
+import { installApp, installHelp } from '../../actions/update';
 import { INSTALL_TEXT } from '../../content/install';
 import { useT } from '../../i18n/useT';
 import { prefs } from '../../state/prefs';
@@ -24,7 +24,11 @@ export default function InstallNudge() {
           className="secondary"
           data-install-end
           aria-expanded={install === 'prompt' ? undefined : steps}
-          onClick={() => (install === 'prompt' ? void installApp() : setSteps(!steps))}
+          onClick={() => {
+            if (install === 'prompt') return void installApp();
+            if (!steps) installHelp();
+            setSteps(!steps);
+          }}
         >
           + {m.install}
         </button>

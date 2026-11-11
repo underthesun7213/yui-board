@@ -1,0 +1,4 @@
+# False positives. A made-up Mixpanel token for the e2e build (D40), since
+# replaced by '0'.repeat(32); the commit stays in the branch history.
+ca95142bfe1dc7105ffa88afe665a87337da3aab:playwright.config.ts:generic-api-key:28
+ca95142bfe1dc7105ffa88afe665a87337da3aab:tests/e2e/stats.spec.ts:generic-api-key:40

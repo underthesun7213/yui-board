@@ -1,0 +1,20 @@
+/* The usage statistics switch (D40) at the top of the terms screen: loaded
+   with that screen, not with the first one. */
+.legal .statsopt {
+  align-items: flex-start;
+  margin: 8px 0 16px;
+  padding: 12px 14px;
+  border-radius: var(--r-m);
+  background: var(--surface);
+  line-height: 1.5;
+}
+.legal .statsopt input {
+  flex: none;
+  margin-top: 2px;
+}
+.legal .statsopt .sub {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 14px;
+}

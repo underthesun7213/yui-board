@@ -13,6 +13,7 @@ import { mt, MT_START } from '../state/matcha';
 import { ph, PH_START } from '../state/photo';
 import { unlock } from './achievements';
 import { toast } from './ui';
+import { track } from './update';
 
 export function openLesson(lid: string) {
   vn.set(VN_START);
@@ -31,7 +32,10 @@ export function ensureVnEn(): Promise<void> {
   return enLoad;
 }
 
-export const pickRoute = (route: Route) => vn.set({ ...VN_START, route });
+export function pickRoute(route: Route) {
+  vn.set({ ...VN_START, route });
+  track('game_start', { route });
+}
 export const resetVn = () => vn.set(VN_START);
 
 export function pickOption(i: number) {
@@ -74,6 +78,7 @@ export function nextScene() {
   if (VN[v.route].scenes[i]?.kind === 'photo') ph.set({ ...PH_START, mode: v.shot });
   if (i < VN[v.route].scenes.length) return;
   const card = endingFor(v.route, v.score);
+  track('game_finish', { route: v.route, ending: card.tier });
   const cg = { ...collection.get().cg };
   const fresh = !cg[card.id];
   cg[card.id] = true;
