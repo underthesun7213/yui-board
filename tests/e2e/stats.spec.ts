@@ -37,7 +37,7 @@ test('D40 app_open: a random ID and four fields; ip=0, no address, referrer or c
     lang: 'en',
     mode: 'browser',
     platform: 'android',
-    token: '0123456789abcdef0123456789abcdef',
+    token: '0'.repeat(32),
   });
   writeFileSync(info.outputPath('app_open.json'), JSON.stringify(stats, null, 2));
 });

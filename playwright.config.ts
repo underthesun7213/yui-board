@@ -25,7 +25,7 @@ export default defineConfig({
     env: {
       VITE_E2E: '1',
       YUNABI_ORIGIN: BASE,
-      VITE_MIXPANEL_TOKEN: '0123456789abcdef0123456789abcdef',
+      VITE_MIXPANEL_TOKEN: '0'.repeat(32),
     },
     url: BASE,
     reuseExistingServer: !process.env.CI,
