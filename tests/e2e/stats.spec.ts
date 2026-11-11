@@ -8,6 +8,7 @@ type Handle = {
   __yunabi: {
     nextScene(): void;
     vn: { get(): { route: string | null }; set(p: { route: null; i: number }): void };
+    collection: { get(): { cg: Record<string, boolean> } };
   };
 };
 const named = (sent: Sent[], event: string) => sent.filter((s) => s.event === event);
@@ -64,7 +65,13 @@ test('D40 install_tap, install_done, game_start and game_finish carry only what 
   await page.locator('[data-route="osaka"]').click();
   await expect.poll(() => named(stats, 'game_start').length).toBe(1);
   expect(named(stats, 'game_start')[0]!.properties.route).toBe('osaka');
-  for (let i = 0; i < 60 && !named(stats, 'game_finish').length; i++)
+  /* step to the ending and no further: it is reached when its card is collected
+     (sending is async, so waiting on the event itself would overshoot) */
+  const ended = () =>
+    page.evaluate(
+      () => Object.keys((window as unknown as Handle).__yunabi.collection.get().cg).length > 0,
+    );
+  for (let i = 0; i < 60 && !(await ended()); i++)
     await page.evaluate(() => (window as unknown as Handle).__yunabi.nextScene());
   await expect.poll(() => named(stats, 'game_finish').length).toBe(1);
   const fin = named(stats, 'game_finish')[0]!.properties;
@@ -89,8 +96,9 @@ test('D40 the switch on the terms screen stops sending and forgets the ID', asyn
   const box = page.locator('.statsopt input');
   await expect(box).toBeChecked();
   await box.uncheck();
+  /* saved once the sending code has loaded (actions/stats.ts), so wait for it */
+  await expect.poll(() => page.evaluate(() => localStorage.getItem('yui.v1.stats'))).toBe('"off"');
   expect(await aid(page)).toBeNull();
-  expect(await page.evaluate(() => localStorage.getItem('yui.v1.stats'))).toBe('"off"');
   await page.screenshot({ path: info.outputPath('legal-off.png') });
   /* off survives a reload, and nothing more is sent: no open, no game */
   const before = stats.length;
