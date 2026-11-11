@@ -36,11 +36,9 @@ export function Home() {
           <button
             className="install"
             aria-expanded={install === 'prompt' ? undefined : steps}
-            onClick={() => {
-              if (install === 'prompt') return void installApp();
-              if (!steps) installHelp();
-              setSteps(!steps);
-            }}
+            onClick={() =>
+              install === 'prompt' ? void installApp() : (steps || installHelp(), setSteps(!steps))
+            }
           >
             + {m.install}
           </button>

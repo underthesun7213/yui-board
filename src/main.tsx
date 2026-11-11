@@ -2,7 +2,6 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { startData } from './actions/data';
 import { enterMap, ensurePrefs } from './actions/map';
-
 import { track, watchForUpdates, watchInstallable } from './actions/update';
 import { App } from './app/App';
 import { onRouteChange, startRouter } from './app/router';

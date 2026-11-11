@@ -1,4 +1,4 @@
-import { prefs } from '../state/prefs';
+import { stats } from '../state/stats';
 
 /* The usage statistics switch (D40), used only by the terms screen, so it
    loads with that screen. Sending itself is track() in actions/update.ts,
@@ -9,12 +9,12 @@ const code = () => import('../platform/analytics');
 
 /* the device's choice, read when this screen's code first loads */
 code().then(
-  (a) => prefs.set({ stats: a.statsOn() }),
+  (a) => stats.set({ on: a.statsOn() }),
   () => {},
 );
 
 export function setStats(on: boolean) {
-  prefs.set({ stats: on });
+  stats.set({ on });
   code().then(
     (a) => a.setStatsOn(on),
     () => {},

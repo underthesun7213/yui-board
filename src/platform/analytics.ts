@@ -85,6 +85,9 @@ function installed(): boolean {
   }
 }
 
+/* install_done: this chunk loads with app_open, early enough to hear it */
+addEventListener('appinstalled', () => send('install_done'));
+
 export function send(event: string, props: Props = {}) {
   if (!TOKEN || !statsOn()) return;
   try {

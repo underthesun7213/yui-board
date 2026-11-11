@@ -42,7 +42,7 @@ test('D40 app_open: a random ID and four fields; ip=0, no address, referrer or c
   writeFileSync(info.outputPath('app_open.json'), JSON.stringify(stats, null, 2));
 });
 
-test('D40 install_tap, game_start and game_finish carry only what they name', async ({
+test('D40 install_tap, install_done, game_start and game_finish carry only what they name', async ({
   page,
   errors,
   stats,
@@ -55,6 +55,10 @@ test('D40 install_tap, game_start and game_finish carry only what they name', as
   expect(named(stats, 'install_tap')[0]!.properties.kind).toBe('android');
   /* closing the steps again is not another tap */
   await page.locator('.hhead button.install').click();
+  /* the browser saying the app was installed */
+  await expect.poll(() => named(stats, 'app_open').length).toBe(1);
+  await page.evaluate(() => dispatchEvent(new Event('appinstalled')));
+  await expect.poll(() => named(stats, 'install_done').length).toBe(1);
   /* the game: start Osaka, then run it to its ending */
   await go(page, 'japanese/l8');
   await page.locator('[data-route="osaka"]').click();

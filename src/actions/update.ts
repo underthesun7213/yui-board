@@ -11,13 +11,12 @@ import { ui } from '../state/ui';
    events, nothing else. */
 export type StatEvent = 'app_open' | 'install_tap' | 'install_done' | 'game_start' | 'game_finish';
 const statsCode = () => import('../platform/analytics');
-const ignore = () => {};
 
 export const track = (event: StatEvent, props?: Props) =>
-  void statsCode().then((a) => a.send(event, props), ignore);
+  void statsCode().then((a) => a.send(event, props), Boolean); // Boolean: a failed load is ignored
 
 const setInstall = (install: Install) => ui.set({ install });
-export const watchInstallable = () => watchInstall(setInstall, () => track('install_done'));
+export const watchInstallable = () => watchInstall(setInstall);
 /** install_tap carries the kind: 'prompt' is the browser's own dialog, the rest open the steps */
 export const installHelp = () => track('install_tap', { kind: ui.get().install });
 export function installApp() {

@@ -7,6 +7,7 @@ import { CONTACT_EMAIL, parseLegal, STATS_TEXT, type Span } from '../../content/
 import type { Lang } from '../../domain/types';
 import { useT } from '../../i18n/useT';
 import { prefs } from '../../state/prefs';
+import { stats as statsStore } from '../../state/stats';
 import { useStore } from '../../state/useStore';
 import { BackBar } from '../../ui/BackBar';
 
@@ -21,7 +22,7 @@ const Text = ({ spans }: { spans: Span[] }) =>
 export function Legal() {
   const m = useT();
   const lang = useStore(prefs, (s) => s.lang);
-  const stats = useStore(prefs, (s) => s.stats);
+  const stats = useStore(statsStore, (s) => s.on);
   const blocks = (parsed[lang] ??= parseLegal(TEXTS[lang]));
   return (
     <>

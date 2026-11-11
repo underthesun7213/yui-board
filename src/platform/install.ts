@@ -18,7 +18,7 @@ export function installKind(ua: string, touchPoints: number): Install {
   return /Android/.test(ua) ? 'android' : 'no';
 }
 
-export function watchInstall(set: (s: Install) => void, installed?: () => void) {
+export function watchInstall(set: (s: Install) => void) {
   const nav = navigator as Navigator & { standalone?: boolean };
   if (matchMedia('(display-mode: standalone)').matches || nav.standalone) return;
   const kind = installKind(nav.userAgent, nav.maxTouchPoints);
@@ -29,10 +29,7 @@ export function watchInstall(set: (s: Install) => void, installed?: () => void) 
     deferred = e as Deferred;
     set('prompt');
   });
-  addEventListener('appinstalled', () => {
-    set('no');
-    installed?.();
-  });
+  addEventListener('appinstalled', () => set('no'));
 }
 
 /** the browser's own install dialog; it can be shown once per event */
