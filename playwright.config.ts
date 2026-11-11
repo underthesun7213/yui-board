@@ -21,7 +21,12 @@ export default defineConfig({
   webServer: {
     /* a separate folder: the e2e build carries the test handle and must never be deployed */
     command: `npx vite build --outDir dist-e2e --logLevel error && npx vite preview --outDir dist-e2e --port ${PORT} --strictPort --host 127.0.0.1`,
-    env: { VITE_E2E: '1', YUNABI_ORIGIN: BASE },
+    /* a made-up Mixpanel token: the fixtures answer its API and record what is sent (D40) */
+    env: {
+      VITE_E2E: '1',
+      YUNABI_ORIGIN: BASE,
+      VITE_MIXPANEL_TOKEN: '0123456789abcdef0123456789abcdef',
+    },
     url: BASE,
     reuseExistingServer: !process.env.CI,
     timeout: 180_000,
