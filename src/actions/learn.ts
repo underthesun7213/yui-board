@@ -13,7 +13,11 @@ import { mt, MT_START } from '../state/matcha';
 import { ph, PH_START } from '../state/photo';
 import { unlock } from './achievements';
 import { toast } from './ui';
-import { track } from './update';
+
+/* the game's usage statistics (D40): game_start and game_finish, sent by the
+   statistics code (loaded at start by main.tsx; import(), never static) */
+const track = (event: string, props: Record<string, string>) =>
+  void import('../platform/analytics').then((a) => a.send(event, props), Boolean);
 
 export function openLesson(lid: string) {
   vn.set(VN_START);

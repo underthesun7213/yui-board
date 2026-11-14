@@ -85,9 +85,6 @@ function installed(): boolean {
   }
 }
 
-/* install_done: this chunk loads with app_open, early enough to hear it */
-addEventListener('appinstalled', () => send('install_done'));
-
 export function send(event: string, props: Props = {}) {
   if (!TOKEN || !statsOn()) return;
   try {
@@ -115,4 +112,25 @@ export function send(event: string, props: Props = {}) {
   } catch {
     /* statistics never get in the way */
   }
+}
+
+/* The first screen loads this code at start (main.tsx) and leaves the rest
+   to it, so its own budget carries no sending code: app_open now; install_done
+   when the browser says so; install_tap on a tap on an "Install app" button
+   (data-install-kind), heard before the screen handles it, so a tap that
+   closes the steps again (aria-expanded true) is not counted. */
+try {
+  send('app_open');
+  addEventListener('appinstalled', () => send('install_done'));
+  addEventListener(
+    'click',
+    (e) => {
+      const b = (e.target as Element | null)?.closest?.('[data-install-kind]');
+      if (b && b.getAttribute('aria-expanded') !== 'true')
+        send('install_tap', { kind: b.getAttribute('data-install-kind') ?? '' });
+    },
+    true,
+  );
+} catch {
+  /* not in a browser: nothing to hear */
 }

@@ -50,14 +50,17 @@ test('D40 install_tap, install_done, game_start and game_finish carry only what 
 }, info) => {
   void errors;
   await go(page, '');
+  /* the statistics code hears the taps once loaded, as app_open shows */
+  await expect.poll(() => named(stats, 'app_open').length).toBe(1);
   /* Android without the browser's dialog: the tap opens the steps */
   await page.locator('.hhead button.install').click();
   await expect.poll(() => named(stats, 'install_tap').length).toBe(1);
   expect(named(stats, 'install_tap')[0]!.properties.kind).toBe('android');
   /* closing the steps again is not another tap */
   await page.locator('.hhead button.install').click();
+  await page.waitForTimeout(300);
+  expect(named(stats, 'install_tap')).toHaveLength(1);
   /* the browser saying the app was installed */
-  await expect.poll(() => named(stats, 'app_open').length).toBe(1);
   await page.evaluate(() => dispatchEvent(new Event('appinstalled')));
   await expect.poll(() => named(stats, 'install_done').length).toBe(1);
   /* the game: start Osaka, then run it to its ending */

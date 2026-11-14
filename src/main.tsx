@@ -2,7 +2,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { startData } from './actions/data';
 import { enterMap, ensurePrefs } from './actions/map';
-import { track, watchForUpdates, watchInstallable } from './actions/update';
+import { watchForUpdates, watchInstallable } from './actions/update';
 import { App } from './app/App';
 import { onRouteChange, startRouter } from './app/router';
 import { ROOTS } from './app/routes';
@@ -62,7 +62,10 @@ createRoot(document.getElementById('root')!).render(
 if (import.meta.env.VITE_E2E) void import('./e2e');
 watchForUpdates();
 watchInstallable();
-track('app_open');
+/* usage statistics (D40): the sending code sends app_open and hears the
+   install taps itself (platform/analytics.ts). Loaded from here, which
+   already has the loader helper, so the first screen pays for one line. */
+void import('./platform/analytics').catch(Boolean);
 const idle = (fn: () => void) =>
   'requestIdleCallback' in window ? requestIdleCallback(fn) : setTimeout(fn, 1500);
 addEventListener('load', () => idle(preload));
