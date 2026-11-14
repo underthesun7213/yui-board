@@ -906,6 +906,10 @@ main {
   font-weight: 600;
   text-underline-offset: 3px;
 }
+/* the card's map link and Report sat touching ("…열기신고") */
+.glink + .reportbtn {
+  margin-left: 24px;
+}
 .plist {
   list-style: none;
   margin-top: 12px;
