@@ -1,6 +1,5 @@
 import type { Props } from '../platform/analytics';
 import { promptInstall, watchInstall, type Install } from '../platform/install';
-import { registerSW } from '../platform/sw';
 import { ui } from '../state/ui';
 
 /* The app's life on this device: installing, updating, and sending usage
@@ -24,12 +23,19 @@ export function installApp() {
   return promptInstall(setInstall);
 }
 
+/* The service worker code (Workbox, about 2 KB) is a chunk of its own: the
+   worker registers after the page has loaded anyway, so the first screen
+   does not wait for it or pay for it in its budget. */
 let activate: (() => void) | null = null;
 export function watchForUpdates() {
-  registerSW((a) => {
-    activate = a;
-    ui.set({ updateReady: true });
-  });
+  void import('../platform/sw').then(
+    (sw) =>
+      sw.registerSW((a) => {
+        activate = a;
+        ui.set({ updateReady: true });
+      }),
+    Boolean, // a failed load leaves the app as it is: no update toast this visit
+  );
 }
 export function activateUpdate() {
   activate?.();
