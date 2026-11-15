@@ -5,39 +5,44 @@ import { useT } from '../../i18n/useT';
 import { prefs } from '../../state/prefs';
 import { ui } from '../../state/ui';
 import { useStore } from '../../state/useStore';
+import { SurveyLink } from '../../ui/SurveyLink';
 
 const InstallSteps = lazy(() => import('../home/InstallSteps'));
 
-/* At a game's ending, when someone has just enjoyed it: offer to keep the app. */
+/* At a game's ending, when someone has just played it: offer to keep the app
+   (unless it is already installed), then ask for the survey. */
 export default function InstallNudge() {
   const m = useT();
   const lang = useStore(prefs, (s) => s.lang);
   const install = useStore(ui, (s) => s.install);
   const [steps, setSteps] = useState(false);
-  if (install === 'no') return null;
+  if (install === 'no') return <SurveyLink />;
   const inApp = install === 'line' || install === 'inapp';
   return (
-    <div className="endinstall">
-      <p>{INSTALL_TEXT[lang].installEnd}</p>
-      {!inApp && (
-        <button
-          className="secondary"
-          data-install-end
-          aria-expanded={install === 'prompt' ? undefined : steps}
-          onClick={() => {
-            if (install === 'prompt') return void installApp();
-            if (!steps) installHelp();
-            setSteps(!steps);
-          }}
-        >
-          + {m.install}
-        </button>
-      )}
-      {(inApp || (steps && install !== 'prompt')) && (
-        <Suspense fallback={null}>
-          <InstallSteps />
-        </Suspense>
-      )}
-    </div>
+    <>
+      <div className="endinstall">
+        <p>{INSTALL_TEXT[lang].installEnd}</p>
+        {!inApp && (
+          <button
+            className="secondary"
+            data-install-end
+            aria-expanded={install === 'prompt' ? undefined : steps}
+            onClick={() => {
+              if (install === 'prompt') return void installApp();
+              if (!steps) installHelp();
+              setSteps(!steps);
+            }}
+          >
+            + {m.install}
+          </button>
+        )}
+        {(inApp || (steps && install !== 'prompt')) && (
+          <Suspense fallback={null}>
+            <InstallSteps />
+          </Suspense>
+        )}
+      </div>
+      <SurveyLink />
+    </>
   );
 }

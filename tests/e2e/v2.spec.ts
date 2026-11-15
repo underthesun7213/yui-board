@@ -533,6 +533,8 @@ test('install: words for Android, Samsung and an app browser', async ({ page, er
   void errors;
   await go(page, '');
   await expect(page.locator('.hcards')).toBeVisible();
+  /* the test handle loads after the first screen */
+  await page.waitForFunction(() => !!window.__yunabi);
   const set = (install: 'android' | 'samsung' | 'line' | 'no') =>
     page.evaluate((i) => window.__yunabi.ui.set({ install: i }), install);
   await set('android');

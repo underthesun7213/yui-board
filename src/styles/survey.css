@@ -1,0 +1,29 @@
+/* The survey link (ui/SurveyLink.tsx): loaded with the screens that show it,
+   not with the first one. */
+.surveylink {
+  display: block;
+  margin: 16px 0;
+  padding: 12px 14px;
+  border-radius: var(--r-m);
+  background: var(--primary-tint);
+  color: inherit;
+  text-align: left;
+  text-decoration: none;
+  line-height: 1.5;
+}
+.surveylink b {
+  display: block;
+  color: var(--primary);
+}
+.surveylink b::after {
+  content: ' ↗';
+}
+.surveylink span {
+  display: block;
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 14px;
+}
+.surveylink:active {
+  background: var(--surface);
+}

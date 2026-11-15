@@ -10,6 +10,7 @@ import { prefs } from '../../state/prefs';
 import { stats as statsStore } from '../../state/stats';
 import { useStore } from '../../state/useStore';
 import { BackBar } from '../../ui/BackBar';
+import { SurveyLink } from '../../ui/SurveyLink';
 
 const TEXTS: Record<Lang, string> = { ja, en, ko };
 const parsed: Partial<Record<Lang, ReturnType<typeof parseLegal>>> = {};
@@ -35,6 +36,7 @@ export function Legal() {
             <span className="sub">{STATS_TEXT[lang].statsB}</span>
           </span>
         </label>
+        <SurveyLink />
         {blocks.map((b, i) => {
           switch (b.t) {
             case 'h1':
