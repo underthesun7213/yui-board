@@ -5,7 +5,7 @@ import type { Lang } from '../domain/types';
    ending and the terms screen (ui/SurveyLink.tsx) until it closes; the
    poster carries the same address and the same closing date. */
 export const SURVEY_URL =
-  'https://docs.google.com/forms/d/e/1FAIpQLSeGHXb0GKZrBV6RiyfWZCsTCwFtF47jXYI5Azqy_hdQWkLQ0g/viewform';
+  'https://docs.google.com/forms/d/e/1FAIpQLScFD0VQa0GU5X9Nz2Eer-HNB-wrl5rbrkqkrDSQhoif3G89LA/viewform';
 
 /* Monday 30 November 2026, 23:59 JST; the form stops taking answers then. */
 export const SURVEY_CLOSES = Date.parse('2026-11-30T23:59:59+09:00');

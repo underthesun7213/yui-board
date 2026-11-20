@@ -6,7 +6,7 @@ import { expect, go, test } from './fixtures';
 const OPEN = new Date('2026-11-20T12:00:00+09:00');
 const CLOSED = new Date('2026-12-01T00:00:00+09:00');
 const FORM =
-  'https://docs.google.com/forms/d/e/1FAIpQLSeGHXb0GKZrBV6RiyfWZCsTCwFtF47jXYI5Azqy_hdQWkLQ0g/viewform';
+  'https://docs.google.com/forms/d/e/1FAIpQLScFD0VQa0GU5X9Nz2Eer-HNB-wrl5rbrkqkrDSQhoif3G89LA/viewform';
 type Handle = {
   __yunabi: { nextScene(): void; collection: { get(): { cg: Record<string, boolean> } } };
 };
